@@ -10,6 +10,7 @@ class PieceFournirController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $summary = $this->model->getSummaryCounts();
         $this->loadView('../views/pieces_fournir/list.php', [
             'summary' => $summary
@@ -19,6 +20,7 @@ class PieceFournirController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,12 +37,14 @@ class PieceFournirController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $this->loadView('../views/pieces_fournir/edit.php', []);
     }
 
     public function edition($idParam)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $id = $this->validator->decrypter($idParam);
         if (!$id || !is_numeric($id)) {
             $id = is_numeric($idParam) ? (int)$idParam : 0;
@@ -61,7 +65,8 @@ class PieceFournirController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+        $userCode = Auth::code() ?? '';
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
@@ -86,7 +91,7 @@ class PieceFournirController extends BaseController
 
                 $seenInBatch[] = $libelleLower;
 
-                $code = $this->validator->generateCode('pieces_fournir', 'code_piece_fournir', 'DOC-', 8);
+                $code = $this->validator->generateCode(TABLES::PIECES_FOURNIR, 'code_piece_fournir', 'DOC-', 8);
                 $save = [
                     'code_piece_fournir' => $code,
                     'libelle_piece' => $libelle,
@@ -102,12 +107,11 @@ class PieceFournirController extends BaseController
 
             if ($inserted > 0) {
                 if ($duplicates > 0) {
-                    $_SESSION['flash_success'] = "$inserted pièce(s) ajoutée(s) au répertoire avec succès. $duplicates document(s) existant déjà ont été ignoré(s).";
+                    Session::set('flash_success', "$inserted pièce(s) ajoutée(s) au répertoire avec succès. $duplicates document(s) existant déjà ont été ignoré(s).");
                 } else {
-                    $_SESSION['flash_success'] = "$inserted pièce(s) ajoutée(s) au répertoire avec succès !";
+                    Session::set('flash_success', "$inserted pièce(s) ajoutée(s) au répertoire avec succès !");
                 }
-                header('Location: ' . RACINE . 'piece_fournir/list');
-                exit();
+                redirect('piece_fournir/list');
             } else {
                 if ($duplicates > 0) {
                     $this->error("Le(s) document(s) saisi(s) existe(nt) déjà dans le répertoire des pièces.");
@@ -130,7 +134,7 @@ class PieceFournirController extends BaseController
             return;
         }
 
-        $code = $this->validator->generateCode('pieces_fournir', 'code_piece_fournir', 'DOC-', 8);
+        $code = $this->validator->generateCode(TABLES::PIECES_FOURNIR, 'code_piece_fournir', 'DOC-', 8);
         $saveData = [
             'code_piece_fournir' => $code,
             'libelle_piece' => $libelle,
@@ -141,9 +145,8 @@ class PieceFournirController extends BaseController
         ];
 
         if ($this->model->create($saveData)) {
-            $_SESSION['flash_success'] = "Pièce « $libelle » enregistrée avec succès !";
-            header('Location: ' . RACINE . 'piece_fournir/list');
-            exit();
+            Session::set('flash_success', "Pièce « $libelle » enregistrée avec succès !");
+            redirect('piece_fournir/list');
         } else {
             $this->error("Erreur lors de l'enregistrement.");
         }
@@ -180,9 +183,8 @@ class PieceFournirController extends BaseController
         ];
 
         if ($this->model->update($updateData, $id)) {
-            $_SESSION['flash_success'] = "Pièce à fournir mise à jour avec succès !";
-            header('Location: ' . RACINE . 'piece_fournir/list');
-            exit();
+            Session::set('flash_success', "Pièce à fournir mise à jour avec succès !");
+            redirect('piece_fournir/list');
         } else {
             $this->error("Erreur lors de la mise à jour.");
         }
@@ -221,9 +223,8 @@ class PieceFournirController extends BaseController
         }
 
         if ($this->model->delete((int)$id)) {
-            $_SESSION['flash_success'] = "Pièce supprimée du répertoire.";
-            header('Location: ' . RACINE . 'piece_fournir/list');
-            exit();
+            Session::set('flash_success', "Pièce supprimée du répertoire.");
+            redirect('piece_fournir/list');
         } else {
             $this->error("Impossible de supprimer cette pièce.");
         }

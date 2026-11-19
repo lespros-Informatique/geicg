@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : (isset($permission) ? $permission : []);
 $isEdit = !empty($item['id_permission']);
 ?>
 <div class="app-layout">
@@ -13,13 +12,13 @@ $isEdit = !empty($item['id_permission']);
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= $isEdit ? 'Éditer ' : 'Ajouter ' ?> une Permission Granulaire</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des autorisations unitaires et des privilèges système</p>
         </div>
-        <a href="<?= RACINE ?>permission/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('permission/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>permission/<?= $isEdit ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form action="<?= url('permission/' . ($isEdit ? 'edit' : 'add')) ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if ($isEdit): ?>
             <input type="hidden" name="id_permission" value="<?= $item['id_permission'] ?>">
@@ -47,8 +46,7 @@ $isEdit = !empty($item['id_permission']);
               </div>
 
               <?php
-                $dbConn = (new Database())->getCon();
-                $existingModules = $dbConn->query("SELECT DISTINCT module_permission FROM permissions WHERE module_permission IS NOT NULL AND module_permission != '' ORDER BY module_permission ASC")->fetchAll(PDO::FETCH_COLUMN);
+                $existingModules = $existingModules ?? [];
                 $curMod = strtoupper($item['module_permission'] ?? 'ADMINISTRATION');
               ?>
 
@@ -75,7 +73,7 @@ $isEdit = !empty($item['id_permission']);
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
               <select class="form-control" name="statut_permission" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
                 <option value="actif" <?= (($item['statut_permission'] ?? 'actif') === 'actif') ? 'selected' : '' ?>>Actif</option>
-                <option value="inactif" <?= (($item['statut_permission'] ?? '') === 'inactif') ? 'selected' : '' ?>>Inactif</option>
+                <option value="inactif" <?= (($item['statut_permission'] ?? '') === STATUTS::INACTIF) ? 'selected' : '' ?>>Inactif</option>
               </select>
             </div>
             <?php endif; ?>
@@ -84,7 +82,7 @@ $isEdit = !empty($item['id_permission']);
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
             <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer la Permission</button>
-            <a href="<?= RACINE ?>permission/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
+            <a href="<?= url('permission/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
           </div>
         </form>
       </div>
@@ -92,28 +90,7 @@ $isEdit = !empty($item['id_permission']);
   </main>
 </div>
 
-<script>
-var isCustomModule = false;
-function toggleModuleInput() {
-  isCustomModule = !isCustomModule;
-  if (isCustomModule) {
-    $('#bloc-select-module').hide();
-    $('#bloc-text-module').show();
-    $('#input_nouveau_module').focus();
-    $('#btn-toggle-module').html('<i data-lucide="list" style="width:14px;height:14px;"></i> Choisir un module existant');
-    $('#help-module').text('Saisissez le nom en lettres majuscules (ex: BIBLIOTHEQUE).');
-  } else {
-    $('#bloc-text-module').hide();
-    $('#input_nouveau_module').val('');
-    $('#bloc-select-module').show();
-    $('#btn-toggle-module').html('<i data-lucide="plus-circle" style="width:14px;height:14px;"></i> + Créer un nouveau module');
-    $('#help-module').text('Choisissez parmi les modules existants ou cliquez ci-dessus pour en créer un nouveau.');
-  }
-  if (window.lucide) lucide.createIcons();
-}
-
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons();
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/users.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

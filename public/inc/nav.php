@@ -1,68 +1,46 @@
 <?php
-  // Récupération dynamique de l'année académique active
-  $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
-  $activeAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Aucune année';
-
-  try {
-      $dbNav = (new Database())->getCon();
-      $allAnneesNav = $dbNav ? $dbNav->query("SELECT * FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) : [];
-      if (!empty($allAnneesNav)) {
-          $foundNav = false;
-          foreach ($allAnneesNav as $anNav) {
-              if ($anNav['code_annee'] === $activeAnneeCode) {
-                  $foundNav = true;
-                  $activeAnneeLibelle = $anNav['libelle_annee'];
-                  break;
-              }
-          }
-          if (!$foundNav) {
-              foreach ($allAnneesNav as $anNav) {
-                  if (($anNav['statut_annee'] ?? '') === 'actif') {
-                      $activeAnneeCode = $anNav['code_annee'];
-                      $activeAnneeLibelle = $anNav['libelle_annee'];
-                      $_SESSION['annee_active_code'] = $activeAnneeCode;
-                      $_SESSION['annee_active_libelle'] = $activeAnneeLibelle;
-                      $foundNav = true;
-                      break;
-                  }
-              }
-              if (!$foundNav) {
-                  $activeAnneeCode = '';
-                  $activeAnneeLibelle = 'Aucune';
-                  $_SESSION['annee_active_code'] = '';
-                  $_SESSION['annee_active_libelle'] = 'Aucune';
-              }
-          }
-      } else {
-          $activeAnneeCode = '';
-          $activeAnneeLibelle = 'Aucune année';
-          $_SESSION['annee_active_code'] = '';
-          $_SESSION['annee_active_libelle'] = 'Aucune année';
-      }
-  } catch(Exception $e) {
-      $allAnneesNav = [];
-  }
+  extract(ViewContext::navData());
 ?>
-<?php if (!empty($_SESSION['flash_success'])): ?>
+<?php if (Session::has('flash_success')): ?>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof showToast === 'function') {
-        showToast(<?= json_encode($_SESSION['flash_success']) ?>, 'success');
+    (function() {
+      function fireFlashSuccess() {
+        var msg = <?= json_encode(Session::get('flash_success')) ?>;
+        if (typeof showToast === 'function') {
+          showToast(msg, 'success');
+        } else if (typeof toastr !== 'undefined') {
+          toastr.success(msg);
+        }
       }
-    });
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fireFlashSuccess);
+      } else {
+        fireFlashSuccess();
+      }
+    })();
   </script>
-  <?php unset($_SESSION['flash_success']); ?>
+  <?php Session::remove('flash_success'); ?>
 <?php endif; ?>
 
-<?php if (!empty($_SESSION['flash_error'])): ?>
+<?php if (Session::has('flash_error')): ?>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof showToast === 'function') {
-        showToast(<?= json_encode($_SESSION['flash_error']) ?>, 'error');
+    (function() {
+      function fireFlashError() {
+        var msg = <?= json_encode(Session::get('flash_error')) ?>;
+        if (typeof showToast === 'function') {
+          showToast(msg, 'error');
+        } else if (typeof toastr !== 'undefined') {
+          toastr.error(msg);
+        }
       }
-    });
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fireFlashError);
+      } else {
+        fireFlashError();
+      }
+    })();
   </script>
-  <?php unset($_SESSION['flash_error']); ?>
+  <?php Session::remove('flash_error'); ?>
 <?php endif; ?>
 
 <header class="topbar">
@@ -103,40 +81,43 @@
                 <span id="activeAnneeDisplay" style="white-space: nowrap;"><?= htmlspecialchars($activeAnneeLibelle) ?></span>
                 <i data-lucide="chevron-down" style="width: 13px; height: 13px; color: #64748B;"></i>
             </button>
-            <div class="dropdown-panel" id="anneeSwitcherPanel" style="width: 270px; padding: 12px; border-radius: 14px; box-shadow: 0 15px 35px -5px rgba(0,0,0,0.2); border: 1px solid #E2E8F0; z-index: 1050;">
+            <div class="dropdown-panel" id="anneeSwitcherPanel" style="width: 290px; padding: 12px; border-radius: 14px; box-shadow: 0 15px 35px -5px rgba(0,0,0,0.2); border: 1px solid #E2E8F0; z-index: 1050;">
                 <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 6px 8px 6px; border-bottom: 1.5px solid #F1F5F9; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <span style="display: flex; align-items: center; gap: 5px;">
                         <i data-lucide="calendar" style="width: 13px; height: 13px;"></i> Année Académique
                     </span>
-                    <span class="badge" style="background:#DCFCE7; color:#15803D; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px;">Active</span>
+                    <span class="badge" style="background:#DCFCE7; color:#15803D; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px;">Sélecteur</span>
                 </div>
-                <div style="max-height: 250px; overflow-y: auto; padding-right: 2px;">
+                <div style="max-height: 270px; overflow-y: auto; padding-right: 2px;">
                     <?php if (!empty($allAnneesNav)): ?>
                         <?php foreach ($allAnneesNav as $anItem): ?>
-                            <?php 
-                                $isSelected = ($anItem['code_annee'] === $activeAnneeCode || $anItem['libelle_annee'] === $activeAnneeLibelle);
-                            ?>
-                            <button type="button" class="btn-select-annee-item" data-code="<?= htmlspecialchars($anItem['code_annee']) ?>" data-libelle="<?= htmlspecialchars($anItem['libelle_annee']) ?>" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 8px; border: <?= $isSelected ? '1.5px solid #3B82F6' : '1px solid transparent' ?>; background: <?= $isSelected ? '#EFF6FF' : 'transparent' ?>; text-align: left; cursor: pointer; margin-bottom: 4px; transition: all 0.15s ease;">
-                                <div style="display: flex; align-items: center; gap: 9px;">
-                                    <div style="width: 26px; height: 26px; border-radius: 6px; background: <?= $isSelected ? '#DBEAFE' : '#F1F5F9' ?>; color: <?= $isSelected ? '#1E3A5F' : '#64748B' ?>; display: flex; align-items: center; justify-content: center;">
-                                        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-weight: <?= $isSelected ? '800' : '600' ?>; color: <?= $isSelected ? '#1E3A5F' : '#0F172A' ?>; font-size: 13px; line-height: 1.2;">
-                                            <?= htmlspecialchars($anItem['libelle_annee']) ?>
+                            <?php if (!empty($anItem['_canAccessThisYear'])): ?>
+                                <button type="button" class="btn-select-annee-item" data-code="<?= htmlspecialchars($anItem['code_annee']) ?>" data-libelle="<?= htmlspecialchars($anItem['libelle_annee']) ?>" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 8px; border: <?= !empty($anItem['_isSelected']) ? '1.5px solid #3B82F6' : '1px solid transparent' ?>; background: <?= !empty($anItem['_isSelected']) ? '#EFF6FF' : 'transparent' ?>; text-align: left; cursor: pointer; margin-bottom: 4px; transition: all 0.15s ease;">
+                                    <div style="display: flex; align-items: center; gap: 9px;">
+                                        <div style="width: 26px; height: 26px; border-radius: 6px; background: <?= !empty($anItem['_isSelected']) ? '#DBEAFE' : '#F1F5F9' ?>; color: <?= !empty($anItem['_isSelected']) ? '#1E3A5F' : '#64748B' ?>; display: flex; align-items: center; justify-content: center;">
+                                            <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
                                         </div>
-                                        <?php if (($anItem['statut_annee'] ?? '') === 'actif'): ?>
-                                            <div style="font-size: 10px; color: #16A34A; font-weight: 700;">Active par défaut</div>
-                                        <?php endif; ?>
+                                        <div>
+                                            <div style="font-weight: <?= !empty($anItem['_isSelected']) ? '800' : '600' ?>; color: <?= !empty($anItem['_isSelected']) ? '#1E3A5F' : '#0F172A' ?>; font-size: 13px; line-height: 1.2;">
+                                                <?= htmlspecialchars($anItem['libelle_annee']) ?>
+                                            </div>
+                                            <?php if (!empty($anItem['_isCurrentActiveDb'])): ?>
+                                                <div style="font-size: 10px; color: #16A34A; font-weight: 700;">Active en cours</div>
+                                            <?php elseif (($anItem['statut_annee'] ?? '') === 'planifie'): ?>
+                                                <div style="font-size: 10px; color: #2563EB; font-weight: 700;">En préparation (Future)</div>
+                                            <?php else: ?>
+                                                <div style="font-size: 10px; color: #64748B; font-weight: 600;">Année clôturée (Historique)</div>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-                                </div>
-                                <?php if ($isSelected): ?>
-                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-size: 11px; font-weight: 800;">✓</span>
-                                <?php endif; ?>
-                            </button>
+                                    <?php if (!empty($anItem['_isSelected'])): ?>
+                                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #1E3A5F; color: #FFF; font-size: 11px; font-weight: 800;">✓</span>
+                                    <?php endif; ?>
+                                </button>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div style="padding: 12px; font-size: 12px; color: #64748B; text-align: center;">Aucune année trouvée</div>
+                        <div style="padding: 12px; font-size: 12px; color: #64748B; text-align: center;">Aucune année disponible</div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -151,27 +132,27 @@
                     <h3>Raccourcis GEICG</h3>
                 </div>
                 <div class="dropdown-grid">
-                    <a href="<?= RACINE ?>inscription/add" class="dropdown-card">
+                    <a href="<?= url('inscription/add') ?>" class="dropdown-card">
                         <i data-lucide="user-plus"></i>
                         <span>Nouvelle Inscription</span>
                     </a>
-                    <a href="<?= RACINE ?>paiement/add" class="dropdown-card">
+                    <a href="<?= url('paiement/add') ?>" class="dropdown-card">
                         <i data-lucide="credit-card"></i>
                         <span>Nouveau Paiement</span>
                     </a>
-                    <a href="<?= RACINE ?>note/add" class="dropdown-card">
+                    <a href="<?= url('note/add') ?>" class="dropdown-card">
                         <i data-lucide="edit-3"></i>
                         <span>Saisir Notes</span>
                     </a>
-                    <a href="<?= RACINE ?>etudiant/list" class="dropdown-card">
+                    <a href="<?= url('etudiant/list') ?>" class="dropdown-card">
                         <i data-lucide="users"></i>
                         <span>Étudiants</span>
                     </a>
-                    <a href="<?= RACINE ?>emploi/list" class="dropdown-card">
+                    <a href="<?= url('emploi/list') ?>" class="dropdown-card">
                         <i data-lucide="calendar"></i>
                         <span>Emplois du temps</span>
                     </a>
-                    <a href="<?= RACINE ?>bulletin/list" class="dropdown-card">
+                    <a href="<?= url('bulletin/list') ?>" class="dropdown-card">
                         <i data-lucide="file-text"></i>
                         <span>Bulletins</span>
                     </a>
@@ -201,7 +182,7 @@
                     <!-- Thème Principal / Accents École -->
                     <div style="background: var(--bg-secondary, #F8FAFC); border: 1px solid var(--border-color, #E2E8F0); border-radius: 12px; padding: 14px;">
                         <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary, #64748B); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="award" style="width: 14px; height: 14px; color: var(--primary-color);"></i> Couleur Institutionnelle
+                            <i data-lucide="award" style="width: 14px; height: 14px; color: var(--primary-color);"></i> Couleur Principale
                         </div>
                         <div class="theme-options" id="primaryOptions" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
                             <div class="theme-option active" data-category="primary" data-value="navy" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; cursor: pointer; border: 1.5px solid #CBD5E1; background: #FFFFFF;">
@@ -406,13 +387,7 @@
                     <div>
                         <strong><?= htmlspecialchars($currentUserName ?? 'Utilisateur') ?></strong>
                         <small style="color: #64748B; display: block;"><?= htmlspecialchars($currentUserEmail ?? '') ?></small>
-                        <?php 
-                          $navRoles = $_SESSION[USERS_AUTH]['roles'] ?? [];
-                          if (empty($navRoles) && !empty($_SESSION[USERS_AUTH]['role_code'])) {
-                              $navRoles = [$_SESSION[USERS_AUTH]['role_code']];
-                          }
-                          if (!empty($navRoles)):
-                        ?>
+                        <?php if (!empty($navRoles)): ?>
                           <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
                             <?php foreach($navRoles as $nr): ?>
                               <span style="font-size: 10px; font-weight: 700; background: rgba(24, 56, 95, 0.08); color: var(--primary-color, #18385F); padding: 2px 6px; border-radius: 4px;">
@@ -423,10 +398,25 @@
                         <?php endif; ?>
                     </div>
                 </div>
-                <a href="<?= RACINE ?>user/profil" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>
+                <a href="<?= url('user/profil') ?>" class="dropdown-item"><i data-lucide="user"></i> Mon profil</a>
                 <hr>
-                <a href="<?= RACINE ?>user/decon" class="dropdown-item logout"><i data-lucide="log-out"></i> Déconnexion</a>
+                <a href="<?= url('user/decon') ?>" class="dropdown-item logout"><i data-lucide="log-out"></i> Déconnexion</a>
             </div>
         </div>
     </div>
 </header>
+
+<?php if ($isPastAnneeNav): ?>
+  <div style="background: <?= $isReadOnlyAnneeNav ? '#FFFBEB' : '#EFF6FF' ?>; color: <?= $isReadOnlyAnneeNav ? '#B45309' : '#1E40AF' ?>; border-bottom: 1.5px solid <?= $isReadOnlyAnneeNav ? '#FCD34D' : '#93C5FD' ?>; padding: 8px 24px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; box-sizing: border-box;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i data-lucide="<?= $isReadOnlyAnneeNav ? 'lock' : 'unlock' ?>" style="width: 16px; height: 16px; flex-shrink: 0; color: <?= $isReadOnlyAnneeNav ? '#D97706' : '#2563EB' ?>;"></i>
+      <span>
+        Mode Historique (Année <?= htmlspecialchars($activeAnneeLibelle) ?>) — 
+        <?= $isReadOnlyAnneeNav ? '<strong>Lecture seule</strong> (Aucune modification autorisée sur cette année)' : '<strong>Édition / Régularisation autorisée</strong>' ?>
+      </span>
+    </div>
+    <span class="badge" style="background: <?= $isReadOnlyAnneeNav ? '#FEF3C7' : '#DBEAFE' ?>; color: <?= $isReadOnlyAnneeNav ? '#92400E' : '#1E3A5F' ?>; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
+      <?= $isReadOnlyAnneeNav ? 'Lecture Seule' : 'Mode Saisie' ?>
+    </span>
+  </div>
+<?php endif; ?>

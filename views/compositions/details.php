@@ -1,62 +1,9 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$item = $item ?? [];
 $targetClasses = $targetClasses ?? [];
 $matieres = $matieres ?? [];
 $encryptedId = $encryptedId ?? '';
 ?>
-<style>
-  /* Card Hover Animations & Micro-Interactions */
-  .card {
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease !important;
-  }
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04) !important;
-  }
-  .card [data-lucide] {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  }
-  .card:hover [data-lucide] {
-    transform: scale(1.14) rotate(-3deg);
-  }
-  .matiere-card-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border: 1.5px solid #CBD5E1;
-    border-radius: 8px;
-    margin-bottom: 6px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    background: #FFFFFF;
-  }
-  .matiere-card-item:hover {
-    border-color: #0284C7;
-    background: #F0F9FF;
-    transform: translateX(4px);
-  }
-  .matiere-card-item.selected {
-    border-color: #0284C7;
-    background: #EFF6FF;
-    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.12);
-  }
-  @keyframes btnSpin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  .btn-circle-loader {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    border-radius: 50%;
-    border-top-color: #FFFFFF;
-    animation: btnSpin 0.65s linear infinite;
-    vertical-align: middle;
-  }
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -71,17 +18,30 @@ $encryptedId = $encryptedId ?? '';
             <i data-lucide="award" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
             Fiche Composition : <?= htmlspecialchars($item['libelle_composition'] ?? 'Épreuve') ?>
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails officiels de la programmation, coefficients et classes associées</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails de la programmation, coefficients et classes associées</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-          <a href="<?= RACINE ?>composition/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('composition/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <?php if (!empty($encryptedId)): ?>
-          <a href="<?= RACINE ?>composition/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
+          <?php if (!empty($item['code_composition']) && (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::ENTER_NOTES])))): ?>
+          <a href="<?= url() ?>note/saisieClasse?type_evaluation_code=EXAMEN&composition_code=<?= urlencode($item['code_composition']) ?>" class="btn btn-success" style="background: #16A34A; border-color: #16A34A; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 10px rgba(22,163,74,0.2);">
+            <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisir les Notes
           </a>
           <?php endif; ?>
+          <?php 
+          $isExamen = strtoupper($item['type_composition'] ?? 'EXAMEN') === 'EXAMEN';
+          if (!empty($encryptedId)): 
+            if ($isExamen):
+          ?>
+          <a href="<?= url('composition/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
+          </a>
+          <?php else: ?>
+          <button type="button" class="btn btn-light" disabled style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; color: #94A3B8; background: #F1F5F9; border: 1px solid #CBD5E1; cursor: not-allowed;" title="Seuls les examens peuvent être modifiés via la programmation">
+            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier
+          </button>
+          <?php endif; endif; ?>
         </div>
       </div>
 
@@ -96,7 +56,17 @@ $encryptedId = $encryptedId ?? '';
             </div>
             <div>
               <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Intitulé de l'Épreuve</div>
-              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;"><?= htmlspecialchars($item['libelle_composition'] ?? '-') ?></div>
+              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <?php 
+                  $typ = $item['type_composition'] ?? 'EXAMEN';
+                  $badgeBg = '#EFF6FF'; $badgeCol = '#1D4ED8';
+                  if ($typ === 'DEVOIR') { $badgeBg = '#FEF3C7'; $badgeCol = '#B45309'; }
+                  elseif ($typ === 'INTERROGATION') { $badgeBg = '#F0FDF4'; $badgeCol = '#15803D'; }
+                  elseif ($typ === 'AUTRE') { $badgeBg = '#F1F5F9'; $badgeCol = '#475569'; }
+                ?>
+                <span style="font-size: 11px; font-weight: 800; background: <?= $badgeBg ?>; color: <?= $badgeCol ?>; padding: 2px 8px; border-radius: 6px;"><?= htmlspecialchars($typ) ?></span>
+                <span><?= htmlspecialchars($item['libelle_composition'] ?? '-') ?></span>
+              </div>
             </div>
           </div>
           <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
@@ -132,8 +102,12 @@ $encryptedId = $encryptedId ?? '';
             </div>
             <div>
               <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Date & Statut</div>
-              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;">
-                <?= !empty($item['date_composition']) ? date('d/m/Y', strtotime($item['date_composition'])) : '-' ?>
+              <div style="font-size: 14px; font-weight: 800; color: #0F172A; margin-top: 2px;">
+                <?php if (!empty($item['date_composition']) && !empty($item['date_fin_composition']) && $item['date_composition'] !== $item['date_fin_composition']): ?>
+                  Du <?= date('d/m/Y', strtotime($item['date_composition'])) ?> au <?= date('d/m/Y', strtotime($item['date_fin_composition'])) ?>
+                <?php else: ?>
+                  <?= !empty($item['date_composition']) ? date('d/m/Y', strtotime($item['date_composition'])) : (!empty($item['date_fin_composition']) ? date('d/m/Y', strtotime($item['date_fin_composition'])) : '-') ?>
+                <?php endif; ?>
               </div>
             </div>
           </div>
@@ -154,14 +128,14 @@ $encryptedId = $encryptedId ?? '';
               <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
             </div>
             <div>
-              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Cibles Rattachées</div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Niveaux & Filières Rattachés</div>
               <div style="font-size: 15px; font-weight: 800; color: #7E22CE; margin-top: 2px;">
                 <?= count($targetClasses) ?> Niveaux / Filières
               </div>
             </div>
           </div>
           <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; align-items: center;">
-            <span>État des cibles :</span>
+            <span>État :</span>
             <span class="badge" style="background:#F3E8FF; color:#7E22CE; padding:3px 10px; border-radius:20px; font-weight:700; font-size:11px;">Active(s)</span>
           </div>
         </div>
@@ -177,53 +151,59 @@ $encryptedId = $encryptedId ?? '';
         <?php if (empty($targetClasses)): ?>
           <div style="padding: 20px; text-align: center; color: #94A3B8; font-size: 13px;">Aucun niveau/filière spécifique associé à cette composition.</div>
         <?php else: ?>
-          <table id="table-niveaux-filieres" class="table display nowrap" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-            <thead>
-              <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase;">
-                <th style="padding: 10px 14px;">#</th>
-                <th style="padding: 10px 14px;">Niveau d'Études</th>
-                <th style="padding: 10px 14px;">Filière</th>
-                <th style="padding: 10px 14px; text-align: center;">Nombre de Matières</th>
-                <th style="padding: 10px 14px; text-align: right;">Actions Saisie Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php 
-                $rowNum = 1;
-                foreach ($targetClasses as $tc): 
-                  $classeCode = $tc['code_classe'] ?? '';
-                  $targetName = !empty($tc['libelle_classe']) ? $tc['libelle_classe'] : (($tc['libelle_niveau'] ?? '') . ' - ' . ($tc['libelle_filiere'] ?? ''));
-                  $nbMatieres = (int)($tc['nb_matieres'] ?? 0);
-              ?>
-                <tr style="border-bottom: 1px solid #F1F5F9;">
-                  <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
-                  <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
-                  <td style="padding: 12px 14px;"><span style="background: #F1F5F9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?></span></td>
-                  <td style="padding: 12px 14px; text-align: center;">
-                    <span class="badge" style="background: <?= $nbMatieres > 0 ? '#EFF6FF' : '#F1F5F9' ?>; color: <?= $nbMatieres > 0 ? '#1E40AF' : '#64748B' ?>; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                      <i data-lucide="book-open" style="width: 13px; height: 13px;"></i>
-                      <?= $nbMatieres ?> matière<?= $nbMatieres > 1 ? 's' : '' ?>
-                    </span>
-                  </td>
-                  <td style="padding: 12px 14px; text-align: right;">
-                    <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">
-                      <button type="button" 
-                              class="btn btn-sm btn-open-saisie-modal" 
-                              data-classe-code="<?= htmlspecialchars($classeCode) ?>"
-                              data-classe-libelle="<?= htmlspecialchars($targetName) ?>"
-                              data-cible-code="<?= htmlspecialchars($tc['code_composition_niveau_filiere'] ?? '') ?>"
-                              style="background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(30,58,95,0.2);">
-                        <i data-lucide="list-checks" style="width: 14px; height: 14px;"></i> Liste Matières
-                      </button>
-                      <a href="<?= RACINE ?>note/saisieClasse?classe_code=<?= urlencode($classeCode) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
-                        <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Grille des notes
-                      </a>
-                    </div>
-                  </td>
+          <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table id="table-niveaux-filieres" class="table display" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase;">
+                  <th style="padding: 10px 14px; width: 40px;">#</th>
+                  <th style="padding: 10px 14px; min-width: 130px;">Niveau d'Études</th>
+                  <th style="padding: 10px 14px; min-width: 160px; max-width: 220px; white-space: normal;">Filière</th>
+                  <th style="padding: 10px 14px; text-align: center; min-width: 150px;">Nombre de Matières</th>
+                  <th style="padding: 10px 14px; text-align: right; min-width: 250px;">Actions Saisie Notes</th>
                 </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <?php 
+                  $rowNum = 1;
+                  foreach ($targetClasses as $tc): 
+                    $classeCode = $tc['code_classe'] ?? '';
+                    $targetName = !empty($tc['libelle_classe']) ? $tc['libelle_classe'] : (($tc['libelle_niveau'] ?? '') . ' - ' . ($tc['libelle_filiere'] ?? ''));
+                    $nbMatieres = (int)($tc['nb_matieres'] ?? 0);
+                ?>
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 12px 14px; font-weight: 700; color: #64748B;"><?= $rowNum++ ?></td>
+                    <td style="padding: 12px 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
+                    <td style="padding: 12px 14px; white-space: normal; max-width: 220px;">
+                      <span style="background: #F1F5F9; color: #334155; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; display: inline-block; white-space: normal; line-height: 1.4; word-break: normal;">
+                        <?= htmlspecialchars($tc['libelle_filiere'] ?? '-') ?>
+                      </span>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: center;">
+                      <span class="badge" style="background: <?= $nbMatieres > 0 ? '#EFF6FF' : '#F1F5F9' ?>; color: <?= $nbMatieres > 0 ? '#1E40AF' : '#64748B' ?>; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                        <i data-lucide="book-open" style="width: 13px; height: 13px;"></i>
+                        <?= $nbMatieres ?> matière<?= $nbMatieres > 1 ? 's' : '' ?>
+                      </span>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: right;">
+                      <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+                        <button type="button" 
+                                class="btn btn-sm btn-open-saisie-modal" 
+                                data-classe-code="<?= htmlspecialchars($classeCode) ?>"
+                                data-classe-libelle="<?= htmlspecialchars($targetName) ?>"
+                                data-cible-code="<?= htmlspecialchars($tc['code_composition_niveau_filiere'] ?? '') ?>"
+                                style="background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 6px; font-weight: 700; padding: 7px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(30,58,95,0.2); white-space: nowrap;">
+                          <i data-lucide="list-checks" style="width: 14px; height: 14px;"></i> Liste Matières
+                        </button>
+                        <a href="<?= url() ?>note/saisieClasse?classe_code=<?= urlencode($classeCode) ?>&semestre_code=<?= urlencode($item['semestre_code'] ?? '') ?>&composition_code=<?= urlencode($item['code_composition'] ?? '') ?>&type_evaluation_code=EXAMEN" class="btn btn-sm" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; border-radius:6px; font-weight:700; padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px; white-space: nowrap;">
+                          <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Grille des notes
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
         <?php endif; ?>
       </div>
 
@@ -252,7 +232,7 @@ $encryptedId = $encryptedId ?? '';
     </div>
 
     <!-- Form Content -->
-    <form action="<?= RACINE ?>note/saisieClasse" method="GET" id="form-modal-saisie-notes" style="padding: 24px; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+    <form action="<?= url('note/saisieClasse') ?>" method="GET" id="form-modal-saisie-notes" style="padding: 24px; display: flex; flex-direction: column; overflow: hidden; height: 100%;">
       <input type="hidden" name="classe_code" id="modal_input_classe_code" value="">
       <input type="hidden" name="composition_cible_code" id="modal_input_cible_code" value="">
       <input type="hidden" name="semestre_code" value="<?= htmlspecialchars($item['semestre_code'] ?? '') ?>">
@@ -312,193 +292,12 @@ $encryptedId = $encryptedId ?? '';
   </div>
 </div>
 
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-
-  if ($.fn.DataTable && $('#table-niveaux-filieres').length) {
-    $('#table-niveaux-filieres').DataTable({
-      pageLength: 10,
-      autoWidth: false,
-      language: {
-        url: '<?= RACINE ?>public/json/datatables-i18n-fr-FR.json'
-      },
-      drawCallback: function() {
-        if (window.lucide) lucide.createIcons();
-      }
-    });
-  }
-
-  var allCheckedState = false;
-
-  $(document).on('click', '.btn-open-saisie-modal', function() {
-    var $btn = $(this);
-    var classeCode = $btn.attr('data-classe-code') || $btn.data('classe-code') || '';
-    var classeLibelle = $btn.attr('data-classe-libelle') || $btn.data('classe-libelle') || '';
-    var cibleCode = $btn.attr('data-cible-code') || $btn.data('cible-code') || '';
-
-    $('#modal_input_classe_code').val(classeCode);
-    $('#modal_input_cible_code').val(cibleCode);
-    $('#modal_display_classe_name').text(classeLibelle);
-
-    $('#modal-saisie-matiere').css('display', 'flex');
-    loadMatieresForSelectedClasse();
-  });
-
-  function loadMatieresForSelectedClasse() {
-    var classeCode = $('#modal_input_classe_code').val();
-    var cibleCode = $('#modal_input_cible_code').val();
-    var compositionCode = $('input[name="composition_code"]').val() || '<?= htmlspecialchars($item['code_composition'] ?? '') ?>';
-
-    var $container = $('#matieres-checkboxes-container');
-    $container.html('<div style="padding: 30px; text-align: center; color: #64748B;"><i data-lucide="loader" class="spin" style="width: 24px; height: 24px;"></i><p style="margin: 8px 0 0 0; font-size: 13px;">Chargement des matières de l\'emploi du temps...</p></div>');
-    if (window.lucide) lucide.createIcons();
-
-    $.ajax({
-      url: '<?= RACINE ?>composition/getMatieresClasseApi',
-      type: 'GET',
-      data: { classe_code: classeCode, composition_code: compositionCode, composition_niveau_filiere_code: cibleCode },
-      dataType: 'json',
-      success: function(res) {
-        if (res && res.data) {
-          var items = res.data;
-          var savedCodes = res.saved_codes || [];
-          var source = res.source;
-
-          if (source === 'emploi_temps') {
-            $('#badge-source-matieres').html('<i data-lucide="clock" style="width:12px;height:12px;"></i> Emploi du Temps (Session Active)').css({ 'background': '#DCFCE7', 'color': '#15803D' });
-          } else if (source === 'enseignant_matiere') {
-            $('#badge-source-matieres').html('<i data-lucide="user-check" style="width:12px;height:12px;"></i> Affectation Enseignants').css({ 'background': '#FEF3C7', 'color': '#B45309' });
-          } else {
-            $('#badge-source-matieres').html('<i data-lucide="book-open" style="width:12px;height:12px;"></i> Toutes les Matières').css({ 'background': '#F1F5F9', 'color': '#475569' });
-          }
-
-          $('#badge-matieres-count').text(items.length + ' matière' + (items.length > 1 ? 's' : ''));
-
-          if (items.length === 0) {
-            $container.html('<div style="padding: 24px; text-align: center; color: #94A3B8; font-size: 13px;">Aucune matière trouvée pour cette classe.</div>');
-            return;
-          }
-
-          var html = '';
-          items.forEach(function(m, idx) {
-            var isChecked = false;
-            if (savedCodes.length > 0) {
-              isChecked = (savedCodes.indexOf(m.code_matiere) !== -1);
-            } else {
-              isChecked = (idx === 0);
-            }
-            var checkedAttr = isChecked ? 'checked' : '';
-
-            html += '<label class="matiere-card-item ' + (isChecked ? 'selected' : '') + '">';
-            html += '  <div style="display: flex; align-items: center; gap: 12px;">';
-            html += '    <input type="checkbox" name="matiere_codes[]" value="' + m.code_matiere + '" class="chk-matiere-item" ' + checkedAttr + ' style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">';
-            html += '    <span style="font-weight: 800; font-size: 13.5px; color: #0F172A;">' + m.libelle_matiere + '</span>';
-            html += '  </div>';
-            html += '  <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; background: #F1F5F9; padding: 3px 8px; border-radius: 6px;">' + m.code_matiere + '</span>';
-            html += '</label>';
-          });
-
-          $container.html(html);
-          if (window.lucide) lucide.createIcons();
-        }
-      },
-      error: function() {
-        $container.html('<div style="padding: 20px; text-align: center; color: #DC2626; font-size: 13px;">Erreur lors du chargement des matières.</div>');
-      }
-    });
-  }
-
-  // Highlight et sélection interactive des cartes
-  $(document).on('change', '.chk-matiere-item', function() {
-    var $card = $(this).closest('.matiere-card-item');
-    if ($(this).is(':checked')) {
-      $card.addClass('selected');
-    } else {
-      $card.removeClass('selected');
-    }
-  });
-
-  // Bouton Tout cocher / Tout décocher
-  $(document).on('click', '#btn-toggle-select-all', function(e) {
-    e.preventDefault();
-    allCheckedState = !allCheckedState;
-    $('.chk-matiere-item:visible').prop('checked', allCheckedState).trigger('change');
-    $(this).text(allCheckedState ? 'Tout décocher' : 'Tout cocher');
-  });
-
-  // Form submit handler : enregistrement dans composition_matieres sans redirection
-  $(document).on('submit', '#form-modal-saisie-notes', function(e) {
-    e.preventDefault();
-
-    var checkedMatieres = $('.chk-matiere-item:checked');
-    var selectedMatCodes = [];
-    checkedMatieres.each(function() {
-      selectedMatCodes.push($(this).val());
-    });
-
-    var cibleCode = $('#modal_input_cible_code').val();
-    var compositionCode = $('input[name="composition_code"]').val() || '<?= htmlspecialchars($item['code_composition'] ?? '') ?>';
-
-    if (!cibleCode || !compositionCode) {
-      if (window.toastr) {
-        toastr.error('Données de composition manquantes. Veuillez rouvrir le formulaire.', 'Erreur');
-      }
-      return false;
-    }
-
-    var $btnSubmit = $(this).find('button[type="submit"]');
-    var originalBtnHtml = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Valider les Matières';
-    
-    $btnSubmit.prop('disabled', true).html('<span class="btn-circle-loader" style="margin-right: 6px;"></span> Enregistrement...');
-
-    $.ajax({
-      url: '<?= RACINE ?>composition/saveMatieresClasseApi',
-      type: 'POST',
-      data: {
-        composition_code: compositionCode,
-        composition_niveau_filiere_code: cibleCode,
-        matiere_codes: selectedMatCodes
-      },
-      dataType: 'json',
-      success: function(res) {
-        $btnSubmit.prop('disabled', false).html(originalBtnHtml);
-        if (window.lucide) lucide.createIcons();
-
-        if (res && (res.status === 1 || res.status === '1' || res.success)) {
-          if (window.toastr) {
-            toastr.success(res.message || 'Matières enregistrées avec succès !', 'Succès');
-          }
-          $('#modal-saisie-matiere').hide();
-          setTimeout(function() {
-            location.reload();
-          }, 300);
-        } else {
-          if (window.toastr) {
-            toastr.error((res ? res.message : null) || 'Erreur lors de l\'enregistrement des matières.', 'Erreur');
-          }
-        }
-      },
-      error: function(xhr, status, err) {
-        $btnSubmit.prop('disabled', false).html(originalBtnHtml);
-        if (window.lucide) lucide.createIcons();
-        if (window.toastr) {
-          toastr.error('Erreur de connexion au serveur lors de l\'enregistrement.', 'Erreur Réseau');
-        }
-      }
-    });
-    return false;
-  });
-
-  $(document).on('click', '.btn-close-saisie-modal', function() {
-    $('#modal-saisie-matiere').hide();
-  });
-
-  $(window).on('click', function(e) {
-    if ($(e.target).is('#modal-saisie-matiere')) {
-      $('#modal-saisie-matiere').hide();
-    }
-  });
-});
+<script type="application/json" id="compositions-details-config">
+<?= json_encode([
+    'compositionCode' => $item['code_composition'] ?? ''
+]) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/compositions.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

@@ -1,8 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
-$cycles = isset($cycles) ? $cycles : [];
-$classes = isset($classes) ? $classes : [];
 $stats = isset($stats) ? $stats : [];
 ?>
 <div class="app-layout">
@@ -17,10 +14,10 @@ $stats = isset($stats) ? $stats : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Spécialité académique, cycles de rattachement, classes et effectifs</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>filiere/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('filiere/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <a href="<?= RACINE ?>filiere/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('filiere/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la filière
           </a>
         </div>
@@ -35,8 +32,29 @@ $stats = isset($stats) ? $stats : [];
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Spécialité / Filière</span>
-            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></div>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">
+              <?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?>
+              <?php if (!empty($item['slug_filiere'])): ?>
+                <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 8px; border-radius:6px; font-weight:700; font-size:12px; margin-left:6px; vertical-align:middle;"><?= htmlspecialchars($item['slug_filiere']) ?></span>
+              <?php endif; ?>
+            </div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Code : <code><?= htmlspecialchars($item['code_filiere'] ?? '-') ?></code></div>
+          </div>
+
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Type de Filière</span>
+            <div style="margin-top: 6px;">
+              <?php 
+                $tf = $item['type_filiere'] ?? null;
+                if ($tf === 'INDUSTRIELLE'): ?>
+                  <span class="badge" style="background:#E0F2FE; color:#0369A1; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Industrielle</span>
+                <?php elseif ($tf === 'TERTIAIRE'): ?>
+                  <span class="badge" style="background:#FEF3C7; color:#B45309; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Tertiaire</span>
+                <?php else: ?>
+                  <span style="color:#94A3B8; font-size:13px; font-style:italic;">Non spécifié (null)</span>
+                <?php endif; ?>
+            </div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Domaine de formation</div>
           </div>
 
           <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
@@ -54,7 +72,7 @@ $stats = isset($stats) ? $stats : [];
           <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Statut</span>
             <div style="margin-top: 6px;">
-              <?php if (($item['statut_filiere'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_filiere'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Actif</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Inactif</span>
@@ -69,10 +87,10 @@ $stats = isset($stats) ? $stats : [];
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
           <div>
             <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="layers" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Classes & Promotions Ouvertes (<?= count($classes) ?>)
+              <i data-lucide="layers" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Classes Ouvertes (<?= count($classes) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>classe/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+          <a href="<?= url('classe/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
             + Ouvrir une classe
           </a>
         </div>
@@ -95,7 +113,7 @@ $stats = isset($stats) ? $stats : [];
                 <?php foreach ($classes as $cl): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" style="color: #1E3A5F; text-decoration: underline;">
+                      <a href="<?= url() ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" style="color: #1E3A5F; text-decoration: underline;">
                         <?= htmlspecialchars($cl['libelle_classe']) ?>
                       </a>
                     </td>
@@ -107,9 +125,80 @@ $stats = isset($stats) ? $stats : [];
                       </span>
                     </td>
                     <td style="padding: 10px; text-align: right;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
+                      <a href="<?= url() ?>classe/details/<?= $this->validator->crypter($cl['id_classe']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
                         Voir la classe
                       </a>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php endif; ?>
+      </div>
+
+      <!-- CARD 3 (COL-12) : PROGRAMME & MAQUETTE PÉDAGOGIQUE -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-top: 24px; width: 100%; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="book-marked" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Maquette Pédagogique & Coefficients (<?= count($maquetteMatieres ?? []) ?>)
+            </h3>
+            <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Matières Générales et Professionnelles programmées pour l'année active</p>
+          </div>
+          <a href="<?= url('maquette/list') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="sliders" style="width: 14px; height: 14px;"></i> Gérer les Maquettes
+          </a>
+        </div>
+
+        <?php if (empty($maquetteMatieres)): ?>
+          <div style="text-align: center; padding: 30px 0;">
+            <p style="color: #94A3B8; font-style: italic; margin-bottom: 12px;">Aucune matière n'a encore été configurée dans la maquette pour cette filière.</p>
+            <a href="<?= url('maquette/list') ?>" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px;">
+              + Configurer la maquette de la filière
+            </a>
+          </div>
+        <?php else: ?>
+          <div style="width: 100%; overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px;">
+                  <th style="padding: 10px;">Matière</th>
+                  <th style="padding: 10px;">Niveau</th>
+                  <th style="padding: 10px; text-align: center;">Catégorie Bulletin</th>
+                  <th style="padding: 10px; text-align: center;">Coefficient</th>
+                  <th style="padding: 10px; text-align: center;">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($maquetteMatieres as $mq): ?>
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 10px; font-weight: 700; color: #0F172A;">
+                      <?= htmlspecialchars($mq['libelle_matiere'] ?? '-') ?>
+                    </td>
+                    <td style="padding: 10px; color: #334155;">
+                      <span class="badge" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; padding: 2px 8px; border-radius: 6px; font-weight: 600;">
+                        <?= htmlspecialchars($mq['libelle_niveau'] ?? '-') ?>
+                      </span>
+                    </td>
+                    <td style="padding: 10px; text-align: center;">
+                      <?php if (($mq['categorie_matiere'] ?? '') === 'GENERALE'): ?>
+                        <span class="badge" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px;">GÉNÉRALE</span>
+                      <?php else: ?>
+                        <span class="badge" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px;">PROFESSIONNELLE</span>
+                      <?php endif; ?>
+                    </td>
+                    <td style="padding: 10px; text-align: center;">
+                      <span style="display: inline-block; padding: 2px 10px; border-radius: 6px; font-weight: 800; background: #F8FAFC; color: #0F172A; border: 1px solid #CBD5E1;">
+                        <?= number_format((float)($mq['coefficient'] ?? 1), 1, ',', ' ') ?>
+                      </span>
+                    </td>
+                    <td style="padding: 10px; text-align: center;">
+                      <?php if (($mq['statut_maquette'] ?? STATUTS::ACTIF) === STATUTS::ACTIF): ?>
+                        <span class="badge" style="background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Actif</span>
+                      <?php else: ?>
+                        <span class="badge" style="background: #FEE2E2; color: #B91C1C; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">Inactif</span>
+                      <?php endif; ?>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -122,5 +211,4 @@ $stats = isset($stats) ? $stats : [];
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

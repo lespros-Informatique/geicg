@@ -1,20 +1,29 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$dbScol = (new Database())->getCon();
-$annees = (new ModelAnnee())->getAll();
-$cycles = (new ModelCycle())->getAll();
-$filieres = (new ModelFiliere())->getAll();
-$niveaux = (new ModelNiveau())->getAll();
+$currentAnneeCode = $item['annee_code'] ?? Session::get('annee_active_code', '');
+$niveaux = $niveaux ?? [];
+$filiereCyclesMap = $filiereCyclesMap ?? [];
 
-$filiereCyclesMap = $dbScol->query("
-    SELECT filiere_code, cycle_code 
-    FROM filiere_cycles 
-    WHERE (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)
-")->fetchAll(PDO::FETCH_ASSOC);
-
+$cycleToNiveaux = [];
 $filiereToCycles = [];
+
 foreach ($filiereCyclesMap as $fc) {
-    $filiereToCycles[$fc['filiere_code']][] = $fc['cycle_code'];
+    $cCode = $fc['cycle_code'] ?? '';
+    $fCode = $fc['filiere_code'] ?? '';
+    $nCode = $fc['niveau_code'] ?? '';
+
+    if (!empty($cCode) && !empty($nCode)) {
+        if (!isset($cycleToNiveaux[$cCode])) {
+            $cycleToNiveaux[$cCode] = [];
+        }
+        if (!in_array($nCode, $cycleToNiveaux[$cCode], true)) {
+            $cycleToNiveaux[$cCode][] = $nCode;
+        }
+    }
+
+    if (!empty($fCode) && !empty($cCode)) {
+        $filiereToCycles[$fCode][] = $cCode;
+    }
 }
 ?>
 <div class="app-layout">
@@ -27,12 +36,12 @@ foreach ($filiereCyclesMap as $fc) {
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_scolarite']) ? 'Éditer ' : 'Ajouter ' ?> Tarif de Scolarité</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des grilles tarifaires par année, filière et niveau d'études</p>
         </div>
-        <a href="<?= RACINE ?>scolarite/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('scolarite/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>scolarite/<?= !empty($item['id_scolarite']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form action="<?= url('scolarite/' . (!empty($item['id_scolarite']) ? 'edit' : 'add')) ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_scolarite'])): ?>
             <input type="hidden" name="id_scolarite" value="<?= $item['id_scolarite'] ?>">
@@ -46,8 +55,8 @@ foreach ($filiereCyclesMap as $fc) {
             
             <!-- Année Académique (Sélection Readonly / Verrouillée sur l'année active) -->
             <?php 
-              $currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
-              $currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
+              $currentAnneeCode = $item['annee_code'] ?? (Session::get('annee_active_code', ''));
+              $currentAnneeLibelle = Session::get('annee_active_libelle', 'Session Active');
             ?>
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
@@ -57,7 +66,7 @@ foreach ($filiereCyclesMap as $fc) {
               <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" tabindex="-1" readonly>
                 <?php foreach($annees as $a): ?>
                   <option value="<?= htmlspecialchars($a['code_annee']) ?>" data-debut="<?= htmlspecialchars($a['date_debut_annee'] ?? '') ?>" data-fin="<?= htmlspecialchars($a['date_fin_annee'] ?? '') ?>" <?= ($currentAnneeCode == $a['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === 'actif') ? '(Session Active)' : '' ?>
+                    <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? '(Session Active)' : '' ?>
                   </option>
                 <?php endforeach; ?>
                 <?php if (empty($annees)): ?>
@@ -66,36 +75,73 @@ foreach ($filiereCyclesMap as $fc) {
               </select>
             </div>
 
+            <?php $isAddMode = empty($item['id_scolarite']); ?>
+
             <!-- Cycle Académique (Select2 pour filtrer les filières) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle Académique</label>
-              <select class="form-control select2" id="sel_cycle_scolarite" style="width: 100%;">
-                <option value="">-- Tous les cycles --</option>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Cycle Académique <span style="color: #EF4444;">*</span> </label>
+              <select class="form-control select2" id="sel_cycle_scolarite" name="cycle_code" style="width: 100%;" required>
+                <option value="">-- Choisir un cycle académique --</option>
                 <?php 
                   $selectedFiliereCycles = !empty($item['filiere_code']) ? ($filiereToCycles[$item['filiere_code']] ?? []) : [];
                   foreach($cycles as $c): 
                     $isCycleSelected = in_array($c['code_cycle'], $selectedFiliereCycles);
                 ?>
                   <option value="<?= htmlspecialchars($c['code_cycle']) ?>" <?= $isCycleSelected ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($c['libelle_cycle']) ?>
+                    <?= htmlspecialchars($c['libelle_cycle']) ?> (<?= htmlspecialchars($c['code_cycle']) ?>)
                   </option>
                 <?php endforeach; ?>
               </select>
             </div>
 
-            <?php $isAddMode = empty($item['id_scolarite']); ?>
+            <!-- Niveau d'études (Select2 Multi-Select en création, Simple en édition) -->
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                <?= $isAddMode ? 'Niveau(x) d\'études <span style="color: #EF4444;">*</span>' : 'Niveau d\'études <span style="color: #EF4444;">*</span>' ?>
+              </label>
+              <select class="form-control select2" id="sel_niveau_scolarite" name="<?= $isAddMode ? 'niveau_codes[]' : 'niveau_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : 'required' ?> style="width: 100%;">
+                <?php if (!$isAddMode): ?>
+                  <option value="">-- Choisir un niveau --</option>
+                <?php endif; ?>
+                <?php foreach($niveaux as $n): ?>
+                  <option value="<?= htmlspecialchars($n['code_niveau']) ?>" <?= (($item['niveau_code'] ?? '') == $n['code_niveau']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($n['libelle_niveau']) ?> (<?= htmlspecialchars($n['code_niveau']) ?>)
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
+            <!-- Type de Filière (Select2 pour filtrer les filières par type) -->
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Type de Filière</label>
+              <select class="form-control select2" id="sel_type_filiere_scolarite" name="type_filiere" style="width: 100%;">
+                <option value="">-- Tous les types --</option>
+                <?php 
+                  $typesFilieres = STATUTS::TYPES_FILIERES ?? ['INDUSTRIELLE' => 'Filière Industrielle', 'TERTIAIRE' => 'Filière Tertiaire'];
+                  $selectedTypeFiliere = '';
+                  if (!empty($item['filiere_code'])) {
+                      foreach ($filieres as $fItem) {
+                          if ($fItem['code_filiere'] === $item['filiere_code']) {
+                              $selectedTypeFiliere = $fItem['type_filiere'] ?? '';
+                              break;
+                          }
+                      }
+                  }
+                  foreach($typesFilieres as $codeType => $libelleType): 
+                ?>
+                  <option value="<?= htmlspecialchars($codeType) ?>" <?= ($selectedTypeFiliere === $codeType) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($libelleType) ?> (<?= htmlspecialchars($codeType) ?>)
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
 
             <!-- Filière (Select2 Multi-Select en création, Simple en édition) -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label style="font-weight: 700; font-size: 13px; color: #334155;">
-                  <?= $isAddMode ? 'Filière(s) rattachée(s)' : 'Filière rattachée' ?> <span style="color: #EF4444;">*</span>
-                </label>
-                <?php if ($isAddMode): ?>
-                  <button type="button" id="btn-toggle-all-filieres" class="btn btn-sm btn-link" style="font-size: 11px; padding: 0; text-decoration: underline; color: #1E3A5F; font-weight: 700; cursor: pointer; border: none; background: transparent;">Tout sélectionner</button>
-                <?php endif; ?>
-              </div>
-              <select class="form-control select2" id="sel_filiere_scolarite" name="<?= $isAddMode ? 'filiere_codes[]' : 'filiere_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : '' ?> style="width: 100%;" required>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+                <?= $isAddMode ? 'Filière(s) rattachée(s) <span style="color: #EF4444;">*</span>' : 'Filière rattachée <span style="color: #EF4444;">*</span>' ?>
+              </label>
+              <select class="form-control select2" id="sel_filiere_scolarite" name="<?= $isAddMode ? 'filiere_codes[]' : 'filiere_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : 'required' ?> style="width: 100%;">
                 <?php if (!$isAddMode): ?>
                   <option value="">-- Choisir une filière --</option>
                 <?php endif; ?>
@@ -104,38 +150,10 @@ foreach ($filiereCyclesMap as $fc) {
                   $cyclesAttr = htmlspecialchars(implode(',', $fCycles));
                 ?>
                   <option value="<?= htmlspecialchars($f['code_filiere']) ?>" data-cycles="<?= $cyclesAttr ?>" <?= (($item['filiere_code'] ?? '') == $f['code_filiere']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($f['libelle_filiere']) ?>
+                    <?= htmlspecialchars($f['libelle_filiere']) ?> (<?= htmlspecialchars($f['code_filiere']) ?>)
                   </option>
                 <?php endforeach; ?>
               </select>
-              <?php if ($isAddMode): ?>
-                <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Vous pouvez sélectionner plusieurs filières qui partageront le même tarif et échéancier.</small>
-              <?php endif; ?>
-            </div>
-
-            <!-- Niveau d'études (Select2 Multi-Select en création, Simple en édition) -->
-            <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label style="font-weight: 700; font-size: 13px; color: #334155;">
-                  <?= $isAddMode ? 'Niveau(x) d\'études' : 'Niveau d\'études' ?> <span style="color: #EF4444;">*</span>
-                </label>
-                <?php if ($isAddMode): ?>
-                  <button type="button" id="btn-toggle-all-niveaux" class="btn btn-sm btn-link" style="font-size: 11px; padding: 0; text-decoration: underline; color: #1E3A5F; font-weight: 700; cursor: pointer; border: none; background: transparent;">Tout sélectionner</button>
-                <?php endif; ?>
-              </div>
-              <select class="form-control select2" id="sel_niveau_scolarite" name="<?= $isAddMode ? 'niveau_codes[]' : 'niveau_code' ?>" <?= $isAddMode ? 'multiple="multiple"' : '' ?> style="width: 100%;" required>
-                <?php if (!$isAddMode): ?>
-                  <option value="">-- Choisir un niveau --</option>
-                <?php endif; ?>
-                <?php foreach($niveaux as $n): ?>
-                  <option value="<?= htmlspecialchars($n['code_niveau']) ?>" <?= (($item['niveau_code'] ?? '') == $n['code_niveau']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($n['libelle_niveau']) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-              <?php if ($isAddMode): ?>
-                <small style="color: #64748B; font-size: 11px; display: block; margin-top: 4px;">Vous pouvez sélectionner plusieurs niveaux d'études.</small>
-              <?php endif; ?>
             </div>
 
             <!-- Régime / Statut d'affectation (Select statique) -->
@@ -150,7 +168,7 @@ foreach ($filiereCyclesMap as $fc) {
             <!-- Montant annuel -->
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Montant annuel (FCFA) <span style="color: #EF4444;">*</span></label>
-              <input type="number" step="1000" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="montant_scolarite" value="<?= htmlspecialchars($item['montant_scolarite'] ?? '') ?>" placeholder="Ex: 650000" required>
+              <input type="number" step="any" min="0" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; outline: none; transition: border-color 0.2s;" name="montant_scolarite" value="<?= htmlspecialchars($item['montant_scolarite'] ?? '') ?>" placeholder="Ex: 650000" required>
             </div>
 
           </div>
@@ -214,485 +232,41 @@ foreach ($filiereCyclesMap as $fc) {
 
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
             <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer</button>
-            <a href="<?= RACINE ?>scolarite/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
+            <a href="<?= url('scolarite/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
           </div>
         </form>
       </div>
     </div>
   </main>
-</div>
-<script>
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons();
-  var isAddMode = <?= $isAddMode ? 'true' : 'false' ?>;
-
-  if ($.fn.select2) {
-    $('#sel_annee_scolarite').select2({ placeholder: "-- Choisir une année --", allowClear: true, width: '100%' });
-    $('#sel_cycle_scolarite').select2({ placeholder: "-- Tous les cycles --", allowClear: true, width: '100%' });
-    $('#sel_filiere_scolarite').select2({
-      placeholder: isAddMode ? "Sélectionnez une ou plusieurs filières..." : "-- Choisir une filière --",
-      allowClear: !isAddMode,
-      width: '100%'
-    });
-    $('#sel_niveau_scolarite').select2({
-      placeholder: isAddMode ? "Sélectionnez un ou plusieurs niveaux..." : "-- Choisir un niveau --",
-      allowClear: !isAddMode,
-      width: '100%'
-    });
-    $('#sel_affectation_scolarite').select2({ minimumResultsForSearch: Infinity, width: '100%' });
-
-    $('#sel_annee_scolarite').on('change select2:select', function() {
-      updateTranchesSummary();
-    });
-  }
-
-  // Tout sélectionner / Tout désélectionner
-  $('#btn-toggle-all-filieres').on('click', function(e) {
-    e.preventDefault();
-    var $sel = $('#sel_filiere_scolarite');
-    var allVals = $sel.find('option').map(function() { return $(this).val(); }).get().filter(Boolean);
-    var currentVals = $sel.val() || [];
-    if (Array.isArray(currentVals) && currentVals.length >= allVals.length) {
-      $sel.val(null).trigger('change');
-      $(this).text('Tout sélectionner');
-    } else {
-      $sel.val(allVals).trigger('change');
-      $(this).text('Tout désélectionner');
-    }
-  });
-
-  $('#btn-toggle-all-niveaux').on('click', function(e) {
-    e.preventDefault();
-    var $sel = $('#sel_niveau_scolarite');
-    var allVals = $sel.find('option').map(function() { return $(this).val(); }).get().filter(Boolean);
-    var currentVals = $sel.val() || [];
-    if (Array.isArray(currentVals) && currentVals.length >= allVals.length) {
-      $sel.val(null).trigger('change');
-      $(this).text('Tout sélectionner');
-    } else {
-      $sel.val(allVals).trigger('change');
-      $(this).text('Tout désélectionner');
-    }
-  });
-
-  var allFilieres = <?= json_encode(array_map(function($f) use ($filiereToCycles) {
-      return [
-          'code_filiere' => $f['code_filiere'],
-          'libelle_filiere' => $f['libelle_filiere'],
-          'cycles' => $filiereToCycles[$f['code_filiere']] ?? []
-      ];
-  }, $filieres)) ?>;
-  var preselectedFiliereCode = <?= json_encode($item['filiere_code'] ?? '') ?>;
-
-  function filterFilieresByCycle() {
-    var selectedCycle = $('#sel_cycle_scolarite').val();
-    var $filiereSelect = $('#sel_filiere_scolarite');
-    var currentVal = $filiereSelect.val();
-
-    $filiereSelect.empty();
-
-    if (!selectedCycle) {
-      if (!isAddMode) {
-        $filiereSelect.append('<option value="">-- Choisir d\'abord un cycle --</option>');
-      } else {
-        $filiereSelect.append('<option value="" disabled selected>-- Choisir d\'abord un cycle académique --</option>');
-      }
-      $filiereSelect.val(null).trigger('change.select2');
-      return;
-    }
-
-    if (!isAddMode) {
-      $filiereSelect.append('<option value="">-- Choisir une filière --</option>');
-    }
-
-    var count = 0;
-    allFilieres.forEach(function(f) {
-      if (f.cycles && f.cycles.indexOf(selectedCycle) !== -1) {
-        count++;
-        var isSel = false;
-        if (Array.isArray(currentVal)) {
-          isSel = currentVal.indexOf(f.code_filiere) !== -1;
-        } else {
-          isSel = (f.code_filiere === currentVal || f.code_filiere === preselectedFiliereCode);
-        }
-        var optHtml = '<option value="' + $('<div>').text(f.code_filiere).html() + '"' + (isSel ? ' selected' : '') + '>' + $('<div>').text(f.libelle_filiere).html() + '</option>';
-        $filiereSelect.append(optHtml);
-      }
-    });
-
-    if (count === 0) {
-      $filiereSelect.append('<option value="" disabled>(Aucune filière rattachée à ce cycle)</option>');
-    }
-
-    $filiereSelect.trigger('change.select2');
-  }
-
-  $('#sel_cycle_scolarite').on('change select2:select select2:clear', function() {
-    preselectedFiliereCode = '';
-    filterFilieresByCycle();
-    if (typeof checkDuplicateScolarites === 'function') {
-      checkDuplicateScolarites();
-    }
-  });
-
-  filterFilieresByCycle();
-
-  var isAllDuplicate = false;
-
-  function displayDuplicateNotice(msg, isError, $form) {
-    $form.find('.js-duplicate-notice-banner').remove();
-    if (!msg) return;
-
-    var bgColor = isError ? '#FEE2E2' : '#FEF3C7';
-    var borderColor = isError ? '#FCA5A5' : '#FCD34D';
-    var textColor = isError ? '#991B1B' : '#B45309';
-    var iconName = isError ? 'alert-triangle' : 'info';
-
-    var alertHtml = '<div class="alert js-duplicate-notice-banner" style="background:' + bgColor + '; border:1px solid ' + borderColor + '; color:' + textColor + '; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:10px;">' +
-                    '<i data-lucide="' + iconName + '" style="width:18px; height:18px; flex-shrink:0;"></i>' +
-                    '<span>' + msg + '</span>' +
-                    '</div>';
-    $form.prepend(alertHtml);
-    if (window.lucide) lucide.createIcons();
-  }
-
-  function checkDuplicateScolarites() {
-    var filieres = $('#sel_filiere_scolarite').val();
-    var niveaux = $('#sel_niveau_scolarite').val();
-    var affectation = $('#sel_affectation_scolarite').val();
-    var anneeCode = $('input[name="annee_code"]').val() || '';
-    var idScolarite = $('input[name="id_scolarite"]').val() || 0;
-    var $form = $('form');
-
-    if (filieres && niveaux && (Array.isArray(filieres) ? filieres.length > 0 : filieres !== '') && (Array.isArray(niveaux) ? niveaux.length > 0 : niveaux !== '')) {
-      var racine = (typeof RACINE !== 'undefined') ? RACINE : '/geicg/';
-      $.ajax({
-        url: racine + 'scolarite/checkExists',
-        type: 'GET',
-        data: {
-          annee_code: anneeCode,
-          filiere_codes: filieres,
-          filiere_code: filieres,
-          niveau_codes: niveaux,
-          niveau_code: niveaux,
-          affectation_etat: affectation,
-          id_scolarite: idScolarite
-        },
-        dataType: 'json',
-        success: function(resp) {
-          if (resp) {
-            if (resp.all_exist) {
-              isAllDuplicate = true;
-              displayDuplicateNotice(resp.message, true, $form);
-              $form.find('button[type="submit"]').prop('disabled', true).css('opacity', '0.6');
-            } else if (resp.existing_count > 0) {
-              isAllDuplicate = false;
-              displayDuplicateNotice(resp.message, false, $form);
-              $form.find('button[type="submit"]').prop('disabled', false).css('opacity', '1');
-            } else {
-              isAllDuplicate = false;
-              $form.find('.js-duplicate-notice-banner').remove();
-              $form.find('button[type="submit"]').prop('disabled', false).css('opacity', '1');
-            }
-          }
-        }
-      });
-    } else {
-      isAllDuplicate = false;
-      $form.find('.js-duplicate-notice-banner').remove();
-      $form.find('button[type="submit"]').prop('disabled', false).css('opacity', '1');
-    }
-  }
-
-  $('#sel_filiere_scolarite, #sel_niveau_scolarite, #sel_affectation_scolarite').on('change select2:select select2:unselect select2:clear', function() {
-    checkDuplicateScolarites();
-  });
-
-  var existingTranches = <?= json_encode($tranches ?? []) ?>;
-  var trancheCounter = 0;
-  var deletedTrancheIds = [];
-
-  function formatFcfa(val) {
-    return Number(val || 0).toLocaleString('fr-FR') + ' FCFA';
-  }
-
-  function formatDateFr(isoDateStr) {
-    if (!isoDateStr) return '';
-    var parts = isoDateStr.split('-');
-    if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
-    return isoDateStr;
-  }
-
-  function displayFormError(msg, $form) {
-    if (window.toastr) {
-      toastr.error(msg);
-    } else if (typeof showToast === 'function') {
-      showToast(msg, 'error');
-    }
-    
-    $form.find('.js-date-error-banner').remove();
-    var alertHtml = '<div class="alert alert-danger js-date-error-banner" style="background:#FEE2E2; border:1px solid #FCA5A5; color:#991B1B; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:10px;">' +
-                    '<i data-lucide="alert-triangle" style="width:18px; height:18px; flex-shrink:0;"></i>' +
-                    '<span>' + msg + '</span>' +
-                    '</div>';
-    $form.prepend(alertHtml);
-    if (window.lucide) lucide.createIcons();
-    $('html, body').animate({ scrollTop: $form.offset().top - 80 }, 200);
-  }
-
-  function updateTranchesSummary() {
-    var montantScolarite = parseFloat($('input[name="montant_scolarite"]').val()) || 0;
-    var totalTranches = 0;
-    var rowCount = 0;
-
-    $('#tbody-tranches tr').each(function(idx) {
-      rowCount++;
-      $(this).find('.tranche-index-label').text(rowCount);
-      var montant = parseFloat($(this).find('.input-tranche-montant').val()) || 0;
-      totalTranches += montant;
-    });
-
-    $('#lbl-total-scolarite').text(formatFcfa(montantScolarite));
-    $('#lbl-cumul-tranches').text(formatFcfa(totalTranches));
-
-    var diff = montantScolarite - totalTranches;
-    var $lblReste = $('#lbl-reste-scolarite');
-    var $badge = $('#badge-repartition-status');
-    var $btnAdd = $('#btn-add-tranche');
-
-    // Désactivation du bouton "Ajouter une tranche" si la scolarité n'est pas renseignée (0) ou est déjà intégralement couverte
-    if (montantScolarite <= 0) {
-      $btnAdd.prop('disabled', true).css({
-        'opacity': '0.5',
-        'cursor': 'not-allowed',
-        'pointer-events': 'none'
-      }).attr('title', 'Veuillez d\'abord renseigner le montant annuel de la scolarité.');
-    } else if (totalTranches >= montantScolarite) {
-      $btnAdd.prop('disabled', true).css({
-        'opacity': '0.5',
-        'cursor': 'not-allowed',
-        'pointer-events': 'none'
-      }).attr('title', 'La totalité de la scolarité est déjà couverte par les tranches.');
-    } else {
-      $btnAdd.prop('disabled', false).css({
-        'opacity': '1',
-        'cursor': 'pointer',
-        'pointer-events': 'auto'
-      }).attr('title', 'Ajouter une tranche');
-    }
-
-    if (rowCount === 0) {
-      $('#tranches-empty-state').show();
-      $lblReste.text(formatFcfa(montantScolarite)).css('color', '#64748B');
-      $badge.text('0 tranche').css({ 'background': '#F1F5F9', 'color': '#64748B' });
-    } else {
-      $('#tranches-empty-state').hide();
-      if (montantScolarite > 0) {
-        if (Math.abs(diff) < 0.01) {
-          $lblReste.text('0 FCFA (100% Couvert)').css('color', '#15803D');
-          $badge.text(rowCount + ' tranche(s) - 100% planifié').css({ 'background': '#DCFCE7', 'color': '#15803D' });
-        } else if (diff > 0) {
-          $lblReste.text(formatFcfa(diff) + ' restant').css('color', '#B45309');
-          $badge.text(rowCount + ' tranche(s) - Incomplet').css({ 'background': '#FEF3C7', 'color': '#B45309' });
-        } else {
-          $lblReste.text('Dépassement de ' + formatFcfa(Math.abs(diff))).css('color', '#B91C1C');
-          $badge.text(rowCount + ' tranche(s) - Dépassement !').css({ 'background': '#FEE2E2', 'color': '#B91C1C' });
-        }
-      } else {
-        $lblReste.text(formatFcfa(diff)).css('color', '#64748B');
-        $badge.text(rowCount + ' tranche(s)').css({ 'background': '#EFF6FF', 'color': '#1E3A5F' });
-      }
-    }
-  }
-
-  function addTrancheRow(data) {
-    trancheCounter++;
-    var idx = trancheCounter;
-    var id = data ? (data.id_tranche || '') : '';
-    var libelle = data ? (data.libelle_tranche || '') : ('Tranche ' + ($('#tbody-tranches tr').length + 1));
-    var montant = data ? (data.montant_tranche || '') : '';
-    var dateLimite = data ? (data.date_limite || '') : '';
-    var statut = data ? (data.statut_tranche || 'actif') : 'actif';
-
-    var escapedLibelle = $('<div>').text(libelle).html();
-
-    var rowHtml = '<tr class="tranche-row" data-idx="' + idx + '" style="border-bottom:1px solid #F1F5F9;">' +
-      '<td style="padding:8px 12px; text-align:center; font-weight:800; color:#1E3A5F;" class="tranche-index-label">1</td>' +
-      '<td style="padding:8px 12px;">' +
-        (id ? '<input type="hidden" name="tranches[' + idx + '][id_tranche]" value="' + id + '">' : '') +
-        '<input type="text" name="tranches[' + idx + '][libelle_tranche]" class="form-control form-control-sm input-tranche-libelle" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-weight:600; font-size:13px;" value="' + escapedLibelle + '" placeholder="Ex: 1ère Tranche (Inscription)" required>' +
-      '</td>' +
-      '<td style="padding:8px 12px;">' +
-        '<input type="number" step="1000" name="tranches[' + idx + '][montant_tranche]" class="form-control form-control-sm input-tranche-montant" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-weight:700; color:#0F172A; font-size:13px;" value="' + montant + '" placeholder="Ex: 250000" required>' +
-      '</td>' +
-      '<td style="padding:8px 12px;">' +
-        '<input type="date" name="tranches[' + idx + '][date_limite]" class="form-control form-control-sm input-tranche-date" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:6px 10px; font-size:13px;" value="' + dateLimite + '" required>' +
-      '</td>' +
-      '<td style="padding:8px 12px; text-align:center;">' +
-        '<select name="tranches[' + idx + '][statut_tranche]" class="form-control form-control-sm" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:5px 8px; font-size:12px; font-weight:700;">' +
-          '<option value="actif" ' + (statut === 'actif' ? 'selected' : '') + '>Actif</option>' +
-          '<option value="inactif" ' + (statut === 'inactif' ? 'selected' : '') + '>Inactif</option>' +
-        '</select>' +
-      '</td>' +
-      '<td style="padding:8px 12px; text-align:center;">' +
-        '<button type="button" class="btn btn-sm btn-danger btn-remove-tranche" data-id="' + id + '" style="background:#FEE2E2; border:none; color:#B91C1C; border-radius:6px; padding:6px 9px; cursor:pointer;" title="Supprimer cette tranche">' +
-          '<i data-lucide="trash-2" style="width:15px; height:15px;"></i>' +
-        '</button>' +
-      '</td>' +
-    '</tr>';
-
-    $('#tbody-tranches').append(rowHtml);
-    if (window.lucide) lucide.createIcons();
-    updateTranchesSummary();
-  }
-
-  $('#btn-add-tranche').on('click', function(e) {
-    var montantScolarite = parseFloat($('input[name="montant_scolarite"]').val()) || 0;
-    var totalTranches = 0;
-    $('#tbody-tranches .input-tranche-montant').each(function() {
-      totalTranches += parseFloat($(this).val()) || 0;
-    });
-
-    if (montantScolarite <= 0) {
-      e.preventDefault();
-      displayFormError("Veuillez d'abord saisir le montant annuel de la scolarité avant de pouvoir ajouter des tranches.", $('form'));
-      return false;
-    }
-
-    if (totalTranches >= montantScolarite) {
-      e.preventDefault();
-      displayFormError("Le montant total de la scolarité (" + formatFcfa(montantScolarite) + ") est déjà entièrement couvert par les tranches actuelles. Impossible d'ajouter une tranche supplémentaire.", $('form'));
-      return false;
-    }
-
-    addTrancheRow();
-  });
-
-  $(document).on('click', '.btn-remove-tranche', function() {
-    var id = $(this).data('id');
-    if (id) {
-      deletedTrancheIds.push(id);
-      $('#deleted_tranches_ids').val(deletedTrancheIds.join(','));
-    }
-    $(this).closest('tr').remove();
-    updateTranchesSummary();
-  });
-
-  $(document).on('input change', 'input[name="montant_scolarite"], .input-tranche-montant', function() {
-    updateTranchesSummary();
-  });
-
-  function displayFormSuccess(msg, $form) {
-    if (window.toastr) {
-      toastr.success(msg);
-    } else if (typeof showToast === 'function') {
-      showToast(msg, 'success');
-    }
-    
-    $form.find('.js-date-error-banner, .js-date-success-banner').remove();
-    var alertHtml = '<div class="alert alert-success js-date-success-banner" style="background:#DCFCE7; border:1px solid #86EFAC; color:#166534; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:10px;">' +
-                    '<i data-lucide="check-circle" style="width:18px; height:18px; flex-shrink:0;"></i>' +
-                    '<span>' + msg + '</span>' +
-                    '</div>';
-    $form.prepend(alertHtml);
-    if (window.lucide) lucide.createIcons();
-    $('html, body').animate({ scrollTop: $form.offset().top - 80 }, 200);
-  }
-
-  // Soumission du formulaire via AJAX sans rechargement de page
-  $('form').on('submit', function(e) {
-    e.preventDefault();
-    var $form = $(this);
-    var $btnSubmit = $form.find('button[type="submit"]');
-
-    if (isAllDuplicate) {
-      displayFormError("Impossible d'enregistrer : Toutes les combinaisons sélectionnées existent déjà en base.", $form);
-      return false;
-    }
-
-    $form.find('.js-date-error-banner, .js-date-success-banner').remove();
-
-    var montantScolarite = parseFloat($('input[name="montant_scolarite"]').val()) || 0;
-    var totalTranches = 0;
-
-    $('#tbody-tranches tr').each(function() {
-      var montant = parseFloat($(this).find('.input-tranche-montant').val()) || 0;
-      totalTranches += montant;
-    });
-
-    // Contrôle du dépassement de scolarité
-    if (montantScolarite > 0 && totalTranches > montantScolarite) {
-      var depassement = totalTranches - montantScolarite;
-      displayFormError("Erreur sur le montant : Le cumul des tranches (" + formatFcfa(totalTranches) + ") dépasse le montant annuel de la scolarité (" + formatFcfa(montantScolarite) + ") de " + formatFcfa(depassement) + ". Veuillez ajuster les montants des tranches.", $form);
-      return false;
-    }
-
-    $btnSubmit.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width:14px;height:14px;margin-right:6px;"></span> Enregistrement...');
-
-    $.ajax({
-      url: $form.attr('action'),
-      type: 'POST',
-      data: $form.serialize(),
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      dataType: 'json',
-      success: function(response) {
-        $btnSubmit.prop('disabled', false).html('Enregistrer');
-        if (response && (response.status === 1 || response.status === 'success' || response.success)) {
-          var msg = response.message || 'Tarif de scolarité enregistré avec succès !';
-          if (window.Swal) {
-            Swal.fire({
-              icon: 'success',
-              title: 'Succès !',
-              text: msg,
-              timer: 1500,
-              showConfirmButton: false
-            }).then(function() {
-              window.location.href = '<?= RACINE ?>scolarite/list';
-            });
-          } else {
-            displayFormSuccess(msg, $form);
-            setTimeout(function() {
-              window.location.href = '<?= RACINE ?>scolarite/list';
-            }, 1200);
-          }
-        } else {
-          var errorMsg = (response && response.message) ? response.message : 'Une erreur est survenue lors de l\'enregistrement.';
-          if (window.Swal) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Erreur',
-              text: errorMsg
-            });
-          }
-          displayFormError(errorMsg, $form);
-        }
-      },
-      error: function(xhr) {
-        $btnSubmit.prop('disabled', false).html('Enregistrer');
-        var errText = 'Erreur serveur lors de l\'enregistrement.';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-          errText = xhr.responseJSON.message;
-        }
-        if (window.Swal) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: errText
-          });
-        }
-        displayFormError(errText, $form);
-      }
-    });
-  });
-
-  // Pre-fill existing tranches on load
-  if (existingTranches && existingTranches.length > 0) {
-    existingTranches.forEach(function(t) {
-      addTrancheRow(t);
-    });
-  } else {
-    updateTranchesSummary();
-  }
-});
+<?php
+$scolariteEditConfig = [
+    'isAddMode' => (bool)$isAddMode,
+    'allNiveaux' => array_map(function($n) {
+        return [
+            'code_niveau' => $n['code_niveau'],
+            'libelle_niveau' => $n['libelle_niveau']
+        ];
+    }, $niveaux),
+    'allFilieres' => array_map(function($f) use ($filiereToCycles) {
+        return [
+            'code_filiere' => $f['code_filiere'],
+            'libelle_filiere' => $f['libelle_filiere'],
+            'type_filiere' => $f['type_filiere'] ?? '',
+            'cycles' => $filiereToCycles[$f['code_filiere']] ?? []
+        ];
+    }, $filieres),
+    'cycleToNiveauxMap' => $cycleToNiveaux,
+    'filiereCyclesPivot' => $filiereCyclesMap,
+    'preselectedFiliereCode' => $item['filiere_code'] ?? '',
+    'preselectedNiveauCode' => $item['niveau_code'] ?? '',
+    'existingTranches' => $tranches ?? [],
+    'redirectUrl' => url('scolarite/list')
+];
+?>
+<script type="application/json" id="scolarite-edit-config">
+<?= json_encode($scolariteEditConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/scolarites.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

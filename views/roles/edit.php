@@ -14,12 +14,12 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($role['id']) ? 'Configuration du Rôle : ' . htmlspecialchars($role['libelle_role']) : 'Ajouter un Rôle & Profil' ?></h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Définition des accès et des permissions granulaires du rôle</p>
         </div>
-        <a href="<?= RACINE ?>role/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('role/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux rôles
         </a>
       </div>
 
-      <form action="<?= RACINE ?>role/<?= !empty($role['id']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+      <form action="<?= url('role/' . (!empty($role['id']) ? 'edit' : 'add')) ?>" method="POST" style="width: 100%;">
         <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
         <?php if (!empty($role['id'])): ?>
           <input type="hidden" name="id" value="<?= $role['id'] ?>">
@@ -156,75 +156,20 @@ $assignedCodes = isset($assignedCodes) ? $assignedCodes : [];
           </div>
         </div>
 
-        <div style="display: flex; gap: 12px; padding: 20px 0;">
-          <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 12px 28px; font-size: 14px;">
-            Enregistrer le Rôle & Permissions
+        <div style="display: flex; gap: 12px; padding: 20px 0; align-items: center;">
+          <button type="submit" id="btn-save-role" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 12px 28px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+            <i data-lucide="check" style="width: 18px; height: 18px;"></i> Enregistrer le Rôle & Permissions
           </button>
-          <a href="<?= RACINE ?>role/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px;">Annuler</a>
+          <a href="<?= url('role/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Annuler
+          </a>
         </div>
       </form>
     </div>
   </main>
 </div>
 
-<script>
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons(); 
-});
-
-// Toggle ouvrir / réduire un module avec rotation du chevron
-function toggleAccordion(grpId) {
-  var $body = $('#body-' + grpId);
-  var $wrap = $('#chevron-wrap-' + grpId);
-  if ($body.is(':visible')) {
-    $body.slideUp(180);
-    $wrap.css('transform', 'rotate(-90deg)');
-  } else {
-    $body.slideDown(180);
-    $wrap.css('transform', 'rotate(0deg)');
-  }
-}
-
-// Déplier ou replier tous les modules
-function toggleAllGroups(open) {
-  if (open) {
-    $('.module-body').slideDown(180);
-    $('[id^="chevron-wrap-"]').css('transform', 'rotate(0deg)');
-  } else {
-    $('.module-body').slideUp(180);
-    $('[id^="chevron-wrap-"]').css('transform', 'rotate(-90deg)');
-  }
-}
-
-// Cocher ou décocher toutes les permissions d'un module spécifique
-function checkModulePerms(grpId, checked, evt) {
-  if (evt) evt.stopPropagation();
-  $('.perm-group-' + grpId).prop('checked', checked);
-  var total = $('.perm-group-' + grpId).length;
-  updateGroupBadge(grpId, total);
-}
-
-// Cocher ou décocher globalement toutes les permissions
-function checkAllGlobal(checked) {
-  $('.perm-checkbox').prop('checked', checked);
-  $('[id^="box-"]').each(function() {
-    var grpId = $(this).attr('id').replace('box-', '');
-    var total = $('.perm-group-' + grpId).length;
-    updateGroupBadge(grpId, total);
-  });
-}
-
-// Mise à jour en temps réel du badge "X / Y cochées"
-function updateGroupBadge(grpId, total) {
-  var checkedCount = $('.perm-group-' + grpId + ':checked').length;
-  $('#badge-' + grpId).text(checkedCount + ' / ' + total + ' cochées');
-  if (checkedCount === total) {
-    $('#badge-' + grpId).css({'background': '#DCFCE7', 'color': '#15803D', 'borderColor': '#86EFAC'});
-  } else if (checkedCount > 0) {
-    $('#badge-' + grpId).css({'background': '#EFF6FF', 'color': '#1E3A5F', 'borderColor': '#BFDBFE'});
-  } else {
-    $('#badge-' + grpId).css({'background': '#F1F5F9', 'color': '#64748B', 'borderColor': '#CBD5E1'});
-  }
-}
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/users.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

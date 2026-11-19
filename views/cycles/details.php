@@ -1,8 +1,6 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $stats = isset($stats) ? $stats : [];
-$filieres = isset($filieres) ? $filieres : [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -16,10 +14,10 @@ $filieres = isset($filieres) ? $filieres : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Spécifications du diplôme, filières d'études et effectifs rattachés</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>cycle/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('cycle/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <a href="<?= RACINE ?>cycle/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('cycle/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le cycle
           </a>
         </div>
@@ -34,7 +32,12 @@ $filieres = isset($filieres) ? $filieres : [];
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Libellé du Diplôme</span>
-            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($item['libelle_cycle'] ?? '-') ?></div>
+            <div style="font-size: 18px; font-weight: 800; color: #0F172A; margin-top: 4px;">
+              <?= htmlspecialchars($item['libelle_cycle'] ?? '-') ?>
+              <?php if (!empty($item['slug_cycle'])): ?>
+                <span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:2px 8px; border-radius:6px; font-weight:700; font-size:12px; margin-left:6px; vertical-align:middle;"><?= htmlspecialchars($item['slug_cycle']) ?></span>
+              <?php endif; ?>
+            </div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Code : <code><?= htmlspecialchars($item['code_cycle'] ?? '-') ?></code></div>
           </div>
 
@@ -47,7 +50,7 @@ $filieres = isset($filieres) ? $filieres : [];
           <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Classes Actives</span>
             <div style="font-size: 24px; font-weight: 800; color: #15803D; margin-top: 4px;"><?= (int)($stats['total_classes'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Promotions ouvertes</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Classes ouvertes</div>
           </div>
 
           <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 16px;">
@@ -66,7 +69,7 @@ $filieres = isset($filieres) ? $filieres : [];
               <i data-lucide="book-marked" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Filières rattachées à ce cycle (<?= count($filieres) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>filiere/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+          <a href="<?= url('filiere/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
             + Créer une filière
           </a>
         </div>
@@ -95,5 +98,4 @@ $filieres = isset($filieres) ? $filieres : [];
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

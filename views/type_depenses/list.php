@@ -9,36 +9,19 @@
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Types de Dépenses</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Types de Dépenses</p>
         </div>
-        <a href="<?= RACINE ?>type_depense/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <button type="button" class="btn btn-primary btn-add-type-depense" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Catégorie de Dépense
-        </a>
+        </button>
       </div>
 
       <!-- Navigation Tabs (Dépenses & Engagements vs Types de Dépenses) -->
       <div style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
-        <a href="<?= RACINE ?>depense/list" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="<?= url('depense/list') ?>" class="btn" style="background: #FFFFFF; color: #64748B; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="file-minus" style="width: 17px; height: 17px;"></i> Dépenses & Engagements
         </a>
-        <a href="<?= RACINE ?>type_depense/list" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="<?= url('type_depense/list') ?>" class="btn" style="background: #1E3A5F; color: #FFFFFF; font-weight: 800; font-size: 13.5px; border-radius: 8px; padding: 9px 20px; display: inline-flex; align-items: center; gap: 8px;">
           <i data-lucide="tags" style="width: 17px; height: 17px;"></i> Types / Catégories de Dépenses
         </a>
-      </div>
-
-      <!-- Quick Add Form Card pour Catégorie de Dépense -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px 24px; border: 1px solid #CBD5E1; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
-        <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Nouvelle Catégorie / Type de Dépense
-        </h3>
-        <form action="<?= RACINE ?>type_depense/add" method="POST" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; width: 100%;">
-          <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
-          <div style="flex: 1; min-width: 280px;">
-            <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom / Désignation de la catégorie *</label>
-            <input type="text" name="libelle_type_depense" required placeholder="Ex: Fournitures de bureau, Électricité & Eau, Maintenance des locaux..." class="form-control" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px; width: 100%; box-sizing: border-box;">
-          </div>
-          <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px; height: 42px; display: inline-flex; align-items: center; gap: 6px;">
-            <i data-lucide="save" style="width: 16px; height: 16px;"></i> Enregistrer la Catégorie
-          </button>
-        </form>
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
@@ -49,6 +32,7 @@
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code Catégorie</th>
                 <th style="padding: 12px;">Désignation Catégorie</th>
+                <th style="padding: 12px; text-align: center; width: 100px;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -59,26 +43,49 @@
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() {
-  $('#table-type_depenses').DataTable({
-    ajax: '<?= RACINE ?>type_depense/apiList',
-    processing: true,
-    autoWidth: false,
-    columns: [
-      { data: null, width: '50px', render: function(d, type, row, meta) {
-        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-      }},
-      { data: 'code_type_depense', defaultContent: '-' },
-      { data: 'libelle_type_depense', defaultContent: '-' },
-      { data: null, orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'type_depense/edition/' + (d.editId || d.id_type_depense) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-               '<a href="' + window.RACINE + 'type_depense/details/' + (d.editId || d.id_type_depense) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
-      }, className: 'text-end' }
-    ],
-    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
-    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
-  });
-});
+
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : MODIFIER / AJOUTER TYPE DE DÉPENSE -->
+<!-- ========================================================================= -->
+<div id="modal-type-depense" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-type-depense-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la Catégorie de Dépense
+      </h3>
+      <button type="button" class="btn-close-modal-td" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-type-depense-modal" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_type_depense" id="td_modal_id" value="">
+
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Désignation de la catégorie <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="text" name="libelle_type_depense" id="td_modal_libelle" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #E2E8F0;">
+        <button type="button" class="btn btn-secondary btn-close-modal-td" style="font-weight: 700; border-radius: 8px; padding: 9px 18px;">Annuler</button>
+        <button type="submit" id="btn-save-td-modal" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 22px; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<?php
+$typeDepensesConfig = [
+    'csrfToken' => Validator::generateCsrfToken()
+];
+?>
+<script type="application/json" id="type-depenses-config">
+<?= json_encode($typeDepensesConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/depenses.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

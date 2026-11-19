@@ -33,7 +33,7 @@ class Validator
 
     public function hasRole($role)
     {
-        return in_array($role, $_SESSION['roles'] ?? []);
+        return in_array($role, Session::get('roles', []));
     }
 
     public function verif($table, $field, $value)
@@ -435,23 +435,42 @@ class Validator
 
     public static function generateCsrfToken(): string
     {
-        if (!isset($_SESSION['csrf_token']) || empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-            $_SESSION['csrf_token_time'] = time();
+        $token = Session::get('csrf_token');
+        $time = (int)Session::get('csrf_token_time', 0);
+        // Durée de validité glissante : 7200s (2 heures)
+        if (empty($token) || empty($time) || (time() - $time) > 7200) {
+            $token = bin2hex(random_bytes(32));
+            Session::set('csrf_token', $token);
+            Session::set('csrf_token_time', time());
+        } else {
+            // Renouvellement glissant de l'activité sur la page
+            Session::set('csrf_token_time', time());
         }
-        return $_SESSION['csrf_token'];
+        return (string)$token;
     }
 
-    public static function validateCsrfToken(?string $token): bool
+    public static function validateCsrfToken(?string $token = null): bool
     {
-        if (!isset($_SESSION['csrf_token']) || empty($_SESSION['csrf_token'])) {
+        if (empty($token)) {
+            $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+        }
+        $sessionToken = Session::get('csrf_token');
+        if (empty($sessionToken) || empty($token)) {
             return false;
         }
-        if (!isset($_SESSION['csrf_token_time']) || (time() - $_SESSION['csrf_token_time']) > 3600) {
-            unset($_SESSION['csrf_token'], $_SESSION['csrf_token_time']);
+        // Durée glissante de 7200s (2 heures d'inactivité)
+        $tokenTime = (int)Session::get('csrf_token_time', 0);
+        if ($tokenTime > 0 && (time() - $tokenTime) > 7200) {
+            Session::remove('csrf_token');
+            Session::remove('csrf_token_time');
             return false;
         }
-        return hash_equals($_SESSION['csrf_token'], (string)$token);
+        if (hash_equals((string)$sessionToken, (string)$token)) {
+            // Renouvellement glissant lors d'une validation réussie
+            Session::set('csrf_token_time', time());
+            return true;
+        }
+        return false;
     }
 
     public static function csrfField(): string
@@ -684,7 +703,7 @@ class Validator
 
     public static function isConnected(): bool
     {
-        return isset($_SESSION[USERS_AUTH]['code_user']) && !empty($_SESSION[USERS_AUTH]['code_user']);
+        return !empty(Auth::code());
     }
 
     public static function hashPassword(string $password): string
@@ -734,24 +753,30 @@ class Validator
         if (is_array($data)) {
             if (sizeof($data) > 0 && !empty($entity)) {
                 foreach ($data as $key => $value) {
-                    $_SESSION[$entity][$key] = $value;
+                    Session::set($entity . '.' . $key, $value);
                 }
             }
         } else {
-            $_SESSION[$entity] = $data;
+            Session::set($entity, $data);
         }
     }
 
     public function insert(string $table, array $data, array $keys): bool
     {
         try {
+            $fkError = ForeignKeyValidator::validate($this->pdo->getCon(), $table, $data);
+            if ($fkError !== null) {
+                error_log("Validator::insert {$table} FK Error: {$fkError}");
+                return false;
+            }
+
             $columns = implode(', ', $keys);
             $placeholders = implode(', ', array_map(fn($k) => ":$k", $keys));
             $sql = "INSERT INTO $table ($columns) VALUES ($placeholders)";
             $stmt = $this->pdo->getCon()->prepare($sql);
             return $stmt->execute($data);
         } catch (Exception $e) {
-            error_log("Insert error: " . $e->getMessage());
+            error_log("Insert error {$table}: " . $e->getMessage());
             return false;
         }
     }
@@ -759,13 +784,19 @@ class Validator
     public function update(string $table, array $data, array $keys, string $idField, int $id): bool
     {
         try {
+            $fkError = ForeignKeyValidator::validate($this->pdo->getCon(), $table, $data);
+            if ($fkError !== null) {
+                error_log("Validator::update {$table} FK Error: {$fkError}");
+                return false;
+            }
+
             $setClause = implode(', ', array_map(fn($k) => "$k = :$k", $keys));
             $sql = "UPDATE $table SET $setClause WHERE $idField = :id";
             $stmt = $this->pdo->getCon()->prepare($sql);
             $data['id'] = $id;
             return $stmt->execute($data);
         } catch (Exception $e) {
-            error_log("Update error: " . $e->getMessage());
+            error_log("Update error {$table}: " . $e->getMessage());
             return false;
         }
     }
@@ -773,12 +804,10 @@ class Validator
     public static function getSesion(string $entity, string $field = "")
     {
         if (!empty($field) && !empty($entity)) {
-            if (isset($_SESSION[$entity]) && key_exists($field, $_SESSION[$entity])) {
-                return $_SESSION[$entity][$field];
-            } else {
-                if (isset($_SESSION[$entity])) {
-                    return $_SESSION[$entity];
-                }
+            if (Session::has($entity . '.' . $field)) {
+                return Session::get($entity . '.' . $field);
+            } elseif (Session::has($entity)) {
+                return Session::get($entity);
             }
         }
         return null;
@@ -811,10 +840,67 @@ class Validator
     /**
      * Valide qu'un numéro de téléphone fait exactement 10 chiffres (standard ivoirien)
      */
-    public static function validPhone(?string $phone): bool
+    /**
+     * Convertit un montant numérique en lettres (en Francs CFA)
+     */
+    public static function numberToWordsFCFA($number): string
     {
-        $cleaned = self::cleanPhone($phone);
-        return (bool)preg_match('/^[0-9]{10}$/', $cleaned);
+        $number = (int)round((float)$number);
+        if ($number <= 0) return 'Zéro franc CFA';
+
+        $units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+        $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+
+        $convertGroup = function($n) use (&$convertGroup, $units, $tens) {
+            $str = '';
+            if ($n >= 100) {
+                $h = (int)floor($n / 100);
+                if ($h == 1) {
+                    $str .= 'cent ';
+                } else {
+                    $str .= $units[$h] . ' cent ';
+                }
+                $n %= 100;
+            }
+            if ($n >= 20) {
+                $t = (int)floor($n / 10);
+                $u = $n % 10;
+                if ($t == 7 || $t == 9) {
+                    $t--;
+                    $u += 10;
+                }
+                $str .= $tens[$t];
+                if ($u == 1 && $t != 8) {
+                    $str .= ' et un';
+                } elseif ($u > 0) {
+                    $str .= '-' . $units[$u];
+                }
+            } elseif ($n > 0) {
+                $str .= $units[$n];
+            }
+            return trim($str);
+        };
+
+        $out = '';
+        if ($number >= 1000000) {
+            $m = (int)floor($number / 1000000);
+            $out .= $convertGroup($m) . ' million' . ($m > 1 ? 's ' : ' ');
+            $number %= 1000000;
+        }
+        if ($number >= 1000) {
+            $k = (int)floor($number / 1000);
+            if ($k == 1) {
+                $out .= 'mille ';
+            } else {
+                $out .= $convertGroup($k) . ' mille ';
+            }
+            $number %= 1000;
+        }
+        if ($number > 0) {
+            $out .= $convertGroup($number) . ' ';
+        }
+
+        return ucfirst(trim($out)) . ' francs CFA';
     }
 }
 

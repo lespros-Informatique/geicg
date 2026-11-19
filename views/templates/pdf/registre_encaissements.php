@@ -1,0 +1,334 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Registre des Encaissements - GROUPE EICG</title>
+  <style>
+    @page {
+      margin-top: 6mm;
+      margin-bottom: 8mm;
+      margin-left: 6mm;
+      margin-right: 6mm;
+    }
+    body {
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-size: 8pt;
+      color: #0F172A;
+      line-height: 1.2;
+    }
+
+    /* En-tête */
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 4px;
+    }
+    .header-table td {
+      vertical-align: middle;
+    }
+    .inst-title {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #800000;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.15;
+    }
+    .inst-subtitle {
+      font-size: 8pt;
+      font-weight: bold;
+      color: #000000;
+      margin-top: 1px;
+    }
+    .inst-contacts {
+      font-size: 7.5pt;
+      color: #64748B;
+      margin-top: 1px;
+    }
+
+    .divider-line {
+      height: 1.5px;
+      background-color: #1E3A5F;
+      margin-top: 3px;
+      margin-bottom: 6px;
+    }
+
+    /* Bannière Titre */
+    .banner-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+      background-color: #1E3A5F;
+    }
+    .banner-table td {
+      padding: 6px 10px;
+      text-align: center;
+      color: #FFFFFF;
+    }
+    .banner-title {
+      font-size: 11.5pt;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .banner-sub {
+      font-size: 8pt;
+      color: #E2E8F0;
+      margin-top: 1px;
+    }
+
+    /* Filtres appliqués */
+    .meta-box-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+      border: 1px solid #CBD5E1;
+      background-color: #F8FAFC;
+    }
+    .meta-box-table td {
+      padding: 4px 6px;
+      font-size: 7.5pt;
+      vertical-align: middle;
+      border: 0.5px solid #CBD5E1;
+    }
+    .meta-label {
+      font-size: 7pt;
+      font-weight: bold;
+      color: #475569;
+      text-transform: uppercase;
+    }
+    .meta-value {
+      font-size: 8pt;
+      font-weight: bold;
+      color: #0F172A;
+    }
+
+    /* Synthèse KPIs */
+    .kpi-summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+    .kpi-summary-table td {
+      padding: 5px 6px;
+      font-size: 7.5pt;
+      font-weight: bold;
+      text-align: center;
+      border: 1px solid #CBD5E1;
+    }
+    .kpi-total { background-color: #EFF6FF; color: #1E3A5F; }
+    .kpi-guichet { background-color: #F0FDF4; color: #166534; }
+    .kpi-enligne { background-color: #EEF2FF; color: #4338CA; }
+    .kpi-especes { background-color: #DCFCE7; color: #166534; }
+    .kpi-banque { background-color: #FEF3C7; color: #92400E; }
+    .kpi-count { background-color: #F1F5F9; color: #334155; }
+
+    /* Tableau des Données */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    .data-table th {
+      background-color: #1E293B;
+      color: #FFFFFF;
+      border: 1px solid #000000;
+      padding: 5px 4px;
+      font-size: 7.5pt;
+      font-weight: bold;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .data-table td {
+      border: 1px solid #000000;
+      padding: 4px 4px;
+      font-size: 7.5pt;
+      vertical-align: middle;
+    }
+    .data-table tr.total-row td {
+      background-color: #A6A6A6;
+      color: #000000;
+      font-weight: bold;
+      font-size: 8pt;
+    }
+
+    /* Signatures */
+    .signature-grid {
+      width: 100%;
+      margin-top: 15px;
+      border-collapse: collapse;
+    }
+    .signature-grid td {
+      vertical-align: top;
+      font-size: 8pt;
+    }
+
+    .footer-line {
+      font-size: 7.5pt;
+      color: #64748B;
+      text-align: right;
+      margin-top: 10px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
+
+  <!-- BANNIÈRE TITRE -->
+  <table class="banner-table">
+    <tr>
+      <td>
+        <div class="banner-title">REGISTRE CHRONOLOGIQUE DES ENCAISSEMENTS EN CAISSE</div>
+        <div class="banner-sub">ANNÉE ACADÉMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?> &bull; Édité le <?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- SECTION DES FILTRES APPLIQUÉS -->
+  <table class="meta-box-table">
+    <tr>
+      <td style="width: 17%;">
+        <span class="meta-label">Année Académique :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($annee_libelle ?? 'Toutes les années') ?></span>
+      </td>
+      <td style="width: 17%;">
+        <span class="meta-label">Niveau d'Étude :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($niveau_libelle ?? 'Tous les niveaux') ?></span>
+      </td>
+      <td style="width: 17%;">
+        <span class="meta-label">Classe / Groupe :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($classe_libelle ?? 'Toutes les classes') ?></span>
+      </td>
+      <td style="width: 16%;">
+        <span class="meta-label">Canal d'Opération :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($canal_libelle ?? 'Tous les canaux') ?></span>
+      </td>
+      <td style="width: 16%;">
+        <span class="meta-label">Mode & Catégorie :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($mode_libelle ?? 'Tous') ?> (<?= htmlspecialchars($categorie_libelle ?? 'Toutes') ?>)</span>
+      </td>
+      <td style="width: 17%;">
+        <span class="meta-label">Période du Registre :</span><br>
+        <span class="meta-value"><?= htmlspecialchars($periode_libelle ?? 'Toute la période') ?></span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- RÉCAPITULATIF DES KPIS -->
+  <table class="kpi-summary-table">
+    <tr>
+      <td class="kpi-total" style="width: 20%;">
+        CUMUL ENCAISSÉ REGISTRE<br>
+        <span style="font-size: 9.5pt; font-weight: bold;"><?= number_format($total_general ?? 0, 0, ',', ' ') ?> FCFA</span>
+      </td>
+      <td class="kpi-guichet" style="width: 16%;">
+        ENCAISSÉ AU GUICHET<br>
+        <span style="font-size: 9pt; font-weight: bold;"><?= number_format($total_guichet ?? 0, 0, ',', ' ') ?> FCFA</span>
+      </td>
+      <td class="kpi-enligne" style="width: 16%;">
+        ENCAISSÉ EN LIGNE<br>
+        <span style="font-size: 9pt; font-weight: bold;"><?= number_format($total_en_ligne ?? 0, 0, ',', ' ') ?> FCFA</span>
+      </td>
+      <td class="kpi-especes" style="width: 16%;">
+        VERSEMENTS ESPÈCES<br>
+        <span style="font-size: 9pt; font-weight: bold;"><?= number_format($total_especes ?? 0, 0, ',', ' ') ?> FCFA</span>
+      </td>
+      <td class="kpi-banque" style="width: 16%;">
+        MOBILES & BANQUE<br>
+        <span style="font-size: 9pt; font-weight: bold;"><?= number_format((($total_mobile_money ?? 0) + ($total_banque ?? 0)), 0, ',', ' ') ?> FCFA</span>
+      </td>
+      <td class="kpi-count" style="width: 16%;">
+        NBRE ENCAISSEMENTS<br>
+        <span style="font-size: 9.5pt; font-weight: bold;"><?= (int)($count_paiements ?? 0) ?> Règlement(s)</span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- TABLEAU DU REGISTRE -->
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 3%;">N°</th>
+        <th style="width: 10%;">DATE & HEURE</th>
+        <th style="width: 10%;">N° REÇU</th>
+        <th style="width: 9%;">MATRICULE</th>
+        <th style="width: 18%; text-align: left;">NOM & PRÉNOMS ÉTUDIANT</th>
+        <th style="width: 9%;">CLASSE</th>
+        <th style="width: 7%;">CANAL</th>
+        <th style="width: 12%; text-align: left;">LIBELLÉ OPÉRATION</th>
+        <th style="width: 7%;">MODE</th>
+        <th style="width: 7%;">RÉFÉRENCE</th>
+        <th style="width: 8%; text-align: right;">MONTANT VERSÉ</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php if (!empty($paiements) && is_array($paiements)): ?>
+        <?php foreach ($paiements as $idx => $p): ?>
+          <?php
+            $canalVal = strtolower($p['canal_paiement'] ?? 'guichet');
+            $isEnLigne = ($canalVal === 'en_ligne');
+          ?>
+          <tr>
+            <td style="text-align: center;"><?= $idx + 1 ?></td>
+            <td style="text-align: center;"><?= date('d/m/Y H:i', strtotime($p['date_paiement'] ?? 'now')) ?></td>
+            <td style="text-align: center; font-weight: bold;"><?= htmlspecialchars($p['code_paiement'] ?? '-') ?></td>
+            <td style="text-align: center; font-weight: bold;"><?= htmlspecialchars($p['matricule_etudiant'] ?? '-') ?></td>
+            <td style="font-weight: bold;"><?= htmlspecialchars(mb_strtoupper(trim(($p['nom_etudiant'] ?? '') . ' ' . ($p['prenom_etudiant'] ?? '')))) ?></td>
+            <td style="text-align: center;"><?= htmlspecialchars($p['libelle_classe'] ?? '-') ?></td>
+            <td style="text-align: center;">
+              <?php if ($isEnLigne): ?>
+                <span style="font-size: 6.5pt; font-weight: bold; color: #4338CA; background: #EEF2FF; padding: 1px 4px; border-radius: 3px; border: 0.5px solid #C7D2FE;">EN LIGNE</span>
+              <?php else: ?>
+                <span style="font-size: 6.5pt; font-weight: bold; color: #166534; background: #DCFCE7; padding: 1px 4px; border-radius: 3px; border: 0.5px solid #BBF7D0;">GUICHET</span>
+              <?php endif; ?>
+            </td>
+            <td><?= htmlspecialchars($p['type_paiement'] ?? 'Versement Scolarité') ?></td>
+            <td style="text-align: center;"><?= htmlspecialchars($p['mode_paiement'] ?? 'Espèces') ?></td>
+            <td style="text-align: center; font-size: 7pt;"><?= htmlspecialchars($p['reference_paiement'] ?? '-') ?></td>
+            <td style="text-align: right; font-weight: bold; color: #000000;"><?= number_format($p['montant_paiement'] ?? 0, 0, ',', ' ') ?> FCFA</td>
+          </tr>
+        <?php endforeach; ?>
+        <tr class="total-row">
+          <td colspan="10" style="text-align: right; font-weight: bold;">TOTAL GÉNÉRAL DU REGISTRE DES ENCAISSEMENTS :</td>
+          <td style="text-align: right; font-weight: bold; font-size: 8.5pt; color: #000000;"><?= number_format($total_general ?? 0, 0, ',', ' ') ?> FCFA</td>
+        </tr>
+      <?php else: ?>
+        <tr>
+          <td colspan="11" style="text-align: center; padding: 12px; color: #64748B;">Aucun encaissement enregistré pour les critères sélectionnés.</td>
+        </tr>
+      <?php endif; ?>
+    </tbody>
+  </table>
+
+  <!-- SIGNATURES -->
+  <table class="signature-grid">
+    <tr>
+      <td style="width: 50%;">
+        <div style="font-weight: bold; text-decoration: underline;">Le Caissier / Agent Comptable</div>
+        <div style="margin-top: 25px; font-weight: bold; font-size: 8.5pt;"><?= htmlspecialchars($agent_nom ?? 'Caisse Principale GEICG') ?></div>
+      </td>
+      <td style="width: 50%; text-align: right;">
+        <div style="font-size: 8pt; margin-bottom: 2px;">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?></div>
+        <div style="font-weight: bold; text-decoration: underline;"><?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'Le Chef du Service Financier') ?></div>
+        <div style="margin-top: 25px; font-weight: bold; font-size: 8.5pt;"><?= htmlspecialchars($etablissement['nom_responsable_finance'] ?? 'Direction Financière GEICG') ?></div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="footer-line">
+    Registre des encaissements extrait du système informatique GEICG - Page 1 / Édition du <?= date('d/m/Y H:i:s') ?>
+  </div>
+
+</body>
+</html>

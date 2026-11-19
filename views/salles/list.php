@@ -9,9 +9,16 @@
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Salles de cours</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Salles de cours</p>
         </div>
-        <a href="<?= RACINE ?>salle/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-          <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Salle de cours
-        </a>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::PRINT_SALLES, PERMISSIONS::VIEW_SALLES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]))): ?>
+            <a href="<?= url('salle/imprimerPdf') ?>" target="_blank" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Répertoire (PDF)
+            </a>
+          <?php endif; ?>
+          <button type="button" class="btn btn-primary btn-add-salle" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;">
+            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Salle de cours
+          </button>
+        </div>
       </div>
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -21,7 +28,8 @@
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Code</th>
                 <th style="padding: 12px;">Nom de la Salle</th>
-                <th style="padding: 12px;">Statut</th>
+                <th style="padding: 12px;" class="text-center">Capacité</th>
+                <th style="padding: 12px;" class="text-center">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
             </thead>
@@ -32,74 +40,62 @@
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() {
-  var table = $('#table-salles').DataTable({
-    ajax: '<?= RACINE ?>salle/apiList',
-    processing: true,
-    autoWidth: false,
-    columns: [
-      { data: null, width: '50px', render: function(d, type, row, meta) {
-        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-      }},
-      { data: 'code_salle', width: '130px', render: function(d) {
-        if (!d) return '-';
-        return '<code style="font-weight:700; color:#334155; background:#F1F5F9; padding:2px 6px; border-radius:4px;">' + d + '</code>';
-      }},
-      { data: 'libelle_salle', render: function(d) {
-        return '<strong style="color:#0F172A;">' + (d || '-') + '</strong>';
-      }},
-      { data: 'statut_salle', width: '80px', className: 'text-center', render: function(d, type, row) {
-        var isActif = (d === 'actif');
-        var checkedAttr = isActif ? 'checked' : '';
-        return '<div style="display:flex; justify-content:center; align-items:center;">' +
-               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
-               '<input type="checkbox" class="toggle-statut-salle" data-id="' + row.id_salle + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-               '</span>' +
-               '</label>' +
-               '</div>';
-      }},
-      { data: null, width: '160px', orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'salle/edition/' + (d.editId || d.id_salle) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-               '<a href="' + window.RACINE + 'salle/details/' + (d.editId || d.id_salle) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
-      }, className: 'text-end' }
-    ],
-    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
-    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
-  });
 
-  // Bascule de statut instantanée via Ajax
-  $(document).on('change', '.toggle-statut-salle', function() {
-    var id = $(this).data('id');
-    var isChecked = $(this).is(':checked');
-    var $input = $(this);
+<!-- ========================================================================= -->
+<!-- MODAL INTERACTIVE : AJOUTER / MODIFIER UNE SALLE -->
+<!-- ========================================================================= -->
+<div id="modal-salle" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 id="modal-salle-title" style="font-size: 15px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Salle de cours
+      </h3>
+      <button type="button" class="btn-close-modal-salle" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
 
-    $.ajax({
-      url: '<?= RACINE ?>salle/changer',
-      type: 'POST',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      data: {
-        id: id,
-        csrf_token: '<?= Validator::generateCsrfToken() ?>'
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
-          table.ajax.reload(null, false);
-        } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
-          $input.prop('checked', !isChecked);
-        }
-      },
-      error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
-        $input.prop('checked', !isChecked);
-      }
-    });
-  });
-});
+    <form id="form-salle" style="padding: 22px;">
+      <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+      <input type="hidden" name="id_salle" id="salle_id" value="">
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Nom / Numéro de salle <span style="color: #EF4444;">*</span>
+        </label>
+        <input type="text" name="libelle_salle" id="salle_libelle" required placeholder="Ex: Amphi A, Salle 102, Labo Info..." class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
+          Capacité d'accueil (places)
+        </label>
+        <input type="number" min="1" step="1" name="capacite_salle" id="salle_capacite" placeholder="Ex: 40" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
+        <select name="statut_salle" id="salle_statut" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 14px;">
+          <option value="actif">Actif</option>
+          <option value="inactif">Inactif</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #E2E8F0;">
+        <button type="button" class="btn btn-secondary btn-close-modal-salle" style="font-weight: 700; border-radius: 8px; padding: 9px 18px;">Annuler</button>
+        <button type="submit" id="btn-save-salle" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 22px; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="application/json" id="salles-list-config">
+<?= json_encode([
+    'racine' => RACINE,
+    'csrfToken' => Validator::generateCsrfToken()
+]) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/emplois_temps.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

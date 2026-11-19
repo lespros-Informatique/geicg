@@ -10,21 +10,15 @@ class DocumentController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_DOCUMENTS, PERMISSIONS::MANAGE_DOCUMENTS]);
         $this->loadView('../views/documents/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $sql = "SELECT d.*, 
-                       COALESCE(f.libelle_filiere, d.filiere_code, 'Toutes les filières') as libelle_filiere, 
-                       COALESCE(n.libelle_niveau, d.niveaux_code, 'Tous les niveaux') as libelle_niveau,
-                       DATE_FORMAT(d.created_at_document, '%d/%m/%Y') as date_creation_formatee
-                FROM documents d
-                LEFT JOIN filieres f ON (f.code_filiere = d.filiere_code OR f.libelle_filiere = d.filiere_code)
-                LEFT JOIN niveaux n ON (n.code_niveau = d.niveaux_code OR n.libelle_niveau = d.niveaux_code)
-                ORDER BY d.id_document DESC";
-        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $this->requirePermission([PERMISSIONS::VIEW_DOCUMENTS, PERMISSIONS::MANAGE_DOCUMENTS]);
+        $items = $this->model->getDocumentsList();
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_document'];
@@ -41,14 +35,15 @@ class DocumentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
+        $userCode = Auth::code() ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
 
         if (empty($data['code_document'])) {
-            $data['code_document'] = $this->validator->generateCode('documents', 'code_document', 'DOC-', 8);
+            $data['code_document'] = $this->validator->generateCode(TABLES::DOCUMENTS, 'code_document', 'DOC-', 8);
         }
 
         // Support chemin_fichier alias to lien_document
@@ -77,14 +72,22 @@ class DocumentController extends BaseController
 
         $data['statut_document'] = $data['statut_document'] ?? 'actif';
         $data['created_at_document'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE documents")->fetchAll(PDO::FETCH_COLUMN);
+        $cols = $this->model->getTableColumns();
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('etablisement_code', $cols)) $data['etablisement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
-        if ($this->model->create($filteredData)) {
-            $this->success('Document enregistré avec succès !', ['redirect' => RACINE . 'document/list']);
+        $filteredData = $this->model->filterData($data);
+        $newId = $this->model->create($filteredData);
+        if ($newId) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'documents',
+                $newId,
+                "Ajout du document: " . ($filteredData['libelle_document'] ?? $filteredData['code_document'] ?? ''),
+                ['id_document' => $newId, 'code' => $filteredData['code_document'] ?? '', 'titre' => $filteredData['libelle_document'] ?? '', 'type' => $filteredData['type_document'] ?? '']
+            );
+            $this->success('Document enregistré avec succès !', ['redirect' => url('document/list')]);
         } else {
             $this->error('Erreur lors de l\'enregistrement du document');
         }
@@ -94,6 +97,7 @@ class DocumentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
         $id = (int)$this->post('id_document');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -118,10 +122,16 @@ class DocumentController extends BaseController
             }
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE documents")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Document modifié avec succès !', ['redirect' => RACINE . 'document/list']);
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'documents',
+                $id,
+                "Modification du document: " . ($filteredData['libelle_document'] ?? "#{$id}"),
+                ['id_document' => $id, 'titre' => $filteredData['libelle_document'] ?? '', 'type' => $filteredData['type_document'] ?? '']
+            );
+            $this->success('Document modifié avec succès !', ['redirect' => url('document/list')]);
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -166,7 +176,7 @@ class DocumentController extends BaseController
         }
 
         // Chemin relatif accessible
-        $relativePath = RACINE . 'uploads/documents/' . $newName;
+        $relativePath = url('uploads/documents/' . $newName);
         return [
             'success' => true, 
             'path' => $relativePath,
@@ -180,9 +190,17 @@ class DocumentController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'documents',
+                    $id,
+                    "Changement de statut du document ID #{$id}",
+                    ['id_document' => $id]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -195,13 +213,14 @@ class DocumentController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_DOCUMENTS, PERMISSIONS::MANAGE_DOCUMENTS]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'document/list'); exit(); }
+            if (!$item) { redirect('document/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'document/list'); exit();
+            redirect('document/list');
         }
         $this->loadView('../views/documents/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -209,13 +228,14 @@ class DocumentController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'document/list'); exit(); }
+            if (!$item) { redirect('document/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'document/list'); exit();
+            redirect('document/list');
         }
         $this->loadView('../views/documents/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -223,6 +243,7 @@ class DocumentController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_DOCUMENTS);
         $this->loadView('../views/documents/edit.php', ['item' => []]);
     }
 }

@@ -1,4 +1,4 @@
-﻿<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
+<?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -9,7 +9,7 @@
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Parents & Tuteurs</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Parents & Tuteurs</p>
         </div>
-        <a href="<?= RACINE ?>parent/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('parent/formulaire') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Parent / Tuteur
         </a>
       </div>
@@ -35,30 +35,7 @@
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() {
-  $('#table-parents').DataTable({
-    ajax: '<?= RACINE ?>parent/apiList',
-    processing: true,
-    autoWidth: false,
-    columns: [
-      { data: null, width: '50px', render: function(d, type, row, meta) {
-        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-      }},
-      { data: 'etudiant_code', defaultContent: '-' },
-      { data: 'nom_pere', defaultContent: '-' },
-      { data: 'telephone_pere', defaultContent: '-' },
-      { data: 'nom_mere', defaultContent: '-' },
-      { data: 'telephone_mere', defaultContent: '-' },
-      { data: 'nom_tuteur', defaultContent: '-' },
-      { data: null, orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'parent/edition/' + (d.editId || d.id_parent) + '" class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>' +
-               '<a href="' + window.RACINE + 'parent/details/' + (d.editId || d.id_parent) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
-      }, className: 'text-end' }
-    ],
-    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
-    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
-  });
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/etudiants.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

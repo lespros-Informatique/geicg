@@ -10,21 +10,15 @@ class RoleController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ROLES);
         $this->loadView('../views/roles/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $sql = "SELECT r.*,
-                       COUNT(DISTINCT ur.user_code) as nb_users,
-                       COUNT(DISTINCT rp.permission_code) as nb_permissions
-                FROM roles r
-                LEFT JOIN user_roles ur ON ur.role_code = r.code_role
-                LEFT JOIN role_permissions rp ON rp.role_code = r.code_role
-                GROUP BY r.id
-                ORDER BY r.id ASC";
-        $items = $this->model->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $this->requirePermission(PERMISSIONS::VIEW_ROLES);
+        $items = $this->model->getRolesWithCounts();
 
         $data = [];
         foreach ($items as $i) {
@@ -42,6 +36,7 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -50,7 +45,7 @@ class RoleController extends BaseController
         $module = trim($data['module'] ?? 'ADMINISTRATION');
         $groupe = trim($data['groupe'] ?? 'Direction');
         $description = trim($data['description'] ?? '');
-        $permissions = $data['permissions'] ?? [];
+        $permissions = isset($data['permissions']) && is_array($data['permissions']) ? $data['permissions'] : [];
 
         if (empty($libelle)) {
             $this->error('Le libellé du rôle est obligatoire.');
@@ -61,22 +56,34 @@ class RoleController extends BaseController
             $codeRole = 'ROLE_' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '_', $libelle));
         }
 
-        $stmtCheck = $this->model->getCon()->prepare("SELECT id FROM roles WHERE code_role = ?");
-        $stmtCheck->execute([$codeRole]);
-        if ($stmtCheck->fetch()) {
+        if ($this->model->existsCode($codeRole)) {
             $this->error('Ce code de rôle existe déjà.');
             return;
         }
 
-        $stmtIns = $this->model->getCon()->prepare("
-            INSERT INTO roles (code_role, libelle_role, module, groupe, description, statut_role)
-            VALUES (?, ?, ?, ?, ?, 'actif')
-        ");
-        if ($stmtIns->execute([$codeRole, $libelle, $module, $groupe, $description])) {
-            if (!empty($permissions) && is_array($permissions)) {
-                $this->model->syncPermissions($codeRole, $permissions);
-            }
-            $this->success('Rôle créé avec succès !');
+        $rolePayload = [
+            'code_role' => $codeRole,
+            'libelle_role' => $libelle,
+            'module' => $module,
+            'groupe' => $groupe,
+            'description' => $description,
+            'statut_role' => 'actif'
+        ];
+        if ($this->model->createRole($rolePayload, $permissions)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'roles',
+                $codeRole,
+                "Création du rôle d'accès '{$libelle}' ({$codeRole}) avec " . count($permissions) . " permission(s)",
+                [
+                    'code_role' => $codeRole,
+                    'libelle_role' => $libelle,
+                    'module' => $module,
+                    'groupe' => $groupe,
+                    'permissions' => $permissions
+                ]
+            );
+            $this->success('Rôle créé avec succès !', url('role/list'));
         } else {
             $this->error('Erreur lors de la création du rôle.');
         }
@@ -86,37 +93,50 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $id = (int)$this->post('id');
-        if (!$id) { $this->error('Identifiant invalide'); return; }
+        if (!$id) { $this->error('Identifiant invalide', url('role/list')); return; }
 
         $role = $this->model->getById($id);
-        if (!$role) { $this->error('Rôle introuvable'); return; }
+        if (!$role) { $this->error('Rôle introuvable', url('role/list')); return; }
 
         $data = $_POST;
         unset($data['csrf_token']);
 
         $libelle = trim($data['libelle_role'] ?? '');
-        $module = trim($data['module'] ?? $role['module']);
-        $groupe = trim($data['groupe'] ?? $role['groupe']);
-        $description = trim($data['description'] ?? $role['description']);
-        $statut = $data['statut_role'] ?? 'actif';
-        $permissions = $data['permissions'] ?? [];
+        $module = trim($data['module'] ?? ($role['module'] ?? 'ADMINISTRATION'));
+        $groupe = trim($data['groupe'] ?? ($role['groupe'] ?? 'Direction'));
+        $description = trim($data['description'] ?? ($role['description'] ?? ''));
+        $statut = $data['statut_role'] ?? ($role['statut_role'] ?? 'actif');
+        $permissions = isset($data['permissions']) && is_array($data['permissions']) ? $data['permissions'] : [];
 
         if (empty($libelle)) {
             $this->error('Le libellé du rôle est obligatoire.');
             return;
         }
 
-        $stmtUp = $this->model->getCon()->prepare("
-            UPDATE roles 
-            SET libelle_role = ?, module = ?, groupe = ?, description = ?, statut_role = ?
-            WHERE id = ?
-        ");
-        if ($stmtUp->execute([$libelle, $module, $groupe, $description, $statut, $id])) {
-            if (isset($data['permissions']) && is_array($permissions)) {
-                $this->model->syncPermissions($role['code_role'], $permissions);
-            }
-            $this->success('Rôle et permissions mis à jour avec succès !');
+        $rolePayload = [
+            'libelle_role' => $libelle,
+            'module' => $module,
+            'groupe' => $groupe,
+            'description' => $description,
+            'statut_role' => $statut
+        ];
+        if ($this->model->updateRole($id, $rolePayload, $permissions)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'roles',
+                $role['code_role'] ?? (string)$id,
+                "Mise à jour du rôle '{$libelle}' (" . ($role['code_role'] ?? $id) . ") avec " . count($permissions) . " permission(s)",
+                [
+                    'id_role' => $id,
+                    'code_role' => $role['code_role'] ?? null,
+                    'libelle_role' => $libelle,
+                    'statut' => $statut,
+                    'permissions' => $permissions
+                ]
+            );
+            $this->success('Rôle et permissions mis à jour avec succès !', url('role/list'));
         } else {
             $this->error('Erreur lors de la modification du rôle.');
         }
@@ -126,9 +146,17 @@ class RoleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($role = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'roles',
+                    $role['code_role'] ?? (string)$id,
+                    "Basculement de statut (actif/inactif) du rôle '" . ($role['libelle_role'] ?? $id) . "'",
+                    ['id_role' => $id, 'code_role' => $role['code_role'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -141,23 +169,18 @@ class RoleController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ROLES);
         try {
             $id = $this->validator->decrypter($details);
             $role = $this->model->getById($id);
-            if (!$role) { header('Location: ' . RACINE . 'role/list'); exit(); }
+            if (!$role) { redirect('role/list'); }
 
             $permissions = $this->model->getPermissions($role['code_role']);
-            $stmtUsers = $this->model->getCon()->prepare("
-                SELECT u.* FROM users u
-                INNER JOIN user_roles ur ON ur.user_code = u.code_user
-                WHERE ur.role_code = ?
-            ");
-            $stmtUsers->execute([$role['code_role']]);
-            $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
+            $users = $this->model->getUsersByRole($role['code_role']);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'role/list'); exit();
+            redirect('role/list');
         }
         $this->loadView('../views/roles/details.php', [
             'role' => $role,
@@ -170,10 +193,11 @@ class RoleController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         try {
             $id = $this->validator->decrypter($details);
             $role = $this->model->getById($id);
-            if (!$role) { header('Location: ' . RACINE . 'role/list'); exit(); }
+            if (!$role) { redirect('role/list'); }
 
             $allPermissions = (new ModelPermission())->getGrouped();
             $assignedPerms = $this->model->getPermissions($role['code_role']);
@@ -181,7 +205,7 @@ class RoleController extends BaseController
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'role/list'); exit();
+            redirect('role/list');
         }
         $this->loadView('../views/roles/edit.php', [
             'role' => $role,
@@ -194,6 +218,7 @@ class RoleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $allPermissions = (new ModelPermission())->getGrouped();
         $this->loadView('../views/roles/edit.php', [
             'role' => [],

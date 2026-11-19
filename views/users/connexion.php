@@ -1,14 +1,7 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
 
-try {
-    $db = (new Database())->getCon();
-    $stmt = $db->query("SELECT logo_etablissement, libelle_etablissement FROM etablissements ORDER BY id_etablissement ASC LIMIT 1");
-    $etabRow = $stmt->fetch(PDO::FETCH_ASSOC);
-    $loginLogo = $etabRow['logo_etablissement'] ?? '';
-} catch (Exception $e) {
-    $loginLogo = '';
-}
+$loginLogo = $loginLogo ?? '';
 ?>
 
 <div class="app-layout auth-layout">
@@ -17,7 +10,7 @@ try {
       <div class="auth-header">
         <div class="logo">
           <?php if (!empty($loginLogo)): ?>
-            <?php $logoUrl = (strpos($loginLogo, 'http') === 0) ? $loginLogo : RACINE . ltrim($loginLogo, '/'); ?>
+            <?php $logoUrl = (strpos($loginLogo, 'http') === 0) ? $loginLogo : url(ltrim($loginLogo, '/')); ?>
             <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo" style="max-height: 50px; max-width: 180px; object-fit: contain;">
           <?php else: ?>
             <?= LOGO ?>
@@ -28,6 +21,12 @@ try {
       </div>
 
       <div class="auth-body">
+        <?php if (!empty($_GET['expired'])): ?>
+          <div style="background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; padding: 12px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="clock" style="width: 18px; height: 18px; flex-shrink: 0; color: #D97706;"></i>
+            <span>Votre session a expiré après une période d'inactivité. Veuillez vous reconnecter.</span>
+          </div>
+        <?php endif; ?>
         <form class="formConnexion" method="POST">
           <?= Validator::csrfField() ?>
 

@@ -1,161 +1,444 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
-$montant = (float)($item['montant_paye'] ?? ($item['montant_paiement'] ?? 0));
-$scolarite = $scolarite ?? 0;
-$totalPayeCumul = $totalPayeCumul ?? 0;
-$soldeRestant = $soldeRestant ?? 0;
-?>
-<style>
-@media print {
-  body { background: #fff !important; color: #000 !important; }
-  .sidebar, .nav-header, .page-header-actions, .no-print { display: none !important; }
-  .app-layout { display: block !important; }
-  .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-  .content-wrapper { padding: 0 !important; }
-  .card-recu { border: 1px dashed #000 !important; box-shadow: none !important; }
+
+$encryptedId = $encryptedId ?? '';
+$montantOp = (float)($item['montant_paye'] ?? ($item['montant_paiement'] ?? 0));
+$scolarite = (float)($scolarite ?? ($item['montant_scolarite_inscription'] ?? 0));
+$totalPayeCumul = (float)($totalPayeCumul ?? 0);
+$soldeRestant = (float)($soldeRestant ?? 0);
+
+$numRecu = !empty($item['recu_numero_paiement']) ? $item['recu_numero_paiement'] : (!empty($item['code_paiement']) ? $item['code_paiement'] : '');
+$datePaiement = !empty($item['date_paiement']) ? date('d/m/Y H:i:s', strtotime($item['date_paiement'])) : date('d/m/Y H:i:s');
+$datePrint = date('d/m/Y H:i:s');
+
+$matricule = !empty($item['matricule_etudiant']) ? $item['matricule_etudiant'] : ($item['code_etudiant'] ?? '-');
+$nomComplet = strtoupper(trim(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')));
+
+$filiereLib = $item['libelle_filiere'] ?? '';
+$niveauLib = $item['libelle_niveau'] ?? '';
+$filiereNiveau = (!empty($filiereLib) && !empty($niveauLib)) ? ($filiereLib . '_' . $niveauLib) : ($item['libelle_classe'] ?? '');
+
+$statutAffectation = strtoupper(!empty($item['affectation_etat']) ? $item['affectation_etat'] : '');
+$anneeLibelle = $item['libelle_annee'] ?? '';
+$caissierNom = trim(($item['prenom_caissier'] ?? '') . ' ' . ($item['nom_caissier'] ?? ''));
+
+$isFirstPayment = isset($isFirstPayment) ? (bool)$isFirstPayment : true;
+$totalScolariteCumul = (float)($totalScolariteCumul ?? $totalPayeCumul);
+$totalFraisAnnexesCumul = (float)($totalFraisAnnexesCumul ?? 0);
+
+$trancheCodeItem = $item['tranche_code'] ?? '';
+$catItem = strtolower(trim($item['categorie_paiement'] ?? ''));
+$isFAItem = ($trancheCodeItem === 'FRAIS_ANNEXES' || $catItem === 'frais_annexes');
+
+if ($isFirstPayment) {
+    $mainRecuTitle = "REÇU D'INSCRIPTION";
+    $copieRecuTitle = "COPIE REÇU DE VERSEMENT POUR ARCHIVAGE";
+    $pageTitle = "Reçu d'Inscription N° " . $numRecu;
+    $typeOp = "INSCRIPTION";
+
+    $opScolarite = isset($firstGroupScolarite) ? (float)$firstGroupScolarite : 0;
+    $opDroit = isset($firstGroupFraisAnnexes) ? (float)$firstGroupFraisAnnexes : 0;
+
+    if ($opScolarite == 0 && $opDroit == 0) {
+        if ($isFAItem) {
+            $opDroit = $montantOp;
+            $opScolarite = 0;
+        } else {
+            $opFA = (float)($item['montant_frais_annexes'] ?? 0);
+            if ($opFA > 0) {
+                $opDroit = $opFA;
+                $opScolarite = max(0, $montantOp - $opFA);
+            } elseif ($montantOp > 80000 && $montantOp > $scolarite) {
+                $opDroit = 80000;
+                $opScolarite = max(0, $montantOp - 80000);
+            } elseif ($montantOp == 105000) {
+                $opScolarite = 25000;
+                $opDroit = 80000;
+            } else {
+                $opScolarite = $montantOp;
+                $opDroit = 0;
+            }
+        }
+    }
+
+    $montantOpAfficher = $opScolarite + $opDroit;
+    if ($montantOpAfficher <= 0) {
+        $montantOpAfficher = $montantOp;
+    }
+} else {
+    $mainRecuTitle = "REÇU DE VERSEMENT";
+    $copieRecuTitle = "COPIE REÇU DU 1er VERSEMENT POUR ARCHIVAGE";
+    $pageTitle = "Reçu de Versement N° " . $numRecu;
+    $typeOp = !empty($item['libelle_tranche']) ? $item['libelle_tranche'] : (!empty($item['type_paiement']) ? $item['type_paiement'] : ($isFAItem ? 'Frais Annexes' : 'SCOLARITE'));
+
+    $opScolarite = 0;
+    $opDroit = 0;
+    $montantOpAfficher = $montantOp;
 }
-</style>
+
+$montantEnLettres = Validator::numberToWordsFCFA($montantOpAfficher);
+
+$refSeed = !empty($item['code_paiement']) ? $item['code_paiement'] : $numRecu;
+$refCaissHash1 = sprintf("%05d", abs(crc32($refSeed . '_sco')) % 90000 + 10000);
+$refCaissHash2 = sprintf("%010d", abs(crc32($refSeed . '_cais')) % 9000000000 + 1000000000);
+$refCaiss = !empty($item['reference_paiement']) 
+    ? $item['reference_paiement'] 
+    : ($numRecu . 'ScoFOF' . $refCaissHash1 . ',' . $refCaissHash2 . 'ScaisKON');
+
+$barcodeCode = !empty($item['recu_numero_paiement']) 
+    ? $item['recu_numero_paiement'] 
+    : (!empty($item['code_paiement']) ? $item['code_paiement'] : $numRecu);
+
+// Résolution robuste de la photo de l'étudiant
+$studentPhotoUrl = '';
+$rawPhoto = !empty($item['photo_inscription']) ? $item['photo_inscription'] : (!empty($item['photo_etudiant']) ? $item['photo_etudiant'] : '');
+
+if (!empty($rawPhoto)) {
+    $cleanPhotoPath = ltrim($rawPhoto, '/');
+    if (strpos($cleanPhotoPath, 'public/') === 0) {
+        if (file_exists(__DIR__ . '/../../' . $cleanPhotoPath)) {
+            $studentPhotoUrl = url($cleanPhotoPath);
+        }
+    } else {
+        if (file_exists(__DIR__ . '/../../public/' . $cleanPhotoPath)) {
+            $studentPhotoUrl = url('public/' . $cleanPhotoPath);
+        } elseif (file_exists(__DIR__ . '/../../' . $cleanPhotoPath)) {
+            $studentPhotoUrl = url($cleanPhotoPath);
+        }
+    }
+}
+
+if (empty($studentPhotoUrl) && !empty($item['nom_etudiant'])) {
+    $slugNom = preg_replace('/[^a-zA-Z0-9_]/', '_', $item['nom_etudiant']);
+    $anneeFolder = !empty($anneeLibelle) ? $anneeLibelle : '';
+    $potentialPath = 'public/uploads/photos_inscriptions/' . $anneeFolder . '/' . $slugNom . '.png';
+    if (file_exists(__DIR__ . '/../../' . $potentialPath)) {
+        $studentPhotoUrl = url($potentialPath);
+    }
+}
+
+if (empty($studentPhotoUrl)) {
+    $studentPhotoUrl = placeholderUrl('etudiant');
+}
+
+// Générateur vectoriel SVG Code 128 (Subset B) natif, net et conforme pour impression et lecture scanner
+// Générateur de code-barres compact et haut via Picqer Barcode Generator
+if (!function_exists('generatePicqerBarcodeHtml')) {
+    function generatePicqerBarcodeHtml($code, $height = 42) {
+        $code = (string)($code ?? '');
+        if (empty($code)) return '';
+        try {
+            $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+            $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, 1, $height);
+            return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; width:auto; max-width:150px;">';
+        } catch (\Throwable $e) {
+            return '<div style="font-family:monospace; font-weight:bold; font-size:10px;">' . htmlspecialchars($code) . '</div>';
+        }
+    }
+}
+
+// Logo (dynamique depuis la base ou fallback logo_eicg.jpg)
+$logoSrc = $logoSrc ?? getEtablissementLogoUrl();
+?>
+
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; box-sizing: border-box;">
       
-      <div class="page-header no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+      <!-- Barre d'Action Haut -->
+      <div class="page-header no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Reçu de Caisse / Paiement N° <?= htmlspecialchars($item['recu_numero_paiement'] ?? $item['code_paiement']) ?></h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Étudiant : <strong><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></strong> &bull; Date : <strong><?= !empty($item['date_paiement']) ? date('d/m/Y H:i', strtotime($item['date_paiement'])) : date('d/m/Y') ?></strong></p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= htmlspecialchars($pageTitle) ?></h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Étudiant : <strong><?= htmlspecialchars($nomComplet) ?></strong> &bull; Impression conforme au modèle standard</p>
         </div>
-        <div class="page-header-actions" style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <div style="display: flex; gap: 12px;">
+          <a href="<?= url('paiement/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux paiements
           </a>
-          <button onclick="window.print()" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu
-          </button>
+          <a href="<?= url('paiement/imprimerPdf/' . $encryptedId) ?>" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu (PDF)
+          </a>
         </div>
       </div>
 
-      <!-- CARD 1 (COL-12) : REÇU OFFICIEL DE PAIEMENT -->
-      <div class="card card-recu" style="background: #FFFFFF; border-radius: 12px; padding: 32px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
+      <!-- FRAME DU REÇU IMPRIMABLE -->
+      <div class="receipt-page-container receipt-outer-frame">
         
-        <!-- En-tête du Reçu -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #1E3A5F; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="width: 52px; height: 52px; border-radius: 10px; background: #1E3A5F; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">
-              <i data-lucide="receipt" style="width: 28px; height: 28px;"></i>
-            </div>
-            <div>
-              <h2 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0; text-transform: uppercase;">INSTITUT SUPÉRIEUR GEICG</h2>
-              <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Service de la Comptabilité & Caisse &bull; Reçu Officiel de Versement</p>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; font-family: monospace;">
-              REÇU N° <?= htmlspecialchars($item['recu_numero_paiement'] ?? $item['code_paiement']) ?>
-            </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">
-              Date : <?= !empty($item['date_paiement']) ? date('d/m/Y à H:i', strtotime($item['date_paiement'])) : date('d/m/Y') ?>
-            </div>
-          </div>
-        </div>
+        <!-- ========================================================================= -->
+        <!-- PARTIE 1 : REÇU D'INSCRIPTION OU DE VERSEMENT                            -->
+        <!-- ========================================================================= -->
+        
+        <!-- En-tête -->
+        <table class="receipt-header-table">
+          <tr>
+            <td style="width: 155px; vertical-align: middle; padding-right: 14px;">
+              <?php if (!empty($logoSrc)): ?>
+                <img src="<?= $logoSrc ?>" alt="Logo GROUPE EICG" class="institution-logo-img">
+              <?php else: ?>
+                <div class="logo-eicg-box">
+                  GROUPE<br>EICG
+                </div>
+              <?php endif; ?>
+            </td>
+            <td style="vertical-align: top; text-align: center;">
+              <h1 class="institution-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>
+              <div class="institution-subtitle">Agréé par l'Etat et le FDFP</div>
+              <div class="institution-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
+            </td>
+          </tr>
+        </table>
 
-        <!-- Informations Étudiant & Inscription avec Card Photo -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <!-- Bandeau Titre -->
+        <div class="title-gray-banner"><?= htmlspecialchars($mainRecuTitle) ?></div>
+
+        <!-- Année Académique -->
+        <div class="annee-academique-title">ANNEE ACADEMIQUE : <?= htmlspecialchars($anneeLibelle) ?></div>
+
+        <!-- Photo & Détails Étudiant -->
+        <div style="clear: both; margin-bottom: 10px;">
           
-          <!-- Photo / Avatar Étudiant -->
-          <div style="width: 72px; height: 86px; min-width: 72px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
-            <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-              <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+          <div class="student-photo-box">
+            <?php if (!empty($studentPhotoUrl)): ?>
+              <img src="<?= htmlspecialchars($studentPhotoUrl) ?>" alt="Photo de l'étudiant" style="width: 100%; height: 100%; object-fit: cover; display: block;">
             <?php else: ?>
-              <span style="font-size: 20px; font-weight: 900; color: #1E3A5F;">
-                <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
-              </span>
-              <span style="font-size: 8px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 2px;">PHOTO</span>
+              <div style="text-align: center; color: #94A3B8;">
+                <span style="font-size: 24px; font-weight: 900; display: block;"><?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1)) ?></span>
+                <span style="font-size: 9px; font-weight: bold;">PHOTO</span>
+              </div>
             <?php endif; ?>
           </div>
 
-          <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div>
-              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Nom & Prénoms de l'Étudiant</span>
-              <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 3px;"><?= htmlspecialchars(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? '')) ?></div>
-              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Matricule : <code><?= htmlspecialchars($item['matricule_etudiant'] ?? '-') ?></code></div>
-            </div>
+          <table class="info-grid-table">
+            <tr>
+              <td style="width: 55%; vertical-align: top;">
+                <strong>N° <?= htmlspecialchars($numRecu) ?></strong>
+              </td>
+              <td style="width: 45%; vertical-align: top; text-align: right;">
+                <?= htmlspecialchars($datePaiement) ?>
+              </td>
+            </tr>
+            <tr>
+              <td>Numéro réf étudiant( e) : <strong><?= htmlspecialchars($matricule) ?></strong></td>
+              <td>Filière_Niveau : <strong><?= htmlspecialchars($filiereNiveau) ?></strong></td>
+            </tr>
+            <tr>
+              <td colspan="2">Nom_Prénom(s) : <strong><?= htmlspecialchars($nomComplet) ?></strong></td>
+            </tr>
+            <tr>
+              <td>Type d'Opération &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($typeOp) ?></span></td>
+              <td>Statut : <strong><?= htmlspecialchars($statutAffectation) ?></strong></td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding-top: 4px;">
+                Montant de l'Opération : <strong><?= number_format($montantOpAfficher, 0, '', ' ') ?>CFA</strong>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <span class="blue-text-words"><?= htmlspecialchars($montantEnLettres) ?></span>
+              </td>
+            </tr>
+          </table>
 
-            <div>
-              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classe & Niveau</span>
-              <div style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin-top: 3px;"><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></div>
-              <div style="font-size: 12px; color: #64748B;"><?= htmlspecialchars(($item['libelle_filiere'] ?? '-') . ' / ' . ($item['libelle_niveau'] ?? '-')) ?></div>
-            </div>
+        </div>
 
-            <div>
-              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Session Académique</span>
-              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 3px;"><?= htmlspecialchars($item['libelle_annee'] ?? 'En cours') ?></div>
-              <?php if (!empty($item['session_caisse_code'])): ?>
-                <div style="font-size: 11.5px; color: #1E3A5F; font-weight: 700; margin-top: 2px;">
-                  Caisse : <code><?= htmlspecialchars($item['session_caisse_code']) ?></code>
+        <!-- Tableau Financier / Opérations -->
+        <table class="fin-breakdown-table">
+          <thead>
+            <tr>
+              <th style="width: 24%; text-align: left;"></th>
+              <th style="width: 19%; text-align: center;">OP. DU JOUR</th>
+              <th style="width: 19%; text-align: center;">Total à payer</th>
+              <th style="width: 19%; text-align: center;">Total Versé</th>
+              <th style="width: 19%; text-align: center;">Reste à Payer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if ($isFirstPayment): ?>
+              <tr>
+                <td style="font-weight: bold;">SCOLARITE</td>
+                <td style="text-align: center; font-weight: bold;"><?= $opScolarite > 0 ? number_format($opScolarite, 0, '', ' ') . 'CFA' : '' ?></td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($scolarite, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($totalScolariteCumul, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">Droit d'Inscription</td>
+                <td style="text-align: center; font-weight: bold;"><?= $opDroit > 0 ? number_format($opDroit, 0, '', ' ') . 'CFA' : '' ?></td>
+                <td style="background: #FFFFFF;"></td>
+                <td style="text-align: center; font-weight: bold;"><?= $opDroit > 0 ? number_format($opDroit, 0, '', ' ') . 'CFA' : '' ?></td>
+                <td style="background: #FFFFFF;"></td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">AUTRES FRAIS</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            <?php else: ?>
+              <tr>
+                <td style="font-weight: bold;">SCOLARITE</td>
+                <td></td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($scolarite, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($totalScolariteCumul, 0, '', ' ') ?>CFA</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">Droit d'Inscription</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold;">Versement</td>
+                <td style="text-align: center; font-weight: bold;"><?= number_format($montantOpAfficher, 0, '', ' ') ?>CFA</td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            <?php endif; ?>
+            <tr class="fin-total-row">
+              <td style="font-weight: bold; background: #404040;">TOTAL</td>
+              <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($montantOpAfficher, 0, '', ' ') ?>CFA</td>
+              <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($scolarite, 0, '', ' ') ?>CFA</td>
+              <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($totalPayeCumul, 0, '', ' ') ?>CFA</td>
+              <td style="text-align: center; font-weight: bold; background: #404040;"><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Date du Prochain Paiement & Caissier -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <strong>Date du Prochain Payement :</strong> &nbsp;
+              <span style="background: #D1D5DB; color: #DC2626; font-weight: bold; padding: 4px 14px; border-radius: 4px; font-size: 14px; display: inline-block;">
+                <?= ($soldeRestant <= 0) ? 'SOLDÉ' : date('d/m/Y', strtotime('+30 days')) ?>
+              </span>
+            </td>
+            <td style="text-align: right; vertical-align: top;">
+              <div style="font-weight: bold; font-size: 13px; margin-top: 2px;">CAISSIER(RE)</div>
+              <div style="font-size: 12px; font-weight: 600;"><?= htmlspecialchars($caissierNom) ?></div>
+              <div style="display: inline-block; text-align: center; margin-top: 4px;">
+                <div style="line-height: 1;">
+                  <?= generatePicqerBarcodeHtml($barcodeCode, 32, 1.35) ?>
                 </div>
-              <?php endif; ?>
-            </div>
-          </div>
+                <div style="font-size: 10px; font-family: 'Courier New', Courier, monospace; font-weight: 700; letter-spacing: 1px; margin-top: 2px; color: #000000;">
+                  * <?= htmlspecialchars($barcodeCode) ?> *
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Encadré Jaune N.B. -->
+        <div class="yellow-nb-box">
+          N.B: - Aucun remboursement n'est admis après l'inscription.<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Les paiements se font uniquement chez la caissière
         </div>
 
-        <!-- Détails Financiers du Paiement -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Montant du Versement</span>
-            <div style="font-size: 26px; font-weight: 900; color: #15803D; margin-top: 4px;"><?= number_format($montant, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px; text-transform: uppercase;">Mode : <strong><?= htmlspecialchars($item['mode_paiement'] ?? 'Espèces') ?></strong></div>
-          </div>
-
-          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Total Cumulé Versé</span>
-            <div style="font-size: 20px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= number_format($totalPayeCumul, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Sur scolarité de <?= number_format($scolarite, 0, ',', ' ') ?> F</div>
-          </div>
-
-          <div style="background: <?= $soldeRestant > 0 ? '#FEF2F2' : '#F8FAFC' ?>; border: 1px solid <?= $soldeRestant > 0 ? '#FECACA' : '#E2E8F0' ?>; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: <?= $soldeRestant > 0 ? '#DC2626' : '#64748B' ?>; text-transform: uppercase;">Solde Restant à Payer</span>
-            <div style="font-size: 20px; font-weight: 800; color: <?= $soldeRestant > 0 ? '#DC2626' : '#15803D' ?>; margin-top: 4px;">
-              <?= $soldeRestant > 0 ? number_format($soldeRestant, 0, ',', ' ') . ' FCFA' : 'Scolarité Soldée' ?>
-            </div>
-          </div>
+        <!-- Pied de page Partie 1 -->
+        <div style="font-size: 11.5px; display: flex; justify-content: space-between; margin-top: 6px; font-style: italic;">
+          <div>Ce reçu est à conserver. Pour toute réclamation il doit être presenté.</div>
+          <div><?= htmlspecialchars($datePrint) ?></div>
         </div>
 
-        <!-- Tranche Rattachée au Paiement -->
-        <?php if (!empty($item['libelle_tranche']) || !empty($item['type_paiement'])): ?>
-        <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #92400E; text-transform: uppercase;">Tranche / Objet du Versement</span>
-            <div style="font-size: 15px; font-weight: 800; color: #78350F; margin-top: 2px;">
-              <i data-lucide="layers" style="width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px;"></i>
-              <?= htmlspecialchars($item['libelle_tranche'] ?? ($item['type_paiement'] ?? 'Règlement Scolarité')) ?>
-              <?php if (!empty($item['tranche_code'])): ?>
-                <code style="font-size: 11.5px; font-weight: 700; color: #92400E; margin-left: 6px;">(<?= htmlspecialchars($item['tranche_code']) ?>)</code>
-              <?php endif; ?>
-            </div>
-          </div>
-          <?php if (!empty($item['montant_tranche'])): ?>
-            <div style="text-align: right;">
-              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Montant Total Exigible Tranche</span>
-              <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 2px;"><?= number_format((float)$item['montant_tranche'], 0, ',', ' ') ?> FCFA</div>
-            </div>
-          <?php endif; ?>
+        <div style="font-size: 10px; font-family: monospace; margin-top: 4px; color: #475569;">
+          Réf_caiss <?= htmlspecialchars($refCaiss) ?>
         </div>
-        <?php endif; ?>
 
-        <!-- Référence, Caisse & Signature -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #E2E8F0;">
-          <div>
-            <div style="font-size: 12px; color: #64748B;">Opérateur de Caisse :</div>
-            <div style="font-size: 14px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars(($item['nom_caissier'] ?? '') . ' ' . ($item['prenom_caissier'] ?? 'Caisse Centrale')) ?></div>
-            <div style="font-size: 11px; color: #94A3B8; margin-top: 4px;">Référence transaction : <?= htmlspecialchars($item['reference_paiement'] ?? ($item['code_paiement'] ?? '-')) ?></div>
+        <!-- ========================================================================= -->
+        <!-- LIGNE DE SÉPARATION / DÉCOUPAGE DOTTED                                    -->
+        <!-- ========================================================================= -->
+        <div style="border-top: 2px dashed #000000; margin: 18px 0;"></div>
+
+        <!-- ========================================================================= -->
+        <!-- PARTIE 2 : COPIE REÇU POUR ARCHIVAGE                                      -->
+        <!-- ========================================================================= -->
+        
+        <!-- Bandeau Titre Copie Archivage -->
+        <div class="title-gray-banner" style="font-size: 16px;"><?= htmlspecialchars($copieRecuTitle) ?></div>
+
+        <!-- Année Académique -->
+        <div class="annee-academique-title">ANNEE ACADEMIQUE : <?= htmlspecialchars($anneeLibelle) ?></div>
+
+        <!-- Photo & Détails Copie Archivage -->
+        <div style="clear: both; margin-bottom: 10px;">
+          
+          <div class="student-photo-box">
+            <?php if (!empty($studentPhotoUrl)): ?>
+              <img src="<?= htmlspecialchars($studentPhotoUrl) ?>" alt="Photo de l'étudiant" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+            <?php else: ?>
+              <div style="text-align: center; color: #94A3B8;">
+                <span style="font-size: 24px; font-weight: 900; display: block;"><?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1)) ?></span>
+                <span style="font-size: 9px; font-weight: bold;">PHOTO</span>
+              </div>
+            <?php endif; ?>
           </div>
-          <div style="text-align: center;">
-            <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 50px;">Cachet & Signature de la Caisse</div>
-            <div style="font-size: 11px; color: #94A3B8; font-style: italic;">Pour acquit et validation</div>
-          </div>
+
+          <table class="info-grid-table">
+            <tr>
+              <td style="width: 55%; vertical-align: top;">
+                <strong>N° <?= htmlspecialchars($numRecu) ?></strong>
+              </td>
+              <td style="width: 45%; vertical-align: top; text-align: right; color: #64748B;">
+                <?= htmlspecialchars($datePaiement) ?>
+              </td>
+            </tr>
+            <tr>
+              <td>Numéro réf étudiant( e) : <strong><?= htmlspecialchars($matricule) ?></strong></td>
+              <td>Filière_Niveau : <strong><?= htmlspecialchars($filiereNiveau) ?></strong></td>
+            </tr>
+            <tr>
+              <td colspan="2">Nom_Prénom(s) : <strong><?= htmlspecialchars($nomComplet) ?></strong></td>
+            </tr>
+            <tr>
+              <td>Type d'Opération &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($typeOp) ?></span></td>
+              <td>
+                Banque : &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($item['mode_paiement_fmt'] ?? ($item['mode_paiement'] ?? 'CAISSE CENTRALE')) ?></span>
+                &nbsp;&nbsp;&nbsp;&nbsp; Reste à Payer &nbsp; <strong><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</strong>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding-top: 4px;">
+                Montant de l'Opération : <strong><?= number_format($montantOpAfficher, 0, '', ' ') ?>CFA</strong>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <span class="blue-text-words"><?= htmlspecialchars($montantEnLettres) ?></span>
+              </td>
+            </tr>
+          </table>
+
+        </div>
+
+        <!-- Date du Prochain Paiement & Caissier Copie Archivage -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <strong>Date du Prochain Payement :</strong> &nbsp;
+              <span style="background: #D1D5DB; color: #DC2626; font-weight: bold; padding: 4px 14px; border-radius: 4px; font-size: 14px; display: inline-block;">
+                <?= ($soldeRestant <= 0) ? 'SOLDÉ' : date('d/m/Y', strtotime('+30 days')) ?>
+              </span>
+            </td>
+            <td style="text-align: right; vertical-align: top;">
+              <div style="font-weight: bold; font-size: 13px; margin-top: 2px;">CAISSIER(RE)</div>
+              <div style="font-size: 12px; font-weight: 600;"><?= htmlspecialchars($caissierNom) ?></div>
+              <div style="display: inline-block; text-align: center; margin-top: 4px;">
+                <div style="line-height: 1;">
+                  <?= generatePicqerBarcodeHtml($barcodeCode, 32, 1.35) ?>
+                </div>
+                <div style="font-size: 10px; font-family: 'Courier New', Courier, monospace; font-weight: 700; letter-spacing: 1px; margin-top: 2px; color: #000000;">
+                  * <?= htmlspecialchars($barcodeCode) ?> *
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Pied de page Partie 2 -->
+        <div style="font-size: 10px; font-family: monospace; margin-top: 14px; display: flex; justify-content: space-between; color: #334155;">
+          <div>Réf_caiss <?= htmlspecialchars($refCaiss) ?></div>
+          <div><?= htmlspecialchars($datePrint) ?></div>
         </div>
 
       </div>
@@ -163,12 +446,8 @@ $soldeRestant = $soldeRestant ?? 0;
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons(); 
-  <?php if (isset($_GET['print'])): ?>
-    setTimeout(function() { window.print(); }, 400);
-  <?php endif; ?>
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/paiements.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

@@ -10,22 +10,28 @@ class EtablissementController extends BaseController
     private function getSingleItem()
     {
         $items = $this->model->getAll();
-        return !empty($items) ? $items[0] : [
+        $etab = !empty($items) ? $items[0] : [
             'id_etablissement' => 1,
             'libelle_etablissement' => 'Institut Supérieur GEICG',
             'numero_autorisation_etablissement' => '',
-            'telephone_etablissement' => '0708091011',
-            'telephone_etablissement2' => '0102030405',
-            'email_etablissement' => 'contact@geicg.ci',
-            'slogan_etablissement' => 'L\'Excellence au Service de l\'Avenir',
-            'adresse_etablissement' => 'Abidjan Cocody Angré 8ème Tranche',
+            'telephone_etablissement' => '',
+            'telephone_etablissement2' => '',
+            'email_etablissement' => '',
+            'slogan_etablissement' => '',
+            'adresse_etablissement' => '',
             'statut_etablissement' => 'actif'
         ];
+
+        $modelConfig = new ModelConfiguration();
+        $conf = $modelConfig->getConfig();
+
+        return array_merge($etab, $conf ?: []);
     }
 
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -33,6 +39,7 @@ class EtablissementController extends BaseController
     public function config()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -40,6 +47,7 @@ class EtablissementController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -47,6 +55,7 @@ class EtablissementController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -54,6 +63,7 @@ class EtablissementController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $this->loadView('../views/etablissements/config.php', ['item' => $item]);
     }
@@ -61,6 +71,7 @@ class EtablissementController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $item = $this->getSingleItem();
         $id = $item['id_etablissement'] ?? 1;
         $idCrypte = $this->validator->crypter($id);
@@ -71,6 +82,7 @@ class EtablissementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETABLISSEMENT);
         $id = (int)$this->post('id_etablissement');
         $data = $_POST;
         unset($data['csrf_token']);
@@ -92,50 +104,95 @@ class EtablissementController extends BaseController
             }
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE etablissements")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        // Configuration institutionnelle (table configurations) : MAJ ciblée des champs soumis
+        $modelConfig = new ModelConfiguration();
+        $allowedConfigFields = [
+            'nom_etablissement', 'sigle_etablissement', 'slogan_etablissement',
+            'numero_autorisation', 'ministere_tutelle', 'adresse_etablissement',
+            'boite_postale', 'ville_etablissement', 'pays_etablissement',
+            'telephone_fixe', 'telephone_mobile', 'telephone_mobile2',
+            'email_etablissement', 'site_web', 'titre_direction_pedagogique',
+            'nom_directeur_etudes', 'titre_direction_generale', 'nom_directeur_general',
+            'titre_service_finance', 'nom_responsable_finance', 'titre_service_scolarite',
+            'nom_responsable_scolarite', 'nom_secretaire_general', 'mention_cachet_signature',
+            'ville_signature', 'texte_pied_page', 'prefixe_reference', 'logo_etablissement'
+        ];
+
+        $configData = [];
+        foreach ($allowedConfigFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $configData[$field] = $data[$field];
+            }
+        }
+        if (!empty($configData)) {
+            $modelConfig->saveConfig($configData);
+        }
+
+        // Synchronisation des slugs et champs de base dans la table etablissements
+        if (isset($data['use_slug_filiere']) || isset($data['use_slug_cycle']) || isset($data['use_slug_niveau']) || isset($data['section_parametres'])) {
+            $data['use_slug_filiere'] = !empty($data['use_slug_filiere']) ? 1 : 0;
+            $data['use_slug_cycle'] = !empty($data['use_slug_cycle']) ? 1 : 0;
+            $data['use_slug_niveau'] = !empty($data['use_slug_niveau']) ? 1 : 0;
+        }
+
+        if (isset($configData['nom_etablissement'])) {
+            $data['libelle_etablissement'] = $configData['nom_etablissement'];
+        }
+        if (isset($configData['numero_autorisation'])) {
+            $data['numero_autorisation_etablissement'] = $configData['numero_autorisation'];
+        }
+        if (isset($configData['telephone_mobile'])) {
+            $data['telephone_etablissement'] = $configData['telephone_mobile'];
+        }
+        if (isset($configData['telephone_mobile2'])) {
+            $data['telephone_etablissement2'] = $configData['telephone_mobile2'];
+        }
+
+        $filteredData = $this->model->filterData($data);
 
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
         if ($id && $this->model->getById($id)) {
-            if ($this->model->update($filteredData, $id)) {
-                if ($isAjax) {
-                    $this->success('Configuration de l\'établissement mise à jour avec succès!');
-                } else {
-                    $_SESSION['flash_success'] = 'Configuration de l\'établissement mise à jour avec succès!';
-                    header('Location: ' . RACINE . 'etablissement/config');
-                    exit();
-                }
-            } else {
-                if ($isAjax) {
-                    $this->error('Erreur lors de la mise à jour de la configuration');
-                } else {
-                    $_SESSION['flash_error'] = 'Erreur lors de la mise à jour de la configuration';
-                    header('Location: ' . RACINE . 'etablissement/config');
-                    exit();
-                }
+            if (!empty($filteredData)) {
+                $this->model->update($filteredData, $id);
             }
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'etablissements',
+                $id,
+                "Mise à jour de la configuration de l'établissement: " . ($configData['nom_etablissement'] ?? ''),
+                ['id_etablissement' => $id, 'fields' => array_keys($data)]
+            );
         } else {
-            $filteredData['code_etablissement'] = $this->validator->generateCode('etablissements', 'code_etablissement', 'ETA-', 8);
-            $filteredData['statut_etablissement'] = 'actif';
+            $filteredData['code_etablissement'] = $this->validator->generateCode(TABLES::ETABLISSEMENTS, 'code_etablissement', 'ETA-', 8);
+            $filteredData['statut_etablissement'] = STATUTS::ACTIF;
             $filteredData['created_at_etablissement'] = date('Y-m-d H:i:s');
-            if ($this->model->create($filteredData)) {
-                if ($isAjax) {
-                    $this->success('Configuration enregistrée avec succès!');
-                } else {
-                    $_SESSION['flash_success'] = 'Configuration enregistrée avec succès!';
-                    header('Location: ' . RACINE . 'etablissement/config');
-                    exit();
-                }
-            } else {
-                if ($isAjax) {
-                    $this->error('Erreur lors de l\'enregistrement');
-                } else {
-                    $_SESSION['flash_error'] = 'Erreur lors de l\'enregistrement';
-                    header('Location: ' . RACINE . 'etablissement/config');
-                    exit();
-                }
-            }
+            $newId = $this->model->create($filteredData);
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'etablissements',
+                $newId,
+                "Création de l'établissement: " . ($configData['nom_etablissement'] ?? ''),
+                ['id_etablissement' => $newId, 'code' => $filteredData['code_etablissement']]
+            );
+        }
+
+        Session::remove('etablissement_config');
+
+        $sectionName = $this->post('section_name') ?: 'Configuration';
+        $message = "{$sectionName} enregistrée avec succès !";
+        $responseData = [
+            'section' => $this->post('section_id') ?? ''
+        ];
+        if (!empty($data['logo_etablissement'])) {
+            $responseData['logo_url'] = url($data['logo_etablissement']);
+        }
+
+        if ($isAjax) {
+            $this->success($message, $responseData);
+        } else {
+            Session::set('flash_success', $message);
+            redirect('etablissement/config');
         }
     }
 
@@ -148,6 +205,13 @@ class EtablissementController extends BaseController
         if ($id && $this->model->getById($id)) {
             $success = !empty($statut) ? $this->model->updateStatus($id, $statut, 'statut_etablissement') : $this->model->toggleStatus($id);
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'etablissements',
+                    $id,
+                    "Changement du statut de l'établissement ID #{$id}",
+                    ['id_etablissement' => $id, 'nouveau_statut' => $statut]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');

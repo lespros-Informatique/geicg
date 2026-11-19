@@ -15,7 +15,9 @@ $anneeController = new AnneeController();
 $classeController = new ClasseController();
 $semestreController = new SemestreController();
 $matiereController = new MatiereController();
+$maquetteController = new MaquetteController();
 $scolariteController = new ScolariteController();
+$fraisAnnexeController = new FraisAnnexeController();
 $trancheController = new TrancheController();
 $etudiantController = new EtudiantController();
 $parentController = new ParentController();
@@ -23,13 +25,15 @@ $inscriptionController = new InscriptionController();
 $accessoireController = new AccessoireController();
 $pieceFournirController = new PieceFournirController();
 $pieceFournirCycleController = new PieceFournirCycleController();
+$dossierEtudiantController = new DossierEtudiantController();
 $paiementController = new PaiementController();
+$caisseAnnexeController = new CaisseAnnexeController();
 $sessionCaisseController = new SessionCaisseController();
 $impayesController = new ImpayesController();
+$arriereController = new ArriereController();
 $typeDepenseController = new TypeDepenseController();
 $depenseController = new DepenseController();
 $enseignantController = new EnseignantController();
-$enseignantMatiereController = new EnseignantMatiereController();
 $emploiController = new EmploiController();
 $absenceController = new AbsenceController();
 $noteController = new NoteController();
@@ -40,6 +44,7 @@ $galerieController = new GalerieController();
 $documentController = new DocumentController();
 $roleController = new RoleController();
 $permissionController = new PermissionController();
+$auditController = new AuditController();
 
 
 // Route d'accueil & Authentification
@@ -57,6 +62,7 @@ $route->addRoute('/user/edit', [$userController, 'edit']);
 $route->addRoute('/user/changer', [$userController, 'changer']);
 $route->addRoute('/user/edition/{param}', [$userController, 'edition']);
 $route->addRoute('/user/details/{param}', [$userController, 'details']);
+$route->addRoute('/user/imprimerFichePdf/{param}', [$userController, 'imprimerFichePdf']);
 $route->addRoute('/user/formulaire', [$userController, 'formulaire']);
 
 // Routes pour les modules GEICG
@@ -113,6 +119,9 @@ $route->addRoute('/filiere_cycle/changer', [$filiereCycleController, 'changer'])
 $route->addRoute('/filiere_cycle/details/{param}', [$filiereCycleController, 'details']);
 $route->addRoute('/filiere_cycle/edition/{param}', [$filiereCycleController, 'edition']);
 $route->addRoute('/filiere_cycle/formulaire', [$filiereCycleController, 'formulaire']);
+$route->addRoute('/filiere_cycle/imprimerPdf', [$filiereCycleController, 'imprimerPdf']);
+$route->addRoute('/filiere/imprimerPdf', [$filiereController, 'imprimerPdf']);
+$route->addRoute('/filiere/imprimerCataloguePdf', [$filiereController, 'imprimerPdf']);
 
 // Module: niveau (NiveauController)
 $route->addRoute('/niveau/list', [$niveauController, 'list']);
@@ -134,6 +143,8 @@ $route->addRoute('/salle/changer', [$salleController, 'changer']);
 $route->addRoute('/salle/details/{param}', [$salleController, 'details']);
 $route->addRoute('/salle/edition/{param}', [$salleController, 'edition']);
 $route->addRoute('/salle/formulaire', [$salleController, 'formulaire']);
+$route->addRoute('/salle/imprimerPdf', [$salleController, 'imprimerPdf']);
+
 
 // Module: annee (AnneeController)
 $route->addRoute('/annee/list', [$anneeController, 'list']);
@@ -153,9 +164,14 @@ $route->addRoute('/classe/apiList', [$classeController, 'apiList']);
 $route->addRoute('/classe/add', [$classeController, 'add']);
 $route->addRoute('/classe/edit', [$classeController, 'edit']);
 $route->addRoute('/classe/changer', [$classeController, 'changer']);
+$route->addRoute('/classe/reconduire', [$classeController, 'reconduire']);
 $route->addRoute('/classe/details/{param}', [$classeController, 'details']);
 $route->addRoute('/classe/edition/{param}', [$classeController, 'edition']);
 $route->addRoute('/classe/formulaire', [$classeController, 'formulaire']);
+$route->addRoute('/classe/imprimerPdf', [$classeController, 'imprimerPdf']);
+$route->addRoute('/classe/imprimerListe/{param}', [$classeController, 'imprimerListe']);
+$route->addRoute('/classe/getClassesWithScolarite', [$classeController, 'getClassesWithScolarite']);
+$route->addRoute('/etudiant/getClassesWithScolarite', [$classeController, 'getClassesWithScolarite']);
 
 // Module: semestre (SemestreController)
 $route->addRoute('/semestre/list', [$semestreController, 'list']);
@@ -180,6 +196,17 @@ $route->addRoute('/matiere/details/{param}', [$matiereController, 'details']);
 $route->addRoute('/matiere/edition/{param}', [$matiereController, 'edition']);
 $route->addRoute('/matiere/formulaire', [$matiereController, 'formulaire']);
 
+// Module: maquette (MaquetteController)
+$route->addRoute('/maquette/list', [$maquetteController, 'list']);
+$route->addRoute('/maquette/apiList', [$maquetteController, 'apiList']);
+$route->addRoute('/maquette/apiGetMaquetteForFiliere', [$maquetteController, 'apiGetMaquetteForFiliere']);
+$route->addRoute('/maquette/add', [$maquetteController, 'add']);
+$route->addRoute('/maquette/edit', [$maquetteController, 'edit']);
+$route->addRoute('/maquette/changer', [$maquetteController, 'changer']);
+$route->addRoute('/maquette/delete', [$maquetteController, 'delete']);
+$route->addRoute('/maquette/dupliquer', [$maquetteController, 'dupliquer']);
+$route->addRoute('/maquette/imprimerPdf', [$maquetteController, 'imprimerPdf']);
+
 // Module: scolarite (ScolariteController)
 $route->addRoute('/scolarite/list', [$scolariteController, 'list']);
 $route->addRoute('/scolarite/apiList', [$scolariteController, 'apiList']);
@@ -189,6 +216,24 @@ $route->addRoute('/scolarite/changer', [$scolariteController, 'changer']);
 $route->addRoute('/scolarite/details/{param}', [$scolariteController, 'details']);
 $route->addRoute('/scolarite/edition/{param}', [$scolariteController, 'edition']);
 $route->addRoute('/scolarite/formulaire', [$scolariteController, 'formulaire']);
+$route->addRoute('/scolarite/imprimerPdf', [$scolariteController, 'imprimerPdf']);
+
+// Module: frais_annexe (FraisAnnexeController)
+$route->addRoute('/fraisAnnexe/list', [$fraisAnnexeController, 'list']);
+$route->addRoute('/frais_annexe/list', [$fraisAnnexeController, 'list']);
+$route->addRoute('/fraisAnnexe/apiList', [$fraisAnnexeController, 'apiList']);
+$route->addRoute('/frais_annexe/apiList', [$fraisAnnexeController, 'apiList']);
+$route->addRoute('/fraisAnnexe/store', [$fraisAnnexeController, 'store']);
+$route->addRoute('/frais_annexe/store', [$fraisAnnexeController, 'store']);
+$route->addRoute('/fraisAnnexe/add', [$fraisAnnexeController, 'store']);
+$route->addRoute('/fraisAnnexe/edit', [$fraisAnnexeController, 'edit']);
+$route->addRoute('/frais_annexe/edit', [$fraisAnnexeController, 'edit']);
+$route->addRoute('/fraisAnnexe/toggleStatut', [$fraisAnnexeController, 'toggleStatut']);
+$route->addRoute('/frais_annexe/toggleStatut', [$fraisAnnexeController, 'toggleStatut']);
+$route->addRoute('/fraisAnnexe/imprimerPdf', [$fraisAnnexeController, 'imprimerPdf']);
+$route->addRoute('/frais_annexe/imprimerPdf', [$fraisAnnexeController, 'imprimerPdf']);
+$route->addRoute('/fraisAnnexe/reconduire', [$fraisAnnexeController, 'reconduire']);
+$route->addRoute('/frais_annexe/reconduire', [$fraisAnnexeController, 'reconduire']);
 
 // Module: tranche (TrancheController)
 $route->addRoute('/tranche/list', [$trancheController, 'list']);
@@ -203,10 +248,14 @@ $route->addRoute('/tranche/formulaire', [$trancheController, 'formulaire']);
 // Module: etudiant (EtudiantController)
 $route->addRoute('/etudiant/list', [$etudiantController, 'list']);
 $route->addRoute('/etudiant/apiList', [$etudiantController, 'apiList']);
+$route->addRoute('/etudiant/imprimerPdf', [$etudiantController, 'imprimerPdf']);
+$route->addRoute('/etudiant/imprimerFichePdf/{param}', [$etudiantController, 'imprimerFichePdf']);
 $route->addRoute('/etudiant/add', [$etudiantController, 'add']);
 $route->addRoute('/etudiant/addWizard', [$etudiantController, 'addWizard']);
-$route->addRoute('/etudiant/edit', [$etudiantController, 'edit']);
 $route->addRoute('/etudiant/changer', [$etudiantController, 'changer']);
+$route->addRoute('/etudiant/changerClasse', [$etudiantController, 'changerClasse']);
+$route->addRoute('/etudiant/changerClasse/{param}', [$etudiantController, 'changerClassePage']);
+$route->addRoute('/etudiant/annulerInscription', [$etudiantController, 'annulerInscription']);
 $route->addRoute('/etudiant/details/{param}', [$etudiantController, 'details']);
 $route->addRoute('/etudiant/edition/{param}', [$etudiantController, 'edition']);
 $route->addRoute('/etudiant/formulaire', [$etudiantController, 'formulaire']);
@@ -224,6 +273,7 @@ $route->addRoute('/parent/formulaire', [$parentController, 'formulaire']);
 
 // Module: inscription (InscriptionController)
 $route->addRoute('/inscription/list', [$inscriptionController, 'list']);
+$route->addRoute('/reinscription/list', [$inscriptionController, 'list']);
 $route->addRoute('/inscription/apiList', [$inscriptionController, 'apiList']);
 $route->addRoute('/inscription/getStudentProfileSummary', [$inscriptionController, 'getStudentProfileSummary']);
 $route->addRoute('/inscription/getTuitionByClass', [$inscriptionController, 'getTuitionByClass']);
@@ -233,9 +283,39 @@ $route->addRoute('/inscription/changer', [$inscriptionController, 'changer']);
 $route->addRoute('/inscription/details/{param}', [$inscriptionController, 'details']);
 $route->addRoute('/inscription/edition/{param}', [$inscriptionController, 'edition']);
 $route->addRoute('/inscription/formulaire', [$inscriptionController, 'formulaire']);
+$route->addRoute('/inscription/sans_photo', [$inscriptionController, 'priseDeVue']);
+$route->addRoute('/inscription/prise_de_vue', [$inscriptionController, 'priseDeVue']);
+$route->addRoute('/inscription/apiSansPhoto', [$inscriptionController, 'apiPriseDeVue']);
+$route->addRoute('/inscription/apiPriseDeVue', [$inscriptionController, 'apiPriseDeVue']);
+$route->addRoute('/inscription/uploadPhoto', [$inscriptionController, 'uploadPhoto']);
+$route->addRoute('/inscription/imprimerPriseDeVuePdf', [$inscriptionController, 'imprimerPriseDeVuePdf']);
+$route->addRoute('/inscription/fiche', [$inscriptionController, 'imprimerFiche']);
+$route->addRoute('/inscription/fiche/{param}', [$inscriptionController, 'imprimerFiche']);
+$route->addRoute('/inscription/imprimerFichePdf/{param}', [$inscriptionController, 'imprimerFichePdf']);
+$route->addRoute('/inscription/imprimerPdf', [$inscriptionController, 'imprimerPdf']);
+$route->addRoute('/reinscription/imprimerPdf', [$inscriptionController, 'imprimerPdf']);
+$route->addRoute('/reinscription/formulaire', [$inscriptionController, 'formulaire']);
 
 // Module: accessoire (AccessoireController)
 $route->addRoute('/accessoire/list', [$accessoireController, 'list']);
+$route->addRoute('/accessoire/imprimerCataloguePdf', [$accessoireController, 'imprimerCataloguePdf']);
+$route->addRoute('/accessoire/imprimerCiblesPdf', [$accessoireController, 'imprimerCiblesPdf']);
+$route->addRoute('/accessoire/cibles', [$accessoireController, 'cibles']);
+$route->addRoute('/accessoire/apiCiblesList', [$accessoireController, 'apiCiblesList']);
+$route->addRoute('/accessoire/saveCible', [$accessoireController, 'saveCible']);
+$route->addRoute('/accessoire/reconduireCibles', [$accessoireController, 'reconduireCibles']);
+$route->addRoute('/accessoire/deleteCible', [$accessoireController, 'deleteCible']);
+$route->addRoute('/accessoire/changerCible', [$accessoireController, 'changerCible']);
+$route->addRoute('/accessoire/apiPivotByCycle', [$accessoireController, 'apiPivotByCycle']);
+$route->addRoute('/accessoire/delete', [$accessoireController, 'delete']);
+$route->addRoute('/accessoire/registre', [$accessoireController, 'registre']);
+$route->addRoute('/accessoire/imprimerPdf', [$accessoireController, 'imprimerPdf']);
+$route->addRoute('/accessoire/imprimerRegistrePdf', [$accessoireController, 'imprimerPdf']);
+$route->addRoute('/accessoire/imprimerBonPdf', [$accessoireController, 'imprimerBonPdf']);
+$route->addRoute('/accessoire_inscription/registre', [$accessoireController, 'registre']);
+$route->addRoute('/accessoire_inscription/imprimerPdf', [$accessoireController, 'imprimerPdf']);
+$route->addRoute('/accessoire_inscription/imprimerRegistrePdf', [$accessoireController, 'imprimerPdf']);
+$route->addRoute('/accessoire_inscription/imprimerBonPdf', [$accessoireController, 'imprimerBonPdf']);
 $route->addRoute('/accessoire/apiList', [$accessoireController, 'apiList']);
 $route->addRoute('/accessoire/apiDistributions', [$accessoireController, 'apiDistributions']);
 $route->addRoute('/accessoire/apiStats', [$accessoireController, 'apiStats']);
@@ -243,12 +323,21 @@ $route->addRoute('/accessoire/toggleRetrait', [$accessoireController, 'toggleRet
 $route->addRoute('/accessoire/toggleStudentAllKits', [$accessoireController, 'toggleStudentAllKits']);
 $route->addRoute('/accessoire/attribuerKit', [$accessoireController, 'attribuerKit']);
 $route->addRoute('/accessoire/getStudentKits', [$accessoireController, 'getStudentKits']);
+$route->addRoute('/accessoire/getBonRemiseData', [$accessoireController, 'getBonRemiseData']);
 $route->addRoute('/accessoire/add', [$accessoireController, 'add']);
 $route->addRoute('/accessoire/edit', [$accessoireController, 'edit']);
 $route->addRoute('/accessoire/changer', [$accessoireController, 'changer']);
 $route->addRoute('/accessoire/details/{param}', [$accessoireController, 'details']);
 $route->addRoute('/accessoire/edition/{param}', [$accessoireController, 'edition']);
 $route->addRoute('/accessoire/formulaire', [$accessoireController, 'formulaire']);
+
+// Module: dossier_etudiant (DossierEtudiantController)
+$route->addRoute('/dossier_etudiant/list', [$dossierEtudiantController, 'list']);
+$route->addRoute('/dossier_etudiant/apiList', [$dossierEtudiantController, 'apiList']);
+$route->addRoute('/dossier_etudiant/imprimerPdf', [$dossierEtudiantController, 'imprimerPdf']);
+$route->addRoute('/dossier_etudiant/saveStatut', [$dossierEtudiantController, 'saveStatut']);
+$route->addRoute('/dossier_etudiant/saveAll', [$dossierEtudiantController, 'saveAll']);
+$route->addRoute('/dossier_etudiant/getRecepisseData', [$dossierEtudiantController, 'getRecepisseData']);
 
 // Module: piece_fournir (PieceFournirController)
 $route->addRoute('/piece_fournir/list', [$pieceFournirController, 'list']);
@@ -274,14 +363,38 @@ $route->addRoute('/piece_fournir_cycle/formulaire', [$pieceFournirCycleControlle
 
 // Module: paiement (PaiementController)
 $route->addRoute('/paiement/list', [$paiementController, 'list']);
+$route->addRoute('/paiement/comptabilite_etudiants', [$paiementController, 'comptabiliteEtudiants']);
+$route->addRoute('/paiement/apiComptabiliteEtudiants', [$paiementController, 'apiComptabiliteEtudiants']);
 $route->addRoute('/paiement/apiList', [$paiementController, 'apiList']);
+$route->addRoute('/paiement/apiStats', [$paiementController, 'apiStats']);
 $route->addRoute('/paiement/getStudentFinancialSummary', [$paiementController, 'getStudentFinancialSummary']);
 $route->addRoute('/paiement/add', [$paiementController, 'add']);
 $route->addRoute('/paiement/edit', [$paiementController, 'edit']);
 $route->addRoute('/paiement/changer', [$paiementController, 'changer']);
+$route->addRoute('/paiement/annuler', [$paiementController, 'annuler']);
 $route->addRoute('/paiement/details/{param}', [$paiementController, 'details']);
+$route->addRoute('/paiement/recu/{param}', [$paiementController, 'recu']);
+$route->addRoute('/paiement/recu', [$paiementController, 'recu']);
+$route->addRoute('/paiement/imprimerPdf/{param}', [$paiementController, 'imprimerPdf']);
+$route->addRoute('/paiement/imprimerPdf', [$paiementController, 'imprimerPdf']);
+$route->addRoute('/paiement/imprimerComptabiliteEtudiants', [$paiementController, 'imprimerComptabiliteEtudiants']);
+$route->addRoute('/paiement/imprimerComptaPdf', [$paiementController, 'imprimerComptabiliteEtudiants']);
+$route->addRoute('/paiement/imprimerRegistre', [$paiementController, 'imprimerRegistreEncaissements']);
+$route->addRoute('/paiement/imprimerRegistreEncaissements', [$paiementController, 'imprimerRegistreEncaissements']);
+$route->addRoute('/paiement/imprimerBilanFinancier/{param}', [$paiementController, 'imprimerBilanFinancier']);
+$route->addRoute('/paiement/imprimerBilanFinancier', [$paiementController, 'imprimerBilanFinancier']);
 $route->addRoute('/paiement/edition/{param}', [$paiementController, 'edition']);
 $route->addRoute('/paiement/formulaire', [$paiementController, 'formulaire']);
+
+// Module: caisse_annexe (CaisseAnnexeController)
+$route->addRoute('/caisse_annexe', [$caisseAnnexeController, 'list']);
+$route->addRoute('/caisse_annexe/list', [$caisseAnnexeController, 'list']);
+$route->addRoute('/caisse_annexe/apiList', [$caisseAnnexeController, 'apiList']);
+$route->addRoute('/caisse_annexe/apiStats', [$caisseAnnexeController, 'apiStats']);
+$route->addRoute('/caisse_annexe/getStudentAnnexesSummary', [$caisseAnnexeController, 'getStudentAnnexesSummary']);
+$route->addRoute('/caisse_annexe/encaisser', [$caisseAnnexeController, 'encaisser']);
+$route->addRoute('/caisse_annexe/annuler', [$caisseAnnexeController, 'annuler']);
+$route->addRoute('/caisse_annexe/imprimerRegistre', [$caisseAnnexeController, 'imprimerRegistre']);
 
 // Module: session_caisse (SessionCaisseController)
 $route->addRoute('/session_caisse/list', [$sessionCaisseController, 'list']);
@@ -293,6 +406,7 @@ $route->addRoute('/session_caisse/cloturer', [$sessionCaisseController, 'cloture
 $route->addRoute('/session_caisse/cloturer/{param}', [$sessionCaisseController, 'cloturer']);
 $route->addRoute('/session_caisse/saveCloture', [$sessionCaisseController, 'saveCloture']);
 $route->addRoute('/session_caisse/details/{param}', [$sessionCaisseController, 'details']);
+$route->addRoute('/session_caisse/apiTransactions/{param}', [$sessionCaisseController, 'apiTransactions']);
 $route->addRoute('/session_caisse/edition/{param}', [$sessionCaisseController, 'edition']);
 $route->addRoute('/session_caisse/formulaire', [$sessionCaisseController, 'formulaire']);
 $route->addRoute('/session_caisse/getDailyTotals', [$sessionCaisseController, 'getDailyTotals']);
@@ -308,11 +422,23 @@ $route->addRoute('/cloture_caisse/formulaire', [$sessionCaisseController, 'clotu
 $route->addRoute('/impayes/list', [$impayesController, 'list']);
 $route->addRoute('/impayes/apiList', [$impayesController, 'apiList']);
 $route->addRoute('/impayes/add', [$impayesController, 'add']);
+$route->addRoute('/impayes/addGrouped', [$impayesController, 'addGrouped']);
 $route->addRoute('/impayes/edit', [$impayesController, 'edit']);
 $route->addRoute('/impayes/changer', [$impayesController, 'changer']);
 $route->addRoute('/impayes/details/{param}', [$impayesController, 'details']);
 $route->addRoute('/impayes/edition/{param}', [$impayesController, 'edition']);
 $route->addRoute('/impayes/formulaire', [$impayesController, 'formulaire']);
+$route->addRoute('/impayes/imprimerRappelPdf/{param}', [$impayesController, 'imprimerRappelPdf']);
+$route->addRoute('/impayes/imprimerRappelsMasse', [$impayesController, 'imprimerRappelsMasse']);
+$route->addRoute('/impayes/imprimerListeImpayes', [$impayesController, 'imprimerListeImpayes']);
+
+// Module: arriere (ArriereController)
+$route->addRoute('/arriere/list', [$arriereController, 'list']);
+$route->addRoute('/arriere/apiList', [$arriereController, 'apiList']);
+$route->addRoute('/arriere/apiStats', [$arriereController, 'apiStats']);
+$route->addRoute('/arriere/apiDetailEtudiant', [$arriereController, 'apiDetailEtudiant']);
+$route->addRoute('/arriere/enregistrerReglement', [$arriereController, 'enregistrerReglement']);
+$route->addRoute('/arriere/imprimerRecuArriere', [$arriereController, 'imprimerRecuArriere']);
 
 // Module: type_depense (TypeDepenseController)
 $route->addRoute('/type_depense/list', [$typeDepenseController, 'list']);
@@ -328,6 +454,8 @@ $route->addRoute('/type_depense/formulaire', [$typeDepenseController, 'formulair
 $route->addRoute('/depense/list', [$depenseController, 'list']);
 $route->addRoute('/depense/apiList', [$depenseController, 'apiList']);
 $route->addRoute('/depense/apiStats', [$depenseController, 'apiStats']);
+$route->addRoute('/depense/imprimerPdf', [$depenseController, 'imprimerPdf']);
+$route->addRoute('/depenses/imprimerPdf', [$depenseController, 'imprimerPdf']);
 $route->addRoute('/depense/add', [$depenseController, 'add']);
 $route->addRoute('/depense/edit', [$depenseController, 'edit']);
 $route->addRoute('/depense/changer', [$depenseController, 'changer']);
@@ -338,22 +466,16 @@ $route->addRoute('/depense/formulaire', [$depenseController, 'formulaire']);
 // Module: enseignant (EnseignantController)
 $route->addRoute('/enseignant/list', [$enseignantController, 'list']);
 $route->addRoute('/enseignant/apiList', [$enseignantController, 'apiList']);
+$route->addRoute('/enseignant/apiProgrammeJour', [$enseignantController, 'apiProgrammeJour']);
+$route->addRoute('/enseignant/imprimerPdf', [$enseignantController, 'imprimerPdf']);
+$route->addRoute('/enseignant/imprimerProgrammePdf', [$enseignantController, 'imprimerProgrammePdf']);
+$route->addRoute('/enseignant/imprimerFichePdf/{param}', [$enseignantController, 'imprimerFichePdf']);
 $route->addRoute('/enseignant/add', [$enseignantController, 'add']);
 $route->addRoute('/enseignant/edit', [$enseignantController, 'edit']);
 $route->addRoute('/enseignant/changer', [$enseignantController, 'changer']);
 $route->addRoute('/enseignant/details/{param}', [$enseignantController, 'details']);
 $route->addRoute('/enseignant/edition/{param}', [$enseignantController, 'edition']);
 $route->addRoute('/enseignant/formulaire', [$enseignantController, 'formulaire']);
-
-// Module: enseignant_matiere (EnseignantMatiereController)
-$route->addRoute('/enseignant_matiere/list', [$enseignantMatiereController, 'list']);
-$route->addRoute('/enseignant_matiere/apiList', [$enseignantMatiereController, 'apiList']);
-$route->addRoute('/enseignant_matiere/add', [$enseignantMatiereController, 'add']);
-$route->addRoute('/enseignant_matiere/edit', [$enseignantMatiereController, 'edit']);
-$route->addRoute('/enseignant_matiere/changer', [$enseignantMatiereController, 'changer']);
-$route->addRoute('/enseignant_matiere/details/{param}', [$enseignantMatiereController, 'details']);
-$route->addRoute('/enseignant_matiere/edition/{param}', [$enseignantMatiereController, 'edition']);
-$route->addRoute('/enseignant_matiere/formulaire', [$enseignantMatiereController, 'formulaire']);
 
 // Module: emploi (EmploiController)
 $route->addRoute('/emploi/list', [$emploiController, 'list']);
@@ -372,6 +494,7 @@ $route->addRoute('/emploi/delete', [$emploiController, 'delete']);
 $route->addRoute('/emploi/resetClasseSchedule', [$emploiController, 'resetClasseSchedule']);
 $route->addRoute('/emploi/getClassScheduleMatrix', [$emploiController, 'getClassScheduleMatrix']);
 $route->addRoute('/emploi/apiSlots', [$emploiController, 'apiSlots']);
+$route->addRoute('/emploi/imprimerPdf', [$emploiController, 'imprimerPdf']);
 
 
 
@@ -390,9 +513,14 @@ $route->addRoute('/absence/formulaire', [$absenceController, 'formulaire']);
 // Module: note (NoteController)
 $route->addRoute('/note/list', [$noteController, 'list']);
 $route->addRoute('/note/apiList', [$noteController, 'apiList']);
+$route->addRoute('/note/apiDetailsClasse', [$noteController, 'apiDetailsClasse']);
+$route->addRoute('/note/imprimerPdf', [$noteController, 'imprimerPdf']);
+$route->addRoute('/note/imprimerRegistrePdf', [$noteController, 'imprimerRegistrePdf']);
 $route->addRoute('/note/saisieClasse', [$noteController, 'saisieClasse']);
 $route->addRoute('/note/saveBatch', [$noteController, 'saveBatch']);
 $route->addRoute('/note/getStudentsByClasse', [$noteController, 'getStudentsByClasse']);
+$route->addRoute('/note/getMatieresByClasseApi', [$noteController, 'getMatieresByClasseApi']);
+$route->addRoute('/note/getGrilleAjax', [$noteController, 'getGrilleAjax']);
 $route->addRoute('/note/add', [$noteController, 'add']);
 $route->addRoute('/note/edit', [$noteController, 'edit']);
 $route->addRoute('/note/changer', [$noteController, 'changer']);
@@ -420,6 +548,7 @@ $route->addRoute('/composition/saveMatieresClasseApi', [$compositionController, 
 // Module: bulletin (BulletinController)
 $route->addRoute('/bulletin/list', [$bulletinController, 'list']);
 $route->addRoute('/bulletin/apiList', [$bulletinController, 'apiList']);
+$route->addRoute('/bulletin/imprimerRegistrePdf', [$bulletinController, 'imprimerRegistrePdf']);
 $route->addRoute('/bulletin/pvClasse', [$bulletinController, 'pvClasse']);
 $route->addRoute('/bulletin/pvClasse/{param}', [$bulletinController, 'pvClasse']);
 $route->addRoute('/bulletin/add', [$bulletinController, 'add']);
@@ -427,6 +556,10 @@ $route->addRoute('/bulletin/edit', [$bulletinController, 'edit']);
 $route->addRoute('/bulletin/changer', [$bulletinController, 'changer']);
 $route->addRoute('/bulletin/details/{param}', [$bulletinController, 'details']);
 $route->addRoute('/bulletin/edition/{param}', [$bulletinController, 'edition']);
+$route->addRoute('/bulletin/imprimerBulletinPdf/{param}', [$bulletinController, 'imprimerBulletinPdf']);
+$route->addRoute('/bulletin/imprimerClasseBulletinsPdf', [$bulletinController, 'imprimerClasseBulletinsPdf']);
+$route->addRoute('/bulletin/imprimerPvPdf/{param}', [$bulletinController, 'imprimerPvPdf']);
+$route->addRoute('/bulletin/imprimerPvPdf', [$bulletinController, 'imprimerPvPdf']);
 $route->addRoute('/bulletin/formulaire', [$bulletinController, 'formulaire']);
 
 // Module: evenement (EvenementController)
@@ -478,6 +611,11 @@ $route->addRoute('/permission/changer', [$permissionController, 'changer']);
 $route->addRoute('/permission/details/{param}', [$permissionController, 'details']);
 $route->addRoute('/permission/edition/{param}', [$permissionController, 'edition']);
 $route->addRoute('/permission/formulaire', [$permissionController, 'formulaire']);
+
+// Module: audit / logs (AuditController)
+$route->addRoute('/audit/list', [$auditController, 'list']);
+$route->addRoute('/audit/apiList', [$auditController, 'apiList']);
+$route->addRoute('/audit/imprimerPdf', [$auditController, 'imprimerPdf']);
 
 
 

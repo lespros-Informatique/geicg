@@ -10,12 +10,14 @@ class EvenementController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_EVENEMENTS, PERMISSIONS::MANAGE_EVENEMENTS]);
         $this->loadView('../views/evenements/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_EVENEMENTS, PERMISSIONS::MANAGE_EVENEMENTS]);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -33,19 +35,28 @@ class EvenementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $this->requirePermission(PERMISSIONS::MANAGE_EVENEMENTS);
+        $userCode = Auth::code() ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
         $data['statut_evenement'] = $data['statut_evenement'] ?? 'actif';
         $data['date_creation_evenement'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE evenements")->fetchAll(PDO::FETCH_COLUMN);
+        $cols = $this->model->getTableColumns();
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
-        if ($this->model->create($filteredData)) {
+        $filteredData = $this->model->filterData($data);
+        $newId = $this->model->create($filteredData);
+        if ($newId) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'evenements',
+                $newId,
+                "Création de l'événement: " . ($filteredData['titre_evenement'] ?? ''),
+                ['id_evenement' => $newId, 'titre' => $filteredData['titre_evenement'] ?? '', 'type' => $filteredData['type_evenement'] ?? '']
+            );
             $this->success('Item créé avec succès!');
         } else {
             $this->error('Erreur lors de la création');
@@ -56,13 +67,20 @@ class EvenementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EVENEMENTS);
         $id = (int)$this->post('id_evenement');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
-        $cols = $this->model->getCon()->query("DESCRIBE evenements")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'evenements',
+                $id,
+                "Modification de l'événement: " . ($filteredData['titre_evenement'] ?? "#{$id}"),
+                ['id_evenement' => $id, 'titre' => $filteredData['titre_evenement'] ?? '']
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -73,9 +91,17 @@ class EvenementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EVENEMENTS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'evenements',
+                    $id,
+                    "Changement du statut de l'événement ID #{$id}",
+                    ['id_evenement' => $id]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -88,13 +114,14 @@ class EvenementController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_EVENEMENTS, PERMISSIONS::MANAGE_EVENEMENTS]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'evenement/list'); exit(); }
+            if (!$item) { redirect('evenement/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'evenement/list'); exit();
+            redirect('evenement/list');
         }
         $this->loadView('../views/evenements/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -102,13 +129,14 @@ class EvenementController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EVENEMENTS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'evenement/list'); exit(); }
+            if (!$item) { redirect('evenement/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'evenement/list'); exit();
+            redirect('evenement/list');
         }
         $this->loadView('../views/evenements/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -116,6 +144,7 @@ class EvenementController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EVENEMENTS);
         $this->loadView('../views/evenements/edit.php', ['item' => []]);
     }
 }

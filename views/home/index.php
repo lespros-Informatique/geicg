@@ -2,25 +2,43 @@
 require_once __DIR__ . '/../../public/inc/header.php';
 
 $stats = $stats ?? [];
-$roleCode = $roleCode ?? ($_SESSION[USERS_AUTH]['role_code'] ?? 'ROLE_SUPERADMIN');
-$auth = $auth ?? ($_SESSION[USERS_AUTH] ?? []);
+$auth = $auth ?? (Auth::user() ?: []);
 $recentInscriptions = $recentInscriptions ?? [];
 $recentPaiements = $recentPaiements ?? [];
 $recentDepenses = $recentDepenses ?? [];
 $teacherCourses = $teacherCourses ?? [];
 
-$isAdminOrDG = in_array($roleCode, ['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
-$isPedagogie = in_array($roleCode, ['ROLE_DIR_ETUDES', 'ROLE_CHEF_DEP']);
-$isScolarite = ($roleCode === 'ROLE_SCOLARITE');
-$isFinance = in_array($roleCode, ['ROLE_COMPTABLE', 'ROLE_CAISSIER']);
-$isEnseignant = ($roleCode === 'ROLE_ENSEIGNANT');
-$isCommunication = ($roleCode === 'ROLE_COMMUNICATION');
-
-// Rôle par défaut si non reconnu = Administrateur / Global
-if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseignant && !$isCommunication) {
-    $isAdminOrDG = true;
+// Récupération dynamique des permissions utilisateur (100% RBAC - Basé uniquement sur les permissions)
+$rawPerms = Session::get('permissions', []);
+if (empty($rawPerms) && isset($auth['permissions']) && is_array($auth['permissions']) && !isset($auth['permissions']['create'])) {
+    $rawPerms = $auth['permissions'];
 }
+$userPermissions = is_array($rawPerms) ? $rawPerms : [];
+
+// Helper d'autorisation granulaire 100% basé sur les permissions
+$hasPerm = function(string $code) use ($userPermissions): bool {
+    return in_array('*', $userPermissions, true) || in_array($code, $userPermissions, true);
+};
+
+$isAdminOrDG = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_EXECUTIVE);
+$isFinance = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_FINANCE);
+$isPedagogie = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_PEDAGOGIE);
+$isScolarite = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_SCOLARITE);
+$isEnseignant = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_ENSEIGNANT);
+$isCommunication = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_COMMUNICATION);
+$canViewActions = $hasPerm(PERMISSIONS::VIEW_DASHBOARD_ACTIONS);
+
+$monthlyFinancials = $stats['monthly_financials'] ?? ['labels' => [], 'encaissements' => [], 'depenses' => []];
+$filieresDistribution = $stats['filieres_distribution'] ?? ['labels' => [], 'series' => []];
+$guichetAlerts = $stats['guichet_alerts'] ?? ['dossiers_incomplets' => 0, 'kits_en_attente' => 0];
+
+$caAttendu = (float)($stats['ca_attendu'] ?? 0);
+$caEncaisse = (float)($stats['ca_encaisse'] ?? 0);
+$tauxRecouvrement = ($caAttendu > 0) ? min(100, round(($caEncaisse / $caAttendu) * 100, 1)) : 0;
 ?>
+
+<!-- Include ApexCharts library for responsive interactive charts -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -29,291 +47,217 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
 
     <div class="content-wrapper" style="padding: 24px; width: 100%; box-sizing: border-box;">
       
-      <!-- HEADER DU TABLEAU DE BORD ADAPTÉ AU PROFIL -->
-      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+      <!-- ========================================================================= -->
+      <!-- BANNIÈRE HERO D'EN-TÊTE DU TABLEAU DE BORD                                -->
+      <!-- ========================================================================= -->
+      <div style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border-radius: 16px; padding: 24px 28px; color: #FFFFFF; margin-bottom: 24px; box-shadow: 0 10px 25px -5px rgba(30, 58, 95, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="layout-dashboard" style="color: #1E3A5F; width: 26px; height: 26px;"></i> 
-            <span>
-              <?php if ($isAdminOrDG): ?>
-                Tableau de Bord &bull; Direction & Administration
-              <?php elseif ($isPedagogie): ?>
-                Tableau de Bord &bull; Direction Pédagogique & Études
-              <?php elseif ($isScolarite): ?>
-                Tableau de Bord &bull; Service Scolarité & Admissions
-              <?php elseif ($isFinance): ?>
-                Tableau de Bord &bull; Finance, Caisse & Recouvrement
-              <?php elseif ($isEnseignant): ?>
-                Tableau de Bord &bull; Espace Enseignant / Formateur
-              <?php elseif ($isCommunication): ?>
-                Tableau de Bord &bull; Communication & Événements
-              <?php endif; ?>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <span style="background: rgba(255,255,255,0.15); font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+              GROUPE EICG
             </span>
+            <span style="font-size: 12px; color: #94A3B8;">&bull; <?= date('d/m/Y') ?></span>
+          </div>
+          <h1 style="font-size: 24px; font-weight: 900; margin: 0; color: #FFFFFF; letter-spacing: -0.5px;">
+            Bonjour, <?= htmlspecialchars($auth['prenom_user'] ?? ($auth['nom_user'] ?? 'Utilisateur')) ?> 👋
           </h1>
-          <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0; font-size: 13px;">
-            Année Académique Active : <strong><?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?></strong> &bull; Bienvenue, <strong><?= htmlspecialchars($auth['nom_user'] ?? 'Utilisateur') ?></strong>
+          <p style="color: #CBD5E1; font-size: 13.5px; margin: 6px 0 0 0;">
+            Bienvenue sur le système de gestion intégrée GEICG. 
           </p>
         </div>
 
-        <!-- ACTIONS RAPIDES D'EN-TÊTE -->
-        <div class="page-header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <?php if ($isAdminOrDG || $isScolarite): ?>
-            <a href="<?= RACINE ?>inscription/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
-              <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> Nouvelle Inscription
-            </a>
-          <?php endif; ?>
 
-          <?php if ($isAdminOrDG || $isFinance): ?>
-            <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #059669; border-color: #059669; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
-              <i data-lucide="credit-card" style="width: 16px; height: 16px;"></i> Encaisser Paiement
-            </a>
-            <a href="<?= RACINE ?>depense/formulaire" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #FFFFFF; border: 1px solid #DC2626; color: #DC2626; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
-              <i data-lucide="arrow-up-right" style="width: 16px; height: 16px;"></i> Saisir Dépense
-            </a>
-          <?php endif; ?>
-
-          <?php if ($isPedagogie || $isEnseignant): ?>
-            <a href="<?= RACINE ?>note/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
-              <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Saisie des Notes
-            </a>
-            <a href="<?= RACINE ?>absence/formulaire" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #D97706; border-color: #D97706; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
-              <i data-lucide="clock" style="width: 16px; height: 16px;"></i> Pointer Absences
-            </a>
-          <?php endif; ?>
-
-          <?php if ($isCommunication): ?>
-            <a href="<?= RACINE ?>actualite/formulaire" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
-              <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Nouvelle Actualité
-            </a>
-            <a href="<?= RACINE ?>evenement/formulaire" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; background: #7C3AED; border-color: #7C3AED; color: #FFFFFF; padding: 10px 16px; border-radius: 8px; text-decoration: none;">
-              <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> Ajouter Événement
-            </a>
-          <?php endif; ?>
-        </div>
       </div>
 
       <!-- ========================================================================= -->
-      <!-- SECTION 1 : KPI GRID ADAPTÉE STRICTEMENT AU RÔLE                          -->
+      <!-- BANDEAU D'ALERTES RAPIDES GUICHET & RECOUVREMENT                          -->
+      <!-- ========================================================================= -->
+      <?php if (($isAdminOrDG || $isScolarite || $isFinance) && ($guichetAlerts['dossiers_incomplets'] > 0 || $guichetAlerts['kits_en_attente'] > 0 || ($stats['reliquat_impayes'] ?? 0) > 0)): ?>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          
+          <?php if ($guichetAlerts['dossiers_incomplets'] > 0 && ($hasPerm(PERMISSIONS::MANAGE_DEPOT_DOSSIERS) || $isScolarite || $isAdminOrDG)): ?>
+            <a href="<?= url('dossier_etudiant/list') ?>" class="dash-card" style="text-decoration: none; border-left: 4px solid #EA580C; background: #FFF7ED; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: #FFEDD5; color: #C2410C; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="folder-x" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 800; color: #9A3412;"><?= $guichetAlerts['dossiers_incomplets'] ?> Dossier(s) Incomplet(s)</div>
+                  <div style="font-size: 11.5px; color: #C2410C;">Pièces requises en attente de dépôt</div>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: #C2410C;"></i>
+            </a>
+          <?php endif; ?>
+
+          <?php if ($guichetAlerts['kits_en_attente'] > 0 && ($hasPerm(PERMISSIONS::MANAGE_REMISE_KITS) || $isScolarite || $isAdminOrDG)): ?>
+            <a href="<?= url('accessoire_inscription/registre') ?>" class="dash-card" style="text-decoration: none; border-left: 4px solid #D97706; background: #FFFBEB; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="package-check" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 800; color: #92400E;"><?= $guichetAlerts['kits_en_attente'] ?> Kit(s) en Attente de Retrait</div>
+                  <div style="font-size: 11.5px; color: #B45309;">Fournitures attribuées à émarger</div>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: #B45309;"></i>
+            </a>
+          <?php endif; ?>
+
+          <?php if (($stats['reliquat_impayes'] ?? 0) > 0 && ($hasPerm(PERMISSIONS::MANAGE_IMPAYES) || $isFinance || $isAdminOrDG)): ?>
+            <a href="<?= url('impayes/list') ?>" class="dash-card" style="text-decoration: none; border-left: 4px solid #DC2626; background: #FEF2F2; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEE2E2; color: #991B1B; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 800; color: #991B1B;">Reliquat Scolarités à Recouvrer</div>
+                  <div style="font-size: 11.5px; color: #B91C1C;"><?= number_format($stats['reliquat_impayes'], 0, ',', ' ') ?> FCFA restant</div>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" style="width: 18px; height: 18px; color: #B91C1C;"></i>
+            </a>
+          <?php endif; ?>
+
+        </div>
+      <?php endif; ?>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 1 : KPI GRID ADAPTÉE STRICTEMENT AU PROFIL RBAC                   -->
       <!-- ========================================================================= -->
       
       <?php if ($isAdminOrDG): ?>
         <!-- KPI GRID : DIRECTION GÉNÉRALE & SUPERADMIN -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <!-- KPI 1 : Effectif Étudiants -->
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Inscrits Actifs</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="users" style="width: 20px; height: 20px;"></i>
-              </div>
-            </div>
-            <div style="font-size: 26px; font-weight: 800; color: #0F172A; line-height: 1;">
-              <?= number_format($stats['total_etudiants'] ?? 0, 0, ',', ' ') ?>
-            </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
-              <?= (int)($stats['total_classes'] ?? 0) ?> Classes ouvertes
-            </div>
-          </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
 
-          <!-- KPI 2 : Caisse Encaissée -->
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <!-- Recouvrement Scolarité -->
+          <div class="dash-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Recouvrement Caisse</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Recouvrement Scolarité</span>
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;">
                 <i data-lucide="wallet" style="width: 20px; height: 20px;"></i>
               </div>
             </div>
-            <div style="font-size: 22px; font-weight: 800; color: #047857; line-height: 1;">
-              <?= number_format($stats['ca_encaisse'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+            <div style="font-size: 22px; font-weight: 900; color: #047857; line-height: 1;">
+              <?= number_format($stats['ca_encaisse_scolarite'] ?? $stats['ca_encaisse'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 11px;">FCFA</span>
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
-              Sur <?= number_format($stats['ca_attendu'] ?? 0, 0, ',', ' ') ?> attendus
+            <div style="margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 3px;">
+                <span>Taux de recouvrement</span>
+                <span><?= $tauxRecouvrement ?>%</span>
+              </div>
+              <div style="height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden;">
+                <div style="height: 100%; width: <?= $tauxRecouvrement ?>%; background: #047857; border-radius: 3px;"></div>
+              </div>
             </div>
           </div>
 
-          <!-- KPI 3 : Dépenses Engagées -->
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <!-- Reliquat Scolarité -->
+          <a href="<?= url('impayes/list') ?>" class="dash-card" style="text-decoration: none; display: block; border-left: 4px solid #DC2626;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Dépenses & Charges</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Impayés Scolarité</span>
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+              </div>
+            </div>
+            <div style="font-size: 22px; font-weight: 900; color: #DC2626; line-height: 1;">
+              <?= number_format($stats['reliquat_impayes'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 11px;">FCFA</span>
+            </div>
+            <div style="font-size: 12px; color: #DC2626; margin-top: 8px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+              <span>Reste à recouvrer</span>
+              <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+            </div>
+          </a>
+
+          <!-- Dépenses Engagées -->
+          <div class="dash-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Dépenses Engagées</span>
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center;">
                 <i data-lucide="arrow-up-right" style="width: 20px; height: 20px;"></i>
               </div>
             </div>
-            <div style="font-size: 22px; font-weight: 800; color: #DC2626; line-height: 1;">
-              <?= number_format($stats['total_depenses'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+            <div style="font-size: 22px; font-weight: 900; color: #DC2626; line-height: 1;">
+              <?= number_format($stats['total_depenses'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 11px;">FCFA</span>
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
-              Décaissements de l'année
+            <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
+              Total décaissements validés
             </div>
           </div>
 
-          <!-- KPI 4 : Solde Net -->
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <!-- Solde Net Financial -->
+          <div class="dash-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Solde Net Caisse</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #F8FAFC; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Solde Net Trésorerie</span>
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #F8FAFC; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
                 <i data-lucide="scale" style="width: 20px; height: 20px;"></i>
               </div>
             </div>
-            <div style="font-size: 22px; font-weight: 800; color: <?= ($stats['solde_net'] ?? 0) >= 0 ? '#15803D' : '#DC2626' ?>; line-height: 1;">
-              <?= number_format($stats['solde_net'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+            <div style="font-size: 22px; font-weight: 900; color: <?= ($stats['solde_net'] ?? 0) >= 0 ? '#15803D' : '#DC2626' ?>; line-height: 1;">
+              <?= number_format($stats['solde_net'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 11px;">FCFA</span>
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
-              Recettes &minus; Dépenses
-            </div>
-          </div>
-
-          <!-- KPI 5 : Reliquat Impayés -->
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Reliquat Scolarité</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
-              </div>
-            </div>
-            <div style="font-size: 22px; font-weight: 800; color: #D97706; line-height: 1;">
-              <?= number_format($stats['reliquat_impayes'] ?? 0, 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
-            </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
-              Reste à recouvrer
-            </div>
-          </div>
-
-          <!-- KPI 6 : Personnel Enseignant -->
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Corps Enseignant</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i>
-              </div>
-            </div>
-            <div style="font-size: 26px; font-weight: 800; color: #7E22CE; line-height: 1;">
-              <?= (int)($stats['total_enseignants'] ?? 0) ?>
-            </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 6px;">
-              <?= (int)($stats['total_matieres'] ?? 0) ?> Matières au programme
+            <div style="font-size: 12px; color: #64748B; margin-top: 8px;">
+              Scolarité Encaissée &minus; Dépenses
             </div>
           </div>
         </div>
 
-      <?php elseif ($isPedagogie): ?>
-        <!-- KPI GRID : DIRECTION PÉDAGOGIQUE -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classes Actives</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="layout-grid"></i></div>
-            </div>
-            <div style="font-size: 28px; font-weight: 800; color: #0F172A;"><?= (int)($stats['total_classes'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Promotions configurées</div>
-          </div>
-
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Effectif Étudiants</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="users"></i></div>
-            </div>
-            <div style="font-size: 28px; font-weight: 800; color: #047857;"><?= number_format($stats['total_etudiants'] ?? 0, 0, ',', ' ') ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Apprenants inscrits</div>
-          </div>
-
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Enseignants</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="graduation-cap"></i></div>
-            </div>
-            <div style="font-size: 28px; font-weight: 800; color: #7E22CE;"><?= (int)($stats['total_enseignants'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Professeurs actifs</div>
-          </div>
-
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Matières / Cours</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="book-open"></i></div>
-            </div>
-            <div style="font-size: 28px; font-weight: 800; color: #D97706;"><?= (int)($stats['total_matieres'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Modules au catalogue</div>
-          </div>
-
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Notes Saisies</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #F0FDF4; color: #16A34A; display: flex; align-items: center; justify-content: center;"><i data-lucide="check-square"></i></div>
-            </div>
-            <div style="font-size: 28px; font-weight: 800; color: #16A34A;"><?= (int)($stats['total_notes'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Évaluations validées</div>
-          </div>
-
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Salles de Cours</span>
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: #F8FAFC; color: #475569; display: flex; align-items: center; justify-content: center;"><i data-lucide="door-open"></i></div>
-            </div>
-            <div style="font-size: 28px; font-weight: 800; color: #475569;"><?= (int)($stats['total_salles'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Salles disponibles</div>
-          </div>
-        </div>
 
       <?php elseif ($isFinance): ?>
         <!-- KPI GRID : COMPTABILITÉ & CAISSE -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Caisse Encaissée</span>
-            <div style="font-size: 24px; font-weight: 800; color: #047857; margin-top: 8px;"><?= number_format($stats['ca_encaisse'] ?? 0, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Règlements validés</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Scolarité Encaissée</span>
+            <div style="font-size: 24px; font-weight: 900; color: #047857; margin-top: 8px;"><?= number_format($stats['ca_encaisse_scolarite'] ?? $stats['ca_encaisse'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Règlements scolarité</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Scolarité Attendue</span>
-            <div style="font-size: 24px; font-weight: 800; color: #1E3A5F; margin-top: 8px;"><?= number_format($stats['ca_attendu'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Scolarité Attendue</span>
+            <div style="font-size: 24px; font-weight: 900; color: #1E3A5F; margin-top: 8px;"><?= number_format($stats['ca_attendu'] ?? 0, 0, ',', ' ') ?> FCFA</div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Montant global annuel</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Reliquat des Impayés</span>
-            <div style="font-size: 24px; font-weight: 800; color: #DC2626; margin-top: 8px;"><?= number_format($stats['reliquat_impayes'] ?? 0, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Reste à recouvrer</div>
-          </div>
+          <a href="<?= url('impayes/list') ?>" class="dash-card" style="text-decoration: none; display: block; border-left: 4px solid #DC2626;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Reliquat Scolarité</span>
+            <div style="font-size: 24px; font-weight: 900; color: #DC2626; margin-top: 8px;"><?= number_format($stats['reliquat_impayes'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+            <div style="font-size: 12px; color: #DC2626; margin-top: 4px; font-weight: 600;">Reste à recouvrer &rarr;</div>
+          </a>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Total Décaissements</span>
-            <div style="font-size: 24px; font-weight: 800; color: #B91C1C; margin-top: 8px;"><?= number_format($stats['total_depenses'] ?? 0, 0, ',', ' ') ?> FCFA</div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Dépenses enregistrées</div>
-          </div>
-
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Solde Net</span>
-            <div style="font-size: 24px; font-weight: 800; color: <?= ($stats['solde_net'] ?? 0) >= 0 ? '#15803D' : '#DC2626' ?>; margin-top: 8px;">
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Solde Net Trésorerie</span>
+            <div style="font-size: 24px; font-weight: 900; color: <?= ($stats['solde_net'] ?? 0) >= 0 ? '#15803D' : '#DC2626' ?>; margin-top: 8px;">
               <?= number_format($stats['solde_net'] ?? 0, 0, ',', ' ') ?> FCFA
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Position financière nette</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Scolarité Encaissée &minus; Dépenses</div>
           </div>
         </div>
 
       <?php elseif ($isScolarite): ?>
         <!-- KPI GRID : SCOLARITÉ & ADMISSIONS -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Inscriptions Validées</span>
-            <div style="font-size: 28px; font-weight: 800; color: #1E3A5F; margin-top: 6px;"><?= number_format($stats['total_etudiants'] ?? 0, 0, ',', ' ') ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Dossiers actifs</div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Inscriptions Validées</span>
+            <div style="font-size: 26px; font-weight: 900; color: #1E3A5F; margin-top: 6px;"><?= number_format($stats['total_etudiants'] ?? 0, 0, ',', ' ') ?></div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Dossiers d'élèves actifs</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classes Ouvertes</span>
-            <div style="font-size: 28px; font-weight: 800; color: #047857; margin-top: 6px;"><?= (int)($stats['total_classes'] ?? 0) ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Promotions actives</div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Classes Ouvertes</span>
+            <div style="font-size: 26px; font-weight: 900; color: #047857; margin-top: 6px;"><?= (int)($stats['total_classes'] ?? 0) ?></div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Classes actives</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Absences Signalées</span>
-            <div style="font-size: 28px; font-weight: 800; color: #D97706; margin-top: 6px;"><?= (int)($stats['total_absences'] ?? 0) ?></div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Absences Signalées</span>
+            <div style="font-size: 26px; font-weight: 900; color: #D97706; margin-top: 6px;"><?= (int)($stats['total_absences'] ?? 0) ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Heures d'absence</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Reliquat Scolarité</span>
-            <div style="font-size: 22px; font-weight: 800; color: #DC2626; margin-top: 6px;"><?= number_format($stats['reliquat_impayes'] ?? 0, 0, ',', ' ') ?> FCFA</div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Reliquat Scolarité</span>
+            <div style="font-size: 22px; font-weight: 900; color: #DC2626; margin-top: 6px;"><?= number_format($stats['reliquat_impayes'] ?? 0, 0, ',', ' ') ?> FCFA</div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">À relancer</div>
           </div>
         </div>
@@ -321,27 +265,27 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
       <?php elseif ($isEnseignant): ?>
         <!-- KPI GRID : ENSEIGNANT / FORMATEUR -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Mes Cours & Matières</span>
-            <div style="font-size: 28px; font-weight: 800; color: #1E3A5F; margin-top: 6px;"><?= (int)($stats['teacher_courses'] ?? count($teacherCourses)) ?></div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Mes Cours & Matières</span>
+            <div style="font-size: 26px; font-weight: 900; color: #1E3A5F; margin-top: 6px;"><?= (int)($stats['teacher_courses'] ?? count($teacherCourses)) ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Affectations actives</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Mes Classes Attribuées</span>
-            <div style="font-size: 28px; font-weight: 800; color: #047857; margin-top: 6px;"><?= (int)($stats['teacher_classes'] ?? 0) ?></div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Mes Classes Attribuées</span>
+            <div style="font-size: 26px; font-weight: 900; color: #047857; margin-top: 6px;"><?= (int)($stats['teacher_classes'] ?? 0) ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Groupes / Niveaux</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Notes Enregistrées</span>
-            <div style="font-size: 28px; font-weight: 800; color: #7E22CE; margin-top: 6px;"><?= (int)($stats['total_notes'] ?? 0) ?></div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Notes Enregistrées</span>
+            <div style="font-size: 26px; font-weight: 900; color: #7E22CE; margin-top: 6px;"><?= (int)($stats['total_notes'] ?? 0) ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Saisies dans le système</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Salles & Équipements</span>
-            <div style="font-size: 28px; font-weight: 800; color: #475569; margin-top: 6px;"><?= (int)($stats['total_salles'] ?? 0) ?></div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Salles Disponibles</span>
+            <div style="font-size: 26px; font-weight: 900; color: #475569; margin-top: 6px;"><?= (int)($stats['total_salles'] ?? 0) ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Espaces pédagogiques</div>
           </div>
         </div>
@@ -349,218 +293,542 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
       <?php elseif ($isCommunication): ?>
         <!-- KPI GRID : COMMUNICATION & ÉVÉNEMENTS -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Articles & Actualités</span>
-            <div style="font-size: 28px; font-weight: 800; color: #1E3A5F; margin-top: 6px;"><?= (int)($stats['total_actualites'] ?? 0) ?></div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Articles & Actualités</span>
+            <div style="font-size: 26px; font-weight: 900; color: #1E3A5F; margin-top: 6px;"><?= (int)($stats['total_actualites'] ?? 0) ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Publications actives</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Événements</span>
-            <div style="font-size: 28px; font-weight: 800; color: #7E22CE; margin-top: 6px;"><?= (int)($stats['total_evenements'] ?? 0) ?></div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Événements</span>
+            <div style="font-size: 26px; font-weight: 900; color: #7E22CE; margin-top: 6px;"><?= (int)($stats['total_evenements'] ?? 0) ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Planifiés / à venir</div>
           </div>
 
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px;">
-            <span style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase;">Documents & Médias</span>
-            <div style="font-size: 28px; font-weight: 800; color: #047857; margin-top: 6px;"><?= (int)($stats['total_documents'] ?? 0) ?></div>
+          <div class="dash-card">
+            <span style="font-size: 11.5px; font-weight: 800; color: #64748B; text-transform: uppercase;">Documents & Médias</span>
+            <div style="font-size: 26px; font-weight: 900; color: #047857; margin-top: 6px;"><?= (int)($stats['total_documents'] ?? 0) ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 4px;">Fichiers partagés</div>
           </div>
         </div>
       <?php endif; ?>
 
       <!-- ========================================================================= -->
-      <!-- SECTION 2 : RACCOURCIS D'ACTIONS SELON LE RÔLE                           -->
+      <!-- SECTION 2 : GRAPHIQUES D'ANALYSE DÉCISIONNELLE (APEXCHARTS)                -->
       <!-- ========================================================================= -->
-      <div style="margin-bottom: 24px;">
-        <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="zap" style="color: #1E3A5F; width: 18px; height: 18px;"></i> Modules & Raccourcis Rapides
-        </h3>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
-          <?php if ($isAdminOrDG): ?>
-            <a href="<?= RACINE ?>inscription/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                <i data-lucide="user-check"></i>
-              </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; margin-bottom: 24px;">
+        
+        <!-- Graphique 1 : Évolution Mensuelle Financière -->
+        <?php if ($isAdminOrDG || $isFinance): ?>
+          <div class="dash-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
               <div>
-                <strong style="color: #1E293B; font-size: 13px; display: block;">Inscriptions</strong>
-                <small style="color: #64748B;">Registre annuel</small>
+                <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="trending-up" style="width: 20px; height: 20px; color: #047857;"></i> Flux de Trésorerie Mensuel
+                </h3>
+                <span style="font-size: 12px; color: #64748B;">Recouvrements de Scolarité vs Dépenses (FCFA)</span>
               </div>
-            </a>
+            </div>
+            <div id="chart-financial-flux" style="min-height: 290px;"></div>
+          </div>
+        <?php endif; ?>
 
-            <a href="<?= RACINE ?>paiement/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                <i data-lucide="wallet"></i>
-              </div>
-              <div>
-                <strong style="color: #1E293B; font-size: 13px; display: block;">Caisse & Règlements</strong>
-                <small style="color: #64748B;">Suivi des reçus</small>
-              </div>
-            </a>
 
-            <a href="<?= RACINE ?>depense/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                <i data-lucide="arrow-up-right"></i>
-              </div>
-              <div>
-                <strong style="color: #1E293B; font-size: 13px; display: block;">Dépenses</strong>
-                <small style="color: #64748B;">Engagements & charges</small>
-              </div>
-            </a>
-
-            <a href="<?= RACINE ?>classe/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #F8FAFC; color: #1E3A5F; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                <i data-lucide="layout-grid"></i>
-              </div>
-              <div>
-                <strong style="color: #1E293B; font-size: 13px; display: block;">Classes & Niveaux</strong>
-                <small style="color: #64748B;">Structure pédagogique</small>
-              </div>
-            </a>
-
-            <a href="<?= RACINE ?>user/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                <i data-lucide="users"></i>
-              </div>
-              <div>
-                <strong style="color: #1E293B; font-size: 13px; display: block;">Utilisateurs & Rôles</strong>
-                <small style="color: #64748B;">Comptes & habilitations</small>
-              </div>
-            </a>
-
-            <a href="<?= RACINE ?>annee/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                <i data-lucide="calendar"></i>
-              </div>
-              <div>
-                <strong style="color: #1E293B; font-size: 13px; display: block;">Années Académiques</strong>
-                <small style="color: #64748B;">Sessions & semestres</small>
-              </div>
-            </a>
-
-          <?php elseif ($isPedagogie): ?>
-            <a href="<?= RACINE ?>classe/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="layout-grid"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Classes</strong><small style="color: #64748B;">Effectifs & promotions</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>composition/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="award"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Planning Compositions & Examens</strong><small style="color: #64748B;">Compositions, devoirs & coefficients</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>note/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="edit-3"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Notes & Évaluations</strong><small style="color: #64748B;">Contrôles & examens</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>bulletin/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="award"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Bulletins & Moyennes</strong><small style="color: #64748B;">Délibérations</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>emploi_temps/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #F8FAFC; color: #1E3A5F; display: flex; align-items: center; justify-content: center;"><i data-lucide="calendar"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Emploi du Temps</strong><small style="color: #64748B;">Plannings & créneaux</small></div>
-            </a>
-
-          <?php elseif ($isFinance): ?>
-            <a href="<?= RACINE ?>paiement/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="credit-card"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Journal Caisse</strong><small style="color: #64748B;">Encaissements</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>scolarite/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="layers"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Grille Scolarité</strong><small style="color: #64748B;">Montants par filière</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>depense/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FEF2F2; color: #DC2626; display: flex; align-items: center; justify-content: center;"><i data-lucide="arrow-up-right"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Dépenses</strong><small style="color: #64748B;">Décaissements</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>cloture_caisse/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="lock"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Clôtures de Caisse</strong><small style="color: #64748B;">Arrêtés journaliers</small></div>
-            </a>
-
-          <?php elseif ($isScolarite): ?>
-            <a href="<?= RACINE ?>inscription/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="user-plus"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Inscriptions</strong><small style="color: #64748B;">Registre & admissions</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>etudiant/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="users"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Fiches Étudiants</strong><small style="color: #64748B;">Dossiers & matricules</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>badge_etudiant/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="credit-card"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Cartes / Badges</strong><small style="color: #64748B;">Impression des cartes</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>absence/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="clock"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Suivi des Absences</strong><small style="color: #64748B;">Pointage d'assiduité</small></div>
-            </a>
-
-          <?php elseif ($isEnseignant): ?>
-            <a href="<?= RACINE ?>note/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="edit-3"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Mes Notes Saisies</strong><small style="color: #64748B;">Contrôles continus & TPs</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>absence/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="user-x"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Appel & Absences</strong><small style="color: #64748B;">Pointage par cours</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>emploi_temps/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="calendar"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Mon Emploi du Temps</strong><small style="color: #64748B;">Créneaux de la semaine</small></div>
-            </a>
-
-          <?php elseif ($isCommunication): ?>
-            <a href="<?= RACINE ?>actualite/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;"><i data-lucide="newspaper"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Actualités</strong><small style="color: #64748B;">Articles du portail</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>evenement/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FAF5FF; color: #7E22CE; display: flex; align-items: center; justify-content: center;"><i data-lucide="calendar"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Événements</strong><small style="color: #64748B;">Agenda académique</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>document/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #ECFDF5; color: #047857; display: flex; align-items: center; justify-content: center;"><i data-lucide="file-text"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Documents</strong><small style="color: #64748B;">Téléchargements publics</small></div>
-            </a>
-
-            <a href="<?= RACINE ?>galerie/list" class="card" style="margin: 0; padding: 16px; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; border: 1px solid #E2E8F0;">
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;"><i data-lucide="image"></i></div>
-              <div><strong style="color: #1E293B; font-size: 13px; display: block;">Galerie Photos</strong><small style="color: #64748B;">Albums & médias</small></div>
-            </a>
-          <?php endif; ?>
-        </div>
       </div>
 
       <!-- ========================================================================= -->
-      <!-- SECTION 3 : TABLEAUX & ACTIVITÉS RÉCENTES (FILTRÉS SELON LE RÔLE)        -->
+      <!-- SECTION 3 : PANORAMA & CARDS DES MODULES APPLICATIFS PAR GROUPES          -->
       <!-- ========================================================================= -->
-      
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 20px;">
-        
-        <!-- TABLEAU 1 : Inscriptions Récentes (Visible par Admin, DG, Scolarité, Pédagogie) -->
-        <?php if ($isAdminOrDG || $isScolarite || $isPedagogie): ?>
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
-              <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="user-plus" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Dernières Inscriptions
+      <?php if ($canViewActions): ?>
+        <?php
+          $canGroup1 = $hasPerm(PERMISSIONS::VIEW_INSCRIPTIONS) || $hasPerm(PERMISSIONS::MANAGE_INSCRIPTIONS) || $hasPerm(PERMISSIONS::MANAGE_DEPOT_DOSSIERS) || $hasPerm(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || $hasPerm(PERMISSIONS::MANAGE_REMISE_KITS) || $hasPerm(PERMISSIONS::VIEW_REMISE_KITS) || $hasPerm(PERMISSIONS::MANAGE_ACCESSOIRES) || $hasPerm(PERMISSIONS::VIEW_ETUDIANTS) || $hasPerm(PERMISSIONS::MANAGE_ETUDIANTS);
+          $canGroup2 = $hasPerm(PERMISSIONS::VIEW_PAIEMENTS) || $hasPerm(PERMISSIONS::RECORD_PAIEMENTS) || $hasPerm(PERMISSIONS::OUVERTURE_CAISSE) || $hasPerm(PERMISSIONS::CLOTURE_CAISSE) || $hasPerm(PERMISSIONS::MANAGE_CAISSE) || $hasPerm(PERMISSIONS::MANAGE_IMPAYES) || $hasPerm(PERMISSIONS::VIEW_IMPAYES) || $hasPerm(PERMISSIONS::VIEW_DEPENSES) || $hasPerm(PERMISSIONS::RECORD_DEPENSES);
+          $canGroup3 = $hasPerm(PERMISSIONS::VIEW_NOTES) || $hasPerm(PERMISSIONS::ENTER_NOTES) || $hasPerm(PERMISSIONS::VIEW_BULLETINS) || $hasPerm(PERMISSIONS::GENERATE_BULLETINS) || $hasPerm(PERMISSIONS::VIEW_ABSENCES) || $hasPerm(PERMISSIONS::MANAGE_ABSENCES) || $hasPerm(PERMISSIONS::VIEW_ENSEIGNANTS) || $hasPerm(PERMISSIONS::MANAGE_ENSEIGNANTS);
+          $canGroup4 = $hasPerm(PERMISSIONS::VIEW_CLASSES) || $hasPerm(PERMISSIONS::MANAGE_CLASSES) || $hasPerm(PERMISSIONS::VIEW_FILIERES) || $hasPerm(PERMISSIONS::MANAGE_FILIERES) || $hasPerm(PERMISSIONS::VIEW_MATIERES) || $hasPerm(PERMISSIONS::MANAGE_MATIERES);
+          $canGroup5 = $hasPerm(PERMISSIONS::VIEW_USERS) || $hasPerm(PERMISSIONS::MANAGE_USERS) || $hasPerm(PERMISSIONS::MANAGE_ROLES);
+        ?>
+
+        <div style="margin-bottom: 36px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px;">
+            <div>
+              <h3 style="font-size: 19px; font-weight: 900; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="layout-grid" style="color: #1E3A5F; width: 26px; height: 26px;"></i> Modules & Services Applicatifs GEICG
               </h3>
-              <a href="<?= RACINE ?>inscription/list" style="font-size: 12px; font-weight: 600; color: #1E3A5F; text-decoration: none;">Voir tout</a>
+              <span style="font-size: 13px; color: #64748B;">Indicateurs clés et accès direct aux registres groupés par domaines fonctionnels</span>
+            </div>
+          </div>
+
+          <!-- GROUPE 1 : Admissions & Scolarité -->
+          <?php if ($canGroup1): ?>
+            <div style="margin-bottom: 22px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #1E3A5F; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="clipboard-check" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Admissions, Inscriptions & Guichet Étudiants</h4>
+                    <span style="font-size: 12px; color: #64748B;">Inscriptions des apprenants, suivi des dossiers et remise des fournitures</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #DBEAFE; color: #1E40AF; padding: 4px 12px; border-radius: 20px;">Domaine Scolarité</span>
+              </div>
+
+              <div class="dash-module-grid">
+                <?php if ($hasPerm(PERMISSIONS::VIEW_INSCRIPTIONS) || $hasPerm(PERMISSIONS::MANAGE_INSCRIPTIONS)): ?>
+                  <a href="<?= url('reinscription/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #EFF6FF; color: #1D4ED8;">
+                          <i data-lucide="clipboard-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #DBEAFE; color: #1E40AF; padding: 4px 10px; border-radius: 20px;">Inscriptions</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #0F172A;">
+                        <?= number_format((int)($stats['total_etudiants'] ?? 0), 0, ',', ' ') ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Étudiants inscrits actifs</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Inscriptions & Admissions</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::MANAGE_DEPOT_DOSSIERS) || $hasPerm(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || $hasPerm(PERMISSIONS::MANAGE_INSCRIPTIONS)): ?>
+                  <a href="<?= url('dossier_etudiant/list') ?>" class="dash-module-card" style="border-left: 4px solid #EA580C;">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FFF7ED; color: #EA580C;">
+                          <i data-lucide="folder-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FFEDD5; color: #C2410C; padding: 4px 10px; border-radius: 20px;">Dossiers</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #EA580C;">
+                        <?= (int)($guichetAlerts['dossiers_incomplets'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #9A3412; margin-top: 2px;">Dossier(s) incomplet(s) à compléter</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Dépôt des Dossiers</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::MANAGE_REMISE_KITS) || $hasPerm(PERMISSIONS::VIEW_REMISE_KITS) || $hasPerm(PERMISSIONS::MANAGE_ACCESSOIRES)): ?>
+                  <a href="<?= url('accessoire_inscription/registre') ?>" class="dash-module-card" style="border-left: 4px solid #15803D;">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F0FDF4; color: #15803D;">
+                          <i data-lucide="package-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #DCFCE7; color: #15803D; padding: 4px 10px; border-radius: 20px;">Kits</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #15803D;">
+                        <?= (int)($guichetAlerts['kits_en_attente'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #166534; margin-top: 2px;">Kit(s) en attente de retrait</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Registre & Remise Kits</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::VIEW_ETUDIANTS) || $hasPerm(PERMISSIONS::MANAGE_ETUDIANTS)): ?>
+                  <a href="<?= url('etudiant/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #EEF2FF; color: #4F46E5;">
+                          <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #E0E7FF; color: #3730A3; padding: 4px 10px; border-radius: 20px;">Effectif</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #3730A3;">
+                        <?= number_format((int)($stats['total_etudiants'] ?? 0), 0, ',', ' ') ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Apprenants au registre</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Registre des Étudiants</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+
+          <!-- GROUPE 2 : Finance & Caisse -->
+          <?php if ($canGroup2): ?>
+            <div style="margin-bottom: 22px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #047857; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="credit-card" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Gestion Financière, Caisse & Trésorerie</h4>
+                    <span style="font-size: 12px; color: #64748B;">Encaissements de scolarité, ouvertures de caisse, relances impayés et dépenses</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 20px;">Domaine Finance</span>
+              </div>
+
+              <div class="dash-module-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
+                <?php if ($hasPerm(PERMISSIONS::VIEW_PAIEMENTS) || $hasPerm(PERMISSIONS::RECORD_PAIEMENTS)): ?>
+                  <a href="<?= url('paiement/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #ECFDF5; color: #047857;">
+                          <i data-lucide="credit-card" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #D1FAE5; color: #065F46; padding: 4px 10px; border-radius: 20px;">Scolarité</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #047857; font-size: 22px;">
+                        <?= number_format((float)($stats['ca_encaisse_scolarite'] ?? $stats['ca_encaisse'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Scolarité encaissée</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Caisse Scolarité</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::OUVERTURE_CAISSE) || $hasPerm(PERMISSIONS::CLOTURE_CAISSE) || $hasPerm(PERMISSIONS::MANAGE_CAISSE)): ?>
+                  <a href="<?= url('session_caisse/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FEF3C7; color: #D97706;">
+                          <i data-lucide="vault" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FDE68A; color: #92400E; padding: 4px 10px; border-radius: 20px;">Sessions</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #D97706;">
+                        <?= (int)($stats['total_sessions_caisse'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Session(s) caisse ouverte(s)</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Sessions de Caisse</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::MANAGE_IMPAYES) || $hasPerm(PERMISSIONS::VIEW_IMPAYES)): ?>
+                  <a href="<?= url('impayes/list') ?>" class="dash-module-card" style="border-left: 4px solid #DC2626;">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FEF2F2; color: #DC2626;">
+                          <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FEE2E2; color: #991B1B; padding: 4px 10px; border-radius: 20px;">Relances</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #DC2626; font-size: 22px;">
+                        <?= number_format((float)($stats['reliquat_impayes'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #991B1B; margin-top: 2px;">Reliquat scolarité impayé</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Relances & Impayés</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::VIEW_DEPENSES) || $hasPerm(PERMISSIONS::RECORD_DEPENSES)): ?>
+                  <a href="<?= url('depense/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FFF1F2; color: #E11D48;">
+                          <i data-lucide="file-minus" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FFE4E6; color: #9F1239; padding: 4px 10px; border-radius: 20px;">Dépenses</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #E11D48; font-size: 22px;">
+                        <?= number_format((float)($stats['total_depenses'] ?? 0), 0, ',', ' ') ?> <span style="font-size: 12px;">FCFA</span>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Décaissements validés</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Dépenses & Engagements</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+
+          <!-- GROUPE 3 : Pédagogie, Examens & Notes -->
+          <?php if ($canGroup3): ?>
+            <div style="margin-bottom: 22px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #7E22CE; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="award" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Pédagogie, Évaluations, Notes & Absences</h4>
+                    <span style="font-size: 12px; color: #64748B;">Planification des examens, saisie des devoirs, délibérations et corps enseignant</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #F3E8FF; color: #6B21A8; padding: 4px 12px; border-radius: 20px;">Domaine Pédagogie</span>
+              </div>
+
+              <div class="dash-module-grid">
+                <?php if ($hasPerm(PERMISSIONS::VIEW_NOTES) || $hasPerm(PERMISSIONS::ENTER_NOTES)): ?>
+                  <a href="<?= url('composition/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FAF5FF; color: #7E22CE;">
+                          <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #F3E8FF; color: #6B21A8; padding: 4px 10px; border-radius: 20px;">Examens</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #7E22CE;">
+                        <?= (int)($stats['total_notes'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Évaluations enregistrées</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Planning Examens</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+
+                  <a href="<?= url('note/saisieClasse') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F3E8FF; color: #6B21A8;">
+                          <i data-lucide="edit-3" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #E9D5FF; color: #581C87; padding: 4px 10px; border-radius: 20px;">Notes</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #6B21A8;">
+                        <?= (int)($stats['total_matieres'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Matières prêtes pour saisie</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Saisie des Notes</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::VIEW_BULLETINS) || $hasPerm(PERMISSIONS::GENERATE_BULLETINS)): ?>
+                  <a href="<?= url('bulletin/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FFFBEB; color: #B45309;">
+                          <i data-lucide="award" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 20px;">Bulletins</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #B45309;">
+                        <?= (int)($stats['total_classes'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Classes prêtes pour PV</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Bulletins & PV</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::VIEW_ABSENCES) || $hasPerm(PERMISSIONS::MANAGE_ABSENCES)): ?>
+                  <a href="<?= url('absence/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #FEF3C7; color: #B45309;">
+                          <i data-lucide="user-x" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #FDE68A; color: #92400E; padding: 4px 10px; border-radius: 20px;">Absences</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #B45309;">
+                        <?= (int)($stats['total_absences'] ?? 0) ?> <span style="font-size: 14px;">h</span>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Heures d'absences saisies</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Absences & Appel</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::VIEW_ENSEIGNANTS) || $hasPerm(PERMISSIONS::MANAGE_ENSEIGNANTS)): ?>
+                  <a href="<?= url('enseignant/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F5F3FF; color: #5B21B6;">
+                          <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #DDD6FE; color: #5B21B6; padding: 4px 10px; border-radius: 20px;">Enseignants</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #5B21B6;">
+                        <?= (int)($stats['total_enseignants'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Formateurs actifs au registre</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Corps Enseignant</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+
+          <!-- GROUPE 4 : Structure Académique & Formations -->
+          <?php if ($canGroup4): ?>
+            <div style="margin-bottom: 22px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #334155; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Structure Académique & Offre de Formation</h4>
+                    <span style="font-size: 12px; color: #64748B;">Gestion des classes, filières, cycles d'études et catalogue de matières</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #334155; padding: 4px 12px; border-radius: 20px;">Domaine Académique</span>
+              </div>
+
+              <div class="dash-module-grid">
+                <?php if ($hasPerm(PERMISSIONS::VIEW_CLASSES) || $hasPerm(PERMISSIONS::MANAGE_CLASSES)): ?>
+                  <a href="<?= url('classe/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F0FDF4; color: #047857;">
+                          <i data-lucide="graduation-cap" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #A7F3D0; color: #065F46; padding: 4px 10px; border-radius: 20px;">Classes</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #047857;">
+                        <?= (int)($stats['total_classes'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Groupes & effectifs ouverts</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Classes</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::VIEW_FILIERES) || $hasPerm(PERMISSIONS::MANAGE_FILIERES)): ?>
+                  <a href="<?= url('filiere_cycle/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #EFF6FF; color: #1D4ED8;">
+                          <i data-lucide="layers" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #BFDBFE; color: #1E40AF; padding: 4px 10px; border-radius: 20px;">Filières</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #1D4ED8;">
+                        <?= (int)($stats['total_filieres'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Filières & spécialités</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Filières & Cycles</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+
+                <?php if ($hasPerm(PERMISSIONS::VIEW_MATIERES) || $hasPerm(PERMISSIONS::MANAGE_MATIERES)): ?>
+                  <a href="<?= url('matiere/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F8FAFC; color: #334155;">
+                          <i data-lucide="book-open" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #334155; padding: 4px 10px; border-radius: 20px;">Matières</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #334155;">
+                        <?= (int)($stats['total_matieres'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Matières & Unités au catalogue</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Matières & Unités</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+
+          <!-- GROUPE 5 : Administration & Sécurité -->
+          <?php if ($canGroup5): ?>
+            <div style="margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="background: #0F172A; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0;">Administration Système & Sécurité RBAC</h4>
+                    <span style="font-size: 12px; color: #64748B;">Comptes utilisateurs, attribution des rôles et contrôle d'accès aux privilèges</span>
+                  </div>
+                </div>
+                <span style="font-size: 11px; font-weight: 800; background: #0F172A; color: white; padding: 4px 12px; border-radius: 20px;">Sécurité Système</span>
+              </div>
+
+              <div class="dash-module-grid">
+                <?php if ($hasPerm(PERMISSIONS::VIEW_USERS) || $hasPerm(PERMISSIONS::MANAGE_USERS) || $hasPerm(PERMISSIONS::MANAGE_ROLES)): ?>
+                  <a href="<?= url('user/list') ?>" class="dash-module-card">
+                    <div>
+                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="dash-module-icon" style="background: #F8FAFC; color: #1E3A5F;">
+                          <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 800; background: #E2E8F0; color: #1E3A5F; padding: 4px 10px; border-radius: 20px;">Sécurité</span>
+                      </div>
+                      <div class="dash-module-num" style="color: #1E3A5F;">
+                        <?= (int)($stats['total_users'] ?? 0) ?>
+                      </div>
+                      <div style="font-size: 12px; font-weight: 700; color: #64748B; margin-top: 2px;">Comptes utilisateurs actifs</div>
+                    </div>
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                      <strong style="color: #1E3A5F; font-size: 13px;">Utilisateurs & RBAC</strong>
+                      <i data-lucide="arrow-right" style="width: 16px; height: 16px; color: #94A3B8;"></i>
+                    </div>
+                  </a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+
+        </div>
+      <?php endif; ?>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 4 : TABLEAUX DE FLUX RÉCENT ENCAISSEMENT & INSCRIPTIONS            -->
+      <!-- ========================================================================= -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px;">
+        
+        <!-- Table 1 : Inscriptions Récentes -->
+        <?php if ($hasPerm(PERMISSIONS::VIEW_INSCRIPTIONS) || $hasPerm(PERMISSIONS::MANAGE_INSCRIPTIONS)): ?>
+          <div class="dash-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
+              <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="user-plus" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Inscriptions Récentes
+              </h3>
+              <a href="<?= url('reinscription/list') ?>" style="font-size: 12px; font-weight: 700; color: #1E3A5F; text-decoration: none;">Voir tout &rarr;</a>
             </div>
 
             <div style="overflow-x: auto;">
@@ -575,20 +843,16 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                 </thead>
                 <tbody>
                   <?php if (empty($recentInscriptions)): ?>
-                    <tr>
-                      <td colspan="4" style="padding: 16px; text-align: center; color: #94A3B8;">Aucune inscription récente</td>
-                    </tr>
+                    <tr><td colspan="4" style="padding: 16px; text-align: center; color: #94A3B8;">Aucune inscription récente</td></tr>
                   <?php else: ?>
                     <?php foreach ($recentInscriptions as $insc): ?>
                       <tr style="border-bottom: 1px solid #F1F5F9;">
                         <td style="padding: 10px 12px; font-weight: 700; color: #1E3A5F; font-family: monospace;">
-                          <a href="<?= RACINE ?>inscription/details/<?= $this->validator->crypter($insc['id_inscription']) ?>" style="color: #1E3A5F; text-decoration: underline;">
-                            <?= htmlspecialchars($insc['matricule_etudiant'] ?? $insc['code_inscription']) ?>
-                          </a>
+                          <?= htmlspecialchars($insc['matricule_etudiant'] ?? $insc['code_inscription']) ?>
                         </td>
-                        <td style="padding: 10px 12px; font-weight: 600; color: #0F172A;"><?= htmlspecialchars($insc['nom_complet_etudiant'] ?? '-') ?></td>
-                        <td style="padding: 10px 12px; color: #475569;"><?= htmlspecialchars($insc['libelle_classe'] ?? 'Non assigné') ?></td>
-                        <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #0F172A;"><?= number_format((float)($insc['montant_scolarite_inscription'] ?? 0), 0, ',', ' ') ?> FCFA</td>
+                        <td style="padding: 10px 12px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($insc['nom_complet_etudiant'] ?? '-') ?></td>
+                        <td style="padding: 10px 12px; color: #475569;"><?= htmlspecialchars($insc['libelle_classe'] ?? '-') ?></td>
+                        <td style="padding: 10px 12px; text-align: right; font-weight: 800; color: #0F172A;"><?= number_format((float)($insc['montant_scolarite_inscription'] ?? 0), 0, ',', ' ') ?> FCFA</td>
                       </tr>
                     <?php endforeach; ?>
                   <?php endif; ?>
@@ -598,14 +862,14 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
           </div>
         <?php endif; ?>
 
-        <!-- TABLEAU 2 : Règlements Récents de Caisse (Visible par Admin, DG, Finance) -->
-        <?php if ($isAdminOrDG || $isFinance): ?>
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <!-- Table 2 : Derniers Encaissés -->
+        <?php if ($hasPerm(PERMISSIONS::VIEW_PAIEMENTS) || $hasPerm(PERMISSIONS::RECORD_PAIEMENTS)): ?>
+          <div class="dash-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
-              <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="wallet" style="width: 18px; height: 18px; color: #059669;"></i> Derniers Règlements Encaissés
+              <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="wallet" style="width: 18px; height: 18px; color: #047857;"></i> Règlements Scolarité Récents
               </h3>
-              <a href="<?= RACINE ?>paiement/list" style="font-size: 12px; font-weight: 600; color: #059669; text-decoration: none;">Voir tout</a>
+              <a href="<?= url('paiement/list') ?>" style="font-size: 12px; font-weight: 700; color: #047857; text-decoration: none;">Voir tout &rarr;</a>
             </div>
 
             <div style="overflow-x: auto;">
@@ -614,111 +878,24 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
                   <tr style="background: #F8FAFC; text-align: left; color: #64748B; border-bottom: 1px solid #E2E8F0;">
                     <th style="padding: 10px 12px;">Réf. Reçu</th>
                     <th style="padding: 10px 12px;">Étudiant</th>
+                    <th style="padding: 10px 12px;">Tranche</th>
                     <th style="padding: 10px 12px;">Mode</th>
                     <th style="padding: 10px 12px; text-align: right;">Montant</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php if (empty($recentPaiements)): ?>
-                    <tr>
-                      <td colspan="4" style="padding: 16px; text-align: center; color: #94A3B8;">Aucun paiement enregistré pour le moment</td>
-                    </tr>
+                    <tr><td colspan="5" style="padding: 16px; text-align: center; color: #94A3B8;">Aucun paiement récent</td></tr>
                   <?php else: ?>
                     <?php foreach ($recentPaiements as $p): ?>
                       <tr style="border-bottom: 1px solid #F1F5F9;">
-                        <td style="padding: 10px 12px; font-weight: 700; color: #059669; font-family: monospace;">
-                          <a href="<?= RACINE ?>paiement/details/<?= $this->validator->crypter($p['id_paiement']) ?>" style="color: #059669; text-decoration: underline;">
-                            <?= htmlspecialchars($p['reference_paiement'] ?? ($p['code_paiement'] ?? '-')) ?>
-                          </a>
+                        <td style="padding: 10px 12px; font-weight: 700; color: #047857; font-family: monospace;">
+                          <?= htmlspecialchars($p['reference_paiement'] ?: ($p['code_paiement'] ?? '-')) ?>
                         </td>
-                        <td style="padding: 10px 12px; font-weight: 600; color: #0F172A;"><?= htmlspecialchars($p['nom_complet_etudiant'] ?? '-') ?></td>
-                        <td style="padding: 10px 12px;"><span class="badge" style="background: #E0F2FE; color: #0369A1; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;"><?= htmlspecialchars($p['mode_paiement'] ?? 'Caisse') ?></span></td>
+                        <td style="padding: 10px 12px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($p['nom_complet_etudiant'] ?? '-') ?></td>
+                        <td style="padding: 10px 12px;"><span class="badge bg-light text-primary border" style="font-weight: 700; font-size: 11px;"><?= htmlspecialchars($p['type_paiement'] ?? 'Scolarité') ?></span></td>
+                        <td style="padding: 10px 12px;"><span class="badge bg-light text-dark border" style="font-weight: 700; font-size: 11px;"><?= htmlspecialchars($p['mode_paiement'] ?? 'Caisse') ?></span></td>
                         <td style="padding: 10px 12px; text-align: right; font-weight: 800; color: #047857;"><?= number_format((float)($p['montant_paiement'] ?? 0), 0, ',', ' ') ?> FCFA</td>
-                      </tr>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        <?php endif; ?>
-
-        <!-- TABLEAU 3 : Dépenses Récentes (Visible par Admin, DG, Finance) -->
-        <?php if ($isAdminOrDG || $isFinance): ?>
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
-              <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="arrow-up-right" style="width: 18px; height: 18px; color: #DC2626;"></i> Dernières Dépenses Engagées
-              </h3>
-              <a href="<?= RACINE ?>depense/list" style="font-size: 12px; font-weight: 600; color: #DC2626; text-decoration: none;">Voir tout</a>
-            </div>
-
-            <div style="overflow-x: auto;">
-              <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                <thead>
-                  <tr style="background: #F8FAFC; text-align: left; color: #64748B; border-bottom: 1px solid #E2E8F0;">
-                    <th style="padding: 10px 12px;">Code Dépense</th>
-                    <th style="padding: 10px 12px;">Type / Motif</th>
-                    <th style="padding: 10px 12px;">Période</th>
-                    <th style="padding: 10px 12px; text-align: right;">Montant</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if (empty($recentDepenses)): ?>
-                    <tr>
-                      <td colspan="4" style="padding: 16px; text-align: center; color: #94A3B8;">Aucune dépense enregistrée</td>
-                    </tr>
-                  <?php else: ?>
-                    <?php foreach ($recentDepenses as $dep): ?>
-                      <tr style="border-bottom: 1px solid #F1F5F9;">
-                        <td style="padding: 10px 12px; font-weight: 700; color: #DC2626; font-family: monospace;">
-                          <a href="<?= RACINE ?>depense/details/<?= $this->validator->crypter($dep['id_depense']) ?>" style="color: #DC2626; text-decoration: underline;">
-                            <?= htmlspecialchars($dep['code_depense'] ?? '-') ?>
-                          </a>
-                        </td>
-                        <td style="padding: 10px 12px; font-weight: 600; color: #0F172A;"><?= htmlspecialchars($dep['libelle_type_depense'] ?? ($dep['description_depense'] ?? 'Charge générale')) ?></td>
-                        <td style="padding: 10px 12px; color: #64748B;"><?= htmlspecialchars($dep['periode_depense'] ?? '-') ?></td>
-                        <td style="padding: 10px 12px; text-align: right; font-weight: 800; color: #DC2626;"><?= number_format((float)($dep['montant_depense'] ?? 0), 0, ',', ' ') ?> FCFA</td>
-                      </tr>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        <?php endif; ?>
-
-        <!-- TABLEAU 4 : Cours Affectés (Visible par Enseignant) -->
-        <?php if ($isEnseignant): ?>
-          <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px;">
-              <h3 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="book-open" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Mes Cours & Affectations
-              </h3>
-            </div>
-
-            <div style="overflow-x: auto;">
-              <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                <thead>
-                  <tr style="background: #F8FAFC; text-align: left; color: #64748B; border-bottom: 1px solid #E2E8F0;">
-                    <th style="padding: 10px 12px;">Matière</th>
-                    <th style="padding: 10px 12px;">Classe</th>
-                    <th style="padding: 10px 12px;">Niveau</th>
-                    <th style="padding: 10px 12px; text-align: center;">Coef.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if (empty($teacherCourses)): ?>
-                    <tr>
-                      <td colspan="4" style="padding: 16px; text-align: center; color: #94A3B8;">Aucun cours ne vous a été assigné pour le moment.</td>
-                    </tr>
-                  <?php else: ?>
-                    <?php foreach ($teacherCourses as $tc): ?>
-                      <tr style="border-bottom: 1px solid #F1F5F9;">
-                        <td style="padding: 10px 12px; font-weight: 700; color: #1E3A5F;"><?= htmlspecialchars($tc['libelle_matiere'] ?? '-') ?></td>
-                        <td style="padding: 10px 12px; font-weight: 600; color: #0F172A;"><?= htmlspecialchars($tc['libelle_classe'] ?? '-') ?></td>
-                        <td style="padding: 10px 12px; color: #64748B;"><?= htmlspecialchars($tc['libelle_niveau'] ?? '-') ?></td>
-                        <td style="padding: 10px 12px; text-align: center; font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($tc['coefficient'] ?? '1') ?></td>
                       </tr>
                     <?php endforeach; ?>
                   <?php endif; ?>
@@ -734,12 +911,16 @@ if (!$isAdminOrDG && !$isPedagogie && !$isScolarite && !$isFinance && !$isEnseig
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-  if (window.lucide) {
-    lucide.createIcons();
-  }
-});
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT INITIALISATION DE APEXCHARTS ET LUCIDE ICONS                   -->
+<!-- ========================================================================= -->
+<script type="application/json" id="home-dashboard-config">
+<?= json_encode([
+    'monthlyFinancials' => $monthlyFinancials ?? [],
+    'filieresDistribution' => $filieresDistribution ?? []
+]) ?>
 </script>
-
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/home_dashboard.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

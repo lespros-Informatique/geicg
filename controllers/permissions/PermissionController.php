@@ -36,29 +36,36 @@ class PermissionController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_permission'])) {
-            if (!$this->checkUnique('permissions', 'libelle_permission', $data['libelle_permission'], 'Libelle de la permission')) return;
+            if (!$this->checkUnique(TABLES::PERMISSIONS, 'libelle_permission', $data['libelle_permission'], 'Libelle de la permission')) return;
         }
         if (!empty($data['code_permission'])) {
-            if (!$this->checkUnique('permissions', 'code_permission', $data['code_permission'], 'Code permission')) return;
+            if (!$this->checkUnique(TABLES::PERMISSIONS, 'code_permission', $data['code_permission'], 'Code permission')) return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_permission'])) {
-            $data['code_permission'] = $this->validator->generateCode('permissions', 'code_permission', 'PER-', 8);
+            $data['code_permission'] = $this->validator->generateCode(TABLES::PERMISSIONS, 'code_permission', 'PER-', 8);
         }
         $data['statut_permission'] = $data['statut_permission'] ?? 'actif';
         $data['created_at_permission'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE permissions")->fetchAll(PDO::FETCH_COLUMN);
+        $cols = $this->model->getTableColumns();
         if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         if (!empty($data['nouveau_module'])) {
             $data['module_permission'] = strtoupper(trim($data['nouveau_module']));
         }
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'permissions',
+                $data['code_permission'],
+                "Création de la permission '{$data['libelle_permission']}' ({$data['code_permission']})",
+                $filteredData
+            );
             $this->success('Item créé avec succès!');
         } else {
             $this->error('Erreur lors de la création');
@@ -74,18 +81,24 @@ class PermissionController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_permission'])) {
-            if (!$this->checkUnique('permissions', 'libelle_permission', $data['libelle_permission'], 'Libelle de la permission', 'id_permission', $id)) return;
+            if (!$this->checkUnique(TABLES::PERMISSIONS, 'libelle_permission', $data['libelle_permission'], 'Libelle de la permission', 'id_permission', $id)) return;
         }
         if (!empty($data['code_permission'])) {
-            if (!$this->checkUnique('permissions', 'code_permission', $data['code_permission'], 'Code permission', 'id_permission', $id)) return;
+            if (!$this->checkUnique(TABLES::PERMISSIONS, 'code_permission', $data['code_permission'], 'Code permission', 'id_permission', $id)) return;
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE permissions")->fetchAll(PDO::FETCH_COLUMN);
         if (!empty($data['nouveau_module'])) {
             $data['module_permission'] = strtoupper(trim($data['nouveau_module']));
         }
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'permissions',
+                $data['code_permission'] ?? (string)$id,
+                "Modification de la permission '" . ($data['libelle_permission'] ?? $id) . "'",
+                $filteredData
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -97,8 +110,15 @@ class PermissionController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($perm = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'permissions',
+                    $perm['code_permission'] ?? (string)$id,
+                    "Basculement de statut (actif/inactif) de la permission '" . ($perm['libelle_permission'] ?? $id) . "'",
+                    ['id_permission' => $id, 'code_permission' => $perm['code_permission'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -114,10 +134,10 @@ class PermissionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'permission/list'); exit(); }
+            if (!$item) { redirect('permission/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'permission/list'); exit();
+            redirect('permission/list');
         }
         $this->loadView('../views/permissions/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -128,17 +148,26 @@ class PermissionController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'permission/list'); exit(); }
+            if (!$item) { redirect('permission/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'permission/list'); exit();
+            redirect('permission/list');
         }
-        $this->loadView('../views/permissions/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        $existingModules = $this->model->getDistinctModules();
+        $this->loadView('../views/permissions/edit.php', [
+            'item' => $item,
+            'encryptedId' => $encryptedId,
+            'existingModules' => $existingModules
+        ]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->loadView('../views/permissions/edit.php', ['item' => []]);
+        $existingModules = $this->model->getDistinctModules();
+        $this->loadView('../views/permissions/edit.php', [
+            'item' => [],
+            'existingModules' => $existingModules
+        ]);
     }
 }

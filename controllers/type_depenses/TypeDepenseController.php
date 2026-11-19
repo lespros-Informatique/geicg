@@ -10,12 +10,14 @@ class TypeDepenseController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         $this->loadView('../views/type_depenses/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -33,29 +35,34 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_type_depense'])) {
             if (!$this->checkUnique('type_depenses', 'libelle_type_depense', $data['libelle_type_depense'], 'Type de depense')) return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_type_depense'])) {
-            $data['code_type_depense'] = $this->validator->generateCode('type_depenses', 'code_type_depense', 'TYP-', 8);
+            $data['code_type_depense'] = $this->validator->generateCode(TABLES::TYPE_DEPENSES, 'code_type_depense', 'TYP-', 8);
         }
         $data['statut_type_depense'] = $data['statut_type_depense'] ?? 'actif';
         $data['created_at_type_depense'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE type_depenses")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+        $libelle = trim($data['libelle_type_depense'] ?? '');
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
-            $this->success('Item créé avec succès!');
+            $msg = !empty($libelle) ? "Le type de dépense « {$libelle} » a été créé avec succès !" : "Type de dépense créé avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la création');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la création du type de dépense';
+            $this->error($msg);
         }
     }
 
@@ -63,6 +70,7 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $id = (int)$this->post('id_type_depense');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -71,12 +79,16 @@ class TypeDepenseController extends BaseController
             if (!$this->checkUnique('type_depenses', 'libelle_type_depense', $data['libelle_type_depense'], 'Type de depense', 'id_type_depense', $id)) return;
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE type_depenses")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $libelle = trim($data['libelle_type_depense'] ?? '');
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $msg = !empty($libelle) ? "Le type de dépense « {$libelle} » a été modifié avec succès !" : "Type de dépense modifié avec succès !";
+            $this->success($msg);
         } else {
-            $this->error('Erreur lors de la modification');
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : 'Erreur lors de la modification du type de dépense';
+            $this->error($msg);
         }
     }
 
@@ -84,6 +96,7 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -99,23 +112,17 @@ class TypeDepenseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'type_depense/list'); exit(); }
+            if (!$item) { redirect('type_depense/list'); }
 
-            // Dépenses de cette catégorie
-            $stmtDep = $this->model->getCon()->prepare("
-                SELECT * FROM depenses 
-                WHERE type_depense_code = ? 
-                ORDER BY id_depense DESC
-            ");
-            $stmtDep->execute([$item['code_type_depense']]);
-            $depenses = $stmtDep->fetchAll(PDO::FETCH_ASSOC);
+            $depenses = $this->model->getDepensesForType($item['code_type_depense']);
 
             $totalDepenses = 0;
             foreach ($depenses as $d) {
-                if (($d['statut_depense'] ?? '') !== 'annule') {
+                if (($d['statut_depense'] ?? '') !== STATUTS::ANNULE) {
                     $totalDepenses += (float)($d['montant_depense'] ?? 0);
                 }
             }
@@ -124,6 +131,7 @@ class TypeDepenseController extends BaseController
         } catch (Exception $e) {
             error_log("TypeDepenseController::details error: " . $e->getMessage());
             $this->renderNotFound("Le type de dépense demandé est introuvable.");
+            return;
         }
         $this->loadView('../views/type_depenses/details.php', [
             'item' => $item, 
@@ -135,21 +143,11 @@ class TypeDepenseController extends BaseController
 
     public function edition($details)
     {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'type_depense/list'); exit(); }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'type_depense/list'); exit();
-        }
-        $this->loadView('../views/type_depenses/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        redirect('type_depense/list');
     }
 
     public function formulaire()
     {
-        $this->requireAuth();
-        $this->loadView('../views/type_depenses/edit.php', ['item' => []]);
+        redirect('type_depense/list');
     }
 }

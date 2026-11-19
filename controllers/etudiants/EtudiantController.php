@@ -10,19 +10,15 @@ class EtudiantController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $db = $this->model->getCon();
-        $annees = $db->query("SELECT * FROM annees ORDER BY (CASE WHEN statut_annee = 'actif' THEN 1 ELSE 2 END), date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC);
-        $niveaux = $db->query("SELECT * FROM niveaux WHERE statut_niveau = 'actif' ORDER BY libelle_niveau ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $filieres = $db->query("SELECT * FROM filieres WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $classes = $db->query("SELECT * FROM classes WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC);
-
+        $this->requirePermission(PERMISSIONS::VIEW_ETUDIANTS);
+        $deps = $this->model->getListFilterDependencies();
         $anneeActive = $this->getActiveAnneeCode();
 
         $this->loadView('../views/etudiants/list.php', [
-            'annees' => $annees,
-            'niveaux' => $niveaux,
-            'filieres' => $filieres,
-            'classes' => $classes,
+            'annees' => $deps['annees'],
+            'niveaux' => $deps['niveaux'],
+            'filieres' => $deps['filieres'],
+            'classes' => $deps['classes'],
             'anneeActive' => $anneeActive
         ]);
     }
@@ -30,6 +26,7 @@ class EtudiantController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ETUDIANTS);
         $anneeCode = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
         if ($anneeCode === '' || $anneeCode === null) {
             $anneeCode = $this->getActiveAnneeCode();
@@ -40,8 +37,16 @@ class EtudiantController extends BaseController
             'niveau_code' => $_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''),
             'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
             'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),
-            'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? '')
+            'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? ''),
+            'affectation_etat' => $_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? ''),
+            'canal_inscription' => $_GET['canal_inscription'] ?? ($_POST['canal_inscription'] ?? ''),
+            'statut_inscription' => !empty($_GET['statut_inscription']) ? $_GET['statut_inscription'] : (!empty($_POST['statut_inscription']) ? $_POST['statut_inscription'] : 'ACTIFS')
         ];
+
+        $etabCfg = $this->getEtablissementConfig();
+        $useSlugFiliere = !empty($etabCfg['use_slug_filiere']);
+        $useSlugNiveau = !empty($etabCfg['use_slug_niveau']);
+        $useSlugCycle = !empty($etabCfg['use_slug_cycle']);
 
         $items = $this->model->getFilteredRegistry($filters);
         $data = [];
@@ -50,7 +55,10 @@ class EtudiantController extends BaseController
             $idCrypte = $this->validator->crypter($id);
             $data[] = array_merge($i, [
                 'id' => $id,
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'use_slug_filiere' => $useSlugFiliere,
+                'use_slug_niveau' => $useSlugNiveau,
+                'use_slug_cycle' => $useSlugCycle
             ]);
         }
         $this->json(['data' => $data]);
@@ -60,9 +68,24 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
         $data = $_POST;
         unset($data['csrf_token']);
         $this->cleanPhoneFields($data);
+
+        // Aliases de compatibilité des champs du formulaire
+        if (isset($data['date_naissance']) && !isset($data['date_naissance_etudiant'])) {
+            $data['date_naissance_etudiant'] = $data['date_naissance'];
+        }
+        if (isset($data['lieu_naissance']) && !isset($data['lieu_naissance_etudiant'])) {
+            $data['lieu_naissance_etudiant'] = $data['lieu_naissance'];
+        }
+        if (isset($data['nationalite']) && !isset($data['nationalite_etudiant'])) {
+            $data['nationalite_etudiant'] = $data['nationalite'];
+        }
+        if (isset($data['adresse_etudiant']) && !isset($data['lieu_residence_etudiant'])) {
+            $data['lieu_residence_etudiant'] = $data['adresse_etudiant'];
+        }
 
         if (!empty($data['matricule_etudiant'])) {
             if (!$this->checkUnique('etudiants', 'matricule_etudiant', $data['matricule_etudiant'], 'Matricule etudiant')) return;
@@ -74,8 +97,9 @@ class EtudiantController extends BaseController
             if (!$this->checkUnique('etudiants', 'telephone_etudiant', $data['telephone_etudiant'], 'Telephone etudiant')) return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
         $nomEtudiant = trim($data['nom_etudiant'] ?? '');
         $prenomEtudiant = trim($data['prenom_etudiant'] ?? '');
 
@@ -83,16 +107,23 @@ class EtudiantController extends BaseController
             $data['matricule_etudiant'] = $this->model->generateMatricule($nomEtudiant, $prenomEtudiant, $data['classe_code'] ?? null, $anneeCode);
         }
         if (empty($data['code_etudiant'])) {
-            $data['code_etudiant'] = $this->validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
+            $data['code_etudiant'] = $this->validator->generateCode(TABLES::ETUDIANTS, 'code_etudiant', 'ETU-', 8);
         }
-        $data['statut_etudiant'] = $data['statut_etudiant'] ?? 'actif';
+        $data['statut_etudiant'] = $data['statut_etudiant'] ?? STATUTS::ACTIF;
         $data['created_at_etudiant'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE etudiants")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'etudiants',
+                $data['matricule_etudiant'],
+                "Création du dossier étudiant {$prenomEtudiant} {$nomEtudiant} (Matricule: {$data['matricule_etudiant']})",
+                $filteredData,
+                $etabCode
+            );
             $this->success('Item créé avec succès!');
         } else {
             $this->error('Erreur lors de la création');
@@ -103,11 +134,26 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]);
         $id = (int)$this->post('id_etudiant');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
         $this->cleanPhoneFields($data);
+
+        // Aliases de compatibilité des champs du formulaire
+        if (isset($data['date_naissance']) && !isset($data['date_naissance_etudiant'])) {
+            $data['date_naissance_etudiant'] = $data['date_naissance'];
+        }
+        if (isset($data['lieu_naissance']) && !isset($data['lieu_naissance_etudiant'])) {
+            $data['lieu_naissance_etudiant'] = $data['lieu_naissance'];
+        }
+        if (isset($data['nationalite']) && !isset($data['nationalite_etudiant'])) {
+            $data['nationalite_etudiant'] = $data['nationalite'];
+        }
+        if (isset($data['adresse_etudiant']) && !isset($data['lieu_residence_etudiant'])) {
+            $data['lieu_residence_etudiant'] = $data['adresse_etudiant'];
+        }
 
         if (!empty($data['matricule_etudiant'])) {
             if (!$this->checkUnique('etudiants', 'matricule_etudiant', $data['matricule_etudiant'], 'Matricule etudiant', 'id_etudiant', $id)) return;
@@ -119,12 +165,36 @@ class EtudiantController extends BaseController
             if (!$this->checkUnique('etudiants', 'telephone_etudiant', $data['telephone_etudiant'], 'Telephone etudiant', 'id_etudiant', $id)) return;
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE etudiants")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
+        $encryptedId = $this->validator->crypter($id);
+        $redirectUrl = url('etudiant/details/' . $encryptedId);
+
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Item modifié avec succès!');
+            $mat = $data['matricule_etudiant'] ?? (string)$id;
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'etudiants',
+                $mat,
+                "Modification de la fiche de l'étudiant {$mat}",
+                $filteredData
+            );
+            if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+                Session::flash('flash_success', "Fiche de l'étudiant modifiée avec succès !");
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+            $this->success("Fiche de l'étudiant modifiée avec succès !", [
+                'redirect' => $redirectUrl,
+                'encryptedId' => $encryptedId
+            ]);
         } else {
-            $this->error('Erreur lors de la modification');
+            $err = $this->model->getLastError() ?: 'Erreur lors de la modification de la fiche étudiant.';
+            if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+                Session::flash('flash_error', $err);
+                header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? $redirectUrl));
+                exit;
+            }
+            $this->error($err);
         }
     }
 
@@ -132,9 +202,17 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'etudiants',
+                    (string)$id,
+                    "Basculement de statut (actif/inactif) de l'étudiant #{$id}",
+                    ['id_etudiant' => $id]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -144,130 +222,153 @@ class EtudiantController extends BaseController
         }
     }
 
+    public function changerClassePage($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::CHANGER_CLASSE_ETUDIANT);
+
+        try {
+            $id = $this->validator->decrypter($details);
+            if (empty($id)) {
+                $id = $details;
+            }
+
+            $item = $this->model->getById($id);
+            if (!$item) {
+                Session::flash('flash_error', "Étudiant introuvable.");
+                redirect('etudiant/list');
+            }
+
+            $anneeActive = $this->getActiveAnneeCode();
+            $data = $this->model->getChangerClasseData($item['code_etudiant'], $anneeActive);
+            if (empty($data['inscription'])) {
+                Session::flash('flash_error', "Impossible de changer de classe : cet étudiant n'a aucun dossier d'inscription actif (inscription annulée ou inexistante).");
+                redirect('etudiant/list');
+            }
+            $encryptedId = $this->validator->crypter($item['id_etudiant']);
+
+            $this->loadView('../views/etudiants/changer_classe.php', [
+                'item' => $item,
+                'inscription' => $data['inscription'],
+                'classes' => $data['classes'],
+                'annees' => $data['annees'],
+                'encryptedId' => $encryptedId,
+                'activeAnneeCode' => !empty($data['inscription']['annee_code']) ? $data['inscription']['annee_code'] : $anneeActive
+            ]);
+
+        } catch (Exception $e) {
+            Session::flash('flash_error', "Erreur : " . $e->getMessage());
+            redirect('etudiant/list');
+        }
+    }
+
+    public function changerClasse()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::CHANGER_CLASSE_ETUDIANT);
+
+        $codeInscription = trim($_POST['code_inscription'] ?? '');
+        $codeEtudiant = trim($_POST['code_etudiant'] ?? '');
+        $nouvelleClasse = trim($_POST['classe_code'] ?? ($_POST['nouvelle_classe_code'] ?? ''));
+        $affectationInput = trim($_POST['affectation_etat'] ?? 'non_affecte');
+        $affectationEtat = ($affectationInput === 'affecte' || $affectationInput === 'oui') ? 'oui' : 'non';
+        $anneeCode = trim($_POST['annee_code'] ?? '');
+        $montantScolarite = isset($_POST['montant_scolarite_inscription']) ? (float)$_POST['montant_scolarite_inscription'] : null;
+
+        if (empty($nouvelleClasse)) {
+            $this->error("Veuillez sélectionner une classe valide.");
+            return;
+        }
+
+        $userCode = Auth::code() ?? (Auth::user()['code_user'] ?? Session::get('user_code') ?? null);
+        $etabCode = $this->getActiveEtablissementCode();
+
+        $res = $this->model->changerClasseInscription(
+            $codeInscription,
+            $codeEtudiant,
+            $nouvelleClasse,
+            $affectationEtat,
+            $anneeCode ?: $this->getActiveAnneeCode(),
+            $montantScolarite,
+            $userCode,
+            $etabCode
+        );
+
+        if ($res['success']) {
+            $logDesc = "Changement de classe vers {$nouvelleClasse} pour le dossier {$codeInscription}";
+            if (!empty($res['paiements_annules_count'])) {
+                $logDesc .= " ({$res['paiements_annules_count']} versement(s) antérieur(s) annulé(s) pour " . number_format($res['paiements_annules_montant'], 0, ',', ' ') . " FCFA suite au changement de scolarité)";
+            }
+            if (!empty($res['notes_desactivees_count'])) {
+                $logDesc .= " ({$res['notes_desactivees_count']} note(s) antérieure(s) archivée(s) suite au changement de filière/niveau)";
+            }
+            if (!empty($res['kits_desactives_count']) || !empty($res['kits_ajoutes_count']) || !empty($res['kits_reactives_count'])) {
+                $logDesc .= " (Kits synchronisés: " . ($res['kits_desactives_count'] ?? 0) . " désactivé(s), " . ($res['kits_ajoutes_count'] ?? 0) . " ajouté(s), " . ($res['kits_reactives_count'] ?? 0) . " réactivé(s))";
+            }
+
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'inscriptions',
+                $codeInscription ?: $codeEtudiant,
+                $logDesc,
+                [
+                    'code_inscription' => $codeInscription,
+                    'code_etudiant' => $codeEtudiant,
+                    'nouvelle_classe' => $nouvelleClasse,
+                    'affectation' => $affectationEtat,
+                    'montant_scolarite' => $montantScolarite,
+                    'paiements_annules' => $res['paiements_annules_count'] ?? 0,
+                    'montant_annule' => $res['paiements_annules_montant'] ?? 0,
+                    'notes_desactivees' => $res['notes_desactivees_count'] ?? 0,
+                    'kits_desactives' => $res['kits_desactives_count'] ?? 0,
+                    'kits_ajoutes' => $res['kits_ajoutes_count'] ?? 0,
+                    'kits_reactives' => $res['kits_reactives_count'] ?? 0
+                ]
+            );
+            $this->success($res['message'], ['redirect' => url('etudiant/list')]);
+        } else {
+            $this->error($res['message']);
+        }
+    }
+
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ETUDIANTS);
         try {
             $id = $this->validator->decrypter($details);
+            if (empty($id)) {
+                $id = $details;
+            }
             $item = $this->model->getById($id);
-            if (!$item) { 
+            if (!$item && is_string($id)) {
+                $item = $this->model->getByCode($id);
+            }
+            if (!$item && is_string($details)) {
+                $item = $this->model->getByCode($details);
+            }
+
+            if (!$item) {
                 $this->renderNotFound("Le dossier étudiant demandé est introuvable.");
                 return;
             }
 
             $etudiantCode = $item['code_etudiant'];
-            $db = $this->model->getCon();
-
-            // 1. Parent info
-            $parent = [];
-            try {
-                $stmtPar = $db->prepare("SELECT * FROM parents WHERE etudiant_code = ? LIMIT 1");
-                $stmtPar->execute([$etudiantCode]);
-                $parent = $stmtPar->fetch(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details parent error: " . $e->getMessage());
-            }
-
-            // 2. Inscription active & Classe
-            $inscription = [];
-            try {
-                $stmtIns = $db->prepare("
-                    SELECT ins.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
-                    FROM inscriptions ins
-                    LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-                    LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                    LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                    LEFT JOIN annees a ON a.code_annee = ins.annee_code
-                    WHERE ins.etudiant_code = ? AND ins.statut_inscription != 'annule'
-                    ORDER BY ins.id_inscription DESC LIMIT 1
-                ");
-                $stmtIns->execute([$etudiantCode]);
-                $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details inscription error: " . $e->getMessage());
-            }
-
-            // 2.bis Établissement
-            $etablissement = [];
-            try {
-                $etablissement = $db->query("SELECT * FROM etablissements LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details etablissement error: " . $e->getMessage());
-            }
-
-            // 3. Paiements effectués
-            $paiements = [];
-            try {
-                $stmtPaiements = $db->prepare("
-                    SELECT p.*, a.libelle_annee, ins.code_inscription
-                    FROM paiements p
-                    JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
-                    LEFT JOIN annees a ON a.code_annee = p.annee_code
-                    WHERE ins.etudiant_code = ?
-                    ORDER BY p.date_paiement DESC
-                ");
-                $stmtPaiements->execute([$etudiantCode]);
-                $paiements = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details paiements error: " . $e->getMessage());
-            }
-
-            // 4. Statistiques financières
-            $scolariteTotale = (float)($inscription['montant_scolarite_inscription'] ?? 0);
-            $totalPaye = 0;
-            foreach ($paiements as $p) {
-                if (($p['statut_paiement'] ?? '') !== 'annule') {
-                    $totalPaye += (float)($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0));
-                }
-            }
-            $soldeRestant = max(0, $scolariteTotale - $totalPaye);
-
-            // 5. Absences
-            $absences = [];
-            try {
-                $stmtAbs = $db->prepare("
-                    SELECT abs.*, m.libelle_matiere
-                    FROM absences abs
-                    JOIN inscriptions ins ON ins.code_inscription = abs.inscription_code
-                    LEFT JOIN matieres m ON m.code_matiere = abs.matiere_code
-                    WHERE ins.etudiant_code = ?
-                    ORDER BY abs.date_absence DESC
-                ");
-                $stmtAbs->execute([$etudiantCode]);
-                $absences = $stmtAbs->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details absences error: " . $e->getMessage());
-            }
-
-            // 6. Dossier / Pièces physiques fournies (Robuste aux mélanges de collation MySQL)
-            $dossierPieces = [];
-            try {
-                $stmtDossier = $db->prepare("
-                    SELECT pf.libelle_piece, pf.description_piece, COALESCE(de.statut_depot, 'en_attente') AS statut_depot, de.date_depot, de.observations, de.id_dossier_etudiant
-                    FROM pieces_fournir pf
-                    LEFT JOIN dossier_etudiant de ON de.piece_code = pf.code_piece_fournir AND de.etudiant_code = ?
-                    WHERE pf.statut_piece = 'actif'
-                    ORDER BY pf.id_piece_fournir ASC
-                ");
-                $stmtDossier->execute([$etudiantCode]);
-                $dossierPieces = $stmtDossier->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            } catch (Exception $e) {
-                error_log("EtudiantController::details dossierPieces error: " . $e->getMessage());
-            }
-
+            $fullDetails = $this->model->getStudentFullDetails($etudiantCode);
             $encryptedId = $this->validator->crypter($id);
 
             $this->loadView('../views/etudiants/details.php', [
                 'item' => $item, 
-                'parent' => $parent,
-                'inscription' => $inscription,
-                'etablissement' => $etablissement,
-                'dossierPieces' => $dossierPieces,
-                'paiements' => $paiements,
-                'totalPaye' => $totalPaye,
-                'soldeRestant' => $soldeRestant,
-                'scolariteTotale' => $scolariteTotale,
-                'absences' => $absences,
+                'parent' => $fullDetails['parent'],
+                'inscription' => $fullDetails['inscription'],
+                'etablissement' => $fullDetails['etablissement'],
+                'dossierPieces' => $fullDetails['dossierPieces'],
+                'paiements' => $fullDetails['paiements'],
+                'totalPaye' => $fullDetails['totalPaye'],
+                'soldeRestant' => $fullDetails['soldeRestant'],
+                'scolariteTotale' => $fullDetails['scolariteTotale'],
+                'absences' => $fullDetails['absences'],
                 'encryptedId' => $encryptedId
             ]);
         } catch (Exception $e) {
@@ -279,13 +380,14 @@ class EtudiantController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'etudiant/list'); exit(); }
+            if (!$item) { redirect('etudiant/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'etudiant/list'); exit();
+            redirect('etudiant/list');
         }
         $this->loadView('../views/etudiants/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -293,12 +395,14 @@ class EtudiantController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
         $this->loadView('../views/etudiants/edit.php', ['item' => []]);
     }
 
     public function wizard()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
         $this->loadView('../views/etudiants/wizard.php');
     }
 
@@ -306,9 +410,9 @@ class EtudiantController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ETUDIANTS);
 
-        $db = $this->model->getCon();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $data = $_POST;
         unset($data['csrf_token']);
         $this->cleanPhoneFields($data);
@@ -316,170 +420,253 @@ class EtudiantController extends BaseController
         $anneeCode = !empty($data['annee_code']) ? trim($data['annee_code']) : $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
-        $nomEtudiant = trim($data['nom_etudiant'] ?? '');
-        $prenomEtudiant = trim($data['prenom_etudiant'] ?? '');
-        $telephoneEtudiant = $data['telephone_etudiant'] ?? '';
+        $res = $this->model->createFullStudent($data, $userCode, $etabCode, $anneeCode, $this->validator);
+        if ($res['success']) {
+            $this->success($res['message'], ['redirect' => url('etudiant/list')]);
+        } else {
+            $this->error($res['message']);
+        }
+    }
 
-        if (empty($nomEtudiant) || empty($prenomEtudiant) || empty($telephoneEtudiant)) {
-            $this->error('Veuillez renseigner le nom, prénoms et téléphone de l\'étudiant.');
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::MANAGE_ETUDIANTS]);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
+        if ($anneeCode === '' || $anneeCode === null || $anneeCode === 'ALL') {
+            $anneeCode = $this->getActiveAnneeCode();
+        }
+
+        $filters = [
+            'annee_code' => $anneeCode,
+            'niveau_code' => $_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''),
+            'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
+            'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),
+            'statut_etudiant' => $_GET['statut_etudiant'] ?? ($_POST['statut_etudiant'] ?? ''),
+            'affectation_etat' => $_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? ''),
+            'canal_inscription' => $_GET['canal_inscription'] ?? ($_POST['canal_inscription'] ?? ''),
+            'statut_inscription' => !empty($_GET['statut_inscription']) ? $_GET['statut_inscription'] : (!empty($_POST['statut_inscription']) ? $_POST['statut_inscription'] : 'ACTIFS')
+        ];
+
+        $etudiants = $this->model->getFilteredRegistry($filters);
+
+        // Tri par ordre alphabétique (Nom et Prénoms)
+        usort($etudiants, function ($a, $b) {
+            $nomA = mb_strtolower(trim(($a['nom_etudiant'] ?? '') . ' ' . ($a['prenom_etudiant'] ?? '')), 'UTF-8');
+            $nomB = mb_strtolower(trim(($b['nom_etudiant'] ?? '') . ' ' . ($b['prenom_etudiant'] ?? '')), 'UTF-8');
+            return strnatcmp($nomA, $nomB);
+        });
+
+        $filtresLabels = $this->model->getFiltresLabels($filters);
+        if (!empty($filters['affectation_etat']) && $filters['affectation_etat'] !== 'ALL') {
+            $filtresLabels['regime'] = ($filters['affectation_etat'] === 'affecte') ? 'Affectés (État)' : 'Non Affectés (Privé)';
+        }
+
+        // Année académique libellé
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            $anneeItem = (new ModelAnnee())->getByCode($anneeCode);
+            if (!empty($anneeItem['libelle_annee'])) {
+                $anneeLibelle = $anneeItem['libelle_annee'];
+            }
+        }
+
+        // KPIs de synthèse
+        $total = count($etudiants);
+        $affectes = 0;
+        $nonAffectes = 0;
+        $hommes = 0;
+        $femmes = 0;
+
+        foreach ($etudiants as $e) {
+            $aff = $e['affectation_etat'] ?? '';
+            if ($aff === 'affecte' || $aff === 'oui') {
+                $affectes++;
+            } else {
+                $nonAffectes++;
+            }
+
+            $sexe = strtoupper(trim($e['sexe_etudiant'] ?? ''));
+            if (strpos($sexe, 'F') !== false) {
+                $femmes++;
+            } else {
+                $hommes++;
+            }
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Inscription & Scolarité';
+        }
+
+        $isClassList = (!empty($filters['classe_code']) && $filters['classe_code'] !== 'ALL');
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'etudiants' => $etudiants,
+            'filtres_labels' => $filtresLabels,
+            'classe_libelle' => $filtresLabels['classe'] ?? '',
+            'filiere_libelle' => $filtresLabels['filiere'] ?? '',
+            'niveau_libelle' => $filtresLabels['niveau'] ?? '',
+            'kpis' => [
+                'total' => $total,
+                'affectes' => $affectes,
+                'non_affectes' => $nonAffectes,
+                'hommes' => $hommes,
+                'femmes' => $femmes
+            ]
+        ];
+
+        $template = $isClassList ? 'liste_classe.php' : 'liste_etudiants.php';
+        $orientation = $isClassList ? 'P' : 'L';
+        $docTitle = $isClassList ? ('Liste_Classe_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $filtresLabels['classe'] ?? 'Classe')) : 'Liste_Etudiants';
+
+        $html = PdfService::renderTemplate($template, $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'etudiants',
+            $filtresLabels['classe'] ?? ($anneeCode ?: 'TOUT'),
+            "Impression " . ($isClassList ? "de la liste de classe ({$filtresLabels['classe']})" : "du registre nominatif des étudiants"),
+            ['filters' => $filters, 'total' => $total]
+        );
+
+        if (isset($_GET['html'])) {
+            echo $html;
             return;
         }
 
-        $matriculeEtudiant = trim($data['matricule_etudiant'] ?? '');
-        if (empty($matriculeEtudiant)) {
-            $matriculeEtudiant = $this->model->generateMatricule($nomEtudiant, $prenomEtudiant, $data['classe_code'] ?? null, $anneeCode);
-        }
+        $filename = $docTitle . '_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => $orientation,
+            'format' => 'A4',
+            'title' => ($isClassList ? 'Liste de Classe & Émargement - ' : 'Registre Nominatif des Étudiants - ') . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
 
-        $matriculeMenet = !empty($data['matricule_menet']) ? trim($data['matricule_menet']) : null;
-        $matriculeMesrs = !empty($data['matricule_mesrs']) ? trim($data['matricule_mesrs']) : null;
-
-        $codeEtudiant = $this->validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
+    public function imprimerFichePdf($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
 
         try {
-            $db->beginTransaction();
+            $id = $this->validator->decrypter($details);
+            if (empty($id)) {
+                $id = $details;
+            }
 
-            // 1. Insert Student into `etudiants`
-            $stmtEtu = $db->prepare("
-                INSERT INTO etudiants 
-                (code_etudiant, matricule_etudiant, matricule_menet, matricule_mesrs, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
-            ");
-            $stmtEtu->execute([
-                $codeEtudiant,
-                $matriculeEtudiant,
-                $matriculeMenet,
-                $matriculeMesrs,
-                $nomEtudiant,
-                $prenomEtudiant,
-                $data['sexe_etudiant'] ?? 'M',
-                !empty($data['date_naissance_etudiant']) ? $data['date_naissance_etudiant'] : (!empty($data['date_naissance']) ? $data['date_naissance'] : null),
-                !empty($data['lieu_naissance_etudiant']) ? $data['lieu_naissance_etudiant'] : (!empty($data['lieu_naissance']) ? $data['lieu_naissance'] : null),
-                !empty($data['nationalite_etudiant']) ? $data['nationalite_etudiant'] : (!empty($data['nationalite']) ? $data['nationalite'] : 'Ivoirienne'),
-                $telephoneEtudiant,
-                !empty($data['email_etudiant']) ? $data['email_etudiant'] : null,
-                !empty($data['lieu_residence_etudiant']) ? $data['lieu_residence_etudiant'] : (!empty($data['adresse_etudiant']) ? $data['adresse_etudiant'] : null),
-                $userCode,
-                $etabCode
+            // Inscription optionnelle transmise en query string
+            $inscrId = null;
+            if (!empty($_GET['inscription_id'])) {
+                $inscrId = $this->validator->decrypter($_GET['inscription_id']);
+                if (empty($inscrId)) {
+                    $inscrId = $_GET['inscription_id'];
+                }
+            }
+
+            $ficheData = $this->model->getStudentFicheData($id, $inscrId);
+            if (!$ficheData) {
+                Session::flash('flash_error', "Dossier étudiant ou inscription introuvable pour l'impression de la fiche.");
+                redirect('etudiant/list');
+            }
+
+            $etudiant = $ficheData['etudiant'];
+            $inscription = $ficheData['inscription'];
+            $dataView = array_merge($ficheData['viewData'], [
+                'etablissement' => $this->getEtablissementConfig()
             ]);
 
-            // 2. Insert Parent into `parents` if parent info provided
-            if (!empty($data['nom_pere']) || !empty($data['nom_mere']) || !empty($data['nom_tuteur'])) {
-                $codeParent = $this->validator->generateCode('parents', 'code_parent', 'PAR-', 8);
-                $stmtPar = $db->prepare("
-                    INSERT INTO parents 
-                    (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, profession_mere, nom_tuteur, telephone_tuteur, profession_tuteur, user_code, etablissement_code, created_at_parent)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-                ");
-                $stmtPar->execute([
-                    $codeParent,
-                    $codeEtudiant,
-                    !empty($data['nom_pere']) ? $data['nom_pere'] : null,
-                    !empty($data['telephone_pere']) ? $data['telephone_pere'] : null,
-                    !empty($data['profession_pere']) ? $data['profession_pere'] : null,
-                    !empty($data['nom_mere']) ? $data['nom_mere'] : null,
-                    !empty($data['telephone_mere']) ? $data['telephone_mere'] : null,
-                    !empty($data['profession_mere']) ? $data['profession_mere'] : null,
-                    !empty($data['nom_tuteur']) ? $data['nom_tuteur'] : null,
-                    !empty($data['telephone_tuteur']) ? $data['telephone_tuteur'] : null,
-                    !empty($data['profession_tuteur']) ? $data['profession_tuteur'] : null,
-                    $userCode,
-                    $etabCode
-                ]);
+            $html = PdfService::renderTemplate('fiche_etudiant.php', $dataView);
+            if (isset($_GET['html'])) {
+                echo $html;
+                return;
             }
 
-            // 3. Insert Academic Inscription into `inscriptions` if classe_code provided
-            if (!empty($data['classe_code'])) {
-                $montantScolarite = (float)($data['montant_scolarite_inscription'] ?? 0);
-                if ($montantScolarite <= 0) {
-                    $stmtCl = $db->prepare("SELECT * FROM classes WHERE code_classe = ? LIMIT 1");
-                    $stmtCl->execute([$data['classe_code']]);
-                    $cl = $stmtCl->fetch(PDO::FETCH_ASSOC);
-                    if ($cl) {
-                        $stmtSco = $db->prepare("SELECT montant_scolarite FROM scolarites WHERE filiere_code = ? AND niveau_code = ? ORDER BY id_scolarite DESC LIMIT 1");
-                        $stmtSco->execute([$cl['filiere_code'], $cl['niveau_code']]);
-                        $sco = $stmtSco->fetch(PDO::FETCH_ASSOC);
-                        if ($sco) {
-                            $montantScolarite = (float)$sco['montant_scolarite'];
-                        }
-                    }
-                }
+            $mat = $etudiant['matricule_etudiant'] ?? ($etudiant['code_etudiant'] ?? (string)$id);
+            $nomClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim(($etudiant['nom_etudiant'] ?? '') . '_' . ($etudiant['prenom_etudiant'] ?? '')));
+            $filename = 'Fiche_Etudiant_' . ($nomClean ?: 'Dossier') . '_' . date('Ymd_His') . '.pdf';
 
-                $affectationEtatVal = (!empty($data['affectation_etat']) && in_array($data['affectation_etat'], ['affecte', 'oui'])) ? 'oui' : 'non';
-                $codeInscription = $this->validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
-                $stmtIns = $db->prepare("
-                    INSERT INTO inscriptions
-                    (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, user_code, annee_code, etablissement_code, statut_inscription, affectation_etat, created_at_inscription)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'valide', ?, NOW())
-                ");
-                $stmtIns->execute([
-                    $codeInscription,
-                    $codeEtudiant,
-                    $data['classe_code'],
-                    $montantScolarite,
-                    $userCode,
-                    $anneeCode,
-                    $etabCode,
-                    $affectationEtatVal
-                ]);
-            }
+            // Journalisation de l'impression
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'etudiant',
+                $mat,
+                "Impression de la fiche officielle de l'étudiant " . trim(($etudiant['nom_etudiant'] ?? '') . ' ' . ($etudiant['prenom_etudiant'] ?? '')) . (!empty($inscription['libelle_classe']) ? " (" . $inscription['libelle_classe'] . ")" : '')
+            );
 
-            // 4. Insert Accessoires / Kits into `accessoire_inscription`
-            if (!empty($data['accessoires']) && is_array($data['accessoires'])) {
-                $stmtAcc = $db->prepare("
-                    INSERT INTO accessoire_inscription
-                    (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
-                    VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
-                ");
-                foreach ($data['accessoires'] as $accCode) {
-                    if (empty($accCode)) continue;
-                    $codeAccIns = $this->validator->generateCode('accessoire_inscription', 'code_accessoire_inscription', 'ACI-', 8);
-                    $stmtAcc->execute([
-                        $codeAccIns,
-                        !empty($codeInscription) ? $codeInscription : '',
-                        $accCode,
-                        $anneeCode,
-                        $userCode,
-                        $etabCode
-                    ]);
-                }
-            }
-
-            // 5. Insert Documents / Checklist into `dossier_etudiant`
-            $piecesFournies = !empty($data['pieces_fournies']) && is_array($data['pieces_fournies']) ? $data['pieces_fournies'] : [];
-            $allPieces = $db->query("SELECT code_piece_fournir FROM pieces_fournir WHERE statut_piece = 'actif'")->fetchAll(PDO::FETCH_COLUMN) ?: [];
-
-            if (!empty($allPieces)) {
-                $stmtDos = $db->prepare("
-                    INSERT INTO dossier_etudiant
-                    (code_dossier_etudiant, inscription_code, etudiant_code, piece_code, statut_depot, date_depot, observations, user_code, etablissement_code, created_at_dossier_etudiant)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-                ");
-
-                foreach ($allPieces as $pCode) {
-                    $isDepose = in_array($pCode, $piecesFournies);
-                    $codeDos = $this->validator->generateCode('dossier_etudiant', 'code_dossier_etudiant', 'DOS-', 8);
-                    $stmtDos->execute([
-                        $codeDos,
-                        !empty($codeInscription) ? $codeInscription : '',
-                        $codeEtudiant,
-                        $pCode,
-                        $isDepose ? 'depose' : 'en_attente',
-                        $isDepose ? date('Y-m-d H:i:s') : null,
-                        $isDepose ? 'Pièce déposée lors de l\'inscription initiale' : 'En attente de transmission',
-                        $userCode,
-                        $etabCode
-                    ]);
-                }
-            }
-
-            $db->commit();
-            $this->success('Dossier d\'inscription étudiant créé avec succès !', ['redirect' => RACINE . 'etudiant/list']);
-
+            $download = !empty($_GET['download']);
+            PdfService::generate($html, $filename, [
+                'orientation' => 'P',
+                'format' => 'A4',
+                'title' => 'Fiche Étudiant - ' . trim(($etudiant['nom_etudiant'] ?? '') . ' ' . ($etudiant['prenom_etudiant'] ?? '')),
+                'margin_left' => 6,
+                'margin_right' => 6,
+                'margin_top' => 6,
+                'margin_bottom' => 6,
+                'download' => $download
+            ]);
         } catch (Exception $e) {
-            if ($db->inTransaction()) {
-                $db->rollBack();
+            error_log("EtudiantController::imprimerFichePdf error: " . $e->getMessage());
+            Session::flash('flash_error', "Erreur lors de la génération de la fiche étudiant : " . $e->getMessage());
+            redirect('etudiant/list');
+        }
+    }
+
+    public function annulerInscription()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::ANNULER_INSCRIPTION);
+
+        $idInscription = (int)$this->post('id_inscription');
+        $codeInscription = trim($this->post('code_inscription') ?? '');
+
+        $res = $this->model->annulerInscription($idInscription, $codeInscription);
+
+        if ($res['success']) {
+            $inscrCode = $res['inscription']['code_inscription'] ?? ($codeInscription ?: (string)$idInscription);
+            $logDesc = "Annulation de l'inscription {$inscrCode}";
+            if (!empty($res['paiements_annules_count'])) {
+                $logDesc .= " ({$res['paiements_annules_count']} paiement(s) annulé(s) pour " . number_format($res['paiements_annules_montant'], 0, ',', ' ') . " FCFA)";
             }
-            $this->error('Erreur lors de la création du dossier: ' . $e->getMessage());
+            if (!empty($res['kits_annules_count'])) {
+                $logDesc .= " ({$res['kits_annules_count']} kit(s) scolaire(s) désactivé(s))";
+            }
+
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'inscriptions',
+                $inscrCode,
+                $logDesc,
+                [
+                    'id_inscription' => $idInscription,
+                    'code_inscription' => $codeInscription,
+                    'paiements_annules' => $res['paiements_annules_count'] ?? 0,
+                    'montant_annule' => $res['paiements_annules_montant'] ?? 0,
+                    'kits_annules' => $res['kits_annules_count'] ?? 0
+                ]
+            );
+            $this->success($res['message'], [
+                'reload' => true,
+                'id_inscription' => $res['inscription']['id_inscription'] ?? $idInscription,
+                'code_inscription' => $res['inscription']['code_inscription'] ?? $codeInscription,
+                'paiements_annules_count' => $res['paiements_annules_count'] ?? 0,
+                'kits_annules_count' => $res['kits_annules_count'] ?? 0
+            ]);
+        } else {
+            $this->error($res['message']);
         }
     }
 }

@@ -1,0 +1,592 @@
+<?php
+/**
+ * Template Officiel du Reçu d'Inscription (Modèle GROUPE EICG 100% Conforme)
+ * Emplacement : /views/templates/pdf/recu_inscription.php
+ */
+
+// Générateur de code-barres compact et haut via Picqer Barcode Generator
+if (!function_exists('generatePicqerBarcodeHtml')) {
+    function generatePicqerBarcodeHtml($code, $height = 42) {
+        $code = (string)($code ?? '');
+        if (empty($code)) return '';
+        try {
+            $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+            $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, 1, $height);
+            return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; width:auto; max-width:150px;">';
+        } catch (\Throwable $e) {
+            return '<div style="font-family:monospace; font-weight:bold; font-size:10px;">' . htmlspecialchars($code) . '</div>';
+        }
+    }
+}
+
+// Chargement du logo officiel Groupe EICG
+if (!empty($logo_src)) {
+    $logoSrc = $logo_src;
+} else {
+    $logoEicgFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+    $logoSrc = asset('assets/images/logo/logo_eicg.jpg');
+    if (file_exists($logoEicgFile)) {
+        $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
+    }
+}
+
+// Chargement de la photo étudiant ou placeholder par défaut
+if (!empty($photo_etudiant)) {
+    $photo_src = $photo_etudiant;
+} else if (empty($photo_src)) {
+    $placeholderPhotoFile = placeholderPath('etudiant');
+    if (file_exists($placeholderPhotoFile)) {
+        $photo_src = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderPhotoFile));
+    }
+}
+
+// Données dynamiques
+$annee_universitaire = $annee_universitaire ?? '';
+$numero_recu = $numero_recu ?? '';
+$date_operation = $date_operation ?? '';
+$matricule = $matricule ?? '';
+$nom_prenoms = $nom_prenoms ?? '';
+$filiere_niveau = $filiere_niveau ?? '';
+$statut_etudiant = $statut_etudiant ?? '';
+$type_operation = $type_operation ?? '';
+$montant_operation = (float)($montant_operation ?? 0);
+$montant_operation_formatted = $montant_operation_formatted ?? ($montant_operation > 0 ? number_format($montant_operation, 0, ',', ' ') . '  FCFA' : '0 FCFA');
+$montant_en_lettres = $montant_en_lettres ?? '';
+$scolarite_total = (float)($scolarite_total ?? 0);
+$total_verse = (float)($total_verse ?? 0);
+$reste_a_payer = (float)($reste_a_payer ?? 0);
+$caissier_nom = $caissier_nom ?? '';
+$date_impression = $date_impression ?? date('d/m/Y H:i:s');
+$code_barre_val = $code_barre_val ?? $numero_recu;
+
+// Montants lignes du tableau
+$premiere_tranche = (float)($premiere_tranche ?? 0);
+$frais_annexes_inscription = (float)($frais_annexes_inscription ?? 0);
+$droit_tot_payer = (float)($droit_tot_payer ?? ($premiere_tranche + $frais_annexes_inscription));
+
+$droit_op_jour = (float)($droit_op_jour ?? 0);
+$droit_tot_verse = (float)($droit_tot_verse ?? 0);
+
+$scolarite_op_jour = (float)($scolarite_op_jour ?? max(0, $montant_operation - $droit_op_jour));
+$scolarite_tot_payer = (float)($scolarite_tot_payer ?? $scolarite_total);
+$scolarite_tot_verse = (float)($scolarite_tot_verse ?? max(0, $total_verse - $droit_tot_verse));
+$scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $scolarite_tot_verse));
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Reçu d'Inscription - <?= htmlspecialchars($nom_prenoms) ?></title>
+  <style>
+    @page {
+      margin: 6mm 10mm 6mm 10mm;
+    }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.5pt;
+      color: #000000;
+      line-height: 1.25;
+      background-color: #FFFFFF;
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    .main-wrapper {
+      border: 1.5px solid #400303ff;
+      padding: 6px 25px;
+      box-sizing: border-box;
+      background: #FFFFFF;
+      margin: 0 auto;
+    }
+
+    /* EN-TÊTE ÉTABLISSEMENT */
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2px;
+    }
+    .header-logo-cell {
+      width: 95px;
+      vertical-align: top;
+    }
+    .header-logo-img {
+      max-height: 48px;
+      width: auto;
+      max-width: 90px;
+    }
+    .header-text-cell {
+      text-align: center;
+      vertical-align: top;
+    }
+    .header-title {
+      color: #800000;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      font-size: 11.5pt;
+      text-transform: uppercase;
+      margin: 0 0 8px 0;
+      text-decoration: underline;
+      letter-spacing: 0.2px;
+    }
+    .header-subtitle-1 {
+      font-weight: bold;
+      font-style: italic;
+      font-size: 8.5pt;
+      margin-top: 8px;
+      margin-bottom: 5px;
+      color: #000000;
+    }
+    .header-subtitle-2 {
+      font-weight: bold;
+      font-style: italic;
+      font-size: 8.5pt;
+      margin-top: 5px;
+      margin-bottom: 3px;
+      color: #000000;
+    }
+
+    /* BANNIÈRES GRISES DE TITRE */
+    .banner-title-box {
+      background-color: #999999;
+      color: #000000;
+      text-align: center;
+      padding: 6px 0;
+      margin: 10px 0 4px 0;
+      font-weight: bold;
+      font-size: 15.5pt;
+      font-family: 'arial bold';
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .annee-subbanner {
+      text-align: center;
+      font-weight: bold;
+      font-size: 10.5pt;
+      margin-bottom: 4px;
+      color: #000000;
+    }
+
+    /* FORMULAIRE DONNÉES ÉTUDIANT & PHOTO */
+    .info-photo-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+    }
+    .info-left-cell {
+      vertical-align: top;
+      width: 75%;
+    }
+    .photo-right-cell {
+      vertical-align: top;
+      text-align: right;
+      width: 100px;
+    }
+    .photo-frame {
+      width: 90px;
+      height: 110px;
+     /* border: 2px solid #000000;*/
+      background: #F1F5F9;
+      display: inline-block;
+      box-sizing: border-box;
+      vertical-align: top;
+      text-align: center;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .photo-img {
+      width: 90px;
+      height: 110px;
+      border: 1px solid #000000;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-inits {
+      width: 100%;
+      height: 100%;
+      line-height: 106px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 26pt;
+      color: #000000;
+      background: #F1F5F9;
+    }
+
+    .student-info-grid {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.8pt;
+      line-height: 1.5;
+    }
+    .student-info-grid td {
+      padding: 0.5px 0;
+      vertical-align: top;
+    }
+    .val-bold {
+      font-weight: bold;
+      color: #000000;
+    }
+    .amount-words-blue {
+      color: #172f43ff;
+      font-weight: bold;
+      font-size: 9.5pt;
+    }
+
+    /* TABLEAU FINANCIER DES RÈGLEMENTS */
+    .grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 3px;
+      margin-bottom: 4px;
+      font-size: 9.2pt;
+
+    }
+    .grid-table th {
+      border: 1px solid #000000;
+      /* font-size: 8pt;*/
+      /* font-weight: bold; */
+      color: #000000;
+      padding: 3px 4px;
+      text-align: center;
+      background: #FFFFFF;
+    }
+    .grid-table td {
+      border: 1px solid #000000;
+      /* font-size: 8pt; */
+      padding: 2.5px 4px;
+      color: #000000;
+    }
+    .row-total td {
+      font-family: 'arial bold';
+      background-color: #999999;
+      color: #000000;
+      font-weight: bold;
+      font-size: 9.5pt;
+    }
+    .cell-black {
+      background-color: #000000;
+    }
+    .text-center { text-align: center; }
+    .text-bold { font-weight: bold; }
+
+    /* ZONE SOLDE & CODE-BARRES / CAISSIER */
+    .bottom-status-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 3px;
+      margin-bottom: 4px;
+    }
+    .bottom-status-table td {
+      vertical-align: top;
+    }
+
+
+    .solde-badge {
+      height: 40px;
+      background-color: #999999;
+      color: #ea0a0aff;
+      font-weight: 900;
+      font-size: 11pt;
+      padding: 5px 20px;
+      display: inline-block;
+      letter-spacing: 1px;
+    }
+
+
+    .caissier-title {
+      font-weight: bold;
+      text-decoration: underline;
+      font-size: 8.5pt;
+      margin-top: 8px;
+      display: block;
+    }
+    .caissier-name {
+      font-size: 8pt;
+      color: #000000;
+      margin-top: 1px;
+    }
+
+    /* ENCADRÉ JAUNE ATTENTION */
+    .nb-yellow-box {
+      background-color: #e4e42cff;
+      border: 1px solid #000000;
+      padding: 3px 6px;
+      font-weight: bold;
+      font-size: 8.5pt;
+      font-style: italic;
+      color: #000000;
+      margin: 8px 0 8px 0;
+    }
+
+    .notice-row-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+      color: #000000;
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+
+    /* DIVISEUR POINTILLÉ ENTRE LES DEUX PARTIES */
+    .dashed-divider-zone {
+      text-align: center;
+      margin: 4px 0 4px 0;
+    }
+    .dashed-line {
+      border-top: 1px dashed #000000;
+      margin-bottom: 35px;
+    }
+    .ref-caiss-text {
+      font-size: 7.5pt;
+      font-family: monospace;
+      font-weight: bold;
+      color: #000000;
+    }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+
+
+  <?php
+  $initsPDF = '?';
+  if (!empty($nom_prenoms)) {
+      $pParts = array_values(array_filter(explode(' ', trim($nom_prenoms))));
+      if (count($pParts) >= 2) {
+          $initsPDF = strtoupper(substr($pParts[0], 0, 1) . substr($pParts[1], 0, 1));
+      } else if (!empty($pParts)) {
+          $initsPDF = strtoupper(substr($pParts[0], 0, 2));
+      }
+  }
+  ?>
+  <div class="main-wrapper">
+
+    <!-- ========================================================================= -->
+    <!-- 1. PARTIE SUPERIEURE : REÇU D'INSCRIPTION ETUDIANT -->
+    <!-- ========================================================================= -->
+
+    <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG (MODE COMPACT) -->
+    <?php 
+      $headerMode = 'compact';
+      $showHeaderDivider = false;
+      include __DIR__ . '/components/header_institution.php'; 
+    ?>
+
+    <!-- BANNIÈRE PRINCIPALE ET ANNÉE -->
+    <div class="banner-title-box">REÇU D'INSCRIPTION</div>
+    <div class="annee-subbanner">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_universitaire) ?></div>
+
+    <!-- DONNÉES ÉTUDIANT & PHOTO -->
+    <table class="info-photo-table">
+      <tr>
+        <td class="info-left-cell">
+          <table class="student-info-grid">
+            <tr>
+              <td style="width: 50%;">N° &nbsp;<span class="val-bold"><?= htmlspecialchars($numero_recu) ?></span></td>
+              <td style="text-align: right; padding-right: 15px;"><span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
+            </tr>
+            <tr>
+              <td>Numéro réf étudiant( e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
+              <td>Filière_Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
+            </tr>
+            <tr>
+              <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
+            </tr>
+            <tr>
+              <td>Type d'Opération : Frais d'inscription</td>
+              <td>Statut : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="val-bold"><?= htmlspecialchars($statut_etudiant) ?></span></td>
+            </tr>
+            <tr>
+              <td>Montant de l'Opération : &nbsp;<span class="val-bold">(<?= htmlspecialchars($montant_operation_formatted) ?>)</span></td>
+              <td><span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
+            </tr>
+          </table>
+        </td>
+        <td class="photo-right-cell">
+          <div class="photo-frame">
+            <?php if (!empty($photo_src)): ?>
+              <img src="<?= $photo_src ?>" alt="Photo Étudiant" class="photo-img">
+            <?php else: ?>
+              <div class="photo-inits"><?= htmlspecialchars($initsPDF) ?></div>
+            <?php endif; ?>
+          </div>
+        </td>
+      </tr>
+    </table>
+<br>
+    <!-- TABLEAU FINANCIER DES RÈGLEMENTS -->
+    <table class="grid-table">
+      <thead>
+        <tr>
+          <th style="width: 25%;"></th>
+          <th style="width: 18%;">OP. DU JOUR</th>
+          <th style="width: 20%;">Total à payer</th>
+          <th style="width: 18%;">Total Versé</th>
+          <th style="width: 19%;">Reste à Payer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="">SCOLARITE</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_op_jour, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_tot_payer, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_tot_verse, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_reste, 0, ',', ' ') ?>CFA</td>
+        </tr>
+        <tr>
+          <td class="">Droit d'Inscription</td>
+          <td class="text-center text-bold"><?= number_format($droit_op_jour, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($droit_tot_payer, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($droit_tot_verse, 0, ',', ' ') ?>CFA</td>
+          <td class="cell-black"></td>
+        </tr>
+        <tr>
+          <td class="">AUTRES FRAIS</td>
+          <td ></td>
+          <td ></td>
+          <td ></td>
+          <td ></td>
+
+           <!-- <td class="text-center text-bold"><?= number_format($frais_annexes_op_jour, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($frais_annexes_tot_payer, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($frais_annexes_tot_verse, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($frais_annexes_reste, 0, ',', ' ') ?>CFA</td> -->
+        </tr>
+        <tr class="row-total">
+          <td class="text-bold">TOTAL</td>
+          <td class="text-center text-bold"><?= number_format($montant_operation, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($scolarite_total, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($total_verse, 0, ',', ' ') ?>CFA</td>
+          <td class="text-center text-bold"><?= number_format($reste_a_payer, 0, ',', ' ') ?>CFA</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ZONE SOLDE & CODE-BARRES / CAISSIER -->
+    <table class="bottom-status-table" style="margin-top: 14px;">
+      <tr>
+        <td style="width: 55%;">
+          Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="solde-badge"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE: ' . number_format($reste_a_payer, 0, ',', ' ') . 'CFA') ?></span>
+        </td>
+        <td style="width: 45%; text-align: right;">
+          <div style="display: inline-block; text-align: right;">
+            <div style="margin-bottom: 8px;">
+              <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+            </div>
+            <br>
+            <div class="caissier-title">CAISSIER(RE)</div>
+            <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- ENCADRÉ JAUNE N.B & AVIS DE CONSERVATION -->
+    <div class="nb-yellow-box">
+      N.B: - Aucun remboursement n'est admis après l'inscription.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Les paiements se font uniquement chez la caissière
+    </div>
+
+    <table class="notice-row-table">
+      <tr>
+        <td style="font-weight: bold;">Ce reçu est à conserver. Pour toute réclamation il doit être présenté.</td>
+        <td style="text-align: right; font-weight: bold;"><?= htmlspecialchars($date_impression) ?></td>
+      </tr>
+    </table>
+
+    <!-- DIVISEUR POINTILLÉ ENTRE LES DEUX PARTIES -->
+    <div class="dashed-divider-zone">
+      <div class="dashed-line"></div>
+      <div class="ref-caiss-text">Réf_caiss <?= htmlspecialchars($code_barre_val) ?></div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. PARTIE INFERIEURE : COPIE REÇU DE VERSEMENT POUR ARCHIVAGE -->
+    <!-- ========================================================================= -->
+
+    <!-- BANNIÈRE COPIE ARCHIVAGE -->
+    <div class="banner-title-box" style="font-size: 12pt;">COPIE REÇU DE VERSEMENT POUR ARCHIVAGE</div>
+    <div class="annee-subbanner">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_universitaire) ?></div>
+
+    <!-- DONNÉES ÉTUDIANT & PHOTO COPIE -->
+    <table class="info-photo-table">
+      <tr>
+        <td class="info-left-cell">
+          <table class="student-info-grid">
+            <tr>
+              <td style="width: 50%;">N° &nbsp;<span class="val-bold"><?= htmlspecialchars($numero_recu) ?></span></td>
+              <td style="text-align: right; padding-right: 15px;"><span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
+            </tr>
+            <tr>
+              <td>Numéro réf étudiant( e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
+              <td>Filière_Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
+            </tr>
+            <tr>
+              <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
+            </tr>
+            <tr>
+              <td>Type d'Opération &nbsp;&nbsp;&nbsp;&nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;"><?= htmlspecialchars($type_operation) ?></span></td>
+              <td>Banque : &nbsp;&nbsp;&nbsp;&nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;">--</span> &nbsp;&nbsp;&nbsp;&nbsp; Reste à Payer &nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;"><?= number_format($reste_a_payer, 0, ',', ' ') ?>CFA</span></td>
+            </tr>
+            <tr>
+              <td>Montant de l'Opération : &nbsp;<span class="val-bold"><?= htmlspecialchars($montant_operation_formatted) ?></span></td>
+              <td><span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
+            </tr>
+          </table>
+        </td>
+        <td class="photo-right-cell">
+          <div class="photo-frame">
+            <?php if (!empty($photo_src)): ?>
+              <img src="<?= $photo_src ?>" alt="Photo Étudiant" class="photo-img">
+            <?php else: ?>
+              <div class="photo-inits"><?= htmlspecialchars($initsPDF) ?></div>
+            <?php endif; ?>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- ZONE SOLDE & CODE-BARRES COPIE -->
+    <table class="bottom-status-table" style="margin-top: 16px;">
+      <tr>
+        <td style="width: 55%;">
+          Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <span class="solde-badge"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE: ' . number_format($reste_a_payer, 0, ',', ' ') . 'CFA') ?></span>
+        </td>
+        <td style="width: 45%; text-align: right; vertical-align: top;">
+          <div style="display: inline-block; text-align: right;">
+            <div style="margin-bottom: 8px;">
+              <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+            </div>
+            <br>
+            <div class="caissier-title">CAISSIER(RE)</div>
+            <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <table class="notice-row-table" style="margin-top: 8px; margin-bottom: 0;">
+      <tr>
+        <td style="font-family: monospace; font-weight: bold; font-size: 8pt; font-style: normal;">
+          <?= htmlspecialchars($code_barre_val) ?>
+        </td>
+        <td style="text-align: right; font-weight: bold; font-size: 8pt; font-style: normal;">
+          <?= htmlspecialchars($date_impression) ?>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+
+</body>
+</html>

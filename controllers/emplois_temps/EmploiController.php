@@ -7,85 +7,155 @@ class EmploiController extends BaseController
         return new ModelEmploi();
     }
 
+    /**
+     * Détermine le contexte de l'utilisateur : gestionnaire ou enseignant en consultation restreinte
+     */
+    protected function getTeacherContext(): array
+    {
+        $canManage = Auth::can(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
+        $userCode = Auth::code();
+        $teacherCodes = [];
+        $isTeacherOnly = false;
+
+        if (!$canManage) {
+            $teacherCodes = [$userCode];
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT code_enseignant, user_code FROM " . TABLES::ENSEIGNANTS . " WHERE user_code = ? OR code_enseignant = ?");
+                $stmt->execute([$userCode, $userCode]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if (!empty($row['code_enseignant'])) $teacherCodes[] = $row['code_enseignant'];
+                    if (!empty($row['user_code'])) $teacherCodes[] = $row['user_code'];
+                }
+                $teacherCodes = array_values(array_unique(array_filter($teacherCodes)));
+            } catch (Exception $e) {}
+
+            if (Auth::hasRole(ROLES::ENSEIGNANT) || count($teacherCodes) > 1) {
+                $isTeacherOnly = true;
+            }
+        }
+
+        return [
+            'canManage' => $canManage,
+            'isTeacherOnly' => $isTeacherOnly,
+            'teacherCodes' => $teacherCodes
+        ];
+    }
+
     public function list()
     {
         $this->requireAuth();
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
+        $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/emplois_temps/list.php', [
+                'annees' => $annees,
+                'niveaux' => [],
+                'classes' => [],
+                'selectedAnneeCode' => '',
+                'canManage' => false,
+                'isTeacherOnly' => $isTeacherOnly,
+                'stats' => [
+                    'total_classes' => 0,
+                    'total_heures' => 0,
+                    'total_creneaux' => 0,
+                    'plannings_complets' => 0,
+                    'plannings_brouillons' => 0,
+                    'total_matieres' => 0,
+                    'total_heures_formatted' => '0h00'
+                ]
+            ]);
+            return;
+        }
+
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
-        
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
-                    break;
+
+        if ($isTeacherOnly) {
+            $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $selectedAnneeCode);
+        } else {
+            $classes = (new ModelClasse())->getAll();
+            $classesWithEmploi = $this->model->getClassesSummary($selectedAnneeCode);
+        }
+
+        // Statistiques globales pour les cartes KPI
+        $stats = [
+            'total_classes' => count($classesWithEmploi),
+            'total_heures' => 0,
+            'total_creneaux' => 0,
+            'plannings_complets' => 0,
+            'plannings_brouillons' => 0,
+            'total_matieres' => 0
+        ];
+
+        $matieresSet = [];
+        foreach ($classesWithEmploi as $item) {
+            $stats['total_heures'] += (float)($item['total_heures'] ?? 0);
+            $stats['total_creneaux'] += (int)($item['nb_creneaux'] ?? 0);
+            if ((int)($item['nb_jours'] ?? 0) >= 5) {
+                $stats['plannings_complets']++;
+            } else {
+                $stats['plannings_brouillons']++;
+            }
+            if (!empty($item['matieres_noms'])) {
+                $parts = explode(',', $item['matieres_noms']);
+                foreach ($parts as $p) {
+                    $trimmed = trim($p);
+                    if ($trimmed !== '') {
+                        $matieresSet[$trimmed] = true;
+                    }
                 }
             }
-        } else {
-            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
         }
+        $stats['total_matieres'] = count($matieresSet);
+        $totalMin = round($stats['total_heures'] * 60);
+        $h = floor($totalMin / 60);
+        $m = $totalMin % 60;
+        $stats['total_heures_formatted'] = sprintf("%dh%02d", $h, $m);
 
         $this->loadView('../views/emplois_temps/list.php', [
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'canManage' => $canManage,
+            'isTeacherOnly' => $isTeacherOnly,
+            'stats' => $stats
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
 
-        $db = $this->model->getCon();
-        $sql = "
-            SELECT 
-                cl.code_classe,
-                cl.libelle_classe,
-                n.libelle_niveau,
-                COUNT(edt.id_emploi) AS nb_creneaux,
-                COUNT(DISTINCT edt.jour) AS nb_jours,
-                COUNT(DISTINCT edt.matiere_code) AS nb_matieres,
-                COUNT(DISTINCT edt.enseignant_code) AS nb_profs,
-                GROUP_CONCAT(DISTINCT m.libelle_matiere ORDER BY m.libelle_matiere SEPARATOR ', ') AS matieres_noms,
-                MAX(edt.created_at_emploi) AS last_update,
-                SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600 AS total_heures
-            FROM emplois_temps edt
-            INNER JOIN classes cl ON cl.code_classe = edt.classe_code
-            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-        ";
-        $conditions = [];
-        $params = [];
-
-        if (!empty($anneeCode)) {
-            $conditions[] = "(edt.annee_code = ? OR edt.annee_code IS NULL OR edt.annee_code = '')";
-            $params[] = $anneeCode;
+        if ($isTeacherOnly) {
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $anneeCode, $niveauCode, $classeCode);
+        } else {
+            $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
         }
-        if (!empty($niveauCode)) {
-            $conditions[] = "cl.niveau_code = ?";
-            $params[] = $niveauCode;
-        }
-        if (!empty($classeCode)) {
-            $conditions[] = "edt.classe_code = ?";
-            $params[] = $classeCode;
-        }
-
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(" AND ", $conditions);
-        }
-
-        $sql .= " GROUP BY cl.code_classe, cl.libelle_classe, n.libelle_niveau ORDER BY cl.libelle_classe ASC ";
-
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        $classesWithEmploi = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $data = [];
         foreach ($classesWithEmploi as $i) {
@@ -103,6 +173,7 @@ class EmploiController extends BaseController
                 'nb_matieres' => (int)$i['nb_matieres'],
                 'nb_profs' => (int)$i['nb_profs'],
                 'matieres_noms' => $i['matieres_noms'] ?: '',
+                'total_heures' => (float)($i['total_heures'] ?? 0),
                 'total_heures_formatted' => $volHoraire,
                 'last_update' => $i['last_update'] ? date('d/m/Y H:i', strtotime($i['last_update'])) : '-',
                 'statut_planning' => ((int)$i['nb_jours'] >= 5) ? 'Complet' : 'Brouillon'
@@ -115,7 +186,12 @@ class EmploiController extends BaseController
     public function apiSlots()
     {
         $this->requireAuth();
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['status' => 1, 'data' => []]);
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
@@ -131,8 +207,6 @@ class EmploiController extends BaseController
         $this->json(['status' => 1, 'data' => $data]);
     }
 
-
-
     public function getAssignedTeacher()
     {
         $this->requireAuth();
@@ -144,40 +218,7 @@ class EmploiController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-
-        // 1. Recherche précise par classe_code + matiere_code
-        $stmt = $db->prepare("
-            SELECT em.*, 
-                   u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
-                   m.libelle_matiere, cl.libelle_classe
-            FROM enseignant_matiere em
-            JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-            JOIN users u ON u.code_user = em.enseignant_code
-            LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
-            LEFT JOIN classes cl ON cl.code_classe = em.classe_code
-            WHERE em.classe_code = ? AND em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
-            LIMIT 1
-        ");
-        $stmt->execute([$classeCode, $matiereCode]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // 2. Recherche de secours par matière
-        if (!$row) {
-            $stmtGlobal = $db->prepare("
-                SELECT em.*, 
-                       u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
-                       m.libelle_matiere
-                FROM enseignant_matiere em
-                JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                JOIN users u ON u.code_user = em.enseignant_code
-                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
-                WHERE em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
-                LIMIT 1
-            ");
-            $stmtGlobal->execute([$matiereCode]);
-            $row = $stmtGlobal->fetch(PDO::FETCH_ASSOC);
-        }
+        $row = $this->model->getAssignedTeacher($classeCode, $matiereCode);
 
         if ($row) {
             $nomComplet = trim(($row['nom_enseignant'] ?? '') . ' ' . ($row['prenom_enseignant'] ?? ''));
@@ -197,96 +238,7 @@ class EmploiController extends BaseController
 
     public function getScheduleConflicts(string $classeCode, string $salleCode, string $enseignantCode, string $jour, string $heureDebut, string $heureFin, $excludeId = null): array
     {
-        $conflicts = [];
-        $jour = strtolower(trim($jour));
-        $heureDebut = trim($heureDebut);
-        $heureFin = trim($heureFin);
-
-        if (empty($jour) || empty($heureDebut) || empty($heureFin)) {
-            return $conflicts;
-        }
-
-        if (strtotime($heureFin) <= strtotime($heureDebut)) {
-            $conflicts[] = [
-                'type' => 'horaire',
-                'title' => 'Incohérence des horaires',
-                'message' => "L'heure de fin ($heureFin) doit être strictement postérieure à l'heure de début ($heureDebut)."
-            ];
-            return $conflicts;
-        }
-
-        $db = $this->model->getCon();
-
-        $baseSql = "
-            SELECT edt.*, 
-                   cl.libelle_classe, 
-                   m.libelle_matiere, 
-                   s.libelle_salle, 
-                   CONCAT(u.nom_user, ' ', COALESCE(u.prenom_user, '')) AS nom_prof
-            FROM emplois_temps edt
-            LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
-            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-            LEFT JOIN salles s ON s.code_salle = edt.salle_code
-            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-            LEFT JOIN users u ON u.code_user = edt.enseignant_code
-            WHERE edt.statut_emploi = 'actif'
-              AND LOWER(edt.jour) = ?
-              AND (edt.heure_debut < ? AND edt.heure_fin > ?)
-        ";
-        $excludeSql = $excludeId ? " AND edt.id_emploi != " . (int)$excludeId : "";
-
-        // 1. Vérification Conflit Salle
-        if (!empty($salleCode)) {
-            $stmtS = $db->prepare($baseSql . " AND edt.salle_code = ?" . $excludeSql);
-            $stmtS->execute([$jour, $heureFin, $heureDebut, $salleCode]);
-            $rowS = $stmtS->fetch(PDO::FETCH_ASSOC);
-            if ($rowS) {
-                $salleNom = $rowS['libelle_salle'] ?: 'Cette salle';
-                $debutConf = substr($rowS['heure_debut'], 0, 5);
-                $finConf = substr($rowS['heure_fin'], 0, 5);
-                $conflicts[] = [
-                    'type' => 'salle',
-                    'title' => 'Salle déjà occupée',
-                    'message' => "La salle <strong>" . htmlspecialchars($salleNom) . "</strong> est déjà occupée de <strong>$debutConf à $finConf</strong> par la classe <em>" . htmlspecialchars($rowS['libelle_classe'] ?: 'Autre classe') . "</em> (" . htmlspecialchars($rowS['libelle_matiere'] ?: 'Cours') . ")."
-                ];
-            }
-        }
-
-        // 2. Vérification Conflit Enseignant
-        if (!empty($enseignantCode)) {
-            $stmtE = $db->prepare($baseSql . " AND edt.enseignant_code = ?" . $excludeSql);
-            $stmtE->execute([$jour, $heureFin, $heureDebut, $enseignantCode]);
-            $rowE = $stmtE->fetch(PDO::FETCH_ASSOC);
-            if ($rowE) {
-                $profNom = $rowE['nom_prof'] ?: 'Cet enseignant';
-                $debutConf = substr($rowE['heure_debut'], 0, 5);
-                $finConf = substr($rowE['heure_fin'], 0, 5);
-                $conflicts[] = [
-                    'type' => 'enseignant',
-                    'title' => 'Enseignant non disponible',
-                    'message' => "L'enseignant <strong>" . htmlspecialchars($profNom) . "</strong> donne déjà cours de <strong>$debutConf à $finConf</strong> avec la classe <em>" . htmlspecialchars($rowE['libelle_classe'] ?: 'Autre classe') . "</em> en salle " . htmlspecialchars($rowE['libelle_salle'] ?: 'N/A') . "."
-                ];
-            }
-        }
-
-        // 3. Vérification Conflit Classe
-        if (!empty($classeCode)) {
-            $stmtC = $db->prepare($baseSql . " AND edt.classe_code = ?" . $excludeSql);
-            $stmtC->execute([$jour, $heureFin, $heureDebut, $classeCode]);
-            $rowC = $stmtC->fetch(PDO::FETCH_ASSOC);
-            if ($rowC) {
-                $classeNom = $rowC['libelle_classe'] ?: 'Cette classe';
-                $debutConf = substr($rowC['heure_debut'], 0, 5);
-                $finConf = substr($rowC['heure_fin'], 0, 5);
-                $conflicts[] = [
-                    'type' => 'classe',
-                    'title' => 'Classe déjà en cours',
-                    'message' => "La classe <strong>" . htmlspecialchars($classeNom) . "</strong> a déjà un cours de <em>" . htmlspecialchars($rowC['libelle_matiere'] ?: 'Matière') . "</em> programmé de <strong>$debutConf à $finConf</strong>."
-                ];
-            }
-        }
-
-        return $conflicts;
+        return $this->model->findScheduleConflicts($classeCode, $salleCode, $enseignantCode, $jour, $heureDebut, $heureFin, $excludeId);
     }
 
     public function checkScheduleConflicts()
@@ -313,11 +265,31 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = $this->getActiveAnneeCode();
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
+        $userCode = Auth::code();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if ($anneeCode === null || !$this->canWriteAcademicYear($anneeCode)) {
+            $this->error("Planification de créneau non autorisée sur cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
+
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'user_code' => $userCode,
+            'classe_code' => $data['classe_code'] ?? '',
+            'matiere_code' => $data['matiere_code'] ?? '',
+            'enseignant_code' => $data['enseignant_code'] ?? ''
+        ]);
+
+        if (!empty($data['salle_code'])) {
+            $this->validateForeignKeys([
+                'salle_code' => $data['salle_code']
+            ]);
+        }
 
         // Contrôle de conflits côté serveur
         $conflicts = $this->getScheduleConflicts(
@@ -336,31 +308,36 @@ class EmploiController extends BaseController
         }
 
         if (empty($data['code_emploi'])) {
-            $data['code_emploi'] = $this->validator->generateCode('emplois_temps', 'code_emploi', 'EMP-', 8);
+            $data['code_emploi'] = $this->validator->generateCode(TABLES::EMPLOIS_TEMPS, 'code_emploi', 'EMP-', 8);
         }
         $data['jour'] = strtolower($data['jour'] ?? 'lundi');
         $data['statut_emploi'] = $data['statut_emploi'] ?? 'actif';
         $data['created_at_emploi'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE emplois_temps")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+        $filteredData = $this->model->filterData($data);
         $submitAction = $_POST['submit_action'] ?? 'save';
         if (!empty($data['classe_code'])) {
-            $_SESSION['last_emploi_classe_code'] = $data['classe_code'];
-            $stmtCls = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
-            $stmtCls->execute([$data['classe_code']]);
-            $libelleCls = $stmtCls->fetchColumn();
-            if ($libelleCls) $_SESSION['last_emploi_classe_libelle'] = $libelleCls;
+            Session::set('last_emploi_classe_code', $data['classe_code']);
+            $libelleCls = $this->model->getClasseLibelle($data['classe_code']);
+            if ($libelleCls) Session::set('last_emploi_classe_libelle', $libelleCls);
         }
 
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'emplois_temps',
+                $data['code_emploi'],
+                "Planification de cours ({$data['classe_code']} - {$data['matiere_code']} - {$data['jour']} {$data['heure_debut']} à {$data['heure_fin']})",
+                $filteredData,
+                $etabCode
+            );
             if ($submitAction === 'save_and_new') {
-                $redirectUrl = RACINE . 'emploi/formulaire?classe_code=' . urlencode($data['classe_code']);
+                $redirectUrl = url('emploi/formulaire', ['classe_code' => $data['classe_code']]);
                 $this->success('Créneau horaire planifié avec succès ! Saisissez le créneau suivant.', ['redirect' => $redirectUrl]);
             } else {
-                $this->success('Créneau horaire planifié avec succès!', ['redirect' => RACINE . 'emploi/list']);
+                $this->success('Créneau horaire planifié avec succès!', ['redirect' => url('emploi/list')]);
             }
         } else {
             $this->error('Erreur lors de la création');
@@ -371,6 +348,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $id = (int)$this->post('id_emploi');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -397,9 +375,15 @@ class EmploiController extends BaseController
             $data['jour'] = strtolower($data['jour']);
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE emplois_temps")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'emplois_temps',
+                (string)$id,
+                "Modification du créneau horaire #{$id} ({$data['classe_code']} - {$data['jour']})",
+                $filteredData
+            );
             $this->success('Créneau horaire mis à jour avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -410,9 +394,17 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($item = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'emplois_temps',
+                    $item['code_emploi'] ?? (string)$id,
+                    "Basculement de statut du créneau horaire #{$id}",
+                    ['id_emploi' => $id, 'code_emploi' => $item['code_emploi'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -425,32 +417,14 @@ class EmploiController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         try {
             $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT edt.*, 
-                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
-                       m.libelle_matiere,
-                       s.libelle_salle, s.capacite_salle,
-                        u.nom_user as nom_prof,
-                        u.prenom_user as prenom_prof,
-                        e.grade_enseignant
-                 FROM emplois_temps edt
-                 LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
-                 LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                 LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                 LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-                 LEFT JOIN salles s ON s.code_salle = edt.salle_code
-                 LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-                 LEFT JOIN users u ON u.code_user = edt.enseignant_code
-                 WHERE edt.id_emploi = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$item) { header('Location: ' . RACINE . 'emploi/list'); exit(); }
+            $item = $this->model->getDetailsById((int)$id);
+            if (!$item) { redirect('emploi/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'emploi/list'); exit();
+            redirect('emploi/list');
         }
         $this->loadView('../views/emplois_temps/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -458,13 +432,14 @@ class EmploiController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'emploi/list'); exit(); }
+            if (!$item) { redirect('emploi/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'emploi/list'); exit();
+            redirect('emploi/list');
         }
         $this->loadView('../views/emplois_temps/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -474,14 +449,13 @@ class EmploiController extends BaseController
         $this->requireAuth();
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         if (!empty($classeCode)) {
-            $_SESSION['last_emploi_classe_code'] = $classeCode;
-            $stmt = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
-            $stmt->execute([$classeCode]);
-            $libelle = $stmt->fetchColumn() ?: $classeCode;
-            $_SESSION['last_emploi_classe_libelle'] = $libelle;
+            Session::set('last_emploi_classe_code', $classeCode);
+            $libelle = $this->model->getClasseLibelle($classeCode) ?: $classeCode;
+            Session::set('last_emploi_classe_libelle', $libelle);
             $this->json(['status' => 1, 'classe_code' => $classeCode, 'libelle_classe' => $libelle]);
         } else {
-            unset($_SESSION['last_emploi_classe_code'], $_SESSION['last_emploi_classe_libelle']);
+            Session::remove('last_emploi_classe_code');
+            Session::remove('last_emploi_classe_libelle');
             $this->json(['status' => 1, 'message' => 'Session classe réinitialisée']);
         }
     }
@@ -489,45 +463,28 @@ class EmploiController extends BaseController
     public function getTeacherSchedule()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         $ensCode = trim($_GET['enseignant_code'] ?? ($_POST['enseignant_code'] ?? ''));
         if (empty($ensCode)) {
             $this->json(['status' => 1, 'data' => []]);
             return;
         }
-        $db = $this->model->getCon();
-        $stmt = $db->prepare("
-            SELECT edt.*, 
-                   cl.libelle_classe, 
-                   m.libelle_matiere, 
-                   s.libelle_salle,
-                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
-            FROM emplois_temps edt
-            LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
-            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-            LEFT JOIN salles s ON s.code_salle = edt.salle_code
-            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-            LEFT JOIN users u ON u.code_user = edt.enseignant_code
-            WHERE edt.enseignant_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
-            ORDER BY edt.jour ASC, edt.heure_debut ASC
-        ");
-        $stmt->execute([$ensCode]);
-        $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $items = $this->model->getTeacherSchedule($ensCode);
         $this->json(['status' => 1, 'data' => $items]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $selectedClasseCode = $_GET['classe_code'] ?? ($_SESSION['last_emploi_classe_code'] ?? '');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
+        $selectedClasseCode = $_GET['classe_code'] ?? Session::get('last_emploi_classe_code', '');
         $activeClasseLibelle = '';
 
         if (!empty($selectedClasseCode)) {
-            $_SESSION['last_emploi_classe_code'] = $selectedClasseCode;
-            $stmt = $this->model->getCon()->prepare("SELECT libelle_classe FROM classes WHERE code_classe = ? LIMIT 1");
-            $stmt->execute([$selectedClasseCode]);
-            $activeClasseLibelle = $stmt->fetchColumn() ?: '';
+            Session::set('last_emploi_classe_code', $selectedClasseCode);
+            $activeClasseLibelle = $this->model->getClasseLibelle($selectedClasseCode) ?: '';
             if ($activeClasseLibelle) {
-                $_SESSION['last_emploi_classe_libelle'] = $activeClasseLibelle;
+                Session::set('last_emploi_classe_libelle', $activeClasseLibelle);
             }
         }
 
@@ -542,6 +499,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $rawId = $_POST['id'] ?? ($_GET['id'] ?? $this->post('id'));
         $id = (int)$rawId;
 
@@ -549,6 +507,13 @@ class EmploiController extends BaseController
             $item = $this->model->getById($id);
             if ($item) {
                 if ($this->model->delete($id)) {
+                    $this->logAction(
+                        AuditLogger::ACTION_DELETE,
+                        'emplois_temps',
+                        $item['code_emploi'] ?? (string)$id,
+                        "Suppression du créneau horaire (" . ($item['classe_code'] ?? '') . " - " . ($item['jour'] ?? '') . " " . ($item['heure_debut'] ?? '') . ")",
+                        ['id_emploi' => $id, 'item' => $item]
+                    );
                     $this->success('Créneau horaire supprimé avec succès!');
                     return;
                 } else {
@@ -564,14 +529,20 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $classeCode = trim($this->post('classe_code') ?? ($_GET['classe_code'] ?? ''));
         if (empty($classeCode)) {
             $this->error('Classe non spécifiée');
             return;
         }
-        $db = $this->model->getCon();
-        $stmt = $db->prepare("DELETE FROM emplois_temps WHERE classe_code = ?");
-        if ($stmt->execute([$classeCode])) {
+        if ($this->model->resetByClasse($classeCode)) {
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'emplois_temps',
+                $classeCode,
+                "Réinitialisation complète de l'emploi du temps de la classe {$classeCode}",
+                ['classe_code' => $classeCode]
+            );
             $this->success('L\'emploi du temps de la classe a été entièrement réinitialisé !');
         } else {
             $this->error('Erreur lors de la réinitialisation de l\'emploi du temps');
@@ -581,43 +552,157 @@ class EmploiController extends BaseController
     public function getClassScheduleMatrix()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $ctx = $this->getTeacherContext();
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         if (empty($classeCode)) {
             $this->json(['status' => 0, 'message' => 'Classe non spécifiée']);
             return;
         }
 
-        $db = $this->model->getCon();
-
-        $stmtCls = $db->prepare("
-            SELECT cl.libelle_classe, n.libelle_niveau 
-            FROM classes cl 
-            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code 
-            WHERE cl.code_classe = ? LIMIT 1
-        ");
-        $stmtCls->execute([$classeCode]);
-        $classeInfo = $stmtCls->fetch(PDO::FETCH_ASSOC);
-
-        $stmt = $db->prepare("
-            SELECT edt.*, 
-                   m.libelle_matiere, 
-                   s.libelle_salle, 
-                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
-            FROM emplois_temps edt
-            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-            LEFT JOIN salles s ON s.code_salle = edt.salle_code
-            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-            LEFT JOIN users u ON u.code_user = edt.enseignant_code
-            WHERE edt.classe_code = ?
-            ORDER BY edt.jour ASC, edt.heure_debut ASC
-        ");
-        $stmt->execute([$classeCode]);
-        $slots = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $filterTeachers = $isTeacherOnly ? $teacherCodes : null;
+        $matrix = $this->model->getClassScheduleMatrix($classeCode, $filterTeachers);
 
         $this->json([
             'status' => 1,
-            'classe' => $classeInfo,
-            'slots' => $slots
+            'classe' => $matrix['classe'],
+            'slots' => $matrix['slots'],
+            'isTeacherOnly' => $isTeacherOnly
+        ]);
+    }
+
+    /**
+     * Impression du Répertoire des Emplois du Temps via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->error("Accès non autorisé aux emplois du temps de cette année académique.");
+            return;
+        }
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+
+        $etablissement = $this->getEtablissementConfig();
+        
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+                $stmt->execute([$anneeCode]);
+                $lbl = $stmt->fetchColumn();
+                if ($lbl) $anneeLibelle = $lbl;
+            } catch (Exception $e) {}
+        }
+
+        $editeurNom = Auth::fullName();
+        if (empty($editeurNom)) {
+            $editeurNom = $isTeacherOnly ? 'Enseignant' : 'Direction des Études';
+        }
+
+        // Cas 1 : Impression de l'Emploi du Temps officiel d'une classe spécifique
+        $isSingleClasse = !empty($classeCode) && $classeCode !== 'ALL';
+        if ($isSingleClasse) {
+            require_once __DIR__ . '/../../models/classes/ModelClasse.php';
+            $modelClasse = new ModelClasse();
+            $classeInfo = $modelClasse->getClasseWithDetails($classeCode);
+            if (!$classeInfo) {
+                $classeInfo = ['code_classe' => $classeCode, 'libelle_classe' => $classeCode];
+            }
+            $nbEtudiants = count($modelClasse->getEtudiantsForClasse($classeCode));
+
+            $filterTeachers = $isTeacherOnly ? $teacherCodes : null;
+            $matrix = $this->model->getClassScheduleMatrix($classeCode, $filterTeachers);
+            $slots = $matrix['slots'] ?? [];
+
+            $anneeAff = !empty($classeInfo['libelle_annee']) ? $classeInfo['libelle_annee'] : $anneeLibelle;
+
+            $data = [
+                'etablissement' => $etablissement,
+                'annee_libelle' => $anneeAff,
+                'editeur_nom' => $editeurNom,
+                'classe' => $classeInfo,
+                'nb_etudiants' => $nbEtudiants,
+                'slots' => $slots,
+                'isTeacherOnly' => $isTeacherOnly,
+                'canManage' => $canManage
+            ];
+
+            $html = PdfService::renderTemplate('emploi_temps_classe.php', $data);
+
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'emplois_temps',
+                $classeCode,
+                "Impression de l'emploi du temps de la classe " . ($classeInfo['libelle_classe'] ?? $classeCode),
+                ['classe_code' => $classeCode, 'annee' => $anneeAff]
+            );
+
+            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classeInfo['libelle_classe'] ?? $classeCode);
+            $filename = 'Emploi_Temps_' . $cleanName . '_' . date('Ymd_His') . '.pdf';
+            PdfService::generate($html, $filename, [
+                'orientation' => 'L',
+                'format' => 'A4',
+                'title' => 'Emploi du Temps - ' . ($classeInfo['libelle_classe'] ?? $classeCode),
+                'margin_left' => 8,
+                'margin_right' => 8,
+                'margin_top' => 8,
+                'margin_bottom' => 8
+            ]);
+            return;
+        }
+
+        // Cas 2 : Impression du Répertoire Général des Emplois du Temps
+        if ($isTeacherOnly) {
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $anneeCode, $niveauCode, $classeCode);
+        } else {
+            $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'classes' => $classesWithEmploi,
+            'isTeacherOnly' => $isTeacherOnly,
+            'canManage' => $canManage
+        ];
+
+        $html = PdfService::renderTemplate('repertoire_emplois_temps.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'emplois_temps',
+            $anneeCode ?: 'TOUT',
+            "Impression du répertoire général des emplois du temps (Année: " . ($anneeLibelle ?: 'Toutes') . ")",
+            ['annee_code' => $anneeCode, 'is_teacher_only' => $isTeacherOnly]
+        );
+
+        $filename = ($isTeacherOnly ? 'Mon_Emploi_Temps_' : 'Repertoire_Emplois_Temps_') . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => ($isTeacherOnly ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps') . ' - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 10
         ]);
     }
 }

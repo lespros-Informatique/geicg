@@ -2,8 +2,300 @@
 
 class ModelClasse extends BaseModel
 {
-    protected string $table = 'classes';
+    protected string $table = TABLES::CLASSES;
     protected string $primaryKey = 'id_classe';
     protected ?string $statusField = 'statut_classe';
     protected ?string $createdAtField = 'created_at_classe';
+
+    /**
+     * Récupère les classes actives ayant leur scolarité déjà enregistrée pour une année académique donnée
+     *
+     * @param string $anneeCode Code de l'année académique
+     * @param string|null $affectationEtat 'affecte' ou 'non_affecte' (optionnel)
+     * @return array
+     */
+    public function getClassesWithScolarite(string $anneeCode, ?string $affectationEtat = null): array
+    {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
+        $db = $this->getCon();
+
+        // 1. Essai avec filtre spécifique affectation_etat si fourni
+        if (!empty($affectationEtat)) {
+            $sqlStrict = "
+                SELECT DISTINCT c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
+                                c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
+                                f.libelle_filiere, f.type_filiere, n.libelle_niveau,
+                                s.montant_scolarite, s.code_scolarite, s.affectation_etat
+                FROM " . TABLES::CLASSES . " c
+                INNER JOIN " . TABLES::SCOLARITES . " s ON s.filiere_code = c.filiere_code
+                                       AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
+                                       AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
+                                       AND s.annee_code = ?
+                                       AND s.affectation_etat = ?
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+                WHERE c.statut_classe = '" . STATUTS::ACTIF . "' AND c.annee_code = ?
+                GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
+                         c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
+                         f.libelle_filiere, f.type_filiere, n.libelle_niveau,
+                         s.montant_scolarite, s.code_scolarite, s.affectation_etat
+                ORDER BY c.libelle_classe ASC
+            ";
+            $stmtStrict = $db->prepare($sqlStrict);
+            $stmtStrict->execute([$anneeCode, $affectationEtat, $anneeCode]);
+            return $stmtStrict->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        // 2. Recherche générale : toutes les classes actives ayant au moins une scolarité active pour l'année sélectionnée
+        $sql = "
+            SELECT DISTINCT c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
+                            c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
+                            f.libelle_filiere, f.type_filiere, n.libelle_niveau,
+                            s.montant_scolarite, s.code_scolarite, s.affectation_etat
+            FROM " . TABLES::CLASSES . " c
+            INNER JOIN " . TABLES::SCOLARITES . " s ON s.filiere_code = c.filiere_code
+                                   AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
+                                   AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
+                                   AND s.annee_code = ?
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+            WHERE c.statut_classe = '" . STATUTS::ACTIF . "' AND c.annee_code = ?
+            GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
+                     c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
+                     f.libelle_filiere, f.type_filiere, n.libelle_niveau,
+                     s.montant_scolarite, s.code_scolarite, s.affectation_etat
+            ORDER BY c.libelle_classe ASC
+        ";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$anneeCode, $anneeCode]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Retourne les compteurs de diagnostic pour distinguer :
+     * - l'absence de classes créées pour l'année académique (total_classes_annee === 0)
+     * - l'absence de scolarité enregistrée pour l'année ou le régime (total_scolarites_annee / total_scolarites_regime === 0)
+     */
+    public function getDiagnosticsAnneeScolarite(string $anneeCode, ?string $affectationEtat = null): array
+    {
+        if (empty($anneeCode)) {
+            return [
+                'total_classes_annee' => 0,
+                'total_scolarites_annee' => 0,
+                'total_scolarites_regime' => 0,
+            ];
+        }
+
+        $db = $this->getCon();
+
+        $stmtCls = $db->prepare("SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ?");
+        $stmtCls->execute([$anneeCode]);
+        $totalClassesAnnee = (int)$stmtCls->fetchColumn();
+
+        $stmtScolAnnee = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND annee_code = ?");
+        $stmtScolAnnee->execute([$anneeCode]);
+        $totalScolaritesAnnee = (int)$stmtScolAnnee->fetchColumn();
+
+        $totalScolaritesRegime = $totalScolaritesAnnee;
+        if (!empty($affectationEtat)) {
+            $stmtScolRegime = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND annee_code = ? AND affectation_etat = ?");
+            $stmtScolRegime->execute([$anneeCode, $affectationEtat]);
+            $totalScolaritesRegime = (int)$stmtScolRegime->fetchColumn();
+        }
+
+        return [
+            'total_classes_annee' => $totalClassesAnnee,
+            'total_scolarites_annee' => $totalScolaritesAnnee,
+            'total_scolarites_regime' => $totalScolaritesRegime,
+        ];
+    }
+
+    /**
+     * Reconduit toutes les classes actives d'une année source vers une année de destination.
+     */
+    public function reconduireClassesAnnee(string $anneeSourceCode, string $anneeCibleCode, ?string $etabCode = null, ?string $userCode = null): array
+    {
+        $db = $this->getCon();
+        $validator = new Validator();
+
+        // 1. Récupérer toutes les classes actives de l'année source
+        $stmt = $db->prepare("SELECT * FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND statut_classe = '" . STATUTS::ACTIF . "'");
+        $stmt->execute([$anneeSourceCode]);
+        $classesSource = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($classesSource)) {
+            return [
+                'success' => false,
+                'message' => "Aucune classe active trouvée pour l'année source sélectionnée.",
+                'count' => 0
+            ];
+        }
+
+        $createdCount = 0;
+        $skippedCount = 0;
+
+        $stmtCheck = $db->prepare("SELECT id_classe FROM " . TABLES::CLASSES . " WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
+        $stmtInsert = $db->prepare("
+            INSERT INTO " . TABLES::CLASSES . " 
+            (code_classe, libelle_classe, capacite_max_classe, cycle_code, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
+        ");
+
+        foreach ($classesSource as $cls) {
+            // Vérifier si la classe existe déjà dans l'année de destination
+            $stmtCheck->execute([$cls['libelle_classe'], $anneeCibleCode]);
+            if ($stmtCheck->fetch()) {
+                $skippedCount++;
+                continue;
+            }
+
+            // Générer un nouveau code unique
+            $newCode = $validator->generateCode(TABLES::CLASSES, 'code_classe', 'CLA-', 8);
+            
+            $inserted = $stmtInsert->execute([
+                $newCode,
+                $cls['libelle_classe'],
+                $cls['capacite_max_classe'],
+                $cls['cycle_code'] ?? null,
+                $cls['filiere_code'],
+                $etabCode ?: $cls['etablissement_code'],
+                $cls['niveau_code'],
+                $anneeCibleCode,
+                $userCode ?: $cls['user_code']
+            ]);
+
+            if ($inserted) {
+                $createdCount++;
+            }
+        }
+
+        return [
+            'success' => true,
+            'message' => "Reconduction terminée : {$createdCount} classe(s) créée(s), {$skippedCount} ignorée(s) (déjà existantes).",
+            'count' => $createdCount,
+            'skipped' => $skippedCount
+        ];
+    }
+
+    public function getAllWithDetails(?string $anneeCode = null): array
+    {
+        $sql = "SELECT c.*, 
+                       f.libelle_filiere, f.slug_filiere,
+                       n.libelle_niveau, n.slug_niveau,
+                       cy.libelle_cycle, cy.slug_cycle,
+                       a.libelle_annee
+                FROM " . TABLES::CLASSES . " c
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+                LEFT JOIN " . TABLES::CYCLES . " cy ON cy.code_cycle = c.cycle_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = c.annee_code";
+        $params = [];
+        if (!empty($anneeCode)) {
+            $sql .= " WHERE c.annee_code = ?";
+            $params[] = $anneeCode;
+        }
+        $sql .= " ORDER BY cy.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC, c.libelle_classe ASC";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getParcoursPivots(): array
+    {
+        $sql = "
+            SELECT fc.*, 
+                   f.libelle_filiere, f.slug_filiere,
+                   c.libelle_cycle, c.slug_cycle,
+                   n.libelle_niveau, n.slug_niveau
+            FROM " . TABLES::FILIERE_CYCLES . " fc
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = fc.filiere_code
+            LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = fc.cycle_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = fc.niveau_code
+            WHERE fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "'
+            ORDER BY c.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC
+        ";
+        return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getCycleForFiliereNiveau(string $filiereCode, ?string $niveauCode = null): ?string
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT cycle_code FROM " . TABLES::FILIERE_CYCLES . " 
+            WHERE filiere_code = ? AND (niveau_code = ? OR niveau_code IS NULL OR niveau_code = '') 
+            LIMIT 1
+        ");
+        $stmt->execute([$filiereCode, $niveauCode ?? '']);
+        return $stmt->fetchColumn() ?: null;
+    }
+
+    public function getFiliereAndNiveauNames(string $filiereCode, string $niveauCode): array
+    {
+        $stmtF = $this->getCon()->prepare("SELECT libelle_filiere FROM " . TABLES::FILIERES . " WHERE code_filiere = ?");
+        $stmtF->execute([$filiereCode]);
+        $fName = $stmtF->fetchColumn() ?: '';
+
+        $stmtN = $this->getCon()->prepare("SELECT libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ?");
+        $stmtN->execute([$niveauCode]);
+        $nName = $stmtN->fetchColumn() ?: '';
+
+        return ['filiere' => $fName, 'niveau' => $nName];
+    }
+
+    public function getClasseWithDetails($id): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT c.*, 
+                   f.libelle_filiere,
+                   n.libelle_niveau,
+                   a.libelle_annee
+            FROM " . TABLES::CLASSES . " c
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = c.annee_code
+            WHERE c.id_classe = ? OR c.code_classe = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$id, (string)$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function getEtudiantsForClasse(string $classeCode): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription, ins.affectation_etat
+            FROM " . TABLES::ETUDIANTS . " e
+            INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.etudiant_code = e.code_etudiant
+            WHERE ins.classe_code = ? AND (ins.statut_inscription != '" . STATUTS::ANNULE . "' OR ins.statut_inscription IS NULL)
+            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+        ");
+        $stmt->execute([$classeCode]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getMatieresForClasse(string $classeCode): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT DISTINCT
+                   edt.matiere_code,
+                   m.libelle_matiere,
+                   edt.classe_code,
+                   u.nom_user as nom_prof,
+                   u.prenom_user as prenom_prof,
+                   e.grade_enseignant,
+                   ROUND(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 1) AS volume_horaire
+            FROM " . TABLES::EMPLOIS_TEMPS . " edt
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+            WHERE edt.classe_code = ?
+            GROUP BY edt.matiere_code, m.libelle_matiere, edt.classe_code, u.nom_user, u.prenom_user, e.grade_enseignant
+            ORDER BY m.libelle_matiere ASC
+        ");
+        $stmt->execute([$classeCode]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

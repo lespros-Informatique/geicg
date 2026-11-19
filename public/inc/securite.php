@@ -1,5 +1,5 @@
 <?php
 
-if (!(isset($_SESSION['client']))) {
-    header('location: '.RACINE);
+if (!(Session::has('client'))) {
+    redirect();
 }

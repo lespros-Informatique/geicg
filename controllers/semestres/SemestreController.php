@@ -10,20 +10,20 @@ class SemestreController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $anneeModel = new ModelAnnee();
-        $annees = $anneeModel->getAll();
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
+        $annees = $this->getAccessibleAnnees();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
             $selectedAnneeCode = trim($_GET['annee_code']);
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
-                    $_SESSION['annee_active_code'] = $a['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $a['libelle_annee'];
+                    Session::set('annee_active_code', $a['code_annee']);
+                    Session::set('annee_active_libelle', $a['libelle_annee']);
                     break;
                 }
             }
         } else {
-            $selectedAnneeCode = $_SESSION['annee_active_code'] ?? null;
+            $selectedAnneeCode = Session::get('annee_active_code');
         }
 
         $this->loadView('../views/semestres/list.php', [
@@ -35,7 +35,8 @@ class SemestreController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $anneeCode = $_GET['annee_code'] ?? $_SESSION['annee_active_code'] ?? null;
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
+        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
@@ -65,7 +66,7 @@ class SemestreController extends BaseController
     private function validateDatesSemestre(string $dateDebut, string $dateFin, string $anneeCode = ''): ?string
     {
         if (empty($dateDebut) || empty($dateFin)) {
-            return null;
+            return "Les dates de début et de fin du semestre sont obligatoires.";
         }
 
         $timeDebut = strtotime($dateDebut);
@@ -82,9 +83,7 @@ class SemestreController extends BaseController
         }
 
         if (!empty($anneeCode)) {
-            $stmtAnnee = $this->model->getCon()->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtAnnee->execute([$anneeCode]);
-            $annee = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
+            $annee = $this->model->getAnneeByCode($anneeCode);
 
             if ($annee) {
                 if (!empty($annee['date_debut_annee'])) {
@@ -109,6 +108,7 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -120,7 +120,7 @@ class SemestreController extends BaseController
         }
         $data['libelle_semestre'] = $libelle;
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : ($this->getActiveAnneeCode());
         $etabCode = $this->getActiveEtablissementCode();
 
@@ -137,9 +137,7 @@ class SemestreController extends BaseController
         }
 
         // Vérification que la date de fin de l'année sélectionnée n'est pas encore passée
-        $stmtAnnee = $this->model->getCon()->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
-        $stmtAnnee->execute([$anneeCode]);
-        $targetAnnee = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
+        $targetAnnee = $this->model->getAnneeByCode($anneeCode);
         if ($targetAnnee && !empty($targetAnnee['date_fin_annee']) && $targetAnnee['date_fin_annee'] < date('Y-m-d')) {
             $dateFinFr = date('d/m/Y', strtotime($targetAnnee['date_fin_annee']));
             $this->error("Impossible de créer un semestre sur l'année académique {$targetAnnee['libelle_annee']} car sa date de fin est déjà échue ($dateFinFr).");
@@ -147,27 +145,44 @@ class SemestreController extends BaseController
         }
 
         // Contrôle d'unicité : un seul Semestre 1 et un seul Semestre 2 par année académique
-        $stmt = $this->model->getCon()->prepare("
-            SELECT id_semestre FROM semestres 
-            WHERE (libelle_semestre = ? OR UPPER(libelle_semestre) = ?) AND annee_code = ?
-        ");
-        $stmt->execute([$libelle, strtoupper($libelle), $anneeCode]);
-        if ($stmt->fetch()) {
+        if ($this->model->checkSemestreExists($libelle, $anneeCode)) {
             $this->error("Le $libelle est déjà enregistré pour l'année académique sélectionnée.");
             return;
         }
 
         if (empty($data['code_semestre'])) {
-            $data['code_semestre'] = $this->validator->generateCode('semestres', 'code_semestre', 'SEM-', 8);
+            $data['code_semestre'] = $this->validator->generateCode(TABLES::SEMESTRES, 'code_semestre', 'SEM-', 8);
         }
-        $data['statut_semestre'] = !empty($data['statut_semestre']) ? $data['statut_semestre'] : 'inactif';
+        $data['statut_semestre'] = (!empty($data['statut_semestre']) && in_array($data['statut_semestre'], ['planifie', 'actif', 'cloture'], true)) ? $data['statut_semestre'] : 'planifie';
+
+        if ($data['statut_semestre'] === 'actif') {
+            $actErr = '';
+            if (!$this->model->canActivate($data, $actErr)) {
+                $this->error($actErr);
+                return;
+            }
+        }
+
         $data['created_at_semestre'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE semestres")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            if ($data['statut_semestre'] === 'actif') {
+                $created = $this->model->getByCode($data['code_semestre']);
+                if (!empty($created['id_semestre'])) {
+                    $this->model->setActiveSemester((int)$created['id_semestre']);
+                }
+            }
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'semestres',
+                $data['code_semestre'],
+                "Création du '{$libelle}' ({$data['code_semestre']}) pour l'année {$anneeCode}",
+                $filteredData,
+                $etabCode
+            );
             $this->success('Semestre créé avec succès!');
         } else {
             $this->error('Erreur lors de la création du semestre.');
@@ -178,14 +193,15 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $id = (int)$this->post('id_semestre');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         
         $current = $this->model->getById($id);
         if (!$current) { $this->error('Semestre introuvable'); return; }
 
-        if (($current['statut_semestre'] ?? '') === 'actif') {
-            $this->error('Impossible d\'éditer un semestre actif.');
+        if (($current['statut_semestre'] ?? '') !== 'planifie') {
+            $this->error('Seul un semestre en préparation (planifié) peut être modifié.');
             return;
         }
 
@@ -215,20 +231,33 @@ class SemestreController extends BaseController
             return;
         }
 
+        if (($data['statut_semestre'] ?? '') === 'actif') {
+            $actErr = '';
+            $checkData = array_merge($current, $data);
+            if (!$this->model->canActivate($checkData, $actErr)) {
+                $this->error($actErr);
+                return;
+            }
+        }
+
         // Contrôle d'unicité par année académique (en excluant l'enregistrement en cours d'édition)
-        $stmt = $this->model->getCon()->prepare("
-            SELECT id_semestre FROM semestres 
-            WHERE (libelle_semestre = ? OR UPPER(libelle_semestre) = ?) AND annee_code = ? AND id_semestre != ?
-        ");
-        $stmt->execute([$libelle, strtoupper($libelle), $anneeCode, $id]);
-        if ($stmt->fetch()) {
+        if ($this->model->checkSemestreExists($libelle, $anneeCode, $id)) {
             $this->error("Le $libelle est déjà enregistré pour cette année académique.");
             return;
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE semestres")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            if (($data['statut_semestre'] ?? '') === 'actif') {
+                $this->model->setActiveSemester($id);
+            }
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'semestres',
+                $current['code_semestre'] ?? (string)$id,
+                "Modification du '{$libelle}' (" . ($current['code_semestre'] ?? $id) . ")",
+                $filteredData
+            );
             $this->success('Semestre modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification du semestre.');
@@ -239,51 +268,60 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
+        $id = (int)$this->post('id');
+        $item = $id ? $this->model->getById($id) : null;
+        if ($item) {
+            $currentStatus = $item['statut_semestre'] ?? 'planifie';
+            $errorMsg = '';
+
+            if ($currentStatus !== 'actif') {
+                if (!$this->model->canActivate($item, $errorMsg)) {
+                    $this->error($errorMsg);
+                    return;
+                }
+            } else {
+                if (!$this->model->canClose($item, $errorMsg)) {
+                    $this->error($errorMsg);
+                    return;
+                }
+            }
+
             if ($this->model->toggleStatus($id)) {
-                $this->success('Statut mis à jour avec succès!', ['reload' => true]);
+                $msg = ($currentStatus === 'actif') ? 'Semestre clôturé avec succès !' : 'Semestre activé avec succès !';
+                $newStat = ($currentStatus === 'actif') ? 'cloture' : 'actif';
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'semestres',
+                    $item['code_semestre'] ?? (string)$id,
+                    "Changement de statut du semestre '{$item['libelle_semestre']}' vers {$newStat}",
+                    ['id_semestre' => $id, 'code_semestre' => $item['code_semestre'] ?? null, 'nouveau_statut' => $newStat]
+                );
+                $this->success($msg, ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
             }
         } else {
-            $this->error('Item introuvable');
+            $this->error('Semestre introuvable');
         }
     }
 
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
         try {
             $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT s.*, a.libelle_annee 
-                FROM semestres s
-                LEFT JOIN annees a ON a.code_annee = s.annee_code
-                WHERE s.id_semestre = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$item) { header('Location: ' . RACINE . 'semestre/list'); exit(); }
+            $item = $this->model->getSemestreWithAnnee($id);
+            if (!$item) { redirect('semestre/list'); }
 
             $semestreCode = $item['code_semestre'];
-
-            // Statistiques d'évaluations et de notes
-            $stmtStats = $this->model->getCon()->prepare("
-                SELECT 
-                    (SELECT COUNT(*) FROM notes WHERE semestre_code = ? AND statut_note = 'actif') as total_notes,
-                    (SELECT COUNT(DISTINCT ins.classe_code) FROM notes n JOIN inscriptions ins ON ins.code_inscription = n.inscription_code WHERE n.semestre_code = ?) as total_classes_evaluees,
-                    (SELECT COUNT(DISTINCT ins.etudiant_code) FROM notes n JOIN inscriptions ins ON ins.code_inscription = n.inscription_code WHERE n.semestre_code = ?) as total_etudiants_notes
-            ");
-            $stmtStats->execute([$semestreCode, $semestreCode, $semestreCode]);
-            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [
-                'total_notes' => 0, 'total_classes_evaluees' => 0, 'total_etudiants_notes' => 0
-            ];
-
+            $stats = $this->model->getStatsForSemestre($semestreCode);
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("SemestreController::details error: " . $e->getMessage());
             $this->renderNotFound("Le semestre demandé est introuvable.");
+            return;
         }
         $this->loadView('../views/semestres/details.php', [
             'item' => $item, 
@@ -295,16 +333,16 @@ class SemestreController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item || ($item['statut_semestre'] ?? '') === 'actif') { 
-                header('Location: ' . RACINE . 'semestre/list'); 
-                exit(); 
+            if (!$item || ($item['statut_semestre'] ?? '') === STATUTS::ACTIF) { 
+                redirect('semestre/list'); 
             }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'semestre/list'); exit();
+            redirect('semestre/list');
         }
         $this->loadView('../views/semestres/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -312,6 +350,7 @@ class SemestreController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $this->loadView('../views/semestres/edit.php', ['item' => []]);
     }
 
@@ -331,16 +370,7 @@ class SemestreController extends BaseController
             return;
         }
 
-        $sql = "SELECT id_semestre FROM semestres 
-                WHERE (libelle_semestre = ? OR UPPER(libelle_semestre) = ?) AND annee_code = ?";
-        $params = [$libelle, strtoupper($libelle), $anneeCode];
-        if ($idExclude > 0) {
-            $sql .= " AND id_semestre != ?";
-            $params[] = $idExclude;
-        }
-        $stmt = $this->model->getCon()->prepare($sql);
-        $stmt->execute($params);
-        $exists = (bool)$stmt->fetch();
+        $exists = $this->model->checkSemestreExists($libelle, $anneeCode, $idExclude);
 
         $this->json([
             'exists' => $exists,

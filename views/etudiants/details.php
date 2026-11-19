@@ -1,13 +1,10 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $parent = isset($parent) ? $parent : [];
 $inscription = isset($inscription) ? $inscription : [];
 $etablissement = isset($etablissement) ? $etablissement : [];
-$paiements = isset($paiements) ? $paiements : [];
 $absences = isset($absences) ? $absences : [];
 $scolariteTotale = $scolariteTotale ?? 0;
-$totalPaye = $totalPaye ?? 0;
 $soldeRestant = $soldeRestant ?? 0;
 $tauxPaiement = ($scolariteTotale > 0) ? min(100, round(($totalPaye / $scolariteTotale) * 100)) : 100;
 
@@ -19,6 +16,7 @@ $etabNom = $etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONA
 $etabTel = $etablissement['telephone_etablissement'] ?? '+225 01 02 03 04 05';
 $etabEmail = $etablissement['email_etablissement'] ?? 'contact@geicg.ci';
 $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivoire';
+$encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())->crypter($item['id_etudiant']) : '');
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -35,20 +33,22 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Matricule : <strong><?= htmlspecialchars($matricule) ?></strong> &bull; Classe : <strong><?= htmlspecialchars($classeLibelle) ?></strong> &bull; Année : <strong><?= htmlspecialchars($anneeLibelle) ?></strong></p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+          <a href="<?= url('etudiant/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
             <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour
           </a>
           <button type="button" onclick="imprimerCarteScolaire()" class="btn btn-warning" style="background: #D97706; border-color: #D97706; color: #FFF; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
             <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer Carte Scolaire
           </button>
-          <a href="<?= RACINE ?>etudiant/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]))): ?>
+          <a href="<?= url('etudiant/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
             <i data-lucide="edit" style="width: 16px; height: 16px;"></i> Modifier le dossier
           </a>
+          <?php endif; ?>
         </div>
       </div>
 
       <!-- ========================================================================= -->
-      <!-- SECTION NOUVELLE : CARTE SCOLAIRE OFFICIELLE & BADGE ÉTUDIANT (RECTO / VERSO) -->
+      <!-- SECTION NOUVELLE : CARTE SCOLAIRE  & BADGE ÉTUDIANT (RECTO / VERSO) -->
       <!-- ========================================================================= -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #EFF6FF; padding-bottom: 12px;">
@@ -100,7 +100,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
               <!-- Photo / Avatar Étudiant avec cadre sécurité -->
               <div style="width: 78px; height: 96px; border-radius: 8px; border: 2px solid #F59E0B; background: #0F172A; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0;">
                 <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-                  <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+                  <img src="<?= url($item['photo_etudiant']) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
                 <?php else: ?>
                   <span style="font-size: 24px; font-weight: 900; color: #FDE68A;">
                     <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
@@ -151,7 +151,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
 
             <!-- Pied du Recto -->
             <div style="position: absolute; bottom: 8px; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 4px; font-size: 7px; color: #94A3B8;">
-              <span>CARTE D'IDENTITÉ SCOLAIRE OFFICIELLE</span>
+              <span>CARTE D'IDENTITÉ SCOLAIRE</span>
               <span style="color: #FDE68A; font-weight: 700;">VALABLE JUSQU'AU 31/08/2026</span>
             </div>
 
@@ -221,7 +221,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
           <div style="display: flex; align-items: center; gap: 16px;">
             <div style="width: 64px; height: 76px; min-width: 64px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); flex-shrink: 0;">
               <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-                <img src="<?= RACINE . $item['photo_etudiant'] ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="<?= url($item['photo_etudiant']) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
               <?php else: ?>
                 <span style="font-size: 18px; font-weight: 900; color: #1E3A5F;">
                   <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
@@ -252,7 +252,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
           <div>
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Statut Dossier</span>
             <div style="margin-top: 4px;">
-              <?php if (($item['statut_etudiant'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_etudiant'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Actif / Régulier</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Inactif</span>
@@ -262,14 +262,42 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
 
         </div>
 
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #F1F5F9; font-size: 13px; margin-top: 16px;">
-          <div><strong style="color: #64748B;">Date de Naissance :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_naissance_etudiant']) ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : '-' ?></span> <?= !empty($item['lieu_naissance_etudiant']) ? 'à ' . htmlspecialchars($item['lieu_naissance_etudiant']) : '' ?></div>
-          <div><strong style="color: #64748B;">Lieu de Résidence :</strong> <span style="color: #0F172A;"><?= htmlspecialchars($item['lieu_residence_etudiant'] ?? 'Non renseigné') ?></span></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding-top: 16px; border-top: 1px solid #F1F5F9; font-size: 13px; margin-top: 16px;">
+          <div>
+            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Date de naissance</strong>
+            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
+              <?= (!empty($item['date_naissance_etudiant']) && $item['date_naissance_etudiant'] !== '0000-00-00') ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : ((!empty($item['date_naissance']) && $item['date_naissance'] !== '0000-00-00') ? date('d/m/Y', strtotime($item['date_naissance'])) : 'Non renseignée') ?>
+            </span>
+          </div>
+          <div>
+            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Lieu de naissance</strong>
+            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
+              <?= htmlspecialchars($item['lieu_naissance_etudiant'] ?? $item['lieu_naissance'] ?? 'Non renseigné') ?>
+            </span>
+          </div>
+          <div>
+            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Nationalité</strong>
+            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
+              <?= htmlspecialchars($item['nationalite_etudiant'] ?? $item['nationalite'] ?? 'Ivoirienne') ?>
+            </span>
+          </div>
+          <div>
+            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Adresse de résidence</strong>
+            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
+              <?= htmlspecialchars($item['lieu_residence_etudiant'] ?? $item['adresse_etudiant'] ?? 'Non renseignée') ?>
+            </span>
+          </div>
           <?php if (!empty($item['matricule_menet'])): ?>
-            <div><strong style="color: #64748B;">Matricule MENET-FP :</strong> <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px;"><?= htmlspecialchars($item['matricule_menet']) ?></code></div>
+            <div>
+              <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Matricule MENET-FP</strong>
+              <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px; font-size: 13px;"><?= htmlspecialchars($item['matricule_menet']) ?></code>
+            </div>
           <?php endif; ?>
           <?php if (!empty($item['matricule_mesrs'])): ?>
-            <div><strong style="color: #64748B;">Matricule MESRS :</strong> <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px;"><?= htmlspecialchars($item['matricule_mesrs']) ?></code></div>
+            <div>
+              <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Matricule MESRS</strong>
+              <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px; font-size: 13px;"><?= htmlspecialchars($item['matricule_mesrs']) ?></code>
+            </div>
           <?php endif; ?>
         </div>
       </div>
@@ -380,7 +408,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
               <i data-lucide="credit-card" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Situation Financière & Reçus de Scolarité
             </h3>
           </div>
-          <a href="<?= RACINE ?>paiement/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
+          <a href="<?= url('paiement/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
             + Nouveau règlement
           </a>
         </div>
@@ -422,7 +450,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
                 <?php foreach ($paiements as $p): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-family: monospace; font-weight: 700; color: #1E3A5F;">
-                      <a href="<?= RACINE ?>paiement/details/<?= $this->validator->crypter($p['id_paiement']) ?>" style="color: #1E3A5F; text-decoration: underline;">
+                      <a href="<?= url('paiement/details/' . $this->validator->crypter($p['id_paiement'])) ?>" style="color: #1E3A5F; text-decoration: underline;">
                         <?= htmlspecialchars($p['reference_paiement'] ?? ($p['code_paiement'] ?? '-')) ?>
                       </a>
                     </td>
@@ -446,50 +474,7 @@ $etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivo
   </main>
 </div>
 
-<!-- ========================================================================= -->
-<!-- STYLES D'IMPRESSION DÉDIÉS : IMPRESSION STRICTEMENT RÉSERVÉE AU BADGE -->
-<!-- ========================================================================= -->
-<style>
-@media print {
-  body * {
-    visibility: hidden !important;
-  }
-  #section-carte-scolaire, #section-carte-scolaire * {
-    visibility: visible !important;
-  }
-  #section-carte-scolaire {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 30px !important;
-    padding: 20px !important;
-    background: #FFF !important;
-  }
-  .badge-card-container {
-    box-shadow: none !important;
-    border: 1px solid #94A3B8 !important;
-    page-break-inside: avoid !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-}
-</style>
-
-<script>
-function imprimerCarteScolaire() {
-  window.print();
-}
-
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons(); 
-  <?php if (isset($_GET['print'])): ?>
-    setTimeout(function() { window.print(); }, 400);
-  <?php endif; ?>
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/etudiants.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

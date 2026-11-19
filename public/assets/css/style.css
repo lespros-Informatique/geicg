@@ -1802,7 +1802,7 @@ body {
    TOAST
 ============================================================================= */
 
-.toast {
+.js-toast-container .toast {
     position: relative;
 
     display: flex;
@@ -1829,7 +1829,7 @@ body {
     overflow: hidden;
 }
 
-.toast--show {
+.js-toast-container .toast--show {
     transform: translateX(0);
     opacity: 1;
 }
@@ -2400,7 +2400,6 @@ body {
 [data-theme-content="dark"] .modal,
 [data-theme-content="dark"] .dropdown-panel,
 [data-theme-content="dark"] .dropdown-card,
-[data-theme-content="dark"] .toast,
 [data-theme-content="dark"] .js-toast-container .toast {
     background: var(--card-bg);
     color: var(--text-primary);
@@ -2511,7 +2510,7 @@ body {
 [data-theme-content="dark"] .price-box {
     background: rgba(255, 255, 255, 0.03);
 }
-[data-theme-content="dark"] .toast {
+[data-theme-content="dark"] .js-toast-container .toast {
     background: var(--toast-bg);
     color: var(--toast-text);
     box-shadow: var(--toast-shadow);

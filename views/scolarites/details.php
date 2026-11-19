@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $tranches = isset($tranches) ? $tranches : [];
 $montantScolarite = (float)($item['montant_scolarite'] ?? ($item['montant'] ?? 0));
 
@@ -22,16 +21,16 @@ $nbTranches = count($tranches);
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Grille Tarifaire Scolarité</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span>Année : <strong><?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></strong></span> &bull; 
-            <span>Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong></span> &bull; 
-            <span>Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong></span> &bull; 
+            <span>Filière : <strong title="<?= htmlspecialchars($item['libelle_filiere'] ?? '') ?>"><?= htmlspecialchars(!empty($item['slug_filiere']) ? $item['slug_filiere'] : ($item['libelle_filiere'] ?? '-')) ?></strong></span> &bull; 
+            <span>Niveau : <strong title="<?= htmlspecialchars($item['libelle_niveau'] ?? '') ?>"><?= htmlspecialchars(!empty($item['slug_niveau']) ? $item['slug_niveau'] : ($item['libelle_niveau'] ?? '-')) ?></strong></span> &bull; 
             <span>Régime : <span class="badge" style="background: <?= (($item['affectation_etat'] ?? '') === 'affecte') ? '#DCFCE7' : '#F1F5F9' ?>; color: <?= (($item['affectation_etat'] ?? '') === 'affecte') ? '#15803D' : '#475569' ?>; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?= (($item['affectation_etat'] ?? '') === 'affecte') ? 'Affecté (État)' : 'Non Affecté (Privé)' ?></span></span>
           </p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>scolarite/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('scolarite/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux scolarités
           </a>
-          <a href="<?= RACINE ?>scolarite/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('scolarite/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le tarif
           </a>
         </div>
@@ -66,33 +65,6 @@ $nbTranches = count($tranches);
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Total planifié</div>
           </div>
 
-          <!-- 4. Statut de Répartition -->
-          <?php if ($montantScolarite > 0 && abs($diffTranches) < 0.01): ?>
-            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
-              <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Répartition</span>
-              <div style="font-size: 20px; font-weight: 800; color: #15803D; margin-top: 4px;">✓ 100% Planifié</div>
-              <div style="font-size: 12px; color: #15803D; margin-top: 2px;">Scolarité couverte</div>
-            </div>
-          <?php elseif ($diffTranches > 0): ?>
-            <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 16px;">
-              <span style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Répartition</span>
-              <div style="font-size: 18px; font-weight: 800; color: #B45309; margin-top: 4px;">Incomplet (-<?= number_format($diffTranches, 0, ',', ' ') ?> FCFA)</div>
-              <div style="font-size: 12px; color: #B45309; margin-top: 2px;">Reste à planifier</div>
-            </div>
-          <?php elseif ($diffTranches < 0): ?>
-            <div style="background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 10px; padding: 16px;">
-              <span style="font-size: 11px; font-weight: 700; color: #B91C1C; text-transform: uppercase;">Répartition</span>
-              <div style="font-size: 18px; font-weight: 800; color: #B91C1C; margin-top: 4px;">Dépassement (+<?= number_format(abs($diffTranches), 0, ',', ' ') ?> FCFA)</div>
-              <div style="font-size: 12px; color: #B91C1C; margin-top: 2px;">Tranches supérieures au total</div>
-            </div>
-          <?php else: ?>
-            <div style="background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 10px; padding: 16px;">
-              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Répartition</span>
-              <div style="font-size: 20px; font-weight: 800; color: #64748B; margin-top: 4px;">Non configuré</div>
-              <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Aucune tranche rattachée</div>
-            </div>
-          <?php endif; ?>
-
         </div>
       </div>
 
@@ -101,12 +73,10 @@ $nbTranches = count($tranches);
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
           <div>
             <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="calendar" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Échéancier Officiel des Tranches (<?= count($tranches) ?>)
+              <i data-lucide="calendar" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Échéancier des Tranches (<?= count($tranches) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>tranche/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Ajouter une tranche
-          </a>
+        
         </div>
 
         <?php if (empty($tranches)): ?>
@@ -124,9 +94,9 @@ $nbTranches = count($tranches);
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($tranches as $t): ?>
+                <?php foreach ($tranches as $index => $t): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
-                    <td style="padding: 10px; font-weight: 800; color: #1E3A5F;">#<?= (int)($t['ordre_tranche'] ?? 1) ?></td>
+                    <td style="padding: 10px; font-weight: 800; color: #1E3A5F;">#<?= $index + 1 ?></td>
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($t['libelle_tranche'] ?? 'Tranche') ?></td>
                     <td style="padding: 10px; text-align: right; font-weight: 800; color: #15803D;">
                       <?= number_format((float)($t['montant_tranche'] ?? 0), 0, ',', ' ') ?> FCFA
@@ -150,5 +120,4 @@ $nbTranches = count($tranches);
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

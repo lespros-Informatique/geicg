@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -14,10 +13,10 @@ $item = isset($item) ? $item : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Détails de la séance, salle, matière et enseignant assigné</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>emploi/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('emploi/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour au planning
           </a>
-          <a href="<?= RACINE ?>emploi/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('emploi/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier ce créneau
           </a>
         </div>
@@ -68,7 +67,7 @@ $item = isset($item) ? $item : [];
             <?php endif; ?>
           </div>
           <div><strong style="color: #64748B;">Statut du créneau :</strong> 
-            <?php if (($item['statut_emploi'] ?? '') === 'actif'): ?>
+            <?php if (($item['statut_emploi'] ?? '') === STATUTS::ACTIF): ?>
               <span class="badge" style="background:#DCFCE7; color:#15803D; padding:3px 10px; border-radius:10px; font-weight:700;">Actif</span>
             <?php else: ?>
               <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:3px 10px; border-radius:10px; font-weight:700;">Suspendu</span>
@@ -80,5 +79,4 @@ $item = isset($item) ? $item : [];
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

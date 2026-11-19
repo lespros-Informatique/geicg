@@ -1,87 +1,28 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$classes = (new ModelClasse())->getAll();
-$accessoires = (new ModelAccessoire())->getAll();
-$pieces = (new ModelPieceFournir())->getAll();
-$annees = (new ModelAnnee())->getAll();
-$activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
+$annees = (new ModelAnnee())->getAccessibleAnnees();
+$modelAnnee = new ModelAnnee();
+$activeYearRow = $modelAnnee->getActiveYear();
+$activeAnneeCode = Session::get('annee_active_code', '') ?: ($activeYearRow['code_annee'] ?? '');
+if (empty($activeAnneeCode)) {
+    foreach ($annees as $a) {
+        if (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) {
+            $activeAnneeCode = $a['code_annee'];
+            break;
+        }
+    }
+    if (empty($activeAnneeCode) && !empty($annees)) {
+        $activeAnneeCode = $annees[0]['code_annee'];
+    }
+}
+$modelClasse = new ModelClasse();
+$classes = $modelClasse->getClassesWithScolarite($activeAnneeCode, 'non_affecte');
+$diagClassesScol = $modelClasse->getDiagnosticsAnneeScolarite($activeAnneeCode, 'non_affecte');
+$totalClassesAnneeInit = (int)($diagClassesScol['total_classes_annee'] ?? 0);
+$totalScolaritesAnneeInit = (int)($diagClassesScol['total_scolarites_annee'] ?? 0);
+$accessoires = (new ModelAccessoire())->getActifs($activeAnneeCode);
+$pieces = (new ModelPieceFournir())->getPiecesWithRequirements();
 ?>
-<style>
-  .wizard-stepper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
-    background: #FFFFFF;
-    border-radius: 12px;
-    padding: 16px 24px;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    overflow-x: auto;
-  }
-  .wizard-step-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 13px;
-    color: #94A3B8;
-    position: relative;
-    white-space: nowrap;
-    padding: 6px 12px;
-    border-radius: 8px;
-    transition: all 0.25s ease;
-    cursor: pointer;
-  }
-  .wizard-step-item.active {
-    color: #1E3A5F;
-    background: #EFF6FF;
-  }
-  .wizard-step-item.completed {
-    color: #15803D;
-  }
-  .wizard-step-number {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #F1F5F9;
-    color: #64748B;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 800;
-    transition: all 0.25s ease;
-  }
-  .wizard-step-item.active .wizard-step-number {
-    background: #1E3A5F;
-    color: #FFFFFF;
-  }
-  .wizard-step-item.completed .wizard-step-number {
-    background: #DCFCE7;
-    color: #15803D;
-  }
-  .wizard-step-divider {
-    flex: 1;
-    height: 2px;
-    background: #E2E8F0;
-    margin: 0 12px;
-    min-width: 20px;
-  }
-  .wizard-card {
-    background: #FFFFFF;
-    border-radius: 12px;
-    padding: 28px;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  }
-  .wizard-step-content {
-    display: none;
-  }
-  .wizard-step-content.active {
-    display: block;
-  }
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -99,7 +40,7 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
           <button type="button" id="btn-reset-draft" class="btn" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 10px 16px; border: 1px solid #FCA5A5; color: #DC2626; background: #FEF2F2; cursor: pointer;">
             <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i> Effacer le brouillon
           </button>
-          <a href="<?= RACINE ?>etudiant/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('etudiant/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
         </div>
@@ -135,7 +76,7 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
 
       <!-- Form Wizard -->
       <div class="wizard-card">
-        <form id="form-wizard-etudiant" action="<?= RACINE ?>etudiant/addWizard" method="POST">
+        <form id="form-wizard-etudiant" action="<?= url('etudiant/addWizard') ?>" method="POST" novalidate>
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
           <!-- ÉTAPE 1 : IDENTITÉ ÉTUDIANT -->
@@ -143,11 +84,10 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
             <h3 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-bottom: 20px; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="user" style="width: 20px; height: 20px;"></i> Étape 1 : Identité & Coordonnées de l'Étudiant
             </h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div class="wizard-grid-etape1">
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule École (Auto-généré)</label>
-                <input type="text" class="form-control" name="matricule_etudiant" id="wiz_matricule" placeholder="Auto-généré : XX-123/GEB/AA26" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-family: monospace; font-weight: 700; color: #1E3A5F;">
-                <small style="color: #64748B; font-size: 11px; margin-top: 3px; display: block;">Format : Initiales - Ordre / GEB / Filière + Année (laissé vide pour génération auto)</small>
+                <input type="text" class="form-control" name="matricule_etudiant" id="wiz_matricule" placeholder="Auto-généré : XX-123/GEB/AA26" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; font-family: monospace; font-weight: 700; color: #1E3A5F; cursor: not-allowed;" readonly>
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Matricule MENET-FP</label>
@@ -174,15 +114,15 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Date de naissance</label>
-                <input type="date" class="form-control" name="date_naissance_etudiant" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="date" class="form-control" id="wiz_date_naissance" name="date_naissance_etudiant" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Lieu de naissance</label>
-                <input type="text" class="form-control" name="lieu_naissance_etudiant" placeholder="Ex: Abidjan Treichville" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="text" class="form-control" id="wiz_lieu_naissance" name="lieu_naissance_etudiant" placeholder="Ex: Abidjan Treichville" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nationalité</label>
-                <input type="text" class="form-control" name="nationalite_etudiant" value="Ivoirienne" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="text" class="form-control" id="wiz_nationalite" name="nationalite_etudiant" value="Ivoirienne" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Téléphone étudiant <span style="color: #EF4444;">*</span></label>
@@ -190,11 +130,11 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
               </div>
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Email étudiant</label>
-                <input type="email" class="form-control" name="email_etudiant" placeholder="Ex: jean.kouassi@etudiant.geicg.ci" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
+                <input type="email" class="form-control" id="wiz_email" name="email_etudiant" placeholder="Ex: jean.kouassi@etudiant.geicg.ci" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
               </div>
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Adresse de résidence</label>
-                <textarea class="form-control" name="lieu_residence_etudiant" rows="2" placeholder="Ex: Cocody Riviera 3, Abidjan" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;"></textarea>
+                <textarea class="form-control" id="wiz_residence" name="lieu_residence_etudiant" rows="2" placeholder="Ex: Cocody Riviera 3, Abidjan" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;"></textarea>
               </div>
             </div>
           </div>
@@ -204,7 +144,7 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
             <h3 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-bottom: 20px; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="users" style="width: 20px; height: 20px;"></i> Étape 2 : Parents & Tuteurs Légaux
             </h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div class="wizard-grid-3">
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Nom & Prénom du Père</label>
                 <input type="text" class="form-control" name="nom_pere" placeholder="Ex: KOUASSI Paul" style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1;">
@@ -257,16 +197,22 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
                   Statut d'Affectation État / Régime de l'Étudiant <span style="color: #EF4444;">*</span>
                 </label>
                 <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                  <label class="label-affectation-choice" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid #1E3A5F; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #1E3A5F; background: #EFF6FF; transition: all 0.2s;">
-                    <input type="radio" name="affectation_etat" value="non_affecte" checked style="accent-color: #1E3A5F; width: 16px; height: 16px;">
-                    <span>Non Affecté (Privé)</span>
+                  <label class="label-affectation-choice label-affectation-non-affecte" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 2px solid #2563EB; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #1E3A5F; background: #EFF6FF; transition: all 0.2s;">
+                    <input type="radio" name="affectation_etat" value="non_affecte" checked style="accent-color: #2563EB; width: 16px; height: 16px;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                      <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #2563EB;"></span>
+                      Non Affecté
+                    </span>
                   </label>
-                  <label class="label-affectation-choice" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px solid #CBD5E1; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #334155; background: #FFFFFF; transition: all 0.2s;">
-                    <input type="radio" name="affectation_etat" value="affecte" style="accent-color: #1E3A5F; width: 16px; height: 16px;">
-                    <span>Affecté (Subventionné par l'État)</span>
+                  <label class="label-affectation-choice label-affectation-affecte" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: 2px solid #CBD5E1; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; color: #334155; background: #FFFFFF; transition: all 0.2s;">
+                    <input type="radio" name="affectation_etat" value="affecte" style="accent-color: #16A34A; width: 16px; height: 16px;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                      <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #16A34A;"></span>
+                      Affecté
+                    </span>
                   </label>
                 </div>
-                <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi.</small>
+                <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le tarif et le nombre d'échéances s'adaptent automatiquement selon le régime choisi (Affecté ou Non Affecté).</small>
               </div>
 
               <!-- ANNÉE ACADÉMIQUE -->
@@ -276,8 +222,8 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
                 </label>
                 <select class="form-control select2" id="wiz_annee" name="annee_code" style="width: 100%;" required>
                   <?php foreach($annees as $a): ?>
-                    <option value="<?= $a['code_annee'] ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif')) ? 'selected' : '' ?>>
-                      <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' (Active)' : '' ?>
+                    <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($activeAnneeCode === $a['code_annee'] || (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF)) ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($a['libelle_annee']) ?> (<?= htmlspecialchars($a['code_annee']) ?>)<?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' — Session Active' : '' ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
@@ -287,11 +233,39 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Classe d'affectation <span style="color: #EF4444;">*</span></label>
                 <select class="form-control select2" id="wiz_classe" name="classe_code" style="width: 100%;" required>
-                  <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
-                  <?php foreach($classes as $cl): ?>
-                    <option value="<?= $cl['code_classe'] ?>" data-annee="<?= htmlspecialchars($cl['annee_code'] ?? '') ?>"><?= htmlspecialchars($cl['libelle_classe']) ?></option>
-                  <?php endforeach; ?>
+                  <?php if (!empty($classes)): ?>
+                    <option value="">-- Rechercher / Sélectionner la classe d'affectation --</option>
+                    <?php foreach($classes as $cl): ?>
+                      <option value="<?= htmlspecialchars($cl['code_classe']) ?>" 
+                              data-annee="<?= htmlspecialchars($cl['annee_code'] ?? $activeAnneeCode) ?>"
+                              data-type-filiere="<?= htmlspecialchars($cl['type_filiere'] ?? '') ?>"
+                              data-filiere="<?= htmlspecialchars($cl['filiere_code'] ?? '') ?>"
+                              data-niveau="<?= htmlspecialchars($cl['niveau_code'] ?? '') ?>">
+                        <?= htmlspecialchars($cl['libelle_classe']) ?> (<?= htmlspecialchars($cl['code_classe']) ?>)
+                      </option>
+                    <?php endforeach; ?>
+                  <?php else: ?>
+                    <?php if ($totalClassesAnneeInit === 0): ?>
+                      <option value="">-- Aucune classe enregistrée pour cette année académique --</option>
+                    <?php elseif ($totalScolaritesAnneeInit === 0): ?>
+                      <option value="">-- Aucune scolarité enregistrée pour cette année académique --</option>
+                    <?php else: ?>
+                      <option value="">-- Aucune scolarité enregistrée pour le régime Non Affecté --</option>
+                    <?php endif; ?>
+                  <?php endif; ?>
                 </select>
+                <div id="wiz_classe_empty_msg" style="<?= empty($classes) ? '' : 'display: none;' ?> margin-top: 8px; font-size: 12.5px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: 8px; line-height: 1.4;">
+                  <i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline-block; vertical-align: middle; margin-right: 6px; color: #D97706;"></i>
+                  <span>
+                    <?php if ($totalClassesAnneeInit === 0): ?>
+                      Aucune classe n'est enregistrée pour l'année académique sélectionnée. Veuillez d'abord créer ou reconduire les classes dans le module <strong>Structure Académique &gt; Classes</strong>.
+                    <?php elseif ($totalScolaritesAnneeInit === 0): ?>
+                      Des classes existent pour cette année académique, mais <strong>aucun tarif de scolarité n'est encore enregistré</strong>. Veuillez configurer les grilles tarifaires dans le module <strong>Finance &gt; Scolarités</strong>.
+                    <?php else: ?>
+                      Des classes existent pour cette année académique, mais <strong>aucun tarif de scolarité actif n'est enregistré</strong> pour le régime <strong>Non Affecté</strong>. Veuillez configurer la scolarité dans le module <strong>Finance &gt; Scolarités</strong>.
+                    <?php endif; ?>
+                  </span>
+                </div>
               </div>
 
               <!-- Montant auto-récupéré -->
@@ -299,27 +273,30 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
 
               <div class="form-group">
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Remise / Bourse Accordée (FCFA)</label>
-                <input type="number" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="0" readonly style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #64748B; font-weight: 600; pointer-events: none; cursor: not-allowed;">
+                <input type="number" min="0" step="any" class="form-control" id="wiz_remise" name="remise_accordee" placeholder="0" value="0" readonly style="width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #64748B; font-weight: 600; pointer-events: none; cursor: not-allowed;">
               </div>
             </div>
 
             <!-- FICHE TARIFAIRE AUTOMATIQUE & ÉCHÉANCIER COMPLET DES TRANCHES -->
-            <div id="wiz-class-tuition-box" style="display: none; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 22px 24px; margin-top: 22px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.06); transition: all 0.3s ease;">
+            <div id="wiz-class-tuition-box" style="display: none; background: #FFFFFF; border: 2px solid #CBD5E1; border-radius: 12px; padding: 22px 24px; margin-top: 22px; box-shadow: 0 4px 14px -2px rgba(0,0,0,0.08); transition: all 0.3s ease;">
               
               <!-- 1. En-tête avec résumé de la classe et total scolarité -->
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 16px; margin-bottom: 18px;">
+              <div id="wiz_tuition_header_bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 16px; margin-bottom: 18px; border-radius: 8px; padding: 12px 16px; transition: all 0.3s;">
                 <div>
-                  <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                  <div id="wiz_tuition_top_tag" style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
                     <i data-lucide="graduation-cap" style="width: 16px; height: 16px; color: #D97706;"></i> Grille Tarifaire & Échéancier de Scolarité
                   </div>
                   <div style="font-size: 17px; font-weight: 900; color: #0F172A; margin-top: 4px;" id="wiz_summary_classe_title">-</div>
-                  <div style="font-size: 13px; color: #64748B; margin-top: 2px;" id="wiz_summary_filiere_niveau">-</div>
                 </div>
 
                 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                  <div style="background: #EFF6FF; border: 1.5px solid #BFDBFE; padding: 10px 18px; border-radius: 10px; text-align: right;">
-                    <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase;">Scolarité Annuelle</div>
+                  <div id="wiz_summary_total_scolarite_box" style="background: #EFF6FF; border: 1.5px solid #BFDBFE; padding: 10px 18px; border-radius: 10px; text-align: right; transition: all 0.3s;">
+                    <div id="wiz_summary_total_scolarite_label" style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase;">Scolarité Annuelle</div>
                     <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 2px;" id="wiz_summary_total_scolarite">0 FCFA</div>
+                  </div>
+                  <div id="wiz_summary_frais_annexes_box" style="background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 10px 18px; border-radius: 10px; text-align: right; transition: all 0.3s;">
+                    <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase;">Frais Annexes</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 2px;" id="wiz_summary_total_frais_annexes">0 FCFA</div>
                   </div>
                   <div id="wiz_summary_net_box" style="display: none; background: #F0FDF4; border: 1.5px solid #86EFAC; padding: 10px 18px; border-radius: 10px; text-align: right;">
                     <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase;">Net à Payer (Après Remise)</div>
@@ -331,7 +308,7 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
               <!-- 2. Titre de la section des tranches -->
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <span style="font-size: 13px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                  <i data-lucide="calendar" style="width: 15px; height: 15px; color: #2563EB;"></i> Échéancier de Toutes les Tranches de Paiement
+                  <i id="wiz_tranches_calendar_icon" data-lucide="calendar" style="width: 15px; height: 15px; color: #2563EB;"></i> Échéancier de Toutes les Tranches de Paiement
                 </span>
                 <span id="wiz_tranches_count_badge" style="background: #F1F5F9; color: #475569; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
                   0 tranche(s)
@@ -342,7 +319,7 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
               <div style="overflow-x: auto;">
                 <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0;">
                   <thead>
-                    <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <tr id="wiz_tranches_table_header" style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s;">
                       <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0; width: 60px;">N°</th>
                       <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0;">Intitulé de l'Échéance / Tranche</th>
                       <th style="padding: 12px 16px; border-bottom: 2px solid #E2E8F0; text-align: center; width: 140px;">Part</th>
@@ -353,13 +330,22 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
                   <tbody id="wiz_tranches_table_body">
                     <!-- Rempli dynamiquement en JS avec toutes les tranches -->
                   </tbody>
-                  <tfoot>
-                    <tr style="background: #F8FAFC; font-weight: 800; font-size: 13px; color: #0F172A; border-top: 2px solid #CBD5E1;">
-                      <td colspan="4" style="padding: 12px 16px; text-align: right; text-transform: uppercase;">Total Général Échéancier :</td>
-                      <td style="padding: 12px 16px; text-align: right; color: #1E3A5F; font-size: 15px; font-weight: 900;" id="wiz_tranches_total_sum">0 FCFA</td>
-                    </tr>
-                  </tfoot>
                 </table>
+              </div>
+
+              <!-- 4. Carte détaillée des Frais d'inscription (1ère Tranche + Frais Annexes Catégorie Inscription) -->
+              <div id="wiz_frais_annexes_detail_card" style="margin-top: 18px; background: #FFFBEB; border: 1.5px solid #FDE68A; padding: 14px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <span style="font-size: 11.5px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="bookmark-check" style="width: 16px; height: 16px; color: #D97706;"></i> Frais d'inscription
+                  </span>
+                  <div style="font-size: 14px; font-weight: 700; color: #78350F; margin-top: 4px;" id="wiz_frais_annexes_title_text">-</div>
+                  <div style="font-size: 12px; color: #92400E; margin-top: 2px;" id="wiz_frais_annexes_details_desc">-</div>
+                </div>
+                <div style="background: #FEF3C7; border: 1px solid #FCD34D; padding: 8px 16px; border-radius: 8px; text-align: right;">
+                  <div style="font-size: 10.5px; font-weight: 800; color: #92400E; text-transform: uppercase;">Total Frais d'Inscription</div>
+                  <div style="font-size: 17px; font-weight: 900; color: #B45309;" id="wiz_frais_annexes_amount_badge">0 FCFA</div>
+                </div>
               </div>
 
             </div>
@@ -370,21 +356,72 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
             
             <!-- SECTION A : ACCESSOIRES & KITS -->
             <div style="margin-bottom: 30px;">
-              <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin-bottom: 16px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="package" style="width: 18px; height: 18px;"></i> Accessoires & Kits d'Inscription
-              </h3>
-              <p style="font-size: 13px; color: #64748B; margin-bottom: 14px;">Sélectionnez les kits et accessoires souscrits lors de cette inscription :</p>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; border-bottom: 2px solid #F1F5F9; padding-bottom: 10px;">
+                <div>
+                  <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="package" style="width: 18px; height: 18px;"></i> Accessoires & Kits d'Inscription
+                  </h3>
+                  <p style="font-size: 12.5px; color: #64748B; margin: 3px 0 0 0;">Sélectionnez les kits et accessoires souscrits lors de cette inscription :</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" id="btn-check-all-accessoires" style="background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A5F; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                    <i data-lucide="check-square" style="width: 14px; height: 14px;"></i> Tout cocher
+                  </button>
+                  <button type="button" id="btn-uncheck-all-accessoires" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #475569; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                    Tout décocher
+                  </button>
+                </div>
+              </div>
+              <div id="acc_no_class_msg" style="display: none; padding: 12px 16px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; color: #92400E; font-size: 13px; font-weight: 600; margin-bottom: 14px;">
+                <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px; color: #D97706;"></i>
+                <span>Sélectionnez une classe à l'étape 3 pour filtrer et pré-cocher automatiquement les kits correspondants.</span>
+              </div>
+
               <?php if (!empty($accessoires)): ?>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
-                  <?php foreach($accessoires as $acc): ?>
-                    <label class="acc-checkbox-card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
-                      <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire']) ?>" data-prix="<?= (float)$acc['prix_accessoire'] ?>" value="<?= htmlspecialchars($acc['code_accessoire']) ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer;">
-                        <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 13px;"><?= htmlspecialchars($acc['libelle_accessoire']) ?></span>
+                <div id="acc_cards_container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+                  <?php foreach($accessoires as $acc): 
+                    $kitTypeFiliere = $acc['type_filiere_cible'] ?? 'TOUT';
+                    $filieresCodesCsv = $acc['filieres_codes_csv'] ?? '';
+                    $libelleFiliere = $acc['libelle_filiere'] ?? '';
+                    $niveauCode = $acc['niveau_code'] ?? '';
+                    $libelleNiveau = $acc['libelle_niveau'] ?? '';
+                    
+                    $filiereBadgeText = ($kitTypeFiliere === 'INDUSTRIELLE') ? 'Industrielle' : (($kitTypeFiliere === 'TERTIAIRE') ? 'Tertiaire' : 'Toutes filières');
+                    if (!empty($libelleFiliere)) { $filiereBadgeText .= ' (' . $libelleFiliere . ')'; }
+                    $filiereBadgeBg = ($kitTypeFiliere === 'INDUSTRIELLE') ? '#FEF3C7' : (($kitTypeFiliere === 'TERTIAIRE') ? '#DBEAFE' : '#F1F5F9');
+                    $filiereBadgeColor = ($kitTypeFiliere === 'INDUSTRIELLE') ? '#92400E' : (($kitTypeFiliere === 'TERTIAIRE') ? '#1E40AF' : '#475569');
+
+                    $niveauBadgeText = !empty($libelleNiveau) ? $libelleNiveau : 'Tous niveaux';
+                  ?>
+                    <label class="acc-checkbox-card" 
+                           data-code="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>"
+                           data-type-filiere="<?= htmlspecialchars($kitTypeFiliere) ?>"
+                           data-filiere-codes="<?= htmlspecialchars($filieresCodesCsv) ?>"
+                           data-niveau="<?= htmlspecialchars($niveauCode) ?>"
+                           data-cibles-rules="<?= htmlspecialchars($acc['cibles_rules'] ?? '') ?>"
+                           style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #CBD5E1; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
+                      <input type="checkbox" name="accessoires[]" class="chk-accessoire" data-label="<?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?>" value="<?= htmlspecialchars($acc['code_accessoire'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #1E3A5F; cursor: pointer; margin-top: 2px; flex-shrink: 0;">
+                      <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                          <span class="acc-label" style="font-weight: 700; color: #0F172A; font-size: 14px; text-transform: capitalize;"><?= htmlspecialchars($acc['libelle_accessoire'] ?? '') ?></span>
+                          <span class="acc-match-badge" style="display: none; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: #DCFCE7; color: #15803D;">Pré-sélectionné</span>
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                          <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: <?= $filiereBadgeBg ?>; color: <?= $filiereBadgeColor ?>;">
+                            <?= htmlspecialchars($filiereBadgeText) ?>
+                          </span>
+                          <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: #F3F4F6; color: #4B5563;">
+                            <?= htmlspecialchars($niveauBadgeText) ?>
+                          </span>
+                        </div>
                       </div>
-                      <span class="acc-price" style="font-weight: 800; color: #1E3A5F; font-size: 13px;"><?= number_format((float)$acc['prix_accessoire'], 0, ',', ' ') ?> FCFA</span>
                     </label>
                   <?php endforeach; ?>
+                </div>
+
+                <div id="acc_no_match_msg" style="display: none; padding: 20px; background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 10px; color: #64748B; font-size: 13px; text-align: center; font-weight: 600; margin-top: 8px;">
+                  <i data-lucide="package-x" style="width: 28px; height: 28px; display: block; margin: 0 auto 8px auto; color: #94A3B8;"></i>
+                  Aucun kit ou accessoire spécifique n'est configuré pour cette filière et ce niveau.
                 </div>
               <?php else: ?>
                 <div style="padding: 14px; background: #F8FAFC; border-radius: 8px; color: #64748B; font-size: 12.5px; font-weight: 600;">
@@ -413,23 +450,48 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
               </div>
 
               <?php if (!empty($pieces)): ?>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
-                  <?php foreach($pieces as $p): ?>
-                    <label class="piece-checkbox-card" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1.5px solid #E2E8F0; border-radius: 8px; background: #FFFFFF; cursor: pointer; transition: all 0.2s;">
-                      <input type="checkbox" name="pieces_fournies[]" class="chk-piece" value="<?= htmlspecialchars($p['code_piece_fournir']) ?>" style="width: 18px; height: 18px; accent-color: #15803D; margin-top: 2px; flex-shrink: 0;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+                  <?php foreach($pieces as $p): 
+                    $nbExemplaires = max(1, (int)($p['nombre_exemplaires'] ?? 1));
+                    $natureDoc = $p['nature_document'] ?? '';
+                    $natureLabel = '';
+                    if ($natureDoc === 'photocopie_simple') $natureLabel = 'Photocopie simple';
+                    elseif ($natureDoc === 'photocopie_legalisee') $natureLabel = 'Photocopie légalisée';
+                    elseif ($natureDoc === 'original') $natureLabel = 'Original requis';
+                    elseif ($natureDoc === 'numerique') $natureLabel = 'Scan numérique';
+                  ?>
+                    <label class="piece-checkbox-card" 
+                           data-nb-exemplaires="<?= $nbExemplaires ?>"
+                           style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #E2E8F0; border-radius: 10px; background: #FFFFFF; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                      <input type="checkbox" name="pieces_fournies[]" class="chk-piece" value="<?= htmlspecialchars($p['code_piece_fournir'] ?? '') ?>" style="width: 18px; height: 18px; accent-color: #15803D; margin-top: 2px; flex-shrink: 0; cursor: pointer;">
                       <div style="flex: 1;">
-                        <div style="font-weight: 700; color: #0F172A; font-size: 12.5px; line-height: 1.35;">
-                          <?= htmlspecialchars($p['libelle_piece']) ?>
+                        <div class="piece-title" style="font-weight: 700; color: #0F172A; font-size: 13.5px; line-height: 1.35;">
+                          <?= htmlspecialchars($p['libelle_piece'] ?? '') ?>
                         </div>
                         <?php if (!empty($p['description_piece'])): ?>
-                          <div style="font-size: 11px; color: #64748B; margin-top: 2px; line-height: 1.3;">
+                          <div style="font-size: 11.5px; color: #64748B; margin-top: 2px; line-height: 1.3;">
                             <?= htmlspecialchars($p['description_piece']) ?>
                           </div>
                         <?php endif; ?>
-                        <div style="margin-top: 5px;">
-                          <span class="piece-status-badge" style="background: #F1F5F9; color: #64748B; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">
-                            En attente de dépôt
-                          </span>
+                        
+                        <!-- Badges indicatifs : Nombre d'exemplaires & Nature & Statut -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #E2E8F0;">
+                          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span class="badge-nb-exemplaires" style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px;">
+                              <i data-lucide="copy" style="width: 12px; height: 12px; color: #D97706;"></i>
+                              <?= $nbExemplaires ?> exemplaire<?= $nbExemplaires > 1 ? 's' : '' ?> requis
+                            </span>
+                            <?php if (!empty($natureLabel)): ?>
+                              <span style="background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 5px;">
+                                <?= htmlspecialchars($natureLabel) ?>
+                              </span>
+                            <?php endif; ?>
+                          </div>
+                          <div>
+                            <span class="piece-status-badge" style="background: #F1F5F9; color: #64748B; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px;">
+                              En attente de dépôt
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </label>
@@ -495,10 +557,22 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
               </div>
 
               <!-- Grille des Coordonnées et État Civil -->
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; font-size: 13px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 13px;">
                 <div>
-                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Date & Lieu de Naissance</span>
-                  <div style="color: #0F172A; font-weight: 700;" id="recap_naissance_lieu">-</div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Date de naissance</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_date_naissance">-</div>
+                </div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Lieu de naissance</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_lieu_naissance">-</div>
+                </div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Nationalité</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_nationalite">Ivoirienne</div>
+                </div>
+                <div>
+                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Adresse de résidence</span>
+                  <div style="color: #0F172A; font-weight: 700;" id="recap_residence">Non renseignée</div>
                 </div>
                 <div>
                   <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Téléphone Principal</span>
@@ -507,10 +581,6 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
                 <div>
                   <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Email Étudiant</span>
                   <div style="color: #0F172A; font-weight: 700;" id="recap_email">Non renseigné</div>
-                </div>
-                <div>
-                  <span style="color: #64748B; font-size: 11px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 2px;">Lieu de Résidence</span>
-                  <div style="color: #0F172A; font-weight: 700;" id="recap_residence">Non renseigné</div>
                 </div>
               </div>
             </div>
@@ -562,15 +632,19 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
                 <!-- Synthèse des Chiffres -->
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                   <div style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 8px 14px; border-radius: 8px; text-align: right;">
-                    <div style="font-size: 10.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">Tarif Officiel</div>
-                    <div style="font-size: 16px; font-weight: 900; color: #0F172A;" id="recap_scolarite_officielle">0 FCFA</div>
+                    <div style="font-size: 10.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">Tarif Scolarité</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #0F172A;" id="recap_scolarite_">0 FCFA</div>
+                  </div>
+                  <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 8px 14px; border-radius: 8px; text-align: right;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #B45309; text-transform: uppercase;">Frais Annexes</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #B45309;" id="recap_frais_annexes_val">0 FCFA</div>
                   </div>
                   <div style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 8px 14px; border-radius: 8px; text-align: right;">
                     <div style="font-size: 10.5px; font-weight: 700; color: #15803D; text-transform: uppercase;">Remise Accordée</div>
                     <div style="font-size: 16px; font-weight: 900; color: #15803D;" id="recap_remise_val">0 FCFA</div>
                   </div>
                   <div style="background: #166534; border: 1px solid #14532D; padding: 8px 16px; border-radius: 8px; text-align: right;">
-                    <div style="font-size: 10.5px; font-weight: 700; color: #DCFCE7; text-transform: uppercase;">Net Définitif</div>
+                    <div style="font-size: 10.5px; font-weight: 700; color: #DCFCE7; text-transform: uppercase;">Net Définitif (Scolarité)</div>
                     <div style="font-size: 17px; font-weight: 900; color: #FFFFFF;" id="recap_net_scolarite">0 FCFA</div>
                   </div>
                 </div>
@@ -649,538 +723,7 @@ $activeAnneeCode = $_SESSION['annee_active_code'] ?? '';
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-  var currentStep = 1;
-  var totalSteps = 5;
-
-  // Persist form inputs to localStorage
-  function saveFormData() {
-    var formData = {};
-    $('#form-wizard-etudiant').find('input, select, textarea').each(function() {
-      var name = $(this).attr('name');
-      if (!name || name === 'csrf_token') return;
-      
-      if ($(this).attr('type') === 'checkbox') {
-        if (!formData[name]) formData[name] = [];
-        if ($(this).is(':checked')) {
-          formData[name].push($(this).val());
-        }
-      } else {
-        formData[name] = $(this).val();
-      }
-    });
-    localStorage.setItem('geicg_etudiant_wizard_data', JSON.stringify(formData));
-    localStorage.setItem('geicg_etudiant_wizard_step', currentStep);
-  }
-
-  // Restore form inputs from localStorage
-  function restoreFormData() {
-    var savedDataStr = localStorage.getItem('geicg_etudiant_wizard_data');
-    if (savedDataStr) {
-      try {
-        var formData = JSON.parse(savedDataStr);
-        $.each(formData, function(name, val) {
-          var $field = $('#form-wizard-etudiant').find('[name="' + name + '"]');
-          if ($field.length) {
-            if ($field.attr('type') === 'checkbox') {
-              if (Array.isArray(val)) {
-                $field.each(function() {
-                  if (val.indexOf($(this).val()) !== -1) {
-                    $(this).prop('checked', true);
-                    if ($(this).hasClass('chk-piece')) updatePieceCardStyle($(this));
-                    if ($(this).hasClass('chk-accessoire')) updateAccCardStyle($(this));
-                  }
-                });
-              }
-            } else {
-              $field.val(val);
-            }
-          }
-        });
-      } catch(e) { console.error('Erreur restauration brouillon', e); }
-    }
-
-    var savedStep = localStorage.getItem('geicg_etudiant_wizard_step');
-    if (savedStep) {
-      var parsedStep = parseInt(savedStep);
-      if (parsedStep >= 1 && parsedStep <= totalSteps) {
-        currentStep = parsedStep;
-      }
-    }
-  }
-
-  function updateWizardUI() {
-    $('.wizard-step-content').removeClass('active').hide();
-    $('.wizard-step-content[data-step="' + currentStep + '"]').addClass('active').show();
-
-    $('.wizard-step-item').each(function() {
-      var stepNum = parseInt($(this).attr('data-step'));
-      $(this).removeClass('active completed');
-      if (stepNum === currentStep) {
-        $(this).addClass('active');
-      } else if (stepNum < currentStep) {
-        $(this).addClass('completed');
-      }
-    });
-
-    if (currentStep === 1) {
-      $('#btn-wizard-prev').hide();
-    } else {
-      $('#btn-wizard-prev').css('display', 'inline-flex');
-    }
-
-    if (currentStep === totalSteps) {
-      $('#btn-wizard-next').hide();
-      $('#btn-wizard-submit').css('display', 'inline-flex');
-      fillRecap();
-    } else {
-      $('#btn-wizard-next').css('display', 'inline-flex');
-      $('#btn-wizard-submit').hide();
-    }
-
-    saveFormData();
-    if (window.lucide) lucide.createIcons();
-  }
-
-  function validateStep(step) {
-    if (step === 1) {
-      var nom = $('#wiz_nom').val().trim();
-      var prenom = $('#wiz_prenom').val().trim();
-      var tel = $('#wiz_tel').val().trim();
-      if (!nom || !prenom || !tel) {
-        showToast('Veuillez remplir le nom, les prénoms et le téléphone de l\'étudiant avant de continuer.', 'warning', 'Champs requis');
-        return false;
-      }
-    }
-    if (step === 3) {
-      var classe = $('#wiz_classe').val();
-      if (!classe) {
-        showToast('Veuillez sélectionner la classe d\'affectation.', 'warning', 'Champs requis');
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function getFormVal(selector) {
-    try {
-      var $el = $(selector);
-      if (!$el.length) return '';
-      var val = $el.val();
-      if (val === null || val === undefined) return '';
-      return String(val).trim();
-    } catch(e) {
-      return '';
-    }
-  }
-
-  function fillRecap() {
-    var nom = getFormVal('#wiz_nom') || getFormVal('[name="nom_etudiant"]');
-    var prenom = getFormVal('#wiz_prenom') || getFormVal('[name="prenom_etudiant"]');
-    var tel = getFormVal('#wiz_tel') || getFormVal('[name="telephone_etudiant"]');
-    var email = getFormVal('[name="email_etudiant"]');
-    var residence = getFormVal('[name="lieu_residence_etudiant"]');
-    var dateNais = getFormVal('[name="date_naissance_etudiant"]');
-    var lieuNais = getFormVal('[name="lieu_naissance_etudiant"]');
-    var nat = getFormVal('[name="nationalite_etudiant"]') || 'Ivoirienne';
-    var sexeVal = getFormVal('[name="sexe_etudiant"]');
-    var sexe = (sexeVal === 'F') ? 'Féminin' : 'Masculin';
-
-    var matMenet = getFormVal('[name="matricule_menet"]');
-    var matMesrs = getFormVal('[name="matricule_mesrs"]');
-
-    var fullName = (nom + ' ' + prenom).trim().toUpperCase();
-    var initials = ((nom ? nom.charAt(0) : 'E') + (prenom ? prenom.charAt(0) : 'T')).toUpperCase();
-
-    $('#recap_avatar').text(initials || 'ET');
-    $('#recap_nom_prenom').text(fullName || 'NOUVEL ÉTUDIANT');
-    $('#recap_sexe_badge').text(sexe);
-    $('#recap_nationalite_badge').text(nat);
-
-    var naisParts = [];
-    if (dateNais) naisParts.push('Né(e) le ' + dateNais);
-    if (lieuNais) naisParts.push('à ' + lieuNais);
-    $('#recap_naissance_lieu').text(naisParts.length ? naisParts.join(' ') : 'Date non renseignée');
-    $('#recap_tel').text(tel || '-');
-    $('#recap_email').text(email || 'Non renseigné');
-    $('#recap_residence').text(residence || 'Non renseigné');
-
-    $('#recap_mat_menet').text(matMenet || 'Non renseigné');
-    $('#recap_mat_mesrs').text(matMesrs || 'Non renseigné');
-
-    // 2. Parents
-    var pereNom = getFormVal('[name="nom_pere"]');
-    var pereTel = getFormVal('[name="telephone_pere"]');
-    var pereProf = getFormVal('[name="profession_pere"]');
-    $('#recap_pere_nom').text(pereNom || 'Non renseigné');
-    $('#recap_pere_contact').text(pereTel ? 'Tél : ' + pereTel : 'Aucun contact');
-    $('#recap_pere_prof').text(pereProf ? 'Profession : ' + pereProf : '-');
-
-    var mereNom = getFormVal('[name="nom_mere"]');
-    var mereTel = getFormVal('[name="telephone_mere"]');
-    var mereProf = getFormVal('[name="profession_mere"]');
-    $('#recap_mere_nom').text(mereNom || 'Non renseignée');
-    $('#recap_mere_contact').text(mereTel ? 'Tél : ' + mereTel : 'Aucun contact');
-    $('#recap_mere_prof').text(mereProf ? 'Profession : ' + mereProf : '-');
-
-    var tuteurNom = getFormVal('[name="nom_tuteur"]');
-    var tuteurTel = getFormVal('[name="telephone_tuteur"]');
-    $('#recap_tuteur_nom').text(tuteurNom || 'Non renseigné');
-    $('#recap_tuteur_contact').text(tuteurTel ? 'Tél : ' + tuteurTel : 'Aucun contact');
-
-    // 3. Scolarité & Échéancier
-    var classeText = $('#wiz_classe option:selected').text();
-    var isAffecte = $('input[name="affectation_etat"]:checked').val() === 'affecte';
-    var montant = Number(getFormVal('#wiz_montant_scolarite') || getFormVal('[name="montant_scolarite_inscription"]') || 0);
-    var remise = Number(getFormVal('#wiz_remise') || getFormVal('[name="remise_scolarite"]') || 0);
-    var net = Math.max(0, montant - remise);
-
-    $('#recap_classe_title').text(classeText && classeText.indexOf('Choisir') === -1 ? classeText : 'Classe non sélectionnée');
-    $('#recap_regime_text').html(isAffecte ? '<span style="color:#1E3A5F; font-weight:800;">● Régime Affecté (Subventionné par l\'État)</span>' : '<span style="color:#475569; font-weight:800;">● Régime Non Affecté (Privé)</span>');
-    $('#recap_scolarite_officielle').text(montant > 0 ? montant.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
-    $('#recap_remise_val').text(remise > 0 ? remise.toLocaleString('fr-FR') + ' FCFA' : '0 FCFA');
-    $('#recap_net_scolarite').text(net.toLocaleString('fr-FR') + ' FCFA');
-
-    // Cloner ou regénérer les tranches dans le récapitulatif
-    var tranchesRows = $('#wiz_tranches_table_body').html();
-    if (tranchesRows && tranchesRows.trim() !== '') {
-      $('#recap_tranches_table_body').html(tranchesRows);
-    } else {
-      $('#recap_tranches_table_body').html('<tr><td colspan="5" style="padding:10px; text-align:center; color:#64748B;">Règlement standard unique de ' + net.toLocaleString('fr-FR') + ' FCFA</td></tr>');
-    }
-
-    // 4. Pièces du Dossier
-    var totalPieces = $('.chk-piece').length;
-    var checkedPieces = $('.chk-piece:checked').length;
-    $('#recap_dossier_badge').text(checkedPieces + ' / ' + totalPieces + ' pièce(s) fournie(s)');
-    if (checkedPieces === totalPieces && totalPieces > 0) {
-      $('#recap_dossier_badge').css({ 'background': '#DCFCE7', 'color': '#166534', 'border-color': '#86EFAC' });
-    } else {
-      $('#recap_dossier_badge').css({ 'background': '#EFF6FF', 'color': '#1E3A5F', 'border-color': '#BFDBFE' });
-    }
-
-    var piecesHtml = '';
-    $('.chk-piece').each(function() {
-      var isChk = $(this).is(':checked');
-      var label = $(this).closest('.piece-checkbox-card').find('div > div:first-child').text().trim();
-      piecesHtml += '<div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-radius:6px; background:' + (isChk ? '#F0FDF4' : '#F8FAFC') + '; border:1px solid ' + (isChk ? '#BBF7D0' : '#E2E8F0') + ';">';
-      piecesHtml += '  <span style="color:#0F172A; font-weight:600;">' + label + '</span>';
-      piecesHtml += isChk ? '  <span style="color:#166534; font-weight:800; font-size:11px;"><i data-lucide="check" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> Déposée</span>' : '  <span style="color:#64748B; font-weight:600; font-size:11px;">En attente</span>';
-      piecesHtml += '</div>';
-    });
-    $('#recap_pieces_list').html(piecesHtml || '<span style="color:#64748B; font-style:italic;">Aucune pièce configurée</span>');
-
-    // 5. Accessoires & Kits Souscrits
-    var accsHtml = '';
-    var totalAccs = 0;
-    var seenAccs = {};
-    $('#form-wizard-etudiant .chk-accessoire:checked, #form-wizard-etudiant input[name="accessoires[]"]:checked').each(function() {
-      var val = $(this).val();
-      if (!val || seenAccs[val]) return;
-      seenAccs[val] = true;
-      totalAccs++;
-
-      var label = $(this).attr('data-label') || $(this).closest('.acc-checkbox-card').find('.acc-label').text().trim() || $(this).next('span').text().trim() || $(this).closest('label').text().trim() || val;
-      var prix = Number($(this).attr('data-prix') || 0);
-      var prixFormatted = prix > 0 ? ' (' + prix.toLocaleString('fr-FR') + ' FCFA)' : '';
-      accsHtml += '<div style="background: #EFF6FF; color: #1E3A5F; border: 1.5px solid #BFDBFE; padding: 7px 12px; border-radius: 8px; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(30,58,95,0.06); margin: 3px;">';
-      accsHtml += '  <i data-lucide="check-circle" style="width: 15px; height: 15px; color: #15803D; flex-shrink: 0;"></i>';
-      accsHtml += '  <span>' + label + '</span>';
-      if (prix > 0) {
-        accsHtml += '  <span style="color: #1E3A5F; font-weight: 800; font-size: 11.5px; background: #DBEAFE; padding: 2px 7px; border-radius: 4px;">' + prix.toLocaleString('fr-FR') + ' FCFA</span>';
-      }
-      accsHtml += '</div>';
-    });
-
-    if (totalAccs > 0) {
-      $('#recap_acc_badge').text(totalAccs + ' kit(s) souscrit(s)').css({'background': '#DCFCE7', 'color': '#166534', 'border-color': '#86EFAC'});
-      $('#recap_accessoires_list').html(accsHtml);
-    } else {
-      $('#recap_acc_badge').text('0 kit').css({'background': '#EFF6FF', 'color': '#1E3A5F', 'border-color': '#BFDBFE'});
-      $('#recap_accessoires_list').html('<span style="color: #64748B; font-style: italic; font-size: 12.5px; padding: 4px 0;">Aucun kit ou accessoire supplémentaire sélectionné lors de cette inscription.</span>');
-    }
-
-    if (window.lucide) lucide.createIcons();
-  }
-
-  // Gestion visuelle et réactive des kits / accessoires
-  function updateAccCardStyle($chk) {
-    var $card = $chk.closest('.acc-checkbox-card');
-    if ($chk.is(':checked')) {
-      $card.css({ 'background': '#EFF6FF', 'border-color': '#93C5FD' });
-    } else {
-      $card.css({ 'background': '#FFFFFF', 'border-color': '#CBD5E1' });
-    }
-  }
-
-  $(document).on('change', '.chk-accessoire', function() {
-    updateAccCardStyle($(this));
-  });
-
-  // Gestion visuelle et réactive des pièces à fournir
-  function updatePieceCardStyle($chk) {
-    var $card = $chk.closest('.piece-checkbox-card');
-    var $badge = $card.find('.piece-status-badge');
-    if ($chk.is(':checked')) {
-      $card.css({ 'background': '#F0FDF4', 'border-color': '#86EFAC' });
-      $badge.css({ 'background': '#DCFCE7', 'color': '#15803D' }).text('✓ Pièce Déposée');
-    } else {
-      $card.css({ 'background': '#FFFFFF', 'border-color': '#E2E8F0' });
-      $badge.css({ 'background': '#F1F5F9', 'color': '#64748B' }).text('En attente de dépôt');
-    }
-  }
-
-  $(document).on('change', '.chk-piece', function() {
-    updatePieceCardStyle($(this));
-  });
-
-  $('#btn-check-all-pieces').on('click', function() {
-    $('.chk-piece').prop('checked', true).each(function() {
-      updatePieceCardStyle($(this));
-    });
-    saveFormData();
-  });
-
-  $('#btn-uncheck-all-pieces').on('click', function() {
-    $('.chk-piece').prop('checked', false).each(function() {
-      updatePieceCardStyle($(this));
-    });
-    saveFormData();
-  });
-
-  function filterWizardClassesByAnnee() {
-    var selectedAnnee = $('#wiz_annee').val();
-    var $classeSelect = $('#wiz_classe');
-    var currentVal = $classeSelect.val();
-    var currentStillValid = false;
-
-    $classeSelect.find('option').each(function() {
-      var optAnnee = $(this).data('annee');
-      if (!$(this).val()) return;
-
-      if (!selectedAnnee || !optAnnee || optAnnee === selectedAnnee) {
-        $(this).prop('disabled', false).show();
-        if ($(this).val() === currentVal) {
-          currentStillValid = true;
-        }
-      } else {
-        $(this).prop('disabled', true).hide();
-      }
-    });
-
-    if (!currentStillValid && currentVal) {
-      $classeSelect.val('').trigger('change');
-    } else {
-      $classeSelect.trigger('change.select2');
-    }
-  }
-
-  $('#wiz_annee').on('change select2:select', function() {
-    filterWizardClassesByAnnee();
-    refreshClassTuition();
-  });
-
-  // Auto-récupération et affichage complet de la scolarité et de TOUTES les tranches selon la classe et le statut d'affectation
-  function refreshClassTuition() {
-    var classeCode = $('#wiz_classe').val();
-    var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
-
-    if (!classeCode) {
-      $('#wiz-class-tuition-box').slideUp(200);
-      $('#wiz_montant_scolarite').val(0);
-      updateNetScolarite();
-      return;
-    }
-
-    $.ajax({
-      url: '<?= RACINE ?>inscription/getTuitionByClass',
-      type: 'GET',
-      data: { 
-        classe_code: classeCode,
-        affectation_etat: affectationEtat,
-        annee_code: $('#wiz_annee').val()
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 && res.data) {
-          var d = res.data;
-          var totalScolarite = Number(d.montant_scolarite || 0);
-
-          $('#wiz_montant_scolarite').val(totalScolarite);
-          var regimeBadge = d.affectation_etat === 'affecte' ? ' <span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #BFDBFE; font-weight:700;">Affecté État</span>' : ' <span class="badge" style="background:#F8FAFC; color:#475569; font-size:11px; padding:2px 8px; border-radius:4px; border:1px solid #CBD5E1; font-weight:700;">Non Affecté / Privé</span>';
-          $('#wiz_summary_classe_title').html(d.libelle_classe + regimeBadge);
-          $('#wiz_summary_filiere_niveau').text(
-            (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + 
-            (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau + ' • ' : '') + 
-            (d.libelle_annee ? 'Année : ' + d.libelle_annee : '')
-          );
-          $('#wiz_summary_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
-
-          // Rendu dynamique de TOUTES les tranches
-          var tranches = d.tranches || [];
-          var tbodyHtml = '';
-          var sumTranches = 0;
-
-          if (tranches.length > 0) {
-            $('#wiz_tranches_count_badge').text(tranches.length + ' tranche(s) configurée(s)').show();
-
-            tranches.forEach(function(tr, idx) {
-              var mt = Number(tr.montant_tranche || tr.montant_tranche_num || 0);
-              sumTranches += mt;
-              var isFirst = (idx === 0);
-              var pct = totalScolarite > 0 ? Math.round((mt / totalScolarite) * 100) : 0;
-              var dateLimite = tr.date_limite_formatee || (tr.date_limite ? tr.date_limite : 'Non définie');
-
-              tbodyHtml += '<tr style="border-bottom: 1px solid #F1F5F9; background: ' + (isFirst ? '#F8FAFC' : '#FFFFFF') + ';">';
-              tbodyHtml += '  <td style="padding: 12px 16px; font-weight: 800; color: #64748B;">' + (idx + 1) + '</td>';
-              tbodyHtml += '  <td style="padding: 12px 16px;">';
-              tbodyHtml += '    <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;">' + (tr.libelle_tranche || ('Tranche ' + (idx + 1))) + '</div>';
-              if (isFirst) {
-                tbodyHtml += '    <span style="background:#EFF6FF; color:#1D4ED8; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #BFDBFE;">Exigible à l\'inscription</span>';
-              }
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 12px 16px; text-align: center;">';
-              tbodyHtml += '    <span style="background:#F1F5F9; color:#334155; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px;">' + pct + '%</span>';
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 12px 16px; text-align: center; color: #475569; font-size: 12.5px; font-weight: 600;">';
-              tbodyHtml += '    <i data-lucide="calendar" style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px; color:#64748B;"></i>' + dateLimite;
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 12px 16px; text-align: right; font-weight: 800; color: #1E3A5F; font-size: 14px;">';
-              tbodyHtml += '    ' + mt.toLocaleString('fr-FR') + ' FCFA';
-              tbodyHtml += '  </td>';
-              tbodyHtml += '</tr>';
-            });
-          } else {
-            $('#wiz_tranches_count_badge').text('Paiement Unique');
-            sumTranches = totalScolarite;
-            tbodyHtml += '<tr>';
-            tbodyHtml += '  <td colspan="5" style="padding: 16px; text-align: center; color: #64748B; font-style: italic;">';
-            tbodyHtml += '    Aucune tranche intermédiaire configurée pour cette classe. Règlement unique de la scolarité totale : <strong>' + totalScolarite.toLocaleString('fr-FR') + ' FCFA</strong>';
-            tbodyHtml += '  </td>';
-            tbodyHtml += '</tr>';
-          }
-
-          $('#wiz_tranches_table_body').html(tbodyHtml);
-          $('#wiz_tranches_total_sum').text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
-
-          updateNetScolarite();
-          $('#wiz-class-tuition-box').stop(true, true).slideDown(250);
-          if (window.lucide) lucide.createIcons();
-        } else {
-          $('#wiz-class-tuition-box').slideUp(200);
-        }
-      },
-      error: function(err) {
-        console.error('Erreur chargement tarif classe:', err);
-        $('#wiz-class-tuition-box').slideUp(200);
-      }
-    });
-  }
-
-  $('#wiz_classe').on('change select2:select', refreshClassTuition);
-  $('input[name="affectation_etat"]').on('change', function() {
-    $('input[name="affectation_etat"]').each(function() {
-      var isChecked = $(this).is(':checked');
-      $(this).closest('label').css({
-        'border-color': isChecked ? '#1E3A5F' : '#CBD5E1',
-        'background': isChecked ? '#EFF6FF' : '#FFFFFF',
-        'color': isChecked ? '#1E3A5F' : '#334155'
-      });
-    });
-    refreshClassTuition();
-  });
-
-  // Calcul dynamique du net à payer après remise
-  function updateNetScolarite() {
-    var total = Number($('#wiz_montant_scolarite').val() || 0);
-    var remise = Number($('#wiz_remise').val() || 0);
-    if (remise > 0 && total > 0) {
-      var net = Math.max(0, total - remise);
-      $('#wiz_summary_net_scolarite').text(net.toLocaleString('fr-FR') + ' FCFA');
-      $('#wiz_summary_net_box').fadeIn(200);
-    } else {
-      $('#wiz_summary_net_box').hide();
-    }
-  }
-
-  $('#wiz_remise').on('input change keyup', function() {
-    updateNetScolarite();
-  });
-
-  // Auto save on any input change
-  $('#form-wizard-etudiant').on('input change keyup', 'input, select, textarea', function() {
-    saveFormData();
-  });
-
-  // Next Step
-  $('#btn-wizard-next').on('click', function() {
-    if (validateStep(currentStep)) {
-      if (currentStep < totalSteps) {
-        currentStep++;
-        updateWizardUI();
-      }
-    }
-  });
-
-  // Previous Step
-  $('#btn-wizard-prev').on('click', function() {
-    if (currentStep > 1) {
-      currentStep--;
-      updateWizardUI();
-    }
-  });
-
-  // Direct Step click
-  $('.wizard-step-item').on('click', function() {
-    var targetStep = parseInt($(this).attr('data-step'));
-    if (targetStep < currentStep) {
-      currentStep = targetStep;
-      updateWizardUI();
-    } else if (targetStep === currentStep + 1 && validateStep(currentStep)) {
-      currentStep = targetStep;
-      updateWizardUI();
-    }
-  });
-
-  // Manual Reset Draft button (Custom Pro Modal)
-  $('#btn-reset-draft').on('click', function() {
-    showConfirm(
-      'Voulez-vous réinitialiser le formulaire et effacer toutes les données saisies ? Cette action est irréversible.',
-      function() {
-        localStorage.removeItem('geicg_etudiant_wizard_data');
-        localStorage.removeItem('geicg_etudiant_wizard_step');
-        location.reload();
-      },
-      'Réinitialiser le brouillon',
-      'Effacer tout',
-      true
-    );
-  });
-
-  // Clear storage on form submit
-  $('#form-wizard-etudiant').on('submit', function() {
-    localStorage.removeItem('geicg_etudiant_wizard_data');
-    localStorage.removeItem('geicg_etudiant_wizard_step');
-  });
-
-  // Restore state on load
-  restoreFormData();
-  if ($.fn.select2) {
-    $('.select2').select2({
-      placeholder: "-- Rechercher / Sélectionner --",
-      allowClear: true,
-      width: '100%'
-    });
-  }
-  filterWizardClassesByAnnee();
-  updateWizardUI();
-
-  // Déclencher le chargement des tarifs si une classe est déjà pré-sélectionnée
-  var initClass = $('#wiz_classe').val();
-  if (initClass) {
-    $('#wiz_classe').trigger('change');
-  }
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/etudiants.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

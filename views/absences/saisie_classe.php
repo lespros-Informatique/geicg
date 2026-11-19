@@ -1,11 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$classes = $classes ?? [];
 $matieres = $matieres ?? [];
-$selectedClasseCode = $selectedClasseCode ?? '';
 $selectedDate = $selectedDate ?? date('Y-m-d');
-$selectedMatiereCode = $selectedMatiereCode ?? '';
-$etudiants = $etudiants ?? [];
 $existingAbsences = $existingAbsences ?? [];
 ?>
 <div class="app-layout">
@@ -16,7 +12,7 @@ $existingAbsences = $existingAbsences ?? [];
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <a href="<?= RACINE ?>absence/list" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;">
+            <a href="<?= url('absence/list') ?>" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;">
               <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour
             </a>
             <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Registre des Absences par Classe</h1>
@@ -27,7 +23,7 @@ $existingAbsences = $existingAbsences ?? [];
 
       <!-- Formulaire de Sélection de la Classe & Séance -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px;">
-        <form method="GET" action="<?= RACINE ?>absence/saisieClasse" id="filter-form">
+        <form method="GET" action="<?= url('absence/saisieClasse') ?>" id="filter-form">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
             <div>
               <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: block;">Classe <span style="color:#EF4444;">*</span></label>
@@ -158,63 +154,7 @@ $existingAbsences = $existingAbsences ?? [];
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('.select2').select2({ width: '100%' });
-  }
-
-  $(document).on('change', '.check-absent', function() {
-    var isAbsent = $(this).is(':checked');
-    var $row = $(this).closest('tr');
-    var $badge = $row.find('.badge-status');
-    var $justSelect = $row.find('.select-justifiee');
-    var $motifInput = $row.find('.input-motif');
-
-    if (isAbsent) {
-      $badge.text('ABSENT').css({ 'background': '#FEE2E2', 'color': '#991B1B' });
-      $justSelect.prop('disabled', false);
-      $motifInput.prop('disabled', false);
-    } else {
-      $badge.text('PRÉSENT').css({ 'background': '#DCFCE7', 'color': '#166534' });
-      $justSelect.prop('disabled', true);
-      $motifInput.prop('disabled', true);
-    }
-  });
-
-  $('#btn-all-present').on('click', function() {
-    $('.check-absent').prop('checked', false).trigger('change');
-  });
-
-  $('#form-save-batch-absences').on('submit', function(e) {
-    e.preventDefault();
-    var $btn = $(this).find('button[type="submit"]');
-    $btn.prop('disabled', true).html('<i data-lucide="loader" class="spin"></i> Enregistrement en cours...');
-    if (window.lucide) lucide.createIcons();
-
-    $.ajax({
-      url: '<?= RACINE ?>absence/saveBatch',
-      type: 'POST',
-      data: $(this).serialize(),
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Registre des absences enregistré avec succès !');
-          setTimeout(function() { window.location.href = '<?= RACINE ?>absence/list'; }, 1000);
-        } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
-          $btn.prop('disabled', false).html('<i data-lucide="check-circle-2"></i> Enregistrer le Registre des Absences');
-          if (window.lucide) lucide.createIcons();
-        }
-      },
-      error: function() {
-        if (window.toastr) toastr.error('Erreur de connexion au serveur');
-        $btn.prop('disabled', false).html('<i data-lucide="check-circle-2"></i> Enregistrer le Registre des Absences');
-        if (window.lucide) lucide.createIcons();
-      }
-    });
-  });
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/emplois_temps.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

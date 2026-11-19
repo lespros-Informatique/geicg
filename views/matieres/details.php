@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $affectations = isset($affectations) ? $affectations : [];
 $stats = isset($stats) ? $stats : [];
 ?>
@@ -16,10 +15,10 @@ $stats = isset($stats) ? $stats : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Unités d'enseignement, professeurs assignés et classes concernées</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>matiere/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('matiere/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux matières
           </a>
-          <a href="<?= RACINE ?>matiere/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('matiere/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la matière
           </a>
         </div>
@@ -66,13 +65,13 @@ $stats = isset($stats) ? $stats : [];
               <i data-lucide="layers" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Répartition Pédagogique par Classe & Enseignant (<?= count($affectations) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>enseignant_matiere/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Affecter à une classe
+          <a href="<?= url('emploi/list') ?>" class="btn btn-sm btn-outline-primary" style="font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Voir emplois du temps
           </a>
         </div>
 
         <?php if (empty($affectations)): ?>
-          <p style="color: #94A3B8; text-align: center; padding: 30px 0; font-style: italic;">Cette matière n'a pas encore été affectée à une classe ou un enseignant.</p>
+          <p style="color: #94A3B8; text-align: center; padding: 30px 0; font-style: italic;">Cette matière n'a pas encore été programmée dans une classe.</p>
         <?php else: ?>
           <div style="width: 100%; overflow-x: auto;">
             <table class="table" style="width: 100%; border-collapse: collapse;">
@@ -81,32 +80,26 @@ $stats = isset($stats) ? $stats : [];
                   <th style="padding: 10px;">Classe</th>
                   <th style="padding: 10px;">Filière & Niveau</th>
                   <th style="padding: 10px;">Enseignant Titulaire</th>
-                  <th style="padding: 10px; text-align: center;">Coefficient</th>
-                  <th style="padding: 10px; text-align: center;">Volume Horaire</th>
+                  <th style="padding: 10px; text-align: center;">Volume Hebdo</th>
                 </tr>
               </thead>
               <tbody>
                 <?php foreach ($affectations as $a): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
                     <td style="padding: 10px; font-weight: 700; color: #0F172A;">
-                      <a href="<?= RACINE ?>classe/details/<?= $this->validator->crypter($a['id_classe'] ?? 0) ?>" style="color: #1E3A5F; text-decoration: underline;">
-                        <?= htmlspecialchars($a['libelle_classe'] ?? 'Classe') ?>
-                      </a>
+                      <?= htmlspecialchars($a['libelle_classe'] ?? 'Classe') ?>
                     </td>
                     <td style="padding: 10px; color: #334155;">
                       <?= htmlspecialchars(($a['libelle_filiere'] ?? '-') . ' / ' . ($a['libelle_niveau'] ?? '-')) ?>
                     </td>
                     <td style="padding: 10px; color: #1E3A5F; font-weight: 600;">
-                      <?= htmlspecialchars(($a['nom_prof'] ?? '') . ' ' . ($a['prenom_prof'] ?? '')) ?>
+                      <?= htmlspecialchars(trim(($a['nom_prof'] ?? '') . ' ' . ($a['prenom_prof'] ?? '')) ?: 'Non spécifié') ?>
                       <?php if (!empty($a['grade_enseignant'])): ?>
                         <span style="font-size: 11px; color: #64748B; font-weight: normal;">(<?= htmlspecialchars($a['grade_enseignant']) ?>)</span>
                       <?php endif; ?>
                     </td>
-                    <td style="padding: 10px; text-align: center; font-weight: 800; color: #15803D;">
-                      <?= htmlspecialchars($a['coefficient_enseignant_matiere'] ?? '1') ?>
-                    </td>
-                    <td style="padding: 10px; text-align: center; color: #64748B;">
-                      <?= (int)($a['volume_horaire'] ?? 0) ?> h
+                    <td style="padding: 10px; text-align: center; font-weight: 700; color: #0284C7;">
+                      <?= !empty($a['volume_horaire']) ? $a['volume_horaire'] . ' h' : '-' ?>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -119,5 +112,4 @@ $stats = isset($stats) ? $stats : [];
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

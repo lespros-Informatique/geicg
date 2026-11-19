@@ -1,24 +1,10 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$dbConn = (new Database())->getCon();
-$anneeCode = $anneeCode ?? ($_SESSION['annee_active_code'] ?? '');
-$anneeLibelle = $anneeLibelle ?? ($_SESSION['annee_active_libelle'] ?? $anneeCode);
-$niveaux = (new ModelNiveau())->getAll();
-$classes = (new ModelClasse())->getAll();
-$matieres = (new ModelMatiere())->getAll();
-$semestres = (new ModelSemestre())->getAll();
-
-$inscriptionsDetails = $dbConn->query("
-    SELECT i.code_inscription, i.classe_code,
-           CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) AS etudiant_nom,
-           e.matricule_etudiant,
-           cl.libelle_classe,
-           cl.niveau_code
-    FROM inscriptions i
-    LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-    LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-    ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC
-")->fetchAll(PDO::FETCH_ASSOC);
+$anneeCode = $anneeCode ?? Session::get('annee_active_code', '');
+$anneeLibelle = $anneeLibelle ?? Session::get('annee_active_libelle', $anneeCode);
+$niveaux = $niveaux ?? [];
+$matieres = $matieres ?? [];
+$inscriptionsDetails = $inscriptionsDetails ?? [];
 
 // Structurer les étudiants strictement par classe
 $studentsByClass = [];
@@ -38,7 +24,6 @@ foreach ($inscriptionsDetails as $ins) {
 }
 
 $selectedInscriptionCode = $item['inscription_code'] ?? '';
-$selectedClasseCode = $selectedClasseCode ?? '';
 if (empty($selectedClasseCode) && !empty($selectedInscriptionCode)) {
   foreach ($inscriptionsDetails as $ins) {
     if ($ins['code_inscription'] === $selectedInscriptionCode) {
@@ -51,30 +36,12 @@ if (empty($selectedClasseCode) && !empty($selectedInscriptionCode)) {
 $typeEvals = [
   'INTERROGATION' => 'Interrogation',
   'DEVOIR' => 'Devoir / Contrôle Continu',
-  'EXAMEN' => 'Examen / Composition Officielle'
+  'EXAMEN' => 'Examen / Composition'
 ];
 $selectedTypeEval = $item['type_evaluation_code'] ?? 'INTERROGATION';
 if ($selectedTypeEval === 'CC') $selectedTypeEval = 'DEVOIR';
 if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
 ?>
-<style>
-  .input-readonly {
-    background-color: #F8FAFC !important;
-    color: #1E3A5F !important;
-    font-weight: 700 !important;
-    cursor: not-allowed !important;
-    border-color: #CBD5E1 !important;
-  }
-  .eval-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -91,7 +58,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
           </h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Menu de sélection par classe pour la gestion des notes individuelles</p>
         </div>
-        <a href="<?= RACINE ?>note/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('note/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
@@ -113,7 +80,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
 
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 12px; font-weight: 700; color: #64748B;">Saisie Groupée par Classe ?</span>
-          <a href="<?= RACINE ?>note/saisieClasse" class="btn btn-outline-primary" style="font-weight: 700; font-size: 13px; border-radius: 8px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+          <a href="<?= url('note/saisieClasse') ?>" class="btn btn-outline-primary" style="font-weight: 700; font-size: 13px; border-radius: 8px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
             <i data-lucide="users" style="width: 15px; height: 15px;"></i> Passer à la saisie par classe
           </a>
         </div>
@@ -145,7 +112,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
           <div>
             <label style="display: block; font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 6px;">
               <i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #64748B; display: inline-block; vertical-align: text-bottom;"></i>
-              Classe Cible <span style="color: #EF4444;">*</span>
+              Classe <span style="color: #EF4444;">*</span>
             </label>
             <select class="form-control select2" id="sel_classe_no" name="classe_code" style="width: 100%;" required>
               <option value="">-- Sélectionner une classe --</option>
@@ -181,7 +148,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
 
       <!-- FORMULAIRE DE SAISIE DE LA NOTE -->
       <div class="card" style="background: #FFFFFF; border-radius: 14px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>note/<?= !empty($item['id_note']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;" id="form-note-indiv">
+        <form action="<?= url() ?>note/<?= !empty($item['id_note']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;" id="form-note-indiv">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_note'])): ?>
             <input type="hidden" name="id_note" value="<?= $item['id_note'] ?>">
@@ -316,7 +283,7 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
             <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; font-weight: 700; border-radius: 8px; padding: 12px 28px; box-shadow: 0 4px 10px rgba(30,58,95,0.25); display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="save" style="width: 18px; height: 18px;"></i> Enregistrer la Note
             </button>
-            <a href="<?= RACINE ?>note/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px;">Annuler</a>
+            <a href="<?= url('note/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 12px 24px;">Annuler</a>
           </div>
         </form>
       </div>
@@ -324,203 +291,14 @@ if ($selectedTypeEval === 'TP') $selectedTypeEval = 'INTERROGATION';
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-  
-  var studentsByClass = <?= json_encode($studentsByClass) ?>;
-  var selectedInscCode = <?= json_encode($selectedInscriptionCode) ?>;
-  var existingCompCode = <?= json_encode($item['composition_code'] ?? '') ?>;
-
-  if ($.fn.select2) {
-    $('#sel_niveau_filter, #sel_classe_no, #sel_mat_no, #sel_sem_no, #sel_type_eval, #sel_composition_code').select2({ width: '100%' });
-  }
-
-  // Live appreciation calculator
-  function updateAppreciationBadge() {
-    var val = $('#valeur_note_input').val();
-    var $b = $('#badge-appreciation-live');
-    if (val === '' || isNaN(val)) {
-      $b.text('Non saisi').css({ 'background': '#F1F5F9', 'color': '#64748B' });
-      return;
-    }
-    val = parseFloat(val);
-    if (val >= 16) { $b.text('Très Bien').css({ 'background': '#DCFCE7', 'color': '#15803D' }); }
-    else if (val >= 14) { $b.text('Bien').css({ 'background': '#E0F2FE', 'color': '#0369A1' }); }
-    else if (val >= 12) { $b.text('Assez Bien').css({ 'background': '#FEF3C7', 'color': '#B45309' }); }
-    else if (val >= 10) { $b.text('Passable').css({ 'background': '#FFEDD5', 'color': '#C2410C' }); }
-    else { $b.text('Insuffisant').css({ 'background': '#FEE2E2', 'color': '#B91C1C' }); }
-  }
-
-  $('#valeur_note_input').on('input change', updateAppreciationBadge);
-  updateAppreciationBadge();
-
-  // Dynamic Type Eval Switcher (LOCKING/UNLOCKING LIBELLÉ, COEF, SEMESTRE)
-  function handleTypeEvalChange() {
-    var typeEval = $('#sel_type_eval').val();
-    
-    if (typeEval === 'EXAMEN') {
-      $('#box-composition-select').slideDown(200);
-      
-      var $selectedOption = $('#sel_composition_code option:selected');
-      if ($selectedOption.length && $selectedOption.val()) {
-        var lib = $selectedOption.data('libelle');
-        var coef = $selectedOption.data('coef');
-        var sem = $selectedOption.data('semestre');
-
-        if (lib) $('#input_libelle_eval').val(lib);
-        if (coef) $('#input_coef_eval').val(coef);
-        if (sem) {
-          $('#sel_sem_no').val(sem).trigger('change.select2');
-          $('#semestre_code_hidden').val(sem);
-        }
-      }
-
-      $('#input_libelle_eval').prop('readonly', true).addClass('input-readonly');
-      $('#input_coef_eval').prop('readonly', true).addClass('input-readonly');
-      $('#badge-libelle-mode').text('Lecture Seule').css({ 'background': '#FEF3C7', 'color': '#B45309' });
-      $('#badge-coef-mode').text('Lecture Seule').css({ 'background': '#FEF3C7', 'color': '#B45309' });
-      $('#badge-semestre-lock').show();
-
-    } else {
-      $('#box-composition-select').slideUp(200);
-      
-      $('#input_libelle_eval').prop('readonly', false).removeClass('input-readonly');
-      $('#input_coef_eval').prop('readonly', false).removeClass('input-readonly');
-      
-      if ($('#input_libelle_eval').val() === '' || $('#input_libelle_eval').val().indexOf('Composition') !== -1) {
-        $('#input_libelle_eval').val(typeEval === 'DEVOIR' ? 'Devoir Sur Table N°1' : 'Interrogation N°1');
-      }
-      if ($('#input_coef_eval').val() === '' || $('#input_coef_eval').val() === '2.00') {
-        $('#input_coef_eval').val('1.00');
-      }
-
-      $('#badge-libelle-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
-      $('#badge-coef-mode').text('Modifiable').css({ 'background': '#F1F5F9', 'color': '#475569' });
-      $('#badge-semestre-lock').hide();
-    }
-  }
-
-  $('#sel_type_eval').on('change', handleTypeEvalChange);
-
-  // Composition Option Change Event
-  $('#sel_composition_code').on('change', function() {
-    var $opt = $(this).find('option:selected');
-    if ($opt.length && $opt.val()) {
-      var lib = $opt.data('libelle');
-      var coef = $opt.data('coef');
-      var sem = $opt.data('semestre');
-
-      if (lib) $('#input_libelle_eval').val(lib);
-      if (coef) $('#input_coef_eval').val(coef);
-      if (sem) {
-        $('#sel_sem_no').val(sem).trigger('change.select2');
-        $('#semestre_code_hidden').val(sem);
-      }
-    }
-  });
-
-  // Fetch Compositions via AJAX when Classe or Matiere changes
-  function fetchCompositionsAjax() {
-    var classeCode = $('#sel_classe_no').val();
-    var matiereCode = $('#sel_mat_no').val();
-
-    if (!classeCode || !matiereCode) return;
-
-    $.ajax({
-      url: '<?= RACINE ?>composition/getByClasseMatiereApi',
-      type: 'GET',
-      data: { classe_code: classeCode, matiere_code: matiereCode },
-      dataType: 'json',
-      success: function(res) {
-        if (res && res.data) {
-          var $select = $('#sel_composition_code');
-          $select.empty().append('<option value="">-- Sélectionner l\'épreuve programmée --</option>');
-          
-          if (res.data.length === 0) {
-            $('#msg-no-composition').show();
-          } else {
-            $('#msg-no-composition').hide();
-            res.data.forEach(function(comp) {
-              var dComp = comp.date_composition ? comp.date_composition : '';
-              var coef = comp.coefficient ? ' (Coef ' + parseFloat(comp.coefficient) + ')' : '';
-              var isSel = (existingCompCode && existingCompCode === comp.code_composition) ? 'selected' : '';
-              var optHtml = '<option value="' + comp.code_composition + '" data-libelle="' + comp.libelle_composition + '" data-coef="' + comp.coefficient + '" data-semestre="' + comp.semestre_code + '" ' + isSel + '>[Examen] ' + comp.libelle_composition + ' ' + coef + '</option>';
-              $select.append(optHtml);
-            });
-          }
-          $select.trigger('change.select2');
-          handleTypeEvalChange();
-        }
-      }
-    });
-  }
-
-  $('#sel_classe_no, #sel_mat_no').on('change', function() {
-    fetchCompositionsAjax();
-  });
-
-  // Filtrage Niveau -> Classe
-  $('#sel_niveau_filter').on('change', function() {
-    var nivCode = $(this).val();
-    $('#sel_classe_no option').each(function() {
-      var optNiveau = $(this).data('niveau');
-      if (!nivCode || !optNiveau || optNiveau === nivCode || $(this).val() === '') {
-        $(this).prop('disabled', false);
-      } else {
-        $(this).prop('disabled', true);
-      }
-    });
-    if ($('#sel_classe_no option:selected').prop('disabled')) {
-      $('#sel_classe_no').val('').trigger('change.select2');
-      loadStudentsForClasse('', false);
-    } else {
-      $('#sel_classe_no').select2({ width: '100%' });
-    }
-  });
-
-  function loadStudentsForClasse(classeCode, keepSelected) {
-    var $el = $('#sel_ins_no');
-    $el.empty();
-    
-    if (!classeCode || !studentsByClass[classeCode]) {
-      $el.append('<option value="">-- Veuillez d\'abord choisir une classe ci-dessus --</option>');
-      $el.prop('disabled', true);
-      $('#class-info-banner').css('display', 'none');
-    } else {
-      var list = studentsByClass[classeCode];
-      var clsName = $('#sel_classe_no option:selected').text();
-
-      $('#class-info-title').text(clsName);
-      $('#class-student-badge').text(list.length + ' élève' + (list.length > 1 ? 's' : '') + ' inscrit' + (list.length > 1 ? 's' : ''));
-      $('#class-info-banner').css('display', 'flex');
-
-      $el.append('<option value="">-- Choisir un élève de la classe --</option>');
-      $.each(list, function(i, st) {
-        var isSelected = (keepSelected && st.code_inscription === selectedInscCode) ? 'selected' : '';
-        $el.append('<option value="' + st.code_inscription + '" ' + isSelected + '>' + st.nom_affiche + '</option>');
-      });
-      $el.prop('disabled', false);
-    }
-    
-    if ($.fn.select2) {
-      $el.select2({ placeholder: "-- Choisir un élève --", width: '100%' });
-    }
-  }
-
-  $('#sel_classe_no').on('change', function() {
-    loadStudentsForClasse($(this).val(), false);
-  });
-
-  var initialClasse = $('#sel_classe_no').val();
-  if (initialClasse) {
-    loadStudentsForClasse(initialClasse, true);
-    fetchCompositionsAjax();
-  } else {
-    loadStudentsForClasse('', false);
-  }
-
-  handleTypeEvalChange();
-});
+<script type="application/json" id="notes-edit-config">
+<?= json_encode([
+    'studentsByClass' => $studentsByClass ?? [],
+    'selectedInscCode' => $selectedInscriptionCode ?? '',
+    'existingCompCode' => $item['composition_code'] ?? ''
+]) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/notes.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

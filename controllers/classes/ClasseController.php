@@ -10,59 +10,49 @@ class ClasseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $db = $this->model->getCon();
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
-            if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
-            }
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $modelFiliere = new ModelFiliere();
+        $modelNiveau = new ModelNiveau();
+        $filieres = $modelFiliere->getAll();
+        $niveaux = $modelNiveau->getActifs();
+
+        if ($activeYear === null) {
+            $this->loadView('../views/classes/list.php', [
+                'annees' => $annees,
+                'selectedAnneeCode' => '',
+                'parcoursPivots' => [],
+                'filieres' => $filieres,
+                'niveaux' => $niveaux
+            ]);
+            return;
         }
 
-        $activeYear = $this->getActiveAnneeCode();
-        $annees = $db->query("SELECT code_annee, libelle_annee, statut_annee FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $parcoursPivots = $this->model->getParcoursPivots();
 
         $this->loadView('../views/classes/list.php', [
             'annees' => $annees,
-            'selectedAnneeCode' => $activeYear
+            'selectedAnneeCode' => $activeYear,
+            'parcoursPivots' => $parcoursPivots,
+            'filieres' => $filieres,
+            'niveaux' => $niveaux
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $db = $this->model->getCon();
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $stmtA = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
-            $stmtA->execute([$getAnnee]);
-            $aRow = $stmtA->fetch(PDO::FETCH_ASSOC);
-            if ($aRow) {
-                $_SESSION['annee_active_code'] = $aRow['code_annee'];
-                $_SESSION['annee_active_libelle'] = $aRow['libelle_annee'];
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
-
-        $sql = "SELECT c.*, 
-                       f.libelle_filiere,
-                       n.libelle_niveau,
-                       a.libelle_annee
-                FROM classes c
-                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-                LEFT JOIN annees a ON a.code_annee = c.annee_code
-                WHERE (c.annee_code = ? OR c.annee_code IS NULL OR c.annee_code = '' OR ? = '')
-                ORDER BY c.id_classe DESC";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$anneeCode, $anneeCode]);
-        $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $items = $this->model->getAllWithDetails($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_classe'];
@@ -79,26 +69,35 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $data = $_POST;
         unset($data['csrf_token']);
 
-        // Génération automatique intelligente de secours si le champ libelle_classe est vide
-        if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
-            $stmtF = $this->model->getCon()->prepare("SELECT libelle_filiere FROM filieres WHERE code_filiere = ?");
-            $stmtF->execute([$data['filiere_code']]);
-            $fName = $stmtF->fetchColumn();
-
-            $stmtN = $this->model->getCon()->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ?");
-            $stmtN->execute([$data['niveau_code']]);
-            $nName = $stmtN->fetchColumn();
-
-            if ($fName && $nName) {
-                $data['libelle_classe'] = trim($fName) . ' - ' . trim($nName);
+        // Déduction automatique de cycle_code depuis filiere_cycles si non fourni
+        if (empty($data['cycle_code']) && !empty($data['filiere_code'])) {
+            $cyCode = $this->model->getCycleForFiliereNiveau($data['filiere_code'], $data['niveau_code'] ?? null);
+            if ($cyCode) {
+                $data['cycle_code'] = $cyCode;
             }
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
-        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : $this->getActiveAnneeCode();
+        // Génération automatique intelligente de secours si le champ libelle_classe est vide
+        if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
+            $names = $this->model->getFiliereAndNiveauNames($data['filiere_code'], $data['niveau_code']);
+            if (!empty($names['filiere']) && !empty($names['niveau'])) {
+                $data['libelle_classe'] = trim($names['filiere']) . ' - ' . trim($names['niveau']);
+            }
+        }
+
+        $anneeCode = !empty($data['annee_code']) ? trim($data['annee_code']) : $this->getActiveAnneeCode();
+        $userCode = Auth::code();
+
+        $this->validateForeignKeys([
+            'annee_code' => $anneeCode,
+            'filiere_code' => $data['filiere_code'] ?? '',
+            'niveau_code' => $data['niveau_code'] ?? '',
+            'cycle_code' => $data['cycle_code'] ?? null
+        ]);
 
         if (!empty($data['libelle_classe'])) {
             if (!$this->checkUniquePair('classes', [
@@ -109,19 +108,28 @@ class ClasseController extends BaseController
 
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_classe'])) {
-            $data['code_classe'] = $this->validator->generateCode('classes', 'code_classe', 'CLA-', 8);
+            $data['code_classe'] = $this->validator->generateCode(TABLES::CLASSES, 'code_classe', 'CLA-', 8);
         }
-        $data['statut_classe'] = $data['statut_classe'] ?? 'actif';
+        $data['statut_classe'] = (!empty($data['statut_classe']) && in_array($data['statut_classe'], ['actif', 'inactif'], true)) ? $data['statut_classe'] : 'actif';
         $data['created_at_classe'] = date('Y-m-d H:i:s');
-        $cols = $this->model->getCon()->query("DESCRIBE classes")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
+
+        $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
-            $this->success('Classe créée avec succès!');
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'classes',
+                $data['code_classe'],
+                "Création de la classe '{$data['libelle_classe']}' ({$data['code_classe']})",
+                $filteredData,
+                $etabCode
+            );
+            $this->success('Classe créée avec succès!', ['redirect' => url('classe/list')]);
         } else {
-            $this->error('Erreur lors de la création de la classe.');
+            $err = $this->model->getLastError() ?: 'Erreur lors de la création de la classe.';
+            $this->error($err);
         }
     }
 
@@ -129,27 +137,29 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $id = (int)$this->post('id_classe');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
 
-        // Génération automatique intelligente de secours si le champ libelle_classe est vide
-        if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
-            $stmtF = $this->model->getCon()->prepare("SELECT libelle_filiere FROM filieres WHERE code_filiere = ?");
-            $stmtF->execute([$data['filiere_code']]);
-            $fName = $stmtF->fetchColumn();
-
-            $stmtN = $this->model->getCon()->prepare("SELECT libelle_niveau FROM niveaux WHERE code_niveau = ?");
-            $stmtN->execute([$data['niveau_code']]);
-            $nName = $stmtN->fetchColumn();
-
-            if ($fName && $nName) {
-                $data['libelle_classe'] = trim($fName) . ' - ' . trim($nName);
+        // Déduction automatique de cycle_code depuis filiere_cycles si non fourni
+        if (empty($data['cycle_code']) && !empty($data['filiere_code'])) {
+            $cyCode = $this->model->getCycleForFiliereNiveau($data['filiere_code'], $data['niveau_code'] ?? null);
+            if ($cyCode) {
+                $data['cycle_code'] = $cyCode;
             }
         }
 
-        $anneeCode = !empty($data['annee_code']) ? $data['annee_code'] : null;
+        // Génération automatique intelligente de secours si le champ libelle_classe est vide
+        if (empty($data['libelle_classe']) && !empty($data['filiere_code']) && !empty($data['niveau_code'])) {
+            $names = $this->model->getFiliereAndNiveauNames($data['filiere_code'], $data['niveau_code']);
+            if (!empty($names['filiere']) && !empty($names['niveau'])) {
+                $data['libelle_classe'] = trim($names['filiere']) . ' - ' . trim($names['niveau']);
+            }
+        }
+
+        $anneeCode = !empty($data['annee_code']) ? trim($data['annee_code']) : null;
         if (!$anneeCode) {
             $existing = $this->model->getById($id);
             $anneeCode = $existing['annee_code'] ?? $this->getActiveAnneeCode();
@@ -162,12 +172,26 @@ class ClasseController extends BaseController
             ], 'nom de classe', 'id_classe', $id)) return;
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE classes")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        if (isset($data['statut_classe'])) {
+            $data['statut_classe'] = in_array($data['statut_classe'], ['actif', 'inactif'], true) ? $data['statut_classe'] : 'actif';
+        }
+        if (!empty($anneeCode)) {
+            $data['annee_code'] = $anneeCode;
+        }
+
+        $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Classe modifiée avec succès!');
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'classes',
+                (string)$id,
+                "Modification de la classe '" . ($data['libelle_classe'] ?? $id) . "'",
+                $filteredData
+            );
+            $this->success('Classe modifiée avec succès!', ['redirect' => url('classe/list')]);
         } else {
-            $this->error('Erreur lors de la modification de la classe.');
+            $err = $this->model->getLastError() ?: 'Erreur lors de la modification de la classe.';
+            $this->error($err);
         }
     }
 
@@ -175,9 +199,17 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($cls = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'classes',
+                    $cls['code_classe'] ?? (string)$id,
+                    "Basculement de statut de la classe '" . ($cls['libelle_classe'] ?? $id) . "'",
+                    ['id_classe' => $id, 'code_classe' => $cls['code_classe'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -190,55 +222,18 @@ class ClasseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
         try {
             $id = $this->validator->decrypter($details);
-            $stmt = $this->model->getCon()->prepare("
-                SELECT c.*, 
-                       f.libelle_filiere,
-                       n.libelle_niveau,
-                       a.libelle_annee
-                FROM classes c
-                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-                LEFT JOIN annees a ON a.code_annee = c.annee_code
-                WHERE c.id_classe = ?
-            ");
-            $stmt->execute([$id]);
-            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            $item = $this->model->getClasseWithDetails($id);
             if (!$item) { 
                 $this->renderNotFound("La classe demandée est introuvable.");
                 return;
             }
 
             $classeCode = $item['code_classe'];
-
-            // Liste des étudiants inscrits dans cette classe
-            $stmtEtu = $this->model->getCon()->prepare("
-                SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription
-                FROM etudiants e
-                INNER JOIN inscriptions ins ON ins.etudiant_code = e.code_etudiant
-                WHERE ins.classe_code = ? AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)
-                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
-            ");
-            $stmtEtu->execute([$classeCode]);
-            $etudiants = $stmtEtu->fetchAll(PDO::FETCH_ASSOC);
-
-            // Liste des matières & enseignants assignés
-            $stmtMat = $this->model->getCon()->prepare("
-                SELECT em.*, m.libelle_matiere, m.code_matiere,
-                       u.nom_user as nom_prof,
-                       u.prenom_user as prenom_prof,
-                       e.grade_enseignant
-                FROM enseignant_matiere em
-                LEFT JOIN matieres m ON m.code_matiere = em.matiere_code
-                LEFT JOIN enseignants e ON e.code_enseignant = em.enseignant_code
-                LEFT JOIN users u ON u.code_user = em.enseignant_code
-                WHERE em.classe_code = ?
-                ORDER BY m.libelle_matiere ASC
-            ");
-            $stmtMat->execute([$classeCode]);
-            $matieres = $stmtMat->fetchAll(PDO::FETCH_ASSOC);
-
+            $etudiants = $this->model->getEtudiantsForClasse($classeCode);
+            $matieres = $this->model->getMatieresForClasse($classeCode);
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("ClasseController::details error: " . $e->getMessage());
@@ -256,13 +251,14 @@ class ClasseController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'classe/list'); exit(); }
+            if (!$item) { redirect('classe/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'classe/list'); exit();
+            redirect('classe/list');
         }
         $this->loadView('../views/classes/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -270,6 +266,145 @@ class ClasseController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $this->loadView('../views/classes/edit.php', ['item' => []]);
+    }
+
+    public function getClassesWithScolarite()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_CLASSES, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+
+        $anneeCode = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
+        $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? ''));
+        if ($affectationEtat === 'oui') $affectationEtat = 'affecte';
+        if ($affectationEtat === 'non') $affectationEtat = 'non_affecte';
+
+        if (empty($anneeCode)) {
+            $anneeCode = $this->getActiveAnneeCode();
+        }
+
+        $classes = $this->model->getClassesWithScolarite($anneeCode, $affectationEtat);
+        $diagnostics = $this->model->getDiagnosticsAnneeScolarite($anneeCode, $affectationEtat);
+
+        $this->json([
+            'status' => 1,
+            'data' => $classes,
+            'annee_code' => $anneeCode,
+            'affectation_etat' => $affectationEtat,
+            'total' => count($classes),
+            'total_classes_annee' => $diagnostics['total_classes_annee'],
+            'total_scolarites_annee' => $diagnostics['total_scolarites_annee'],
+            'total_scolarites_regime' => $diagnostics['total_scolarites_regime']
+        ]);
+    }
+
+    public function reconduire()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
+
+        $anneeSourceCode = trim($_POST['annee_source_code'] ?? '');
+        $anneeCibleCode = trim($_POST['annee_cible_code'] ?? '');
+
+        if (empty($anneeSourceCode) || empty($anneeCibleCode)) {
+            $this->error("Veuillez sélectionner l'année source et l'année de destination.");
+            return;
+        }
+
+        if ($anneeSourceCode === $anneeCibleCode) {
+            $this->error("L'année source et l'année de destination doivent être différentes.");
+            return;
+        }
+
+        $etabCode = $this->getActiveEtablissementCode();
+        $userCode = Auth::code();
+
+        $res = $this->model->reconduireClassesAnnee($anneeSourceCode, $anneeCibleCode, $etabCode, $userCode);
+
+        if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'classes',
+                $anneeCibleCode,
+                "Reconduction de {$res['count']} classe(s) depuis l'année {$anneeSourceCode} vers {$anneeCibleCode}",
+                ['source' => $anneeSourceCode, 'cible' => $anneeCibleCode, 'count' => $res['count'], 'skipped' => $res['skipped']],
+                $etabCode
+            );
+            $this->success($res['message'], ['reload' => true, 'count' => $res['count'], 'skipped' => $res['skipped']]);
+        } else {
+            $this->error($res['message']);
+        }
+    }
+
+    /**
+     * Impression du Répertoire des Classes via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $this->getActiveAnneeCode();
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        $classes = $this->model->getAllWithDetails($anneeCode);
+        $etablissement = $this->getEtablissementConfig();
+
+        $editeurNom = Auth::fullName();
+        if (empty($editeurNom)) {
+            $editeurNom = 'Direction des Études & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'classes' => $classes
+        ];
+
+        $html = PdfService::renderTemplate('repertoire_classes.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'classes',
+            $anneeCode ?: 'TOUT',
+            "Impression du répertoire des classes (Année: " . ($anneeLibelle ?: 'Toutes') . ", Total: " . count($classes) . ")",
+            ['annee_code' => $anneeCode, 'total' => count($classes)]
+        );
+
+        $filename = 'Repertoire_Classes_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Répertoire des Classes - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 12
+        ]);
+    }
+
+    public function imprimerListe($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::MANAGE_CLASSES]);
+        try {
+            $id = $this->validator->decrypter($details);
+            if (empty($id)) $id = $details;
+            $item = $this->model->getById($id);
+            if (!$item) {
+                $this->renderNotFound("Classe introuvable.");
+                return;
+            }
+            $classeCode = $item['code_classe'] ?? '';
+            $anneeCode = $item['annee_code'] ?? $this->getActiveAnneeCode();
+
+            redirect('etudiant/imprimerPdf', ['annee_code' => $anneeCode, 'classe_code' => $classeCode]);
+        } catch (Exception $e) {
+            $this->renderNotFound("Erreur lors de l'accès à la classe.");
+        }
     }
 }

@@ -2,39 +2,632 @@
 
 class ModelAccessoire extends BaseModel
 {
-    protected string $table = 'accessoires';
+    protected string $table = TABLES::ACCESSOIRES;
     protected string $primaryKey = 'id_accessoire';
     protected ?string $statusField = 'statut_accessoire';
     protected ?string $createdAtField = 'created_at_accessoire';
 
-    public function getAll(?string $anneeCode = null): array
+    public function getById($id): array
     {
-        $sql = "SELECT * FROM accessoires";
-        $params = [];
-        if (!empty($anneeCode)) {
-            $sql .= " WHERE (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
-            $params[] = $anneeCode;
+        if (empty($id)) {
+            return [];
         }
-        $sql .= " ORDER BY id_accessoire DESC";
+        $sql = "
+            SELECT a.*,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.niveau_code ORDER BY n.id_niveau ASC SEPARATOR ','),
+                       ''
+                   ) AS niveaux_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT n.libelle_niveau ORDER BY n.id_niveau ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_niveau,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CASE WHEN anf.filiere_code IN ('TOUTE_FILIERE', 'TOUTE FILIERE', 'TOUT', '') THEN NULL ELSE anf.filiere_code END ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       ''
+                   ) AS filieres_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_filiere,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CONCAT(COALESCE(NULLIF(anf.filiere_code, ''), 'TOUTE_FILIERE'), ':', COALESCE(NULLIF(anf.niveau_code, ''), 'TOUT')) SEPARATOR '|'),
+                       ''
+                   ) AS cibles_rules,
+                   CASE
+                       WHEN COUNT(anf.id_accessoire_niveau_filiere) > 0
+                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') THEN 1 ELSE 0 END) = 0
+                        AND COUNT(DISTINCT f.type_filiere) = 1
+                       THEN MAX(f.type_filiere)
+                       ELSE 'TOUT'
+                   END AS type_filiere_cible
+            FROM " . TABLES::ACCESSOIRES . " a
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
+            WHERE a.id_accessoire = ?
+            GROUP BY a.id_accessoire
+            LIMIT 1
+        ";
         try {
             $stmt = $this->getCon()->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $stmt->execute([$id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                return [];
+            }
+            $csv = trim((string)($row['niveaux_codes_csv'] ?? ''));
+            $row['niveaux_codes'] = $csv !== '' ? array_values(array_filter(array_map('trim', explode(',', $csv)))) : [];
+            $row['niveau_code'] = $csv;
+            $filCsv = trim((string)($row['filieres_codes_csv'] ?? ''));
+            $row['filieres_codes'] = $filCsv !== '' ? array_values(array_filter(array_map('trim', explode(',', $filCsv)))) : [];
+            return $row;
+        } catch (Exception $e) {
+            error_log("Get accessoire by id: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getAll(?string $anneeCode = null): array
+    {
+        $db = $this->getCon();
+        $anfAnneeClause = (!empty($anneeCode) && $anneeCode !== 'ALL')
+            ? " AND (anf.annee_code = " . $db->quote($anneeCode) . " OR anf.annee_code IS NULL)"
+            : "";
+
+        $sql = "
+            SELECT a.*,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.niveau_code ORDER BY n.id_niveau ASC SEPARATOR ','),
+                       ''
+                   ) AS niveaux_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT n.libelle_niveau ORDER BY n.id_niveau ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_niveau,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CASE WHEN anf.filiere_code IN ('TOUTE_FILIERE', 'TOUTE FILIERE', 'TOUT', '') THEN NULL ELSE anf.filiere_code END ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       ''
+                   ) AS filieres_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_filiere,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CONCAT(COALESCE(NULLIF(anf.filiere_code, ''), 'TOUTE_FILIERE'), ':', COALESCE(NULLIF(anf.niveau_code, ''), 'TOUT')) SEPARATOR '|'),
+                       ''
+                   ) AS cibles_rules,
+                   CASE
+                       WHEN COUNT(anf.id_accessoire_niveau_filiere) > 0
+                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') THEN 1 ELSE 0 END) = 0
+                        AND COUNT(DISTINCT f.type_filiere) = 1
+                       THEN MAX(f.type_filiere)
+                       ELSE 'TOUT'
+                   END AS type_filiere_cible
+            FROM " . TABLES::ACCESSOIRES . " a
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL){$anfAnneeClause}
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
+            GROUP BY a.id_accessoire
+            ORDER BY a.id_accessoire DESC
+        ";
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($rows as &$row) {
+                $csv = trim((string)($row['niveaux_codes_csv'] ?? ''));
+                $codes = $csv !== '' ? array_values(array_filter(array_map('trim', explode(',', $csv)))) : [];
+                $row['niveaux_codes'] = $codes;
+                $row['niveau_code'] = $csv;
+                $filCsv = trim((string)($row['filieres_codes_csv'] ?? ''));
+                $row['filieres_codes'] = $filCsv !== '' ? array_values(array_filter(array_map('trim', explode(',', $filCsv)))) : [];
+            }
+            unset($row);
+            return $rows;
         } catch (Exception $e) {
             error_log("Get all accessoires: " . $e->getMessage());
             return [];
         }
     }
 
-    public function getDistributions(string $filter = 'all', ?string $anneeCode = null): array
+    public function getEligibleKitsForClass(?string $filiereCode, ?string $niveauCode, ?string $anneeCode = null): array
     {
         $db = $this->getCon();
-        $where = "WHERE (ai.statut_accessoire_inscription = 'actif' OR ai.statut_accessoire_inscription IS NULL)";
+        try {
+            if (empty($anneeCode)) {
+                $anneeCode = $db->query("SELECT code_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1")->fetchColumn() ?: null;
+            }
+
+            $sql = "
+                SELECT DISTINCT a.code_accessoire, a.libelle_accessoire
+                FROM " . TABLES::ACCESSOIRES . " a
+                INNER JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire
+                WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
+                  AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL)
+            ";
+            $params = [];
+
+            if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+                $sql .= " AND (anf.annee_code = ? OR anf.annee_code IS NULL)";
+                $params[] = $anneeCode;
+            }
+
+            if (!empty($filiereCode)) {
+                $sql .= " AND (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR anf.filiere_code = ?)";
+                $params[] = $filiereCode;
+            } else {
+                $sql .= " AND (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE'))";
+            }
+
+            if (!empty($niveauCode)) {
+                $sql .= " AND (anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR anf.niveau_code = ?)";
+                $params[] = $niveauCode;
+            } else {
+                $sql .= " AND (anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT'))";
+            }
+
+            $sql .= " ORDER BY a.libelle_accessoire ASC";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getEligibleKitsForClass error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getActifs(?string $anneeCode = null): array
+    {
+        $db = $this->getCon();
+        if (empty($anneeCode)) {
+            try {
+                $anneeCode = $db->query("SELECT code_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1")->fetchColumn() ?: null;
+            } catch (Exception $e) {
+                $anneeCode = null;
+            }
+        }
+
+        $anfAnneeClause = !empty($anneeCode) ? " AND (anf.annee_code = " . $db->quote($anneeCode) . " OR anf.annee_code IS NULL)" : "";
+
+        $sql = "
+            SELECT a.*,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT anf.niveau_code ORDER BY n.id_niveau ASC SEPARATOR ','),
+                       ''
+                   ) AS niveaux_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT n.libelle_niveau ORDER BY n.id_niveau ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_niveau,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CASE WHEN anf.filiere_code IN ('TOUTE_FILIERE', 'TOUTE FILIERE', 'TOUT', '') THEN NULL ELSE anf.filiere_code END ORDER BY f.id_filiere ASC SEPARATOR ','),
+                       ''
+                   ) AS filieres_codes_csv,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT COALESCE(NULLIF(f.slug_filiere, ''), f.libelle_filiere) ORDER BY f.id_filiere ASC SEPARATOR ', '),
+                       ''
+                   ) AS libelle_filiere,
+                   COALESCE(
+                       GROUP_CONCAT(DISTINCT CONCAT(COALESCE(NULLIF(anf.filiere_code, ''), 'TOUTE_FILIERE'), ':', COALESCE(NULLIF(anf.niveau_code, ''), 'TOUT')) SEPARATOR '|'),
+                       ''
+                   ) AS cibles_rules,
+                   CASE
+                       WHEN COUNT(anf.id_accessoire_niveau_filiere) > 0
+                        AND SUM(CASE WHEN anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') THEN 1 ELSE 0 END) = 0
+                        AND COUNT(DISTINCT f.type_filiere) = 1
+                       THEN MAX(f.type_filiere)
+                       ELSE 'TOUT'
+                   END AS type_filiere_cible
+            FROM " . TABLES::ACCESSOIRES . " a
+            LEFT JOIN " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf ON anf.accessoire_code = a.code_accessoire AND (anf.statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "' OR anf.statut_accessoire_niveau_filiere IS NULL){$anfAnneeClause}
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
+            WHERE a.statut_accessoire = '" . STATUTS::ACTIF . "'
+            GROUP BY a.id_accessoire
+            ORDER BY a.libelle_accessoire ASC
+        ";
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getActifs error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function syncCibles(string $accessoireCode, string $typeFiliereCible, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null): void
+    {
+        if (empty($accessoireCode)) {
+            return;
+        }
+        $db = $this->getCon();
+        $cleanNiveaux = array_values(array_unique(array_filter(array_map('trim', $niveauCodes), function ($v) {
+            return $v !== '' && $v !== 'TOUT';
+        })));
+
+        try {
+            $stmtDel = $db->prepare("DELETE FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE accessoire_code = ?");
+            $stmtDel->execute([$accessoireCode]);
+
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                (code_accessoire_niveau_filiere, accessoire_code, filiere_code, niveau_code, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
+                VALUES (?, ?, ?, ?, ?, ?, NOW())
+            ");
+
+            if (empty($cleanNiveaux)) {
+                $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                $stmtIns->execute([$codeAnf, $accessoireCode, null, null, $etabCode, $userCode]);
+            } else {
+                foreach ($cleanNiveaux as $nivCode) {
+                    $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                    $stmtIns->execute([$codeAnf, $accessoireCode, null, $nivCode, $etabCode, $userCode]);
+                }
+            }
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::syncCibles error: " . $e->getMessage());
+        }
+    }
+
+    public function getFiliereCyclesMap(): array
+    {
+        $sql = "
+            SELECT fc.filiere_code, fc.cycle_code, fc.niveau_code
+            FROM " . TABLES::FILIERE_CYCLES . " fc
+            WHERE fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "' OR fc.statut_filiere_cycle IS NULL
+        ";
+        try {
+            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getFiliereCyclesMap error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getPivotDataByCycle(string $cycleCode): array
+    {
+        if (empty($cycleCode)) {
+            return ['filieres' => [], 'niveaux' => [], 'pivots' => []];
+        }
+        $sql = "
+            SELECT fc.code_filiere_cycle,
+                   fc.cycle_code,
+                   fc.filiere_code,
+                   fc.niveau_code,
+                   f.libelle_filiere,
+                   f.slug_filiere,
+                   f.type_filiere,
+                   n.id_niveau,
+                   n.libelle_niveau,
+                   n.slug_niveau
+            FROM " . TABLES::FILIERE_CYCLES . " fc
+            INNER JOIN " . TABLES::FILIERES . " f ON f.code_filiere = fc.filiere_code
+            INNER JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = fc.niveau_code
+            WHERE fc.cycle_code = ?
+              AND (fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "' OR fc.statut_filiere_cycle IS NULL)
+              AND (f.statut_filiere = '" . STATUTS::ACTIF . "' OR f.statut_filiere IS NULL)
+              AND (n.statut_niveau = '" . STATUTS::ACTIF . "' OR n.statut_niveau IS NULL)
+            ORDER BY f.libelle_filiere ASC, n.id_niveau ASC
+        ";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$cycleCode]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $filieresMap = [];
+            $niveauxMap = [];
+            $pivots = [];
+
+            foreach ($rows as $r) {
+                $fCode = $r['filiere_code'];
+                $nCode = $r['niveau_code'];
+
+                if (!isset($filieresMap[$fCode])) {
+                    $filieresMap[$fCode] = [
+                        'code_filiere' => $fCode,
+                        'libelle_filiere' => $r['libelle_filiere'],
+                        'slug_filiere' => $r['slug_filiere'],
+                        'type_filiere' => $r['type_filiere']
+                    ];
+                }
+                if (!isset($niveauxMap[$nCode])) {
+                    $niveauxMap[$nCode] = [
+                        'code_niveau' => $nCode,
+                        'libelle_niveau' => $r['libelle_niveau'],
+                        'slug_niveau' => $r['slug_niveau'],
+                        'id_niveau' => (int)$r['id_niveau']
+                    ];
+                }
+                $pivots[] = [
+                    'filiere_code' => $fCode,
+                    'niveau_code' => $nCode
+                ];
+            }
+
+            $niveauxList = array_values($niveauxMap);
+            usort($niveauxList, fn($a, $b) => ($a['id_niveau'] <=> $b['id_niveau']));
+
+            return [
+                'filieres' => array_values($filieresMap),
+                'niveaux' => $niveauxList,
+                'pivots' => $pivots
+            ];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getPivotDataByCycle error: " . $e->getMessage());
+            return ['filieres' => [], 'niveaux' => [], 'pivots' => []];
+        }
+    }
+
+    public function getCiblesList(?string $typeFiliere = null, ?string $niveauCode = null, ?string $filiereCode = null, ?string $cycleCode = null, ?string $anneeCode = null): array
+    {
+        $where = [];
+        $params = [];
+
+        if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+            $where[] = "(anf.annee_code = ? OR anf.annee_code IS NULL)";
+            $params[] = $anneeCode;
+        }
+        if (!empty($cycleCode)) {
+            $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR anf.filiere_code IN (SELECT fc.filiere_code FROM " . TABLES::FILIERE_CYCLES . " fc WHERE fc.cycle_code = ?))";
+            $where[] = "(anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR anf.niveau_code IN (SELECT fc2.niveau_code FROM " . TABLES::FILIERE_CYCLES . " fc2 WHERE fc2.cycle_code = ?))";
+            $params[] = $cycleCode;
+            $params[] = $cycleCode;
+        }
+        if (!empty($typeFiliere)) {
+            if ($typeFiliere === 'TOUT') {
+                $where[] = "(anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE'))";
+            } else {
+                $where[] = "f.type_filiere = ?";
+                $params[] = $typeFiliere;
+            }
+        }
+        if (!empty($filiereCode)) {
+            $where[] = "(anf.filiere_code = ? OR anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE'))";
+            $params[] = $filiereCode;
+        }
+        if (!empty($niveauCode)) {
+            $where[] = "(anf.niveau_code = ? OR anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT'))";
+            $params[] = $niveauCode;
+        }
+
+        $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        $sql = "
+            SELECT anf.*,
+                   a.id_accessoire,
+                   a.libelle_accessoire,
+                   a.statut_accessoire,
+                   an.libelle_annee,
+                   f.libelle_filiere,
+                   f.slug_filiere,
+                   COALESCE(f.type_filiere, 'TOUT') AS type_filiere_cible,
+                   n.libelle_niveau,
+                   n.slug_niveau,
+                   (SELECT fc.cycle_code FROM " . TABLES::FILIERE_CYCLES . " fc
+                    WHERE (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR fc.filiere_code = anf.filiere_code)
+                      AND (anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR fc.niveau_code = anf.niveau_code)
+                    LIMIT 1) AS cycle_code,
+                   (SELECT COALESCE(NULLIF(cy.slug_cycle, ''), cy.libelle_cycle)
+                    FROM " . TABLES::FILIERE_CYCLES . " fc
+                    JOIN " . TABLES::CYCLES . " cy ON cy.code_cycle = fc.cycle_code
+                    WHERE (anf.filiere_code IS NULL OR anf.filiere_code IN ('', 'TOUT', 'TOUTE_FILIERE', 'TOUTE FILIERE') OR fc.filiere_code = anf.filiere_code)
+                      AND (anf.niveau_code IS NULL OR anf.niveau_code IN ('', 'TOUT') OR fc.niveau_code = anf.niveau_code)
+                    LIMIT 1) AS slug_cycle
+            FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " anf
+            JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = anf.accessoire_code
+            LEFT JOIN " . TABLES::ANNEES . " an ON an.code_annee = anf.annee_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = anf.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = anf.niveau_code
+            {$whereSql}
+            ORDER BY anf.id_accessoire_niveau_filiere DESC
+        ";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getCiblesList error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function saveCiblesBatch(array $accessoireCodes, string $typeFiliereCible, array $filiereCodes, array $niveauCodes, ?string $etabCode = null, ?string $userCode = null, ?int $idCibleToUpdate = null, ?string $cycleCode = null, ?string $anneeCode = null): int
+    {
+        $db = $this->getCon();
+        $cleanAccs = array_values(array_unique(array_filter(array_map('trim', $accessoireCodes))));
+        $cleanFilieres = array_values(array_unique(array_filter(array_map('trim', $filiereCodes), function ($v) {
+            return $v !== '' && $v !== 'TOUT' && $v !== 'TOUTE_FILIERE' && $v !== 'TOUTE FILIERE';
+        })));
+        $cleanNiveaux = array_values(array_unique(array_filter(array_map('trim', $niveauCodes), function ($v) {
+            return $v !== '' && $v !== 'TOUT';
+        })));
+
+        if (empty($cleanAccs)) {
+            return 0;
+        }
+
+        if (empty($anneeCode)) {
+            try {
+                $anneeCode = $db->query("SELECT code_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1")->fetchColumn() ?: null;
+            } catch (Exception $e) {
+                $anneeCode = null;
+            }
+        }
+
+        try {
+            if ($idCibleToUpdate !== null && $idCibleToUpdate > 0) {
+                $stmtDel = $db->prepare("DELETE FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE id_accessoire_niveau_filiere = ?");
+                $stmtDel->execute([$idCibleToUpdate]);
+            }
+
+            if (!empty($cycleCode) && empty($cleanNiveaux)) {
+                $stmtNivCycle = $db->prepare("SELECT DISTINCT niveau_code FROM " . TABLES::FILIERE_CYCLES . " WHERE cycle_code = ? AND (statut_filiere_cycle = 'actif' OR statut_filiere_cycle IS NULL)");
+                $stmtNivCycle->execute([$cycleCode]);
+                $cleanNiveaux = array_values(array_filter($stmtNivCycle->fetchAll(PDO::FETCH_COLUMN) ?: []));
+            }
+
+            $stmtCheck = $db->prepare("
+                SELECT id_accessoire_niveau_filiere
+                FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                WHERE accessoire_code = ?
+                  AND ((filiere_code IS NULL AND ? IS NULL) OR filiere_code = ?)
+                  AND ((niveau_code IS NULL AND ? IS NULL) OR niveau_code = ?)
+                  AND ((annee_code IS NULL AND ? IS NULL) OR annee_code = ?)
+                LIMIT 1
+            ");
+
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                (code_accessoire_niveau_filiere, accessoire_code, filiere_code, niveau_code, annee_code, statut_accessoire_niveau_filiere, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
+                VALUES (?, ?, ?, ?, ?, 'actif', ?, ?, NOW())
+            ");
+
+            // Si "Toutes les filières de ce cycle" est sélectionné, on enregistre une seule ligne par niveau avec 'TOUTE_FILIERE'
+            $targetFilieres = empty($cleanFilieres) ? ['TOUTE_FILIERE'] : $cleanFilieres;
+            $targetNiveaux = empty($cleanNiveaux) ? [null] : $cleanNiveaux;
+            $inserted = 0;
+
+            foreach ($cleanAccs as $accCode) {
+                foreach ($targetFilieres as $filCode) {
+                    foreach ($targetNiveaux as $nivCode) {
+                        $stmtCheck->execute([$accCode, $filCode, $filCode, $nivCode, $nivCode, $anneeCode, $anneeCode]);
+                        if ($stmtCheck->fetchColumn()) {
+                            continue;
+                        }
+                        $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                        if ($stmtIns->execute([$codeAnf, $accCode, $filCode, $nivCode, $anneeCode, $etabCode, $userCode])) {
+                            $inserted++;
+                        }
+                    }
+                }
+            }
+
+            return $inserted;
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::saveCiblesBatch error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function reconduireCibles(string $sourceAnneeCode, string $targetAnneeCode, ?string $etabCode = null, ?string $userCode = null): int
+    {
+        if (empty($sourceAnneeCode) || empty($targetAnneeCode) || $sourceAnneeCode === $targetAnneeCode) {
+            return 0;
+        }
+        try {
+            $db = $this->getCon();
+            $stmtSrc = $db->prepare("
+                SELECT accessoire_code, filiere_code, niveau_code
+                FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                WHERE annee_code = ? AND statut_accessoire_niveau_filiere = '" . STATUTS::ACTIF . "'
+            ");
+            $stmtSrc->execute([$sourceAnneeCode]);
+            $rows = $stmtSrc->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if (empty($rows)) {
+                return 0;
+            }
+
+            $stmtCheck = $db->prepare("
+                SELECT id_accessoire_niveau_filiere
+                FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                WHERE accessoire_code = ?
+                  AND ((filiere_code IS NULL AND ? IS NULL) OR filiere_code = ?)
+                  AND ((niveau_code IS NULL AND ? IS NULL) OR niveau_code = ?)
+                  AND annee_code = ?
+                LIMIT 1
+            ");
+
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . "
+                (code_accessoire_niveau_filiere, accessoire_code, filiere_code, niveau_code, annee_code, statut_accessoire_niveau_filiere, etablissement_code, user_code, created_at_accessoire_niveau_filiere)
+                VALUES (?, ?, ?, ?, ?, 'actif', ?, ?, NOW())
+            ");
+
+            $copied = 0;
+            foreach ($rows as $r) {
+                $accCode = $r['accessoire_code'];
+                $filCode = $r['filiere_code'];
+                $nivCode = $r['niveau_code'];
+                $stmtCheck->execute([$accCode, $filCode, $filCode, $nivCode, $nivCode, $targetAnneeCode]);
+                if ($stmtCheck->fetchColumn()) {
+                    continue;
+                }
+                $codeAnf = 'ANF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+                if ($stmtIns->execute([$codeAnf, $accCode, $filCode, $nivCode, $targetAnneeCode, $etabCode, $userCode])) {
+                    $copied++;
+                }
+            }
+            return $copied;
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::reconduireCibles error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function deleteCible(int $idCible): bool
+    {
+        try {
+            $stmt = $this->getCon()->prepare("DELETE FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE id_accessoire_niveau_filiere = ?");
+            return $stmt->execute([$idCible]);
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::deleteCible error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function toggleCibleStatus(int $idCible): bool
+    {
+        try {
+            $db = $this->getCon();
+            $stmt = $db->prepare("SELECT statut_accessoire_niveau_filiere FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE id_accessoire_niveau_filiere = ? LIMIT 1");
+            $stmt->execute([$idCible]);
+            $current = $stmt->fetchColumn();
+            if ($current === false) {
+                return false;
+            }
+            $newStatus = ($current === STATUTS::ACTIF) ? STATUTS::INACTIF : STATUTS::ACTIF;
+            $stmtUpd = $db->prepare("UPDATE " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " SET statut_accessoire_niveau_filiere = ? WHERE id_accessoire_niveau_filiere = ?");
+            return $stmtUpd->execute([$newStatus, $idCible]);
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::toggleCibleStatus error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deleteAccessoire(int $idAccessoire): bool
+    {
+        try {
+            $db = $this->getCon();
+            $row = $this->getById($idAccessoire);
+            if (!empty($row['code_accessoire'])) {
+                $stmtAnf = $db->prepare("DELETE FROM " . TABLES::ACCESSOIRE_NIVEAU_FILIERE . " WHERE accessoire_code = ?");
+                $stmtAnf->execute([$row['code_accessoire']]);
+            }
+            $stmt = $db->prepare("DELETE FROM " . TABLES::ACCESSOIRES . " WHERE id_accessoire = ?");
+            return $stmt->execute([$idAccessoire]);
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::deleteAccessoire error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getDistributions(string $filter = 'all', ?string $anneeCode = null, ?string $classeCode = null): array
+    {
+        $db = $this->getCon();
+        $where = "WHERE (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL) AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)";
         $params = [];
 
         if (!empty($anneeCode)) {
-            $where .= " AND (ai.annee_code = ? OR ai.annee_code IS NULL OR ai.annee_code = '')";
+            $where .= " AND ai.annee_code = ?";
             $params[] = $anneeCode;
+        }
+
+        if (!empty($classeCode)) {
+            $where .= " AND i.classe_code = ?";
+            $params[] = $classeCode;
         }
 
         $sql = "
@@ -44,6 +637,7 @@ class ModelAccessoire extends BaseModel
                    COALESCE(e.matricule_etudiant, '-') as matricule_etudiant,
                    COALESCE(e.nom_etudiant, '') as nom_etudiant,
                    COALESCE(e.prenom_etudiant, '') as prenom_etudiant,
+                   COALESCE(e.photo_etudiant, '') as photo_etudiant,
                    COALESCE(e.telephone_etudiant, '-') as telephone_etudiant,
                    CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) as nom_complet,
                    COALESCE(c.libelle_classe, 'Non assignée') as libelle_classe,
@@ -55,16 +649,17 @@ class ModelAccessoire extends BaseModel
                            ai.id_accessoire_inscription, ':::',
                            COALESCE(a.libelle_accessoire, 'Kit'), ':::',
                            ai.etat_retrait, ':::',
-                           COALESCE(DATE_FORMAT(ai.date_retrait, '%d/%m/%Y %H:%i'), '')
+                           COALESCE(DATE_FORMAT(ai.date_retrait, '%d/%m/%Y %H:%i'), ''), ':::',
+                           COALESCE(ai.accessoire_code, '')
                        ) ORDER BY ai.id_accessoire_inscription ASC SEPARATOR '|||'
                    ) as kits_details
-            FROM accessoire_inscription ai
-            LEFT JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
-            LEFT JOIN inscriptions i ON i.code_inscription = ai.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN classes c ON c.code_classe = i.classe_code
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            LEFT JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
+            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+            LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
             {$where}
-            GROUP BY i.code_inscription, e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, c.libelle_classe
+            GROUP BY i.code_inscription, e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.photo_etudiant, e.telephone_etudiant, c.libelle_classe
         ";
 
         if ($filter === 'en_attente') {
@@ -75,9 +670,190 @@ class ModelAccessoire extends BaseModel
 
         $sql .= " ORDER BY i.id_inscription DESC";
 
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            foreach ($rows as &$row) {
+                $items = [];
+                if (!empty($row['kits_details'])) {
+                    $rawItems = explode('|||', $row['kits_details']);
+                    foreach ($rawItems as $raw) {
+                        $parts = explode(':::', $raw);
+                        if (count($parts) >= 3) {
+                            $items[] = [
+                                'id_accessoire_inscription' => (int)($parts[0] ?? 0),
+                                'libelle_accessoire' => $parts[1] ?? 'Kit',
+                                'etat_retrait' => $parts[2] ?? 'en_attente',
+                                'date_retrait_formatee' => $parts[3] ?? '',
+                                'accessoire_code' => $parts[4] ?? ''
+                            ];
+                        }
+                    }
+                }
+                $row['items'] = $items;
+                $row['pourcentage'] = ($row['total_kits'] > 0) ? round(($row['total_retires'] / $row['total_kits']) * 100) : 0;
+            }
+            unset($row);
+
+            return $rows;
+        } catch (Exception $e) {
+            error_log("ModelAccessoire::getDistributions error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getBonRemiseData(string $inscriptionCode): array
+    {
+        $db = $this->getCon();
+        $stmt = $db->prepare("
+            SELECT 
+                i.code_inscription, i.created_at_inscription AS date_inscription, i.statut_inscription,
+                i.montant_scolarite_inscription, i.affectation_etat, i.annee_code,
+                e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, e.photo_etudiant,
+                cl.libelle_classe, cl.filiere_code,
+                a.libelle_annee,
+                et.libelle_etablissement AS nom_etablissement, et.logo_etablissement, et.telephone_etablissement, et.adresse_etablissement
+            FROM " . TABLES::INSCRIPTIONS . " i
+            JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+            JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
+            LEFT JOIN " . TABLES::ETABLISSEMENTS . " et ON et.code_etablissement = i.etablissement_code
+            WHERE i.code_inscription = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "'
+            LIMIT 1
+        ");
+        $stmt->execute([$inscriptionCode]);
+        $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$student) {
+            return [];
+        }
+
+        $stmtKits = $db->prepare("
+            SELECT 
+                ai.id_accessoire_inscription,
+                ai.code_accessoire_inscription,
+                ai.etat_retrait,
+                ai.date_retrait,
+                DATE_FORMAT(ai.date_retrait, '%d/%m/%Y %H:%i') as date_retrait_formatee,
+                DATE_FORMAT(ai.created_at_accessoire_inscription, '%d/%m/%Y') as date_attribution_formatee,
+                a.libelle_accessoire
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+            WHERE ai.inscription_code = ?
+              AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
+            ORDER BY a.libelle_accessoire ASC
+        ");
+        $stmtKits->execute([$inscriptionCode]);
+        $kits = $stmtKits->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $kitsRemis = [];
+        $kitsEnAttente = [];
+
+        foreach ($kits as $k) {
+            if ($k['etat_retrait'] === 'retire') {
+                $kitsRemis[] = $k;
+            } else {
+                $kitsEnAttente[] = $k;
+            }
+        }
+
+        // Paiements associés à cette inscription
+        $stmtP = $db->prepare("
+            SELECT categorie_paiement, montant_paiement, type_paiement, code_paiement, date_paiement
+            FROM " . TABLES::PAIEMENTS . "
+            WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'
+            ORDER BY date_paiement DESC
+        ");
+        $stmtP->execute([$inscriptionCode]);
+        $allPayments = $stmtP->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $fraisAnnexesPaye = 0.0;
+        $dernierCodePaiementFrais = '';
+        $dateDernierPaiementFrais = '';
+        $scolaritePaye = 0.0;
+        $dernierCodePaiementAutre = '';
+        $dateDernierPaiementAutre = '';
+        foreach ($allPayments as $p) {
+            if ($p['categorie_paiement'] === 'FRAIS_ANNEXES') {
+                $fraisAnnexesPaye += (float)$p['montant_paiement'];
+                if (empty($dernierCodePaiementFrais)) {
+                    $dernierCodePaiementFrais = $p['code_paiement'];
+                    $dateDernierPaiementFrais = !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : '';
+                }
+            } else {
+                if (empty($dernierCodePaiementAutre)) {
+                    $dernierCodePaiementAutre = $p['code_paiement'];
+                    $dateDernierPaiementAutre = !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : '';
+                }
+                if ($p['categorie_paiement'] === 'SCOLARITE') {
+                    $scolaritePaye += (float)$p['montant_paiement'];
+                }
+            }
+        }
+
+        // Grille tarifaire des frais annexes correspondante
+        $montantPayerTenue = 0.0;
+        if (!empty($student['filiere_code'])) {
+            $stmtFrais = $db->prepare("
+                SELECT fa.montant_frais_annexe 
+                FROM " . TABLES::FRAIS_ANNEXES . " fa
+                JOIN " . TABLES::FILIERES . " fil ON fil.code_filiere = ?
+                WHERE fa.annee_code = ? 
+                  AND (fa.type_filiere = fil.type_filiere OR fa.type_filiere = 'TOUT')
+                  AND fa.statut_frais_annexe = '" . STATUTS::ACTIF . "'
+                ORDER BY (fa.type_filiere != 'TOUT') DESC
+                LIMIT 1
+            ");
+            $stmtFrais->execute([$student['filiere_code'], $student['annee_code'] ?? '']);
+            $faRow = $stmtFrais->fetch(PDO::FETCH_ASSOC);
+            if ($faRow && (float)$faRow['montant_frais_annexe'] > 0) {
+                $montantPayerTenue = (float)$faRow['montant_frais_annexe'];
+            }
+        }
+        if ($montantPayerTenue <= 0) {
+            $montantPayerTenue = $fraisAnnexesPaye;
+        }
+
+        $restePayerTenue = max(0, $montantPayerTenue - $fraisAnnexesPaye);
+        $scolaritePayer = (float)($student['montant_scolarite_inscription'] ?? 0);
+        $resteScolarite = max(0, $scolaritePayer - $scolaritePaye);
+
+        // Détermination du code paiement officiel (JAMAIS le code d'inscription)
+        $codePaiementFinal = $dernierCodePaiementFrais ?: $dernierCodePaiementAutre;
+        if (empty($codePaiementFinal)) {
+            if (!class_exists('Validator')) {
+                require_once __DIR__ . '/../Validator.php';
+            }
+            $validator = new Validator();
+            $codePaiementFinal = $validator->generateCode(TABLES::PAIEMENTS, 'code_paiement', 'REC-FA-', 6);
+        }
+
+        return [
+            'student' => $student,
+            'etudiant' => $student,
+            'kits' => $kits,
+            'kits_remis' => $kitsRemis,
+            'kits_en_attente' => $kitsEnAttente,
+            'total_kits' => count($kits),
+            'total_remis' => count($kitsRemis),
+            'total_en_attente' => count($kitsEnAttente),
+            'pourcentage' => (count($kits) > 0) ? round((count($kitsRemis) / count($kits)) * 100) : 0,
+            'finances' => [
+                'code_paiement' => $codePaiementFinal,
+                'date_operation' => $dateDernierPaiementFrais ?: ($dateDernierPaiementAutre ?: date('d/m/Y', strtotime($student['date_inscription'] ?? date('Y-m-d')))),
+                'montant_payer_tenue' => $montantPayerTenue,
+                'montant_paye_tenue' => $fraisAnnexesPaye,
+                'reste_payer_tenue' => ($restePayerTenue <= 0 && $fraisAnnexesPaye > 0) ? 'Soldé' : ($restePayerTenue > 0 ? number_format($restePayerTenue, 0, ',', ' ') . ' CFA' : 'Soldé'),
+                'scolarite_recap' => [
+                    'montant_payer' => $scolaritePayer,
+                    'montant_paye' => $scolaritePaye,
+                    'reste_payer' => $resteScolarite,
+                    'prochain_rdv' => ($resteScolarite <= 0) ? 'Soldé' : 'À fixer'
+                ]
+            ]
+        ];
     }
 
     public function getStats(?string $anneeCode = null): array
@@ -86,31 +862,143 @@ class ModelAccessoire extends BaseModel
         $whereAnnee = "";
         $params = [];
         if (!empty($anneeCode)) {
-            $whereAnnee = " AND (annee_code = ? OR annee_code IS NULL OR annee_code = '')";
+            $whereAnnee = " AND ai.annee_code = ?";
             $params[] = $anneeCode;
         }
 
-        $stmtTot = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL)" . $whereAnnee);
+        $baseJoin = " FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai 
+                      JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code 
+                      WHERE (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL) 
+                        AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL) ";
+
+        $stmtTot = $db->prepare("SELECT COUNT(*)" . $baseJoin . $whereAnnee);
         $stmtTot->execute($params);
         $total = (int)($stmtTot->fetchColumn() ?: 0);
 
-        $stmtAtt = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'en_attente'" . $whereAnnee);
+        $stmtAtt = $db->prepare("SELECT COUNT(*)" . $baseJoin . " AND ai.etat_retrait = 'en_attente'" . $whereAnnee);
         $stmtAtt->execute($params);
         $enAttente = (int)($stmtAtt->fetchColumn() ?: 0);
 
-        $stmtRet = $db->prepare("SELECT COUNT(*) FROM accessoire_inscription WHERE (statut_accessoire_inscription = 'actif' OR statut_accessoire_inscription IS NULL) AND etat_retrait = 'retire'" . $whereAnnee);
+        $stmtRet = $db->prepare("SELECT COUNT(*)" . $baseJoin . " AND ai.etat_retrait = 'retire'" . $whereAnnee);
         $stmtRet->execute($params);
         $retire = (int)($stmtRet->fetchColumn() ?: 0);
 
-        $totalTypes = (int)$db->query("SELECT COUNT(*) FROM accessoires WHERE statut_accessoire = 'actif'")->fetchColumn();
+        $totalTypes = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "'")->fetchColumn();
         $taux = $total > 0 ? round(($retire / $total) * 100) : 0;
 
         return [
             'total' => $total,
             'en_attente' => $enAttente,
+            'retires' => $retire,
             'retire' => $retire,
+            'taux_retrait' => $taux,
             'taux' => $taux,
             'total_types' => $totalTypes
         ];
+    }
+
+    public function getAccessoireInscription(int $id, string $code = ''): ?array
+    {
+        $db = $this->getCon();
+        if ($id > 0) {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE id_accessoire_inscription = ? LIMIT 1");
+            $stmt->execute([$id]);
+        } else {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE code_accessoire_inscription = ? LIMIT 1");
+            $stmt->execute([$code]);
+        }
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function updateEtatRetrait(int $id, string $newEtat, ?string $dateRetrait): bool
+    {
+        $stmt = $this->getCon()->prepare("
+            UPDATE " . TABLES::ACCESSOIRE_INSCRIPTION . " 
+            SET etat_retrait = ?, date_retrait = ? 
+            WHERE id_accessoire_inscription = ?
+        ");
+        return $stmt->execute([$newEtat, $dateRetrait, $id]);
+    }
+
+    public function updateAllKitsForInscription(string $inscriptionCode, string $targetEtat, ?string $dateRetrait): bool
+    {
+        $stmt = $this->getCon()->prepare("
+            UPDATE " . TABLES::ACCESSOIRE_INSCRIPTION . " 
+            SET etat_retrait = ?, date_retrait = ? 
+            WHERE inscription_code = ?
+              AND (statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR statut_accessoire_inscription IS NULL)
+        ");
+        return $stmt->execute([$targetEtat, $dateRetrait, $inscriptionCode]);
+    }
+
+    public function getKitsByEtudiant(string $etudiantCode, ?string $anneeCode = null): array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT ai.*, a.libelle_accessoire,
+                   DATE_FORMAT(ai.date_retrait, '%d/%m/%Y %H:%i') as date_retrait_formatee,
+                   DATE_FORMAT(ai.created_at_accessoire_inscription, '%d/%m/%Y') as date_attribution_formatee
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+            JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
+            WHERE i.etudiant_code = ?
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
+              AND (ai.annee_code = ? OR ? = '')
+              AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
+            ORDER BY ai.id_accessoire_inscription DESC
+        ");
+        $stmt->execute([$etudiantCode, $anneeCode ?: '', $anneeCode ?: '']);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getAllActiveKits(): array
+    {
+        return $this->getCon()->query("SELECT code_accessoire, libelle_accessoire FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "' ORDER BY libelle_accessoire ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getLatestInscriptionForStudent(string $etudiantCode): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ? AND statut_inscription != '" . STATUTS::ANNULE . "' ORDER BY id_inscription DESC LIMIT 1");
+        $stmt->execute([$etudiantCode]);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res ?: null;
+    }
+
+    public function checkKitAlreadyAttributed(string $etudiantCode, string $insCode, string $accCode, ?string $anneeCode = null): ?array
+    {
+        $stmt = $this->getCon()->prepare("
+            SELECT ai.id_accessoire_inscription, a.libelle_accessoire 
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            LEFT JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+            JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
+            WHERE (i.etudiant_code = ? OR ai.inscription_code = ?)
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
+              AND ai.accessoire_code = ? 
+              AND (ai.annee_code = ? OR ? = '')
+              AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
+            LIMIT 1
+        ");
+        $stmt->execute([$etudiantCode, $insCode, $accCode, $anneeCode ?: '', $anneeCode ?: '']);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res ?: null;
+    }
+
+    public function insertAccessoireInscription(array $data): bool
+    {
+        $stmt = $this->getCon()->prepare("
+            INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
+            (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, date_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+            VALUES (?, ?, ?, ?, 'actif', ?, ?, ?, ?, NOW())
+        ");
+        return $stmt->execute([
+            $data['code_accessoire_inscription'],
+            $data['inscription_code'],
+            $data['accessoire_code'],
+            $data['annee_code'],
+            $data['etat_retrait'] ?? 'en_attente',
+            $data['date_retrait'] ?? null,
+            $data['user_code'] ?? null,
+            $data['etablissement_code'] ?? null
+        ]);
     }
 }

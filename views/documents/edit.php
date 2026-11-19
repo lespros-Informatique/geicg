@@ -25,13 +25,13 @@ $enseignants = (new ModelEnseignant())->getAll();
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_document']) ? 'Éditer ' : 'Ajouter ' ?> Document / Support de Cours</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Saisie des données du module Centre de Documents & Supports Pédagogiques</p>
         </div>
-        <a href="<?= RACINE ?>document/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('document/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
 
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form action="<?= RACINE ?>document/<?= !empty($item['id_document']) ? 'edit' : 'add' ?>" method="POST" enctype="multipart/form-data" style="width: 100%;">
+        <form action="<?= url('document/' . (!empty($item['id_document']) ? 'edit' : 'add')) ?>" method="POST" enctype="multipart/form-data" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_document'])): ?>
             <input type="hidden" name="id_document" value="<?= $item['id_document'] ?>">
@@ -148,7 +148,7 @@ $enseignants = (new ModelEnseignant())->getAll();
             <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px; display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer le document
             </button>
-            <a href="<?= RACINE ?>document/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
+            <a href="<?= url('document/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
           </div>
         </form>
       </div>
@@ -156,130 +156,13 @@ $enseignants = (new ModelEnseignant())->getAll();
   </main>
 </div>
 
-<script>
-var currentDocTab = 'upload';
-var existingDocUrl = <?= json_encode($item['lien_document'] ?? ($item['chemin_fichier'] ?? '')) ?>;
-
-function switchDocTab(tab) {
-  currentDocTab = tab;
-  var isUpload = (tab === 'upload');
-  document.getElementById('panel_upload').style.display = isUpload ? '' : 'none';
-  document.getElementById('panel_url').style.display = isUpload ? 'none' : '';
-  
-  document.getElementById('tab_upload').style.background = isUpload ? '#1E3A5F' : '#F1F5F9';
-  document.getElementById('tab_upload').style.color = isUpload ? '#FFFFFF' : '#475569';
-  document.getElementById('tab_url').style.background = isUpload ? '#F1F5F9' : '#1E3A5F';
-  document.getElementById('tab_url').style.color = isUpload ? '#475569' : '#FFFFFF';
-
-  if (!isUpload) {
-    var inp = document.getElementById('url_fichier_input');
-    if (!inp.value && existingDocUrl) { 
-      inp.value = existingDocUrl; 
-    }
-    document.getElementById('lien_document').value = inp.value;
-  }
-}
-
-// Drag & Drop
-var dropZone = document.getElementById('doc_drop_zone');
-dropZone.addEventListener('dragover', function(e) {
-  e.preventDefault();
-  dropZone.style.borderColor = '#1E3A5F';
-  dropZone.style.background = '#EFF6FF';
-});
-
-dropZone.addEventListener('dragleave', function() {
-  dropZone.style.borderColor = '#CBD5E1';
-  dropZone.style.background = '#F8FAFC';
-});
-
-dropZone.addEventListener('drop', function(e) {
-  e.preventDefault();
-  dropZone.style.borderColor = '#CBD5E1';
-  dropZone.style.background = '#F8FAFC';
-  var files = e.dataTransfer.files;
-  if (files.length) {
-    document.getElementById('fichier_upload').files = files;
-    handleDocFile(files[0]);
-  }
-});
-
-document.getElementById('fichier_upload').addEventListener('change', function() {
-  if (this.files.length) {
-    handleDocFile(this.files[0]);
-  }
-});
-
-function handleDocFile(file) {
-  var maxMo = 50;
-  if (file.size > maxMo * 1024 * 1024) {
-    alert('Le fichier sélectionné dépasse la taille maximale autorisée de ' + maxMo + ' Mo.');
-    return;
-  }
-
-  var ext = file.name.split('.').pop().toLowerCase();
-  var iconName = 'file-text';
-  var typeSelectVal = 'autre';
-
-  if (ext === 'pdf') {
-    iconName = 'file-text';
-    typeSelectVal = 'pdf';
-  } else if (['doc', 'docx', 'odt', 'rtf', 'txt'].indexOf(ext) !== -1) {
-    iconName = 'file-type-2';
-    typeSelectVal = 'word';
-  } else if (['xls', 'xlsx', 'ods'].indexOf(ext) !== -1) {
-    iconName = 'file-spreadsheet';
-    typeSelectVal = 'excel';
-  } else if (['ppt', 'pptx', 'odp'].indexOf(ext) !== -1) {
-    iconName = 'presentation';
-    typeSelectVal = 'powerpoint';
-  } else if (['zip', 'rar', '7z'].indexOf(ext) !== -1) {
-    iconName = 'archive';
-    typeSelectVal = 'archive';
-  } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].indexOf(ext) !== -1) {
-    iconName = 'image';
-    typeSelectVal = 'image';
-  }
-
-  document.getElementById('doc_preview_zone').style.display = '';
-  document.getElementById('doc_file_name').textContent = file.name;
-  document.getElementById('doc_file_size').textContent = (file.size / (1024 * 1024)).toFixed(2) + ' Mo — Extension .' + ext.toUpperCase();
-  document.getElementById('type_document').value = typeSelectVal;
-  document.getElementById('lien_document').value = '';
-
-  var iconEl = document.getElementById('doc_type_icon');
-  iconEl.setAttribute('data-lucide', iconName);
-  if (window.lucide) lucide.createIcons();
-}
-
-function clearDocFile() {
-  document.getElementById('fichier_upload').value = '';
-  document.getElementById('doc_preview_zone').style.display = 'none';
-  document.getElementById('lien_document').value = existingDocUrl;
-}
-
-document.getElementById('url_fichier_input').addEventListener('input', function() {
-  var val = this.value.trim();
-  document.getElementById('lien_document').value = val;
-});
-
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-
-  if (existingDocUrl) {
-    if (existingDocUrl.indexOf('http') === 0) {
-      switchDocTab('url');
-      document.getElementById('url_fichier_input').value = existingDocUrl;
-    } else {
-      // Document existant uploadé
-      document.getElementById('doc_preview_zone').style.display = '';
-      var fileName = existingDocUrl.split('/').pop();
-      document.getElementById('doc_file_name').textContent = fileName;
-      document.getElementById('doc_file_size').textContent = 'Fichier enregistré existant';
-      if (window.lucide) lucide.createIcons();
-    }
-  }
-});
+<script type="application/json" id="documents-edit-config">
+<?= json_encode([
+    'existingDocUrl' => $item['lien_document'] ?? ($item['chemin_fichier'] ?? '')
+]) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/documents.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>
 

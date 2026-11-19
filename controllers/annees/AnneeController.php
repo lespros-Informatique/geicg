@@ -10,12 +10,14 @@ class AnneeController extends BaseController
     public function list()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ANNEES);
         $this->loadView('../views/annees/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ANNEES);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -59,6 +61,7 @@ class AnneeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ANNEES);
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_annee'])) {
@@ -72,26 +75,34 @@ class AnneeController extends BaseController
             return;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_annee'])) {
-            $data['code_annee'] = $this->validator->generateCode('annees', 'code_annee', 'ANN-', 8);
+            $data['code_annee'] = $this->validator->generateCode(TABLES::ANNEES, 'code_annee', 'ANN-', 8);
         }
         
-        // Toute nouvelle année académique est obligatoirement créée avec le statut inactif
-        $data['statut_annee'] = 'inactif';
+        // Toute nouvelle année académique est créée avec le statut 'planifie' par défaut (En préparation)
+        $data['statut_annee'] = 'planifie';
         $data['created_at_annee'] = date('Y-m-d H:i:s');
+        $data['user_code'] = $userCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['annee_code'] = $anneeCode;
         
-        $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('user_code', $cols)) $data['user_code'] = $userCode;
-        if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
-        if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $filteredData = $this->model->filterData($data);
+        $libelle = $data['libelle_annee'] ?? '';
         if ($this->model->create($filteredData)) {
-            $this->success('Année académique créée avec succès (statut initial : inactif).');
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'annees',
+                $data['code_annee'],
+                "Création de l'année académique '{$libelle}' ({$data['code_annee']})",
+                $filteredData,
+                $etabCode
+            );
+            $this->success("L'année académique « {$libelle} » a été créée avec succès (statut initial : en préparation).");
         } else {
-            $this->error('Erreur lors de la création');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de la création de l\'année académique');
         }
     }
 
@@ -99,6 +110,7 @@ class AnneeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ANNEES);
         $id = (int)$this->post('id_annee');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         
@@ -108,8 +120,8 @@ class AnneeController extends BaseController
             return;
         }
 
-        if (($currentItem['statut_annee'] ?? '') === 'actif') {
-            $this->error('Impossible d\'éditer une année académique active.');
+        if (($currentItem['statut_annee'] ?? '') !== 'planifie') {
+            $this->error('Seule une année académique en préparation (planifiée) peut être modifiée.');
             return;
         }
 
@@ -129,8 +141,8 @@ class AnneeController extends BaseController
         }
 
         // Vérification des règles de dates si changement de statut
-        $newStatus = $data['statut_annee'] ?? ($currentItem['statut_annee'] ?? 'inactif');
-        $oldStatus = $currentItem['statut_annee'] ?? 'inactif';
+        $newStatus = $data['statut_annee'] ?? ($currentItem['statut_annee'] ?? 'planifie');
+        $oldStatus = $currentItem['statut_annee'] ?? 'planifie';
 
         $evalItem = array_merge($currentItem, $data);
 
@@ -140,7 +152,7 @@ class AnneeController extends BaseController
                 $this->error($errorMsg);
                 return;
             }
-        } elseif ($newStatus === 'inactif' && $oldStatus === 'actif') {
+        } elseif ($newStatus === 'cloture' && $oldStatus === 'actif') {
             $errorMsg = '';
             if (!$this->model->canClose($evalItem, $errorMsg)) {
                 $this->error($errorMsg);
@@ -148,20 +160,30 @@ class AnneeController extends BaseController
             }
         }
 
-        $cols = $this->model->getCon()->query("DESCRIBE annees")->fetchAll(PDO::FETCH_COLUMN);
-        $filteredData = array_intersect_key($data, array_flip($cols));
+        $data['updated_at_annee'] = date('Y-m-d H:i:s');
+        $filteredData = $this->model->filterData($data);
+
+        $libelle = $data['libelle_annee'] ?? ($currentItem['libelle_annee'] ?? '');
+
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'annees',
+                $currentItem['code_annee'] ?? (string)$id,
+                "Modification de l'année académique '{$libelle}' (" . ($currentItem['code_annee'] ?? $id) . ")",
+                $filteredData
+            );
             if ($newStatus === 'actif') {
                 $this->model->setActiveYear($id);
                 $updatedRow = $this->model->getById($id);
                 if ($updatedRow) {
-                    $_SESSION['annee_active_code'] = $updatedRow['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $updatedRow['libelle_annee'];
+                    Session::set('annee_active_code', $updatedRow['code_annee']);
+                    Session::set('annee_active_libelle', $updatedRow['libelle_annee']);
                 }
             }
-            $this->success('Année académique modifiée avec succès!');
+            $this->success("L'année académique « {$libelle} » a été modifiée avec succès !");
         } else {
-            $this->error('Erreur lors de la modification');
+            $this->error($this->model->getLastError() ?: 'Erreur lors de la modification de l\'année académique');
         }
     }
 
@@ -169,6 +191,7 @@ class AnneeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ANNEES);
         $id = (int)$this->post('id');
         $item = $id ? $this->model->getById($id) : null;
         if ($item) {
@@ -193,9 +216,19 @@ class AnneeController extends BaseController
             if ($this->model->toggleStatus($id)) {
                 $activeYear = $this->model->getActiveYear();
                 if ($activeYear) {
-                    $_SESSION['annee_active_code'] = $activeYear['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $activeYear['libelle_annee'];
+                    Session::set('annee_active_code', $activeYear['code_annee']);
+                    Session::set('annee_active_libelle', $activeYear['libelle_annee']);
+                } else {
+                    Session::set('annee_active_code', '');
+                    Session::set('annee_active_libelle', 'Aucune');
                 }
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'annees',
+                    $item['code_annee'] ?? (string)$id,
+                    "Changement de statut / activation de l'année académique '{$item['libelle_annee']}'",
+                    ['id_annee' => $id, 'code_annee' => $item['code_annee'] ?? null, 'nouveau_statut' => ($currentStatus === 'actif' ? 'cloture' : 'actif')]
+                );
                 $this->success('Statut mis à jour avec succès (Une seule année active à la fois) !', [
                     'reload' => true,
                     'activeYear' => $activeYear
@@ -211,6 +244,7 @@ class AnneeController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ANNEES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -220,40 +254,9 @@ class AnneeController extends BaseController
             }
             
             $anneeCode = $item['code_annee'];
-            
-            // Statistiques
-            $stmtStats = $this->model->getCon()->prepare("
-                SELECT 
-                    (SELECT COUNT(*) FROM inscriptions WHERE annee_code = ? AND statut_inscription = 'actif') as total_etudiants,
-                    (SELECT COUNT(*) FROM classes WHERE annee_code = ? AND statut_classe = 'actif') as total_classes,
-                    (SELECT COUNT(*) FROM semestres WHERE annee_code = ? AND statut_semestre = 'actif') as total_semestres,
-                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM paiements WHERE annee_code = ? AND statut_paiement != 'annule') as total_recouvrement
-            ");
-            $stmtStats->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode]);
-            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: [
-                'total_etudiants' => 0, 'total_classes' => 0, 'total_semestres' => 0, 'total_recouvrement' => 0
-            ];
-
-            // Liste des classes de cette année
-            $stmtCls = $this->model->getCon()->prepare("
-                SELECT cl.*, f.libelle_filiere, n.libelle_niveau,
-                       (SELECT COUNT(*) FROM inscriptions ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription = 'actif') as nb_eleves
-                FROM classes cl
-                LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-                WHERE cl.annee_code = ?
-                ORDER BY cl.libelle_classe ASC
-            ");
-            $stmtCls->execute([$anneeCode]);
-            $classes = $stmtCls->fetchAll(PDO::FETCH_ASSOC);
-
-            // Liste des semestres de cette année
-            $stmtSem = $this->model->getCon()->prepare("
-                SELECT * FROM semestres WHERE annee_code = ? ORDER BY id_semestre ASC
-            ");
-            $stmtSem->execute([$anneeCode]);
-            $semestres = $stmtSem->fetchAll(PDO::FETCH_ASSOC);
-
+            $stats = $this->model->getStatsForAnnee($anneeCode);
+            $classes = $this->model->getClassesForAnnee($anneeCode);
+            $semestres = $this->model->getSemestresForAnnee($anneeCode);
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("AnneeController::details error: " . $e->getMessage());
@@ -271,25 +274,12 @@ class AnneeController extends BaseController
 
     public function edition($details)
     {
-        $this->requireAuth();
-        try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item || ($item['statut_annee'] ?? '') === 'actif') { 
-                header('Location: ' . RACINE . 'annee/list'); 
-                exit(); 
-            }
-            $encryptedId = $this->validator->crypter($id);
-        } catch (Exception $e) {
-            header('Location: ' . RACINE . 'annee/list'); exit();
-        }
-        $this->loadView('../views/annees/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+        redirect('annee/list');
     }
 
     public function formulaire()
     {
-        $this->requireAuth();
-        $this->loadView('../views/annees/edit.php', ['item' => []]);
+        redirect('annee/list');
     }
 
     /**
@@ -305,14 +295,20 @@ class AnneeController extends BaseController
             return;
         }
 
-        $db = $this->model->getCon();
-        $stmt = $db->prepare("SELECT * FROM annees WHERE code_annee = ? OR id_annee = ? LIMIT 1");
-        $stmt->execute([$code, is_numeric($code) ? (int)$code : 0]);
-        $annee = $stmt->fetch(PDO::FETCH_ASSOC);
+        $annee = $this->model->getAnneeByCodeOrId($code);
 
         if ($annee) {
-            $_SESSION['annee_active_code'] = $annee['code_annee'];
-            $_SESSION['annee_active_libelle'] = $annee['libelle_annee'];
+            // Vérification stricte des droits d'accès à l'historique si l'année n'est pas active
+            if (!$this->model->canUserAccessAnnee($annee['code_annee'])) {
+                $this->json([
+                    'status' => 0,
+                    'message' => "Accès refusé : vous n'avez pas l'autorisation de consulter l'historique de cette année académique."
+                ]);
+                return;
+            }
+
+            Session::set('annee_active_code', $annee['code_annee']);
+            Session::set('annee_active_libelle', $annee['libelle_annee']);
             
             $this->json([
                 'status' => 1,

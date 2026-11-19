@@ -1,0 +1,327 @@
+<?php
+
+class FraisAnnexeController extends BaseController
+{
+    protected function resolveModel()
+    {
+        return new ModelFraisAnnexe();
+    }
+
+    public function list()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]);
+
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($activeYear === null) {
+            $this->loadView('../views/frais_annexes/list.php', [
+                'annees' => $annees,
+                'selectedAnneeCode' => '',
+                'niveaux' => []
+            ]);
+            return;
+        }
+
+        $niveaux = (new ModelNiveau())->getActifs();
+
+        $this->loadView('../views/frais_annexes/list.php', [
+            'annees' => $annees,
+            'selectedAnneeCode' => $activeYear,
+            'niveaux' => $niveaux
+        ]);
+    }
+
+    public function apiList()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]);
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
+
+        $typeFiliere = $_GET['type_filiere'] ?? null;
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $categorie = $_GET['categorie'] ?? null;
+
+        $items = $this->model->getAll($anneeCode, $typeFiliere, $niveauCode, $categorie);
+        $data = [];
+        foreach ($items as $i) {
+            $id = $i['id_frais_annexe'];
+            $idCrypte = $this->validator->crypter($id);
+            $data[] = array_merge($i, [
+                'id' => $id,
+                'editId' => $idCrypte
+            ]);
+        }
+        $this->json(['data' => $data]);
+    }
+
+    public function store()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
+        $data = $_POST;
+        unset($data['csrf_token']);
+
+        $userCode = Auth::code();
+        $anneeCode = $this->getActiveAnneeCode();
+        $etabCode = $this->getActiveEtablissementCode();
+
+        $libelle = trim($data['libelle_frais_annexe'] ?? '');
+        $categorie = in_array($data['categorie_frais_annexe'] ?? '', ['inscription', 'autre'], true) ? $data['categorie_frais_annexe'] : 'autre';
+        $data['categorie_frais_annexe'] = $categorie;
+        $typeFiliere = $data['type_filiere'] ?? 'TOUT';
+        $niveauCode = (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') ? null : $data['niveau_code'];
+
+        if (empty($libelle)) {
+            $this->error("Le libellé de la tarification est obligatoire.");
+            return;
+        }
+        // Contrôle Anti-Doublon (Filière x Niveau d'étude x Catégorie pour la même année)
+        $duplicate = $this->model->checkDuplicate($anneeCode, $typeFiliere, $niveauCode, $categorie);
+        if ($duplicate) {
+            $catLabel = ($categorie === 'inscription') ? 'Inscription' : 'Autre';
+            $configStr = "Catégorie : " . htmlspecialchars($catLabel) . " | Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
+            $this->error("Création impossible : Un tarif de frais annexes est déjà configuré pour [{$configStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
+            return;
+        }
+
+        if (empty($data['code_frais_annexe'])) {
+            $data['code_frais_annexe'] = $this->validator->generateCode(TABLES::FRAIS_ANNEXES, 'code_frais_annexe', 'FRAIS-ANN-', 8);
+        }
+
+        $data['niveau_code'] = $niveauCode;
+        $data['annee_code'] = $anneeCode;
+        $data['etablissement_code'] = $etabCode;
+        $data['user_code'] = $userCode;
+        $data['statut_frais_annexe'] = $data['statut_frais_annexe'] ?? 'actif';
+        $data['created_at_frais_annexe'] = date('Y-m-d H:i:s');
+
+        $filteredData = $this->model->filterData($data);
+
+        if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'frais_annexes',
+                $data['code_frais_annexe'],
+                "Création du tarif de frais annexes '{$libelle}' (Montant: " . number_format((float)($data['montant_frais_annexe'] ?? 0), 0, ',', ' ') . " GNF)",
+                $filteredData,
+                $etabCode
+            );
+            $this->success("Tarif de frais annexes enregistré avec succès !");
+        } else {
+            $this->error("Erreur lors de l'enregistrement du tarif de frais annexes.");
+        }
+    }
+
+    public function edit()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
+        
+        $rawId = $this->post('id_frais_annexe');
+        $id = (int)$rawId;
+        if (!$id && !empty($rawId)) {
+            $id = (int)$this->validator->decrypter($rawId);
+        }
+        if (!$id) {
+            $this->error('Identifiant invalide pour la modification');
+            return;
+        }
+
+        $data = $_POST;
+        unset($data['csrf_token']);
+
+        $libelle = trim($data['libelle_frais_annexe'] ?? '');
+        $categorie = in_array($data['categorie_frais_annexe'] ?? '', ['inscription', 'autre'], true) ? $data['categorie_frais_annexe'] : 'autre';
+        $data['categorie_frais_annexe'] = $categorie;
+        $typeFiliere = $data['type_filiere'] ?? 'TOUT';
+        $niveauCode = (empty($data['niveau_code']) || $data['niveau_code'] === 'TOUT') ? null : $data['niveau_code'];
+
+        if (empty($libelle)) {
+            $this->error("Le libellé de la tarification est obligatoire.");
+            return;
+        }
+
+        $existingItem = $this->model->getById($id);
+        if (!$existingItem) {
+            $this->error('Enregistrement introuvable pour la modification');
+            return;
+        }
+        $itemAnneeCode = $existingItem['annee_code'] ?? $this->getActiveAnneeCode();
+
+        // Contrôle Anti-Doublon sur la combinaison
+        $duplicate = $this->model->checkDuplicate($itemAnneeCode, $typeFiliere, $niveauCode, $categorie, $id);
+        if ($duplicate) {
+            $catLabel = ($categorie === 'inscription') ? 'Inscription' : 'Autre';
+            $configStr = "Catégorie : " . htmlspecialchars($catLabel) . " | Filière : " . htmlspecialchars($typeFiliere) . ($niveauCode ? " | Niveau : " . htmlspecialchars($niveauCode) : " | Tous les Niveaux");
+            $this->error("Modification impossible : Un autre tarif de frais annexes est déjà configuré pour [{$configStr}] sur cette année académique (Réf: " . htmlspecialchars($duplicate['code_frais_annexe'] ?? '') . ").");
+            return;
+        }
+
+        $data['niveau_code'] = $niveauCode;
+        $data['updated_at_frais_annexe'] = date('Y-m-d H:i:s');
+
+        $filteredData = $this->model->filterData($data);
+
+        if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'frais_annexes',
+                $existingItem['code_frais_annexe'] ?? (string)$id,
+                "Modification du tarif de frais annexes '{$libelle}' (Montant: " . number_format((float)($data['montant_frais_annexe'] ?? 0), 0, ',', ' ') . " GNF)",
+                $filteredData
+            );
+            $this->success("Tarif de frais annexes modifié avec succès !");
+        } else {
+            $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
+                ? $this->model->getLastError() 
+                : "Erreur lors de la modification du tarif de frais annexes.";
+            $this->error($msg);
+        }
+    }
+
+    public function toggleStatut()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
+        $id = (int)$this->post('id_frais_annexe');
+        if (!$id) {
+            $this->error('Identifiant invalide');
+            return;
+        }
+
+        $item = $this->model->getById($id);
+        if (!$item) {
+            $this->error('Enregistrement introuvable');
+            return;
+        }
+
+        $newStatut = ($item['statut_frais_annexe'] === STATUTS::ACTIF) ? 'inactif' : 'actif';
+        if ($this->model->update(['statut_frais_annexe' => $newStatut, 'updated_at_frais_annexe' => date('Y-m-d H:i:s')], $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'frais_annexes',
+                $item['code_frais_annexe'] ?? (string)$id,
+                "Changement de statut du tarif '{$item['libelle_frais_annexe']}' vers : {$newStatut}",
+                ['id_frais_annexe' => $id, 'nouveau_statut' => $newStatut]
+            );
+            $this->success("Statut mis à jour avec succès (" . ucfirst($newStatut) . ")");
+        } else {
+            $this->error("Erreur lors du changement de statut.");
+        }
+    }
+
+    /**
+     * Impression de la Grille des Frais Annexes via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::PRINT_FRAIS_ANNEXES, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::PRINT_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE]);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : $this->getActiveAnneeCode();
+        $categorie = !empty($_GET['categorie']) ? trim($_GET['categorie']) : null;
+        $typeFiliere = !empty($_GET['type_filiere']) ? trim($_GET['type_filiere']) : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if ($anneeCode) {
+            $aRow = $this->model->getAnneeByCode($anneeCode);
+            if (!empty($aRow['libelle_annee'])) {
+                $anneeLibelle = $aRow['libelle_annee'];
+            }
+        }
+
+        $fraisAnnexes = $this->model->getAll($anneeCode, $typeFiliere, $niveauCode, $categorie);
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $authSession = Auth::user() ?: [];
+        $editeurNom = trim(($authSession['prenom_user'] ?? '') . ' ' . ($authSession['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Comptabilité & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'frais_annexes' => $fraisAnnexes,
+            'filtres' => [
+                'annee_code' => $anneeCode,
+                'categorie' => $categorie,
+                'type_filiere' => $typeFiliere,
+                'niveau_code' => $niveauCode
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('grille_frais_annexes.php', $data);
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'frais_annexes',
+            $anneeCode ?: 'TOUT',
+            "Impression de la grille des frais annexes (Année: {$anneeLibelle})",
+            ['annee_code' => $anneeCode, 'categorie' => $categorie, 'type_filiere' => $typeFiliere, 'niveau_code' => $niveauCode]
+        );
+        $filename = 'Grille_Frais_Annexes_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Grille des Frais Annexes - ' . ($etablissement['libelle_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 12
+        ]);
+    }
+
+    public function reconduire()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_FRAIS_ANNEXES, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
+
+        $anneeSourceCode = trim($_POST['annee_source_code'] ?? '');
+        $anneeCibleCode = trim($_POST['annee_cible_code'] ?? '');
+
+        if (empty($anneeSourceCode) || empty($anneeCibleCode)) {
+            $this->error("Veuillez sélectionner l'année source et l'année de destination.");
+            return;
+        }
+
+        if ($anneeSourceCode === $anneeCibleCode) {
+            $this->error("L'année source et l'année de destination doivent être différentes.");
+            return;
+        }
+
+        $etabCode = $this->getActiveEtablissementCode();
+        $userCode = Auth::code();
+
+        $res = $this->model->reconduireFraisAnnee($anneeSourceCode, $anneeCibleCode, $etabCode, $userCode);
+
+        if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'frais_annexes',
+                $anneeCibleCode,
+                "Reconduction de {$res['count']} tarif(s) de frais annexes depuis l'année {$anneeSourceCode} vers {$anneeCibleCode}",
+                ['source' => $anneeSourceCode, 'cible' => $anneeCibleCode, 'count' => $res['count'], 'skipped' => $res['skipped']],
+                $etabCode
+            );
+            $this->success($res['message'], ['reload' => true, 'count' => $res['count'], 'skipped' => $res['skipped']]);
+        } else {
+            $this->error($res['message']);
+        }
+    }
+}
