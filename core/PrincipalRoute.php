@@ -15,10 +15,13 @@ require_once __DIR__ . '/../models/home/ModelHome.php';
 require_once __DIR__ . '/../models/users/ModelUser.php';
 require_once __DIR__ . '/../models/roles/ModelRole.php';
 require_once __DIR__ . '/../models/permissions/ModelPermission.php';
+require_once __DIR__ . '/../models/audit/ModelAuditLog.php';
+require_once __DIR__ . '/../controllers/audit/AuditController.php';
 
 
 // School Structure & Academic Models
 require_once __DIR__ . '/../models/etablissements/ModelEtablissement.php';
+require_once __DIR__ . '/../models/configurations/ModelConfiguration.php';
 require_once __DIR__ . '/../models/cycles/ModelCycle.php';
 require_once __DIR__ . '/../models/filieres/ModelFiliere.php';
 require_once __DIR__ . '/../models/niveaux/ModelNiveau.php';
@@ -55,6 +58,7 @@ require_once __DIR__ . '/../models/emplois_temps/ModelEmploi.php';
 require_once __DIR__ . '/../models/absences/ModelAbsence.php';
 require_once __DIR__ . '/../models/notes/ModelNote.php';
 require_once __DIR__ . '/../models/compositions/ModelComposition.php';
+require_once __DIR__ . '/../models/maquettes/ModelMaquette.php';
 
 
 // Médias & Communication Models
@@ -80,6 +84,7 @@ require_once __DIR__ . '/../controllers/classes/ClasseController.php';
 require_once __DIR__ . '/../controllers/semestres/SemestreController.php';
 
 require_once __DIR__ . '/../controllers/matieres/MatiereController.php';
+require_once __DIR__ . '/../controllers/maquettes/MaquetteController.php';
 require_once __DIR__ . '/../controllers/salles/SalleController.php';
 
 // Finance & Scolarité Controllers
@@ -118,31 +123,29 @@ require_once __DIR__ . '/../controllers/documents/DocumentController.php';
 
 require_once __DIR__ . '/../models/fonctions/ModelFonction.php';
 require_once __DIR__ . '/../models/impayes/ModelImpayes.php';
-require_once __DIR__ . '/../models/enseignant_matiere/ModelEnseignantMatiere.php';
 require_once __DIR__ . '/../models/bulletin/ModelBulletin.php';
 
 require_once __DIR__ . '/../controllers/fonctions/FonctionController.php';
 require_once __DIR__ . '/../controllers/impayes/ImpayesController.php';
-require_once __DIR__ . '/../controllers/enseignant_matiere/EnseignantMatiereController.php';
 require_once __DIR__ . '/../controllers/bulletin/BulletinController.php';
 
 require_once __DIR__ . '/../models/ModelFiliereCycle.php';
 require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.php';
 
 // Auto-initialisation de l'année académique active en session (avec fallback si aucune marquée active)
-if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['annee_active_code'])) {
+if (session_status() === PHP_SESSION_ACTIVE && empty(Session::get('annee_active_code'))) {
     try {
         $dbInit = (new Database())->getCon();
         if ($dbInit) {
-            $stmtInit = $dbInit->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
+            $stmtInit = $dbInit->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
             $rowInit = $stmtInit ? $stmtInit->fetch(PDO::FETCH_ASSOC) : null;
             if (!$rowInit) {
-                $stmtFallback = $dbInit->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+                $stmtFallback = $dbInit->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
                 $rowInit = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
             }
             if ($rowInit) {
-                $_SESSION['annee_active_code'] = $rowInit['code_annee'];
-                $_SESSION['annee_active_libelle'] = $rowInit['libelle_annee'];
+                Session::set('annee_active_code', $rowInit['code_annee']);
+                Session::set('annee_active_libelle', $rowInit['libelle_annee']);
             }
         }
     } catch (Exception $e) {}

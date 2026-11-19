@@ -158,9 +158,9 @@ class ForeignKeyValidator
         'absences' => ['etudiant_code', 'classe_code', 'annee_code', 'etablissement_code'],
         'notes' => ['composition_code', 'etudiant_code', 'inscription_code', 'etablissement_code'],
         'classes' => ['filiere_code', 'niveau_code', 'annee_code', 'etablissement_code'],
+        'maquettes_pedagogiques' => ['filiere_code', 'niveau_code', 'matiere_code', 'annee_code', 'etablissement_code'],
         'annees' => ['etablissement_code'],
         'emplois_temps' => ['classe_code', 'matiere_code', 'enseignant_code', 'annee_code', 'etablissement_code'],
-        'enseignant_matiere' => ['enseignant_code', 'matiere_code', 'classe_code', 'annee_code', 'etablissement_code'],
         'filiere_cycles' => ['filiere_code', 'cycle_code', 'niveau_code', 'etablissement_code'],
         'filiere_niveaux' => ['filiere_code', 'niveau_code', 'etablissement_code'],
         'scolarites' => ['filiere_code', 'niveau_code', 'annee_code', 'etablissement_code'],
@@ -196,6 +196,7 @@ class ForeignKeyValidator
     ];
 
     private static array $tableColsCache = [];
+    private static array $keyExistenceCache = [];
 
     private static function getTableColumns(PDO $pdo, string $table): array
     {
@@ -303,7 +304,7 @@ class ForeignKeyValidator
      */
     private static function checkKeyExistence(PDO $pdo, string $fkCol, string $val, ?string $customLabel = null): ?string
     {
-        if ($fkCol === 'tranche_code' && $val === 'SCOLARITE_GLOBALE') {
+        if ($fkCol === 'tranche_code' && in_array($val, ['SCOLARITE_GLOBALE', 'FRAIS_ANNEXES'], true)) {
             return null;
         }
 
@@ -316,14 +317,20 @@ class ForeignKeyValidator
         $targetField = $info['field'];
         $label = $customLabel ?? $info['label'];
 
-        try {
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM `{$targetTable}` WHERE `{$targetField}` = ?");
-            $stmt->execute([$val]);
-            $count = (int)$stmt->fetchColumn();
+        $cacheKey = "{$targetTable}.{$targetField}={$val}";
+        if (isset(self::$keyExistenceCache[$cacheKey])) {
+            return null;
+        }
 
-            if ($count === 0) {
+        try {
+            $stmt = $pdo->prepare("SELECT 1 FROM `{$targetTable}` WHERE `{$targetField}` = ? LIMIT 1");
+            $stmt->execute([$val]);
+            $exists = (bool)$stmt->fetchColumn();
+
+            if (!$exists) {
                 return "Opération interrompue : La référence '{$label}' ('{$val}') est introuvable ou n'existe pas dans le système (table {$targetTable}).";
             }
+            self::$keyExistenceCache[$cacheKey] = true;
         } catch (Exception $e) {
             error_log("ForeignKeyValidator error checking {$fkCol}='{$val}': " . $e->getMessage());
             return "Opération interrompue : Erreur lors de la vérification de la clé étrangère '{$label}'.";

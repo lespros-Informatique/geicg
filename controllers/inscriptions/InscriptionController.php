@@ -51,15 +51,22 @@ class InscriptionController extends BaseController
             $data[] = [
                 'id_etudiant' => $etu['id_etudiant'],
                 'code_etudiant' => $etu['code_etudiant'],
+                'encrypted_id' => $this->validator->crypter($etu['id_etudiant']),
+                'encrypted_code' => $this->validator->crypter($etu['code_etudiant']),
                 'matricule_etudiant' => $etu['matricule_etudiant'] ?? '-',
                 'nom_etudiant' => $etu['nom_etudiant'],
                 'prenom_etudiant' => $etu['prenom_etudiant'],
                 'nom_complet' => trim(($etu['nom_etudiant'] ?? '') . ' ' . ($etu['prenom_etudiant'] ?? '')),
                 'sexe' => $etu['sexe_etudiant'] ?? 'M',
+                'date_naissance' => !empty($etu['date_naissance_etudiant']) ? date('d/m/Y', strtotime($etu['date_naissance_etudiant'])) : '-',
                 'telephone' => $etu['telephone_etudiant'] ?? '-',
                 'photo_etudiant' => $etu['photo_etudiant'] ?? '',
 
                 // Cursus antérieur (N-1)
+                'id_inscription' => $prev['id_inscription'] ?? null,
+                'code_inscription' => $prev['code_inscription'] ?? null,
+                'encrypted_inscription_id' => !empty($prev['id_inscription']) ? $this->validator->crypter($prev['id_inscription']) : '',
+                'encrypted_inscription_code' => !empty($prev['code_inscription']) ? $this->validator->crypter($prev['code_inscription']) : '',
                 'classe_precedente' => $prev['classe_prev'] ?? '',
                 'filiere_precedente' => $prev['filiere_prev'] ?? '',
                 'niveau_precedent' => $prev['niveau_prev'] ?? '',
@@ -99,7 +106,7 @@ class InscriptionController extends BaseController
     public function getTuitionByClass()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_INSCRIPTIONS', 'MANAGE_ETUDIANTS', 'VIEW_CLASSES', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         $anneeCodeReq = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
         $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? 'non_affecte'));
@@ -151,6 +158,21 @@ class InscriptionController extends BaseController
         if ($modeInscription === 'nouveau' || (!empty($data['nom_etudiant']) && !empty($data['prenom_etudiant']))) {
             $res = $this->model->processFullInscription($data, $userCode, $etabCode, $anneeCode, $this->validator);
             if ($res['success']) {
+                $inscrCode = $res['data']['code_inscription'] ?? ($data['code_inscription'] ?? '');
+                $etuNom = trim(($data['prenom_etudiant'] ?? '') . ' ' . ($data['nom_etudiant'] ?? ''));
+                $this->logAction(
+                    AuditLogger::ACTION_CREATE,
+                    'inscriptions',
+                    $inscrCode,
+                    "Nouvelle inscription de l'étudiant {$etuNom} (Classe: " . ($data['classe_code'] ?? '') . ")",
+                    [
+                        'code_inscription' => $inscrCode,
+                        'etudiant' => $etuNom,
+                        'classe_code' => $data['classe_code'] ?? null,
+                        'mode' => 'nouveau'
+                    ],
+                    $etabCode
+                );
                 $this->success($res['message']);
             } else {
                 $this->error($res['message']);
@@ -161,10 +183,25 @@ class InscriptionController extends BaseController
         // 2. CAS RÉINSCRIPTION ÉTUDIANT EXISTANT
         $currentUser = Auth::user();
         $agentName = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
-        $hasDerogationPermission = $this->hasPermission('MANAGE_DEROGATION_INSCRIPTION');
+        $hasDerogationPermission = $this->hasPermission(PERMISSIONS::MANAGE_DEROGATION_INSCRIPTION);
 
         $res = $this->model->processReinscription($data, $userCode, $etabCode, $anneeCode, $this->validator, $hasDerogationPermission, $agentName);
         if ($res['success']) {
+            $inscrCode = $res['voucher_data']['code_inscription'] ?? ($data['code_inscription'] ?? '');
+            $nomComplet = $res['voucher_data']['nom_complet'] ?? '';
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'inscriptions',
+                $inscrCode,
+                "Réinscription de l'étudiant {$nomComplet} (Classe: " . ($data['classe_code'] ?? '') . ")",
+                [
+                    'code_inscription' => $inscrCode,
+                    'etudiant' => $nomComplet,
+                    'classe_code' => $data['classe_code'] ?? null,
+                    'mode' => 'reinscription'
+                ],
+                $etabCode
+            );
             $this->json([
                 'status' => 1,
                 'message' => $res['message'],
@@ -201,6 +238,13 @@ class InscriptionController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'inscriptions',
+                (string)$id,
+                "Modification du dossier d'inscription #{$id}",
+                $filteredData
+            );
             $this->success('Inscription modifiée avec succès !');
         } else {
             $this->error('Erreur lors de la modification');
@@ -211,7 +255,7 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_INSCRIPTIONS');
+        $this->requirePermission(PERMISSIONS::MANAGE_INSCRIPTIONS);
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -222,6 +266,13 @@ class InscriptionController extends BaseController
                 $success = $this->model->toggleStatus($id);
             }
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'inscriptions',
+                    (string)$id,
+                    "Changement de statut de l'inscription #{$id} : " . ($statut ?: 'inversion'),
+                    ['id_inscription' => $id, 'statut' => $statut]
+                );
                 $this->success('Statut de l\'inscription mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -267,24 +318,24 @@ class InscriptionController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_INSCRIPTIONS');
+        $this->requirePermission(PERMISSIONS::MANAGE_INSCRIPTIONS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'inscription/list'); exit(); }
+            if (!$item) { redirect('inscription/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'inscription/list'); exit();
+            redirect('inscription/list');
         }
-        $canDerogate = $this->hasPermission('MANAGE_DEROGATION_INSCRIPTION');
+        $canDerogate = $this->hasPermission(PERMISSIONS::MANAGE_DEROGATION_INSCRIPTION);
         $this->loadView('../views/inscriptions/edit.php', ['item' => $item, 'encryptedId' => $encryptedId, 'canDerogate' => $canDerogate]);
     }
 
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_INSCRIPTIONS');
-        $canDerogate = $this->hasPermission('MANAGE_DEROGATION_INSCRIPTION');
+        $this->requirePermission(PERMISSIONS::MANAGE_INSCRIPTIONS);
+        $canDerogate = $this->hasPermission(PERMISSIONS::MANAGE_DEROGATION_INSCRIPTION);
         $this->loadView('../views/inscriptions/edit.php', ['item' => [], 'canDerogate' => $canDerogate]);
     }
 
@@ -296,24 +347,26 @@ class InscriptionController extends BaseController
     public function priseDeVue()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
-        $activeAnneeCode = $this->getActiveAnneeCode();
         $annees = $this->getAccessibleAnnees();
+        $activeAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
         $deps = $this->model->getPriseDeVueDependencies();
+        $stats = $this->model->getPriseDeVueStats($activeAnneeCode ?: '');
 
         $this->loadView('../views/inscriptions/prise_de_vue.php', [
             'annees' => $annees,
-            'filieres' => $deps['filieres'] ?? [],
-            'classes' => $deps['classes'] ?? [],
-            'selectedAnneeCode' => $activeAnneeCode
+            'filieres' => $activeAnneeCode ? ($deps['filieres'] ?? []) : [],
+            'classes' => $activeAnneeCode ? ($deps['classes'] ?? []) : [],
+            'selectedAnneeCode' => $activeAnneeCode ?: '',
+            'stats' => $stats
         ]);
     }
 
     public function imprimerFiche($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_ETUDIANTS', 'MANAGE_ETUDIANTS', 'VIEW_INSCRIPTIONS', 'MANAGE_INSCRIPTIONS', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_INSCRIPTIONS, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $data = [];
@@ -328,13 +381,21 @@ class InscriptionController extends BaseController
             if ($recuData === null || isset($recuData['error'])) {
                 $msg = $recuData['error'] ?? "Impossible de générer le reçu d'inscription : Inscription introuvable.";
                 Session::flash('flash_error', $msg);
-                header('Location: ' . RACINE . 'etudiant/list');
-                exit;
+                redirect('etudiant/list');
             }
             $data = $recuData;
         }
 
         $html = PdfService::renderTemplate('recu_inscription.php', $data);
+
+        $mat = $data['matricule'] ?? ($data['code_inscription'] ?? 'INCONNU');
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'inscriptions',
+            $mat,
+            "Impression de la fiche / reçu d'inscription pour {$mat}",
+            ['matricule' => $mat, 'id' => $id ?? null]
+        );
 
         if (!empty($_GET['pdf'])) {
             $filename = 'Recu_Inscription_' . ($data['matricule'] ?? 'GEICG') . '.pdf';
@@ -346,6 +407,223 @@ class InscriptionController extends BaseController
         }
     }
 
+    public function imprimerFichePdf($details)
+    {
+        require_once __DIR__ . '/../etudiants/EtudiantController.php';
+        $etudiantController = new EtudiantController();
+        $etudiantController->imprimerFichePdf($details);
+    }
+
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_INSCRIPTIONS);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $activeAnneeCode = $this->getActiveAnneeCode();
+        $activeAnneeLibelle = Session::get('annee_active_libelle', 'En cours');
+
+        $filterAnnee = trim($_GET['annee_code'] ?? '');
+        $filterFiliere = trim($_GET['filiere_code'] ?? '');
+        $filterNiveau = trim($_GET['niveau_code'] ?? '');
+        $filterClasse = trim($_GET['classe_code'] ?? '');
+
+        $deps = $this->model->getReinscriptionFormDependencies($activeAnneeCode);
+        if (empty($filterAnnee) || $filterAnnee === 'ALL') {
+            $filterAnnee = $deps['anneesCloturees'][0]['code_annee'] ?? '';
+        }
+
+        $candidates = $this->model->getReinscriptionCandidates(
+            $activeAnneeCode,
+            $filterAnnee,
+            $filterFiliere,
+            $filterNiveau,
+            $filterClasse
+        );
+
+        $filiereLabel = 'Toutes les filières';
+        foreach ($deps['filieres'] as $f) {
+            if (($f['code_filiere'] ?? '') === $filterFiliere) {
+                $filiereLabel = $f['libelle_filiere'] ?? $filiereLabel;
+                break;
+            }
+        }
+
+        $niveauLabel = 'Tous les niveaux';
+        foreach ($deps['niveaux'] as $n) {
+            if (($n['code_niveau'] ?? '') === $filterNiveau) {
+                $niveauLabel = $n['libelle_niveau'] ?? $niveauLabel;
+                break;
+            }
+        }
+
+        $classeLabel = 'Toutes les classes';
+        foreach ($deps['classes'] as $c) {
+            if (($c['code_classe'] ?? '') === $filterClasse) {
+                $classeLabel = $c['libelle_classe'] ?? $classeLabel;
+                break;
+            }
+        }
+
+        $anneePrevLabel = $filterAnnee;
+        foreach ($deps['anneesCloturees'] as $a) {
+            if (($a['code_annee'] ?? '') === $filterAnnee) {
+                $anneePrevLabel = $a['libelle_annee'] ?? $anneePrevLabel;
+                break;
+            }
+        }
+
+        $total = count($candidates);
+        $hommes = 0;
+        $femmes = 0;
+        foreach ($candidates as $cand) {
+            $sexe = strtoupper(trim($cand['etudiant']['sexe_etudiant'] ?? ''));
+            if (strpos($sexe, 'F') !== false) {
+                $femmes++;
+            } else {
+                $hommes++;
+            }
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Inscription & Scolarité';
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_active_libelle' => $activeAnneeLibelle,
+            'annee_prev_libelle' => $anneePrevLabel,
+            'editeur_nom' => $editeurNom,
+            'candidates' => $candidates,
+            'filtres_labels' => [
+                'annee' => $anneePrevLabel,
+                'filiere' => $filiereLabel,
+                'niveau' => $niveauLabel,
+                'classe' => $classeLabel,
+            ],
+            'kpis' => [
+                'total' => $total,
+                'hommes' => $hommes,
+                'femmes' => $femmes
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('liste_reinscriptions.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'inscriptions',
+            $filterAnnee ?: 'TOUT',
+            "Impression du registre des candidats à la réinscription (Total: {$total})",
+            ['filters' => compact('filterAnnee', 'filterFiliere', 'filterNiveau', 'filterClasse'), 'total' => $total]
+        );
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Candidats_Reinscription_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre Candidats Réinscription - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
+    public function imprimerPriseDeVuePdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $filiereCode = trim($_GET['filiere_code'] ?? '');
+        $classeCode = trim($_GET['classe_code'] ?? '');
+        $filterPhoto = trim($_GET['filter_photo'] ?? 'all');
+
+        $rows = $this->model->getInscriptionsSansPhoto($anneeCode ?: '', $filiereCode, $classeCode, $filterPhoto);
+        $stats = $this->model->getPriseDeVueStats($anneeCode ?: '', $filiereCode, $classeCode);
+
+        // Labels pour métadonnées d'édition
+        $anneeLibelle = '';
+        if (!empty($anneeCode)) {
+            $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+            $anneeLibelle = $anneeObj['libelle_annee'] ?? $anneeCode;
+        }
+
+        $filiereLibelle = 'Toutes les filières';
+        if (!empty($filiereCode)) {
+            $filObj = (new ModelFiliere())->getByCode($filiereCode);
+            $filiereLibelle = $filObj['libelle_filiere'] ?? $filiereCode;
+        }
+
+        $classeLibelle = 'Toutes les classes';
+        if (!empty($classeCode)) {
+            $clObj = (new ModelClasse())->getByCode($classeCode);
+            $classeLibelle = $clObj['libelle_classe'] ?? $classeCode;
+        }
+
+        $photoLabel = 'Tous les étudiants inscrits';
+        if ($filterPhoto === 'sans_photo') {
+            $photoLabel = 'Photos Manquantes (Sans photo)';
+        } elseif ($filterPhoto === 'avec_photo') {
+            $photoLabel = 'Photos Enregistrées (Avec photo)';
+        }
+
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Scolarité & Admissions';
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'filiere_libelle' => $filiereLibelle,
+            'classe_libelle' => $classeLibelle,
+            'photo_label' => $photoLabel,
+            'editeur_nom' => $editeurNom,
+            'rows' => $rows,
+            'stats' => $stats
+        ];
+
+        $html = PdfService::renderTemplate('liste_prise_de_vue.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'inscriptions',
+            $anneeCode ?: 'TOUT',
+            "Impression de l'état du studio photo & prise de vue",
+            ['annee' => $anneeCode, 'total' => count($rows)]
+        );
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Etat_Prise_De_Vue_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'État de Prise de Vue - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
     public function apiSansPhoto()
     {
         $this->apiPriseDeVue();
@@ -354,15 +632,21 @@ class InscriptionController extends BaseController
     public function apiPriseDeVue()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
-        $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $filiereCode = $_GET['filiere_code'] ?? '';
         $classeCode = $_GET['classe_code'] ?? '';
         $filterPhoto = $_GET['filter_photo'] ?? 'all';
 
         try {
             $rows = $this->model->getInscriptionsSansPhoto($anneeCode, $filiereCode, $classeCode, $filterPhoto);
+            $stats = $this->model->getPriseDeVueStats($anneeCode, $filiereCode, $classeCode);
             $data = [];
             foreach ($rows as $r) {
                 $id = $r['id_inscription'];
@@ -377,7 +661,7 @@ class InscriptionController extends BaseController
                     'photo_path' => $photoPath
                 ]);
             }
-            $this->json(['data' => $data]);
+            $this->json(['data' => $data, 'stats' => $stats]);
         } catch (Exception $e) {
             error_log("InscriptionController::apiPriseDeVue error: " . $e->getMessage());
             $this->json(['data' => [], 'error' => $e->getMessage()]);
@@ -388,7 +672,7 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_INSCRIPTIONS_SANS_PHOTO', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $idInscription = (int)($_POST['id_inscription'] ?? 0);
         $codeInscription = trim($_POST['code_inscription'] ?? '');
@@ -482,8 +766,15 @@ class InscriptionController extends BaseController
             $ok = $this->model->updatePhoto((int)$inscInfo['id_inscription'], $relativePath, $codeEtu, $matEtu);
 
             if ($ok) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'inscriptions',
+                    $matEtu ?: (string)$inscInfo['id_inscription'],
+                    "Mise à jour de la photo d'identité pour {$matEtu}",
+                    ['id_inscription' => $inscInfo['id_inscription'], 'matricule' => $matEtu, 'photo_path' => $relativePath]
+                );
                 $this->success("La photo d'inscription a été enregistrée avec succès !", [
-                    'photo_url' => RACINE . $relativePath
+                    'photo_url' => url($relativePath)
                 ]);
             } else {
                 $this->error("Erreur lors de la mise à jour de la photo dans la base de données.");

@@ -11,19 +11,25 @@ class ScolariteController extends BaseController
     {
         $this->requireAuth();
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = (new ModelAnnee())->getByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($activeYear === null) {
+            $this->loadView('../views/scolarites/list.php', [
+                'total_grilles' => 0,
+                'grilles_actives' => 0,
+                'total_filieres' => 0,
+                'taux_couverture' => 0,
+                'annees' => $annees,
+                'filieres' => [],
+                'niveaux' => [],
+                'classes' => [],
+                'selectedAnneeCode' => ''
+            ]);
+            return;
         }
 
-        $activeYear = $this->getActiveAnneeCode();
-        $annees = $this->getAccessibleAnnees();
         $stats = $this->model->getStats($activeYear);
-
         $niveaux = (new ModelNiveau())->getAll();
         $classes = (new ModelClasse())->getAll();
         $rawFilieres = (new ModelFiliere())->getFilieresAssocieesAuxCycles();
@@ -43,16 +49,12 @@ class ScolariteController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = (new ModelAnnee())->getByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
         $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $affectationEtat = !empty($_GET['affectation_etat']) ? trim($_GET['affectation_etat']) : null;
@@ -155,7 +157,11 @@ class ScolariteController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $userCode = Auth::code();
-        $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : ($this->getActiveAnneeCode());
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if ($anneeCode === null || !$this->canWriteAcademicYear($anneeCode)) {
+            $this->error("Action non autorisée : l'année académique cible est clôturée ou inaccessible en écriture.");
+            return;
+        }
         
         $cycleCode = !empty($_POST['cycle_code']) ? trim($_POST['cycle_code']) : '';
         $typeFiliere = !empty($_POST['type_filiere']) ? trim($_POST['type_filiere']) : '';
@@ -220,7 +226,7 @@ class ScolariteController extends BaseController
                     continue;
                 }
 
-                $codeScolarite = $this->validator->generateCode('scolarites', 'code_scolarite', 'SCO-', 8);
+                $codeScolarite = $this->validator->generateCode(TABLES::SCOLARITES, 'code_scolarite', 'SCO-', 8);
 
                 $data = $_POST;
                 unset($data['csrf_token']);
@@ -257,7 +263,7 @@ class ScolariteController extends BaseController
                                 $libelle = 'Tranche';
                             }
                             $dateLimite = !empty($tData['date_limite']) ? $tData['date_limite'] : date('Y-m-d');
-                            $codeTranche = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
+                            $codeTranche = $this->validator->generateCode(TABLES::TRANCHES_SCOLARITE, 'code_tranche', 'TRA-', 8);
 
                             $newTranche = [
                                 'code_tranche' => $codeTranche,
@@ -385,7 +391,7 @@ class ScolariteController extends BaseController
                         $trancheModel->update($filteredTranche, $trancheId);
                     } else {
                         // Création d'une nouvelle tranche
-                        $codeTranche = $this->validator->generateCode('tranches_scolarite', 'code_tranche', 'TRA-', 8);
+                        $codeTranche = $this->validator->generateCode(TABLES::TRANCHES_SCOLARITE, 'code_tranche', 'TRA-', 8);
                         $newTranche = [
                             'code_tranche' => $codeTranche,
                             'libelle_tranche' => $libelle,
@@ -462,14 +468,14 @@ class ScolariteController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'scolarite/list'); exit(); }
+            if (!$item) { redirect('scolarite/list'); }
             
             // Récupérer les tranches existantes associées à cette scolarité
             $tranches = $this->model->getTranches($item['code_scolarite'] ?? '', $item['filiere_code'] ?? null, $item['niveau_code'] ?? null, $item['annee_code'] ?? null);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'scolarite/list'); exit();
+            redirect('scolarite/list');
         }
         $formData = $this->model->getFormData($item);
         $this->loadView('../views/scolarites/edit.php', array_merge([
@@ -573,7 +579,7 @@ class ScolariteController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_FRAIS_SCOLARITE', 'VIEW_FRAIS_SCOLARITE', 'MANAGE_FRAIS_SCOLARITE']);
+        $this->requirePermission([PERMISSIONS::PRINT_FRAIS_SCOLARITE, PERMISSIONS::VIEW_FRAIS_SCOLARITE, PERMISSIONS::MANAGE_FRAIS_SCOLARITE]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
         require_once __DIR__ . '/../../models/tranches_scolarite/ModelTranche.php';

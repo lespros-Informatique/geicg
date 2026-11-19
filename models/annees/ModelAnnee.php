@@ -2,7 +2,7 @@
 
 class ModelAnnee extends BaseModel
 {
-    protected string $table = 'annees';
+    protected string $table = TABLES::ANNEES;
     protected string $primaryKey = 'id_annee';
     protected ?string $statusField = 'statut_annee';
     protected ?string $createdAtField = 'created_at_annee';
@@ -16,9 +16,9 @@ class ModelAnnee extends BaseModel
             $db = $this->getCon();
             $db->beginTransaction();
             // Clôturer toute année précédemment active
-            $db->exec("UPDATE `annees` SET `statut_annee` = 'cloture' WHERE `statut_annee` = 'actif'");
+            $db->exec("UPDATE `" . TABLES::ANNEES . "` SET `statut_annee` = '" . STATUTS::CLOTURE . "' WHERE `statut_annee` = '" . STATUTS::ACTIF . "'");
             // Activer l'année demandée
-            $stmt = $db->prepare("UPDATE `annees` SET `statut_annee` = 'actif' WHERE `id_annee` = ?");
+            $stmt = $db->prepare("UPDATE `" . TABLES::ANNEES . "` SET `statut_annee` = '" . STATUTS::ACTIF . "' WHERE `id_annee` = ?");
             $stmt->execute([$id]);
             $db->commit();
             return true;
@@ -40,11 +40,11 @@ class ModelAnnee extends BaseModel
         if (!$current) return false;
 
         // Si l'année n'est pas active, on l'active (et clôture l'ancienne)
-        if (($current['statut_annee'] ?? '') !== 'actif') {
+        if (($current['statut_annee'] ?? '') !== STATUTS::ACTIF) {
             return $this->setActiveYear($id);
         } else {
             // Clôturer l'année active
-            $stmt = $this->getCon()->prepare("UPDATE `annees` SET `statut_annee` = 'cloture' WHERE `id_annee` = ?");
+            $stmt = $this->getCon()->prepare("UPDATE `" . TABLES::ANNEES . "` SET `statut_annee` = '" . STATUTS::CLOTURE . "' WHERE `id_annee` = ?");
             return $stmt->execute([$id]);
         }
     }
@@ -80,7 +80,7 @@ class ModelAnnee extends BaseModel
     }
 
     /**
-     * Vérifie si une année académique peut être clôturée / désactivée (date de fin arrivée)
+     * Vérifie si une année académique peut être clôturée (date de fin définie et tous les semestres clôturés)
      */
     public function canClose(array $annee, ?string &$errorMsg = null): bool
     {
@@ -90,25 +90,93 @@ class ModelAnnee extends BaseModel
             return false;
         }
 
+        $codeAnnee = $annee['code_annee'] ?? '';
+        $libelle = $annee['libelle_annee'] ?? $codeAnnee;
+
+        if (!empty($codeAnnee)) {
+            try {
+                $stmt = $this->getCon()->prepare("
+                    SELECT libelle_semestre, statut_semestre
+                    FROM `" . TABLES::SEMESTRES . "`
+                    WHERE `annee_code` = ?
+                    ORDER BY id_semestre ASC
+                ");
+                $stmt->execute([$codeAnnee]);
+                $semestres = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                if (empty($semestres)) {
+                    $errorMsg = "Impossible de clôturer l'année académique {$libelle} : aucun semestre n'a été enregistré et clôturé pour cette année.";
+                    return false;
+                }
+
+                $nonClotures = [];
+                foreach ($semestres as $sem) {
+                    if (($sem['statut_semestre'] ?? '') !== STATUTS::CLOTURE) {
+                        $statutLabel = ($sem['statut_semestre'] ?? '') === STATUTS::ACTIF ? 'Actif' : 'En préparation';
+                        $nonClotures[] = ($sem['libelle_semestre'] ?? 'Semestre') . " ({$statutLabel})";
+                    }
+                }
+
+                if (!empty($nonClotures)) {
+                    $errorMsg = "Impossible de clôturer l'année académique {$libelle} : tous les semestres de cette année doivent être clôturés au préalable (" . implode(', ', $nonClotures) . ").";
+                    return false;
+                }
+            } catch (Exception $e) {
+                error_log("ModelAnnee::canClose error: " . $e->getMessage());
+                $errorMsg = "Erreur lors de la vérification des semestres de l'année académique.";
+                return false;
+            }
+        }
+
         return true;
     }
 
     /**
-     * Récupère l'unique année académique active en base
+     * Récupère l'unique année académique active en base (sans fallback sur une année clôturée)
      */
     public function getActiveYear(): ?array
     {
         try {
-            $stmt = $this->getCon()->query("SELECT * FROM `annees` WHERE `statut_annee` = 'actif' LIMIT 1");
-            $res = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
-            if (!$res) {
-                // Fallback sur la plus récente si aucune n'est active
-                $stmt2 = $this->getCon()->query("SELECT * FROM `annees` ORDER BY `id_annee` DESC LIMIT 1");
-                $res = $stmt2 ? $stmt2->fetch(PDO::FETCH_ASSOC) : null;
-            }
-            return $res ?: null;
+            $stmt = $this->getCon()->query("SELECT * FROM `" . TABLES::ANNEES . "` WHERE `statut_annee` = '" . STATUTS::ACTIF . "' LIMIT 1");
+            return ($stmt && ($res = $stmt->fetch(PDO::FETCH_ASSOC))) ? $res : null;
         } catch (Exception $e) {
+            error_log("ModelAnnee::getActiveYear error: " . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Vérifie si un utilisateur a le droit d'accéder / consulter une année spécifique
+     */
+    public function canUserAccessAnnee(string $anneeCode, ?string $userCode = null): bool
+    {
+        try {
+            $annee = $this->getByCode($anneeCode);
+            if (empty($annee)) {
+                return false;
+            }
+
+            // Si l'année est active ou planifiée, accès standard autorisé
+            if (($annee['statut_annee'] ?? '') === STATUTS::ACTIF || ($annee['statut_annee'] ?? '') === 'planifie') {
+                return true;
+            }
+
+            // Si l'année est clôturée ou archivée : vérifier strictement la permission dédiée ou l'accès par la table user_annee_acces
+            if (Auth::can(PERMISSIONS::VIEW_ANNEES_ANTERIEURES)) {
+                return true;
+            }
+
+            $uCode = $userCode ?? Auth::code();
+            if (!empty($uCode)) {
+                $st = $this->getCon()->prepare("SELECT COUNT(*) FROM `" . TABLES::USER_ANNEE_ACCES . "` WHERE `user_code` = ? AND `annee_code` = ?");
+                $st->execute([$uCode, $anneeCode]);
+                return ((int)$st->fetchColumn()) > 0;
+            }
+
+            return false;
+        } catch (Exception $e) {
+            error_log("ModelAnnee::canUserAccessAnnee error: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -116,7 +184,7 @@ class ModelAnnee extends BaseModel
     {
         try {
             $field = $codeField ?? 'code_annee';
-            $stmt = $this->getCon()->prepare("SELECT * FROM annees WHERE `{$field}` = ?");
+            $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::ANNEES . " WHERE `{$field}` = ?");
             $stmt->execute([$code]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
@@ -133,12 +201,11 @@ class ModelAnnee extends BaseModel
             $db = $this->getCon();
             if (!$db) return [];
 
-            $allAnnees = $db->query("SELECT * FROM annees ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $allAnnees = $db->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             if (empty($allAnnees)) return [];
 
             $userCode = Auth::code();
-            $userPerms = Auth::permissions();
-            $hasGlobalView = in_array('*', $userPerms, true) || in_array('VIEW_ANNEES_ANTERIEURES', $userPerms, true);
+            $hasGlobalView = Auth::can(PERMISSIONS::VIEW_ANNEES_ANTERIEURES);
 
             $userAcces = [];
             if (!$hasGlobalView && !empty($userCode)) {
@@ -153,7 +220,7 @@ class ModelAnnee extends BaseModel
 
             $accessible = [];
             foreach ($allAnnees as $an) {
-                $isCurrentActiveDb = (($an['statut_annee'] ?? '') === 'actif');
+                $isCurrentActiveDb = (($an['statut_annee'] ?? '') === STATUTS::ACTIF);
                 $isPlanifie = (($an['statut_annee'] ?? '') === 'planifie');
                 $canAccess = $isCurrentActiveDb || $isPlanifie || $hasGlobalView || isset($userAcces[$an['code_annee']]);
                 if ($canAccess) {
@@ -175,10 +242,10 @@ class ModelAnnee extends BaseModel
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT 
-                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ? AND (statut_inscription != 'annule' OR statut_inscription IS NULL)) as total_etudiants,
-                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = 'actif' OR statut_classe IS NULL)) as total_classes,
-                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND (statut_semestre = 'actif' OR statut_semestre IS NULL)) as total_semestres,
-                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != 'annule' OR statut_paiement IS NULL)) as total_recouvrement
+                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ? AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)) as total_etudiants,
+                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = '" . STATUTS::ACTIF . "' OR statut_classe IS NULL)) as total_classes,
+                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND (statut_semestre = '" . STATUTS::ACTIF . "' OR statut_semestre IS NULL)) as total_semestres,
+                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != '" . STATUTS::ANNULE . "' OR statut_paiement IS NULL)) as total_recouvrement
             ");
             $stmt->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [
@@ -200,7 +267,7 @@ class ModelAnnee extends BaseModel
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT cl.*, f.libelle_filiere, n.libelle_niveau,
-                       (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)) as nb_eleves
+                       (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND (ins.statut_inscription != '" . STATUTS::ANNULE . "' OR ins.statut_inscription IS NULL)) as nb_eleves
                 FROM " . TABLES::CLASSES . " cl
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code

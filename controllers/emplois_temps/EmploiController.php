@@ -7,44 +7,155 @@ class EmploiController extends BaseController
         return new ModelEmploi();
     }
 
+    /**
+     * Détermine le contexte de l'utilisateur : gestionnaire ou enseignant en consultation restreinte
+     */
+    protected function getTeacherContext(): array
+    {
+        $canManage = Auth::can(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
+        $userCode = Auth::code();
+        $teacherCodes = [];
+        $isTeacherOnly = false;
+
+        if (!$canManage) {
+            $teacherCodes = [$userCode];
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT code_enseignant, user_code FROM " . TABLES::ENSEIGNANTS . " WHERE user_code = ? OR code_enseignant = ?");
+                $stmt->execute([$userCode, $userCode]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if (!empty($row['code_enseignant'])) $teacherCodes[] = $row['code_enseignant'];
+                    if (!empty($row['user_code'])) $teacherCodes[] = $row['user_code'];
+                }
+                $teacherCodes = array_values(array_unique(array_filter($teacherCodes)));
+            } catch (Exception $e) {}
+
+            if (Auth::hasRole(ROLES::ENSEIGNANT) || count($teacherCodes) > 1) {
+                $isTeacherOnly = true;
+            }
+        }
+
+        return [
+            'canManage' => $canManage,
+            'isTeacherOnly' => $isTeacherOnly,
+            'teacherCodes' => $teacherCodes
+        ];
+    }
+
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
         $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/emplois_temps/list.php', [
+                'annees' => $annees,
+                'niveaux' => [],
+                'classes' => [],
+                'selectedAnneeCode' => '',
+                'canManage' => false,
+                'isTeacherOnly' => $isTeacherOnly,
+                'stats' => [
+                    'total_classes' => 0,
+                    'total_heures' => 0,
+                    'total_creneaux' => 0,
+                    'plannings_complets' => 0,
+                    'plannings_brouillons' => 0,
+                    'total_matieres' => 0,
+                    'total_heures_formatted' => '0h00'
+                ]
+            ]);
+            return;
+        }
+
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
-        
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
+
+        if ($isTeacherOnly) {
+            $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $selectedAnneeCode);
+        } else {
+            $classes = (new ModelClasse())->getAll();
+            $classesWithEmploi = $this->model->getClassesSummary($selectedAnneeCode);
+        }
+
+        // Statistiques globales pour les cartes KPI
+        $stats = [
+            'total_classes' => count($classesWithEmploi),
+            'total_heures' => 0,
+            'total_creneaux' => 0,
+            'plannings_complets' => 0,
+            'plannings_brouillons' => 0,
+            'total_matieres' => 0
+        ];
+
+        $matieresSet = [];
+        foreach ($classesWithEmploi as $item) {
+            $stats['total_heures'] += (float)($item['total_heures'] ?? 0);
+            $stats['total_creneaux'] += (int)($item['nb_creneaux'] ?? 0);
+            if ((int)($item['nb_jours'] ?? 0) >= 5) {
+                $stats['plannings_complets']++;
+            } else {
+                $stats['plannings_brouillons']++;
+            }
+            if (!empty($item['matieres_noms'])) {
+                $parts = explode(',', $item['matieres_noms']);
+                foreach ($parts as $p) {
+                    $trimmed = trim($p);
+                    if ($trimmed !== '') {
+                        $matieresSet[$trimmed] = true;
+                    }
                 }
             }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
         }
+        $stats['total_matieres'] = count($matieresSet);
+        $totalMin = round($stats['total_heures'] * 60);
+        $h = floor($totalMin / 60);
+        $m = $totalMin % 60;
+        $stats['total_heures_formatted'] = sprintf("%dh%02d", $h, $m);
 
         $this->loadView('../views/emplois_temps/list.php', [
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'canManage' => $canManage,
+            'isTeacherOnly' => $isTeacherOnly,
+            'stats' => $stats
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
 
-        $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
+        if ($isTeacherOnly) {
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $anneeCode, $niveauCode, $classeCode);
+        } else {
+            $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
+        }
 
         $data = [];
         foreach ($classesWithEmploi as $i) {
@@ -62,6 +173,7 @@ class EmploiController extends BaseController
                 'nb_matieres' => (int)$i['nb_matieres'],
                 'nb_profs' => (int)$i['nb_profs'],
                 'matieres_noms' => $i['matieres_noms'] ?: '',
+                'total_heures' => (float)($i['total_heures'] ?? 0),
                 'total_heures_formatted' => $volHoraire,
                 'last_update' => $i['last_update'] ? date('d/m/Y H:i', strtotime($i['last_update'])) : '-',
                 'statut_planning' => ((int)$i['nb_jours'] >= 5) ? 'Complet' : 'Brouillon'
@@ -74,8 +186,12 @@ class EmploiController extends BaseController
     public function apiSlots()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['status' => 1, 'data' => []]);
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
@@ -149,9 +265,13 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if ($anneeCode === null || !$this->canWriteAcademicYear($anneeCode)) {
+            $this->error("Planification de créneau non autorisée sur cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
@@ -188,7 +308,7 @@ class EmploiController extends BaseController
         }
 
         if (empty($data['code_emploi'])) {
-            $data['code_emploi'] = $this->validator->generateCode('emplois_temps', 'code_emploi', 'EMP-', 8);
+            $data['code_emploi'] = $this->validator->generateCode(TABLES::EMPLOIS_TEMPS, 'code_emploi', 'EMP-', 8);
         }
         $data['jour'] = strtolower($data['jour'] ?? 'lundi');
         $data['statut_emploi'] = $data['statut_emploi'] ?? 'actif';
@@ -205,11 +325,19 @@ class EmploiController extends BaseController
         }
 
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'emplois_temps',
+                $data['code_emploi'],
+                "Planification de cours ({$data['classe_code']} - {$data['matiere_code']} - {$data['jour']} {$data['heure_debut']} à {$data['heure_fin']})",
+                $filteredData,
+                $etabCode
+            );
             if ($submitAction === 'save_and_new') {
-                $redirectUrl = RACINE . 'emploi/formulaire?classe_code=' . urlencode($data['classe_code']);
+                $redirectUrl = url('emploi/formulaire', ['classe_code' => $data['classe_code']]);
                 $this->success('Créneau horaire planifié avec succès ! Saisissez le créneau suivant.', ['redirect' => $redirectUrl]);
             } else {
-                $this->success('Créneau horaire planifié avec succès!', ['redirect' => RACINE . 'emploi/list']);
+                $this->success('Créneau horaire planifié avec succès!', ['redirect' => url('emploi/list')]);
             }
         } else {
             $this->error('Erreur lors de la création');
@@ -220,7 +348,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $id = (int)$this->post('id_emploi');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -249,6 +377,13 @@ class EmploiController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'emplois_temps',
+                (string)$id,
+                "Modification du créneau horaire #{$id} ({$data['classe_code']} - {$data['jour']})",
+                $filteredData
+            );
             $this->success('Créneau horaire mis à jour avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -259,10 +394,17 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($item = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'emplois_temps',
+                    $item['code_emploi'] ?? (string)$id,
+                    "Basculement de statut du créneau horaire #{$id}",
+                    ['id_emploi' => $id, 'code_emploi' => $item['code_emploi'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -275,14 +417,14 @@ class EmploiController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getDetailsById((int)$id);
-            if (!$item) { header('Location: ' . RACINE . 'emploi/list'); exit(); }
+            if (!$item) { redirect('emploi/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'emploi/list'); exit();
+            redirect('emploi/list');
         }
         $this->loadView('../views/emplois_temps/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -290,14 +432,14 @@ class EmploiController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'emploi/list'); exit(); }
+            if (!$item) { redirect('emploi/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'emploi/list'); exit();
+            redirect('emploi/list');
         }
         $this->loadView('../views/emplois_temps/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -321,7 +463,7 @@ class EmploiController extends BaseController
     public function getTeacherSchedule()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
         $ensCode = trim($_GET['enseignant_code'] ?? ($_POST['enseignant_code'] ?? ''));
         if (empty($ensCode)) {
             $this->json(['status' => 1, 'data' => []]);
@@ -334,7 +476,7 @@ class EmploiController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $selectedClasseCode = $_GET['classe_code'] ?? Session::get('last_emploi_classe_code', '');
         $activeClasseLibelle = '';
 
@@ -357,7 +499,7 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $rawId = $_POST['id'] ?? ($_GET['id'] ?? $this->post('id'));
         $id = (int)$rawId;
 
@@ -365,6 +507,13 @@ class EmploiController extends BaseController
             $item = $this->model->getById($id);
             if ($item) {
                 if ($this->model->delete($id)) {
+                    $this->logAction(
+                        AuditLogger::ACTION_DELETE,
+                        'emplois_temps',
+                        $item['code_emploi'] ?? (string)$id,
+                        "Suppression du créneau horaire (" . ($item['classe_code'] ?? '') . " - " . ($item['jour'] ?? '') . " " . ($item['heure_debut'] ?? '') . ")",
+                        ['id_emploi' => $id, 'item' => $item]
+                    );
                     $this->success('Créneau horaire supprimé avec succès!');
                     return;
                 } else {
@@ -380,13 +529,20 @@ class EmploiController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
         $classeCode = trim($this->post('classe_code') ?? ($_GET['classe_code'] ?? ''));
         if (empty($classeCode)) {
             $this->error('Classe non spécifiée');
             return;
         }
         if ($this->model->resetByClasse($classeCode)) {
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'emplois_temps',
+                $classeCode,
+                "Réinitialisation complète de l'emploi du temps de la classe {$classeCode}",
+                ['classe_code' => $classeCode]
+            );
             $this->success('L\'emploi du temps de la classe a été entièrement réinitialisé !');
         } else {
             $this->error('Erreur lors de la réinitialisation de l\'emploi du temps');
@@ -396,19 +552,157 @@ class EmploiController extends BaseController
     public function getClassScheduleMatrix()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_EMPLOI_TEMPS');
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        $ctx = $this->getTeacherContext();
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
         $classeCode = trim($_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''));
         if (empty($classeCode)) {
             $this->json(['status' => 0, 'message' => 'Classe non spécifiée']);
             return;
         }
 
-        $matrix = $this->model->getClassScheduleMatrix($classeCode);
+        $filterTeachers = $isTeacherOnly ? $teacherCodes : null;
+        $matrix = $this->model->getClassScheduleMatrix($classeCode, $filterTeachers);
 
         $this->json([
             'status' => 1,
             'classe' => $matrix['classe'],
-            'slots' => $matrix['slots']
+            'slots' => $matrix['slots'],
+            'isTeacherOnly' => $isTeacherOnly
+        ]);
+    }
+
+    /**
+     * Impression du Répertoire des Emplois du Temps via mPDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_EMPLOI_TEMPS);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $ctx = $this->getTeacherContext();
+        $canManage = $ctx['canManage'];
+        $isTeacherOnly = $ctx['isTeacherOnly'];
+        $teacherCodes = $ctx['teacherCodes'];
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->error("Accès non autorisé aux emplois du temps de cette année académique.");
+            return;
+        }
+        $niveauCode = $_GET['niveau_code'] ?? null;
+        $classeCode = $_GET['classe_code'] ?? null;
+
+        $etablissement = $this->getEtablissementConfig();
+        
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+                $stmt->execute([$anneeCode]);
+                $lbl = $stmt->fetchColumn();
+                if ($lbl) $anneeLibelle = $lbl;
+            } catch (Exception $e) {}
+        }
+
+        $editeurNom = Auth::fullName();
+        if (empty($editeurNom)) {
+            $editeurNom = $isTeacherOnly ? 'Enseignant' : 'Direction des Études';
+        }
+
+        // Cas 1 : Impression de l'Emploi du Temps officiel d'une classe spécifique
+        $isSingleClasse = !empty($classeCode) && $classeCode !== 'ALL';
+        if ($isSingleClasse) {
+            require_once __DIR__ . '/../../models/classes/ModelClasse.php';
+            $modelClasse = new ModelClasse();
+            $classeInfo = $modelClasse->getClasseWithDetails($classeCode);
+            if (!$classeInfo) {
+                $classeInfo = ['code_classe' => $classeCode, 'libelle_classe' => $classeCode];
+            }
+            $nbEtudiants = count($modelClasse->getEtudiantsForClasse($classeCode));
+
+            $filterTeachers = $isTeacherOnly ? $teacherCodes : null;
+            $matrix = $this->model->getClassScheduleMatrix($classeCode, $filterTeachers);
+            $slots = $matrix['slots'] ?? [];
+
+            $anneeAff = !empty($classeInfo['libelle_annee']) ? $classeInfo['libelle_annee'] : $anneeLibelle;
+
+            $data = [
+                'etablissement' => $etablissement,
+                'annee_libelle' => $anneeAff,
+                'editeur_nom' => $editeurNom,
+                'classe' => $classeInfo,
+                'nb_etudiants' => $nbEtudiants,
+                'slots' => $slots,
+                'isTeacherOnly' => $isTeacherOnly,
+                'canManage' => $canManage
+            ];
+
+            $html = PdfService::renderTemplate('emploi_temps_classe.php', $data);
+
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'emplois_temps',
+                $classeCode,
+                "Impression de l'emploi du temps de la classe " . ($classeInfo['libelle_classe'] ?? $classeCode),
+                ['classe_code' => $classeCode, 'annee' => $anneeAff]
+            );
+
+            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classeInfo['libelle_classe'] ?? $classeCode);
+            $filename = 'Emploi_Temps_' . $cleanName . '_' . date('Ymd_His') . '.pdf';
+            PdfService::generate($html, $filename, [
+                'orientation' => 'L',
+                'format' => 'A4',
+                'title' => 'Emploi du Temps - ' . ($classeInfo['libelle_classe'] ?? $classeCode),
+                'margin_left' => 8,
+                'margin_right' => 8,
+                'margin_top' => 8,
+                'margin_bottom' => 8
+            ]);
+            return;
+        }
+
+        // Cas 2 : Impression du Répertoire Général des Emplois du Temps
+        if ($isTeacherOnly) {
+            $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $anneeCode, $niveauCode, $classeCode);
+        } else {
+            $classesWithEmploi = $this->model->getClassesSummary($anneeCode, $niveauCode, $classeCode);
+        }
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'classes' => $classesWithEmploi,
+            'isTeacherOnly' => $isTeacherOnly,
+            'canManage' => $canManage
+        ];
+
+        $html = PdfService::renderTemplate('repertoire_emplois_temps.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'emplois_temps',
+            $anneeCode ?: 'TOUT',
+            "Impression du répertoire général des emplois du temps (Année: " . ($anneeLibelle ?: 'Toutes') . ")",
+            ['annee_code' => $anneeCode, 'is_teacher_only' => $isTeacherOnly]
+        );
+
+        $filename = ($isTeacherOnly ? 'Mon_Emploi_Temps_' : 'Repertoire_Emplois_Temps_') . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => ($isTeacherOnly ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps') . ' - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 10
         ]);
     }
 }

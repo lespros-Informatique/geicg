@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $typeMedia = strtolower($item['type_media'] ?? ($item['type_fichier'] ?? 'image'));
 $urlMedia = $item['url_fichier'] ?? ($item['fichier'] ?? '');
 ?>
@@ -16,10 +15,10 @@ $urlMedia = $item['url_fichier'] ?? ($item['fichier'] ?? '');
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Photothèque et vidéothèque GEICG</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>galerie/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('galerie/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la galerie
           </a>
-          <a href="<?= RACINE ?>galerie/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('galerie/edition/' . ($encryptedId)) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier le média
           </a>
         </div>
@@ -47,7 +46,7 @@ $urlMedia = $item['url_fichier'] ?? ($item['fichier'] ?? '');
           <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Statut de visibilité</span>
             <div style="margin-top: 6px;">
-              <?php if (($item['statut_galerie'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_galerie'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">En ligne / Publié</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Masqué / Archivé</span>
@@ -83,5 +82,4 @@ $urlMedia = $item['url_fichier'] ?? ($item['fichier'] ?? '');
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

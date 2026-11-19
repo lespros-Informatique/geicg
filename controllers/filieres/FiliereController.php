@@ -10,14 +10,14 @@ class FiliereController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_FILIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_FILIERES);
         $this->loadView('../views/filieres/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_FILIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_FILIERES);
         $status = $_GET['statut'] ?? ($_GET['status'] ?? null);
         if ($status !== null && $status !== '') {
             $items = $this->model->getByStatus($status);
@@ -43,7 +43,7 @@ class FiliereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FILIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_FILIERES);
         $data = $_POST;
         unset($data['csrf_token'], $data['id_filiere'], $data['id']);
 
@@ -56,7 +56,7 @@ class FiliereController extends BaseController
         $etabCode = $this->getActiveEtablissementCode();
 
         if (empty($data['code_filiere'])) {
-            $data['code_filiere'] = $this->validator->generateCode('filieres', 'code_filiere', 'FIL-', 8);
+            $data['code_filiere'] = $this->validator->generateCode(TABLES::FILIERES, 'code_filiere', 'FIL-', 8);
         }
         $data['statut_filiere'] = $data['statut_filiere'] ?? 'actif';
         $data['created_at_filiere'] = date('Y-m-d H:i:s');
@@ -87,7 +87,7 @@ class FiliereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FILIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_FILIERES);
         $id = (int)$this->post('id_filiere');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -128,7 +128,7 @@ class FiliereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FILIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_FILIERES);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -144,26 +144,28 @@ class FiliereController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_FILIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_FILIERES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'filiere/list'); exit(); }
+            if (!$item) { redirect('filiere/list'); }
 
             $filiereCode = $item['code_filiere'];
             $cycles = $this->model->getCyclesForFiliere($filiereCode);
             $classes = $this->model->getClassesForFiliere($filiereCode);
             $stats = $this->model->getStatsForFiliere($filiereCode, count($classes));
+            $maquetteMatieres = (new ModelMaquette())->getFilteredList(Session::get('annee_active_code', ''), $filiereCode);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'filiere/list'); exit();
+            redirect('filiere/list');
         }
         $this->loadView('../views/filieres/details.php', [
             'item' => $item, 
             'cycles' => $cycles,
             'classes' => $classes,
             'stats' => $stats,
+            'maquetteMatieres' => $maquetteMatieres ?? [],
             'encryptedId' => $encryptedId
         ]);
     }
@@ -171,14 +173,14 @@ class FiliereController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FILIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_FILIERES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'filiere/list'); exit(); }
+            if (!$item) { redirect('filiere/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'filiere/list'); exit();
+            redirect('filiere/list');
         }
         $this->loadView('../views/filieres/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -186,7 +188,7 @@ class FiliereController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_FILIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_FILIERES);
         $this->loadView('../views/filieres/edit.php', ['item' => []]);
     }
 
@@ -196,7 +198,7 @@ class FiliereController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_FILIERES', 'VIEW_FILIERES', 'PRINT_OFFRE_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::PRINT_FILIERES, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
 

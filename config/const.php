@@ -1,6 +1,13 @@
 <?php
 
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.gc_maxlifetime', '7200');
+    session_set_cookie_params([
+        'lifetime' => 7200,
+        'path' => '/',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
 }
 
@@ -14,6 +21,13 @@ if (file_exists($autoloadPath)) {
     }
 }
 
+// Configuration globale du fuseau horaire (Abidjan / GMT / UTC+0 par défaut)
+$appTimezone = $_ENV['APP_TIMEZONE'] ?? $_SERVER['APP_TIMEZONE'] ?? getenv('APP_TIMEZONE') ?: 'Africa/Abidjan';
+if (!defined('APP_TIMEZONE')) {
+    define('APP_TIMEZONE', $appTimezone);
+}
+date_default_timezone_set(APP_TIMEZONE);
+
 define('ROOT', $_SERVER['DOCUMENT_ROOT'] ?? 'C:/wamp64/www');
 
 $httpHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -23,10 +37,12 @@ if (!defined('RACINE')) {
     define('RACINE', $isLocalEnvironment ? 'http://localhost/geicg/' : 'https://test.groupe-eicg.net/');
 }
 
-// Chargement automatique du socle Core MVC (Session, Auth, Helpers)
+// Chargement automatique du socle Core MVC (Session, Auth, Helpers, ViewContext, AcademicSecurityGuard)
 require_once __DIR__ . '/../core/Session.php';
 require_once __DIR__ . '/../core/Helper.php';
 require_once __DIR__ . '/../core/Auth.php';
+require_once __DIR__ . '/../core/ViewContext.php';
+require_once __DIR__ . '/../core/AcademicSecurityGuard.php';
 
 define('LOGO', '<span class="fw-bold fs-4 text-primary" style="letter-spacing: 1px;">GEICG</span>');
 define('ICON', '<span class="fw-bold fs-4 text-primary">G</span>');
@@ -38,6 +54,7 @@ class TABLES
 {
     // INSTITUTION & ACCÈS
     public const ETABLISSEMENTS = 'etablissements';
+    public const CONFIGURATIONS = 'configurations';
     public const SERVICES = 'services';
     public const FONCTIONS = 'fonctions';
     public const USERS = 'users';
@@ -46,6 +63,7 @@ class TABLES
     public const ROLE_PERMISSIONS = 'role_permissions';
     public const USER_ROLES = 'user_roles';
     public const USER_ANNEE_ACCES = 'user_annee_acces';
+    public const LOGS_ACTIVITES = 'logs_activites';
 
     // ACADÉMIQUE & LMD
     public const ANNEES = 'annees';
@@ -65,10 +83,12 @@ class TABLES
     public const PARENTS = 'parents';
     public const INSCRIPTIONS = 'inscriptions';
     public const ACCESSOIRES = 'accessoires';
+    public const ACCESSOIRE_NIVEAU_FILIERE = 'accessoire_niveau_filiere';
     public const ACCESSOIRE_INSCRIPTION = 'accessoire_inscription';
     public const DOSSIER_ETUDIANT = 'dossier_etudiant';
     public const PIECES_FOURNIR = 'pieces_fournir';
-    public const PIECES_FOURNIR_CYCLES = 'pieces_fournir_cycles';
+    public const PIECES_FOURNIR_CYCLES = 'piece_fournir_cycle';
+    public const PIECE_FOURNIR_CYCLE = 'piece_fournir_cycle';
 
     // FINANCE & CAISSE
     public const SCOLARITES = 'scolarites';
@@ -82,22 +102,40 @@ class TABLES
     public const TYPE_DEPENSES = 'type_depenses';
     public const ARRIERES = 'arrieres';
     public const IMPAYES = 'impayes';
+    public const RELANCES_IMPAYES = 'relances_impayes';
 
     // PÉDAGOGIE & ÉVALUATIONS
+    public const MAQUETTES_PEDAGOGIQUES = 'maquettes_pedagogiques';
     public const ENSEIGNANTS = 'enseignants';
-    public const ENSEIGNANT_MATIERE = 'enseignant_matiere';
     public const EMPLOIS_TEMPS = 'emplois_temps';
     public const NOTES = 'notes';
     public const ABSENCES = 'absences';
     public const COMPOSITIONS = 'compositions';
     public const COMPOSITION_MATIERES = 'composition_matieres';
+    public const COMPOSITION_NIVEAU_FILIERE = 'composition_niveau_filiere';
     public const BULLETINS = 'bulletins';
+    public const V_SESSIONS_EVALUATIONS = 'v_sessions_evaluations';
+    public const V_BULLETIN_INSCRIPTIONS_SYNTHESE = 'v_bulletin_inscriptions_synthese';
 
     // COMMUNICATION & MÉDIAS
     public const DOCUMENTS = 'documents';
     public const EVENEMENTS = 'evenements';
     public const GALERIES = 'galeries';
     public const GALERIE_MEDIAS = 'galerie_medias';
+    public const MESSAGES = 'messages';
+}
+
+class VIEWS
+{
+    public const INSCRIPTIONS_COMPLETES       = 'v_inscriptions_completes';
+    public const PAIEMENTS_COMPLETS           = 'v_paiements_complets';
+    public const BILAN_PAIEMENTS_INSCRIPTIONS = 'v_bilan_paiements_inscriptions';
+    public const NOTES_COMPLETES              = 'v_notes_completes';
+    public const ABSENCES_COMPLETES           = 'v_absences_completes';
+    public const EMPLOIS_TEMPS_COMPLETS       = 'v_emplois_temps_complets';
+    public const BULLETIN_NOTES_DETAILS       = 'v_bulletin_notes_details';
+    public const BULLETIN_INSCRIPTIONS_SYNTHESE = 'v_bulletin_inscriptions_synthese';
+    public const MAQUETTES_COMPLETES          = 'v_maquettes_completes';
 }
 
 class ROLES
@@ -123,6 +161,7 @@ class PERMISSIONS
     public const MANAGE_CLASSES                   = 'MANAGE_CLASSES';
     public const MANAGE_CYCLES                    = 'MANAGE_CYCLES';
     public const MANAGE_FILIERES                  = 'MANAGE_FILIERES';
+    public const MANAGE_MAQUETTES                 = 'MANAGE_MAQUETTES';
     public const MANAGE_MATIERES                  = 'MANAGE_MATIERES';
     public const MANAGE_NIVEAUX                   = 'MANAGE_NIVEAUX';
     public const MANAGE_SALLES                    = 'MANAGE_SALLES';
@@ -130,12 +169,14 @@ class PERMISSIONS
     public const MANAGE_UE                        = 'MANAGE_UE';
     public const PRINT_CLASSES                    = 'PRINT_CLASSES';
     public const PRINT_FILIERES                   = 'PRINT_FILIERES';
+    public const PRINT_MAQUETTES                  = 'PRINT_MAQUETTES';
     public const PRINT_OFFRE_ACADEMIQUE           = 'PRINT_OFFRE_ACADEMIQUE';
     public const PRINT_SALLES                     = 'PRINT_SALLES';
     public const VIEW_ANNEES                      = 'VIEW_ANNEES';
     public const VIEW_CLASSES                     = 'VIEW_CLASSES';
     public const VIEW_CYCLES                      = 'VIEW_CYCLES';
     public const VIEW_FILIERES                    = 'VIEW_FILIERES';
+    public const VIEW_MAQUETTES                   = 'VIEW_MAQUETTES';
     public const VIEW_MATIERES                    = 'VIEW_MATIERES';
     public const VIEW_NIVEAUX                     = 'VIEW_NIVEAUX';
     public const VIEW_SALLES                      = 'VIEW_SALLES';
@@ -151,6 +192,7 @@ class PERMISSIONS
     public const MANAGE_ROLES                     = 'MANAGE_ROLES';
     public const MANAGE_USERS                     = 'MANAGE_USERS';
     public const VIEW_FONCTIONS                   = 'VIEW_FONCTIONS';
+    public const VIEW_LOGS                        = 'VIEW_LOGS';
     public const VIEW_PERMISSIONS                 = 'VIEW_PERMISSIONS';
     public const VIEW_ROLES                       = 'VIEW_ROLES';
     public const VIEW_USERS                       = 'VIEW_USERS';
@@ -180,6 +222,7 @@ class PERMISSIONS
     public const VIEW_DASHBOARD_SCOLARITE         = 'VIEW_DASHBOARD_SCOLARITE';
 
     // MODULE: FINANCE
+    public const CANCEL_CAISSE_ANNEXE             = 'CANCEL_CAISSE_ANNEXE';
     public const CANCEL_PAIEMENTS                 = 'CANCEL_PAIEMENTS';
     public const CLOTURE_CAISSE                   = 'CLOTURE_CAISSE';
     public const EXPORT_FINANCE                   = 'EXPORT_FINANCE';
@@ -228,6 +271,7 @@ class PERMISSIONS
 
     // MODULE: SCOLAIRITE
     public const ANNULER_INSCRIPTION              = 'ANNULER_INSCRIPTION';
+    public const CHANGER_CLASSE                   = 'CHANGER_CLASSE_ETUDIANT';
     public const CHANGER_CLASSE_ETUDIANT          = 'CHANGER_CLASSE_ETUDIANT';
     public const EDIT_ETUDIANT                    = 'EDIT_ETUDIANT';
     public const MANAGE_ABSENCES                  = 'MANAGE_ABSENCES';
@@ -266,35 +310,78 @@ class PERMISSIONS
 
 class STATUTS
 {
+    // VALEURS SCALAIRES STANDARDISÉES
+    public const ACTIF        = 'actif';
+    public const INACTIF      = 'inactif';
+    public const VALIDE       = 'valide';
+    public const ANNULE       = 'annule';
+    public const EN_ATTENTE   = 'en_attente';
+    public const SOLDE        = 'solde';
+    public const OUVERT       = 'ouvert';
+    public const FERME        = 'ferme';
+    public const REJETE       = 'rejete';
+    public const CLOTURE      = 'cloture';
+    public const ARCHIVE      = 'archive';
+    public const PROGRAMME    = 'programme';
+    public const EN_COURS     = 'en_cours';
+    public const TERMINE      = 'termine';
+    public const JUSTIFIE     = 'justifie';
+    public const NON_JUSTIFIE = 'non_justifie';
+
     // INSCRIPTIONS
-    public const INSCRIPTIONS = ['en_attente', 'valide', 'solde', 'annule'];
+    public const INSCRIPTIONS = [self::EN_ATTENTE, self::VALIDE, self::SOLDE, self::ANNULE];
     public const CANAUX_INSCRIPTION = ['guichet', 'en_ligne'];
     public const AFFECTATIONS_ETAT = ['affecte', 'non_affecte'];
 
     // PAIEMENTS
-    public const PAIEMENTS = ['valide', 'annule', 'en_attente'];
+    public const PAIEMENTS = [self::VALIDE, self::ANNULE, self::EN_ATTENTE];
     public const CANAUX_PAIEMENT = ['guichet', 'en_ligne'];
 
     // SESSIONS DE CAISSE
-    public const SESSIONS_CAISSE = ['ouvert', 'ferme', 'valide', 'rejete'];
+    public const SESSIONS_CAISSE = [self::OUVERT, self::FERME, self::VALIDE, self::REJETE];
 
     // ANNÉES ACADÉMIQUES
-    public const ANNEES = ['actif', 'cloture', 'archive', 'inactif'];
+    public const ANNEES = [self::ACTIF, self::CLOTURE, self::ARCHIVE, self::INACTIF];
 
     // COMPOSITIONS / EXAMENS
-    public const COMPOSITIONS = ['programme', 'en_cours', 'termine', 'annule'];
+    public const COMPOSITIONS = [self::PROGRAMME, self::EN_COURS, self::TERMINE, self::ANNULE];
 
     // ABSENCES
-    public const ABSENCES = ['justifie', 'non_justifie'];
+    public const ABSENCES = [self::JUSTIFIE, self::NON_JUSTIFIE];
 
     // STATUT GÉNÉRAL D'ACTIVITÉ
-    public const ACTIF   = 'actif';
-    public const INACTIF = 'inactif';
-    public const GENERAL = ['actif', 'inactif'];
+    public const GENERAL = [self::ACTIF, self::INACTIF];
 
     // TYPES DE FILIÈRES
     public const TYPES_FILIERES = [
         'INDUSTRIELLE' => 'Filière Industrielle',
         'TERTIAIRE'    => 'Filière Tertiaire'
     ];
+
+    // MAQUETTES PÉDAGOGIQUES
+    public const MAQUETTES = [self::ACTIF, self::INACTIF];
+
+    // CATÉGORIES DE MATIÈRES (MAQUETTE & BULLETIN)
+    public const CATEGORIE_GENERALE        = 'GENERALE';
+    public const CATEGORIE_PROFESSIONNELLE = 'PROFESSIONNELLE';
+    public const CATEGORIES_MATIERES       = [
+        self::CATEGORIE_GENERALE        => 'Matières Générales',
+        self::CATEGORIE_PROFESSIONNELLE => 'Matières Professionnelles'
+    ];
+}
+
+class CATEGORIES_MATIERES
+{
+    public const GENERALE        = 'GENERALE';
+    public const PROFESSIONNELLE = 'PROFESSIONNELLE';
+
+    public const ALL = [
+        self::GENERALE        => 'Matières Générales',
+        self::PROFESSIONNELLE => 'Matières Professionnelles'
+    ];
+}
+
+class PLACEHOLDERS
+{
+    public const ETUDIANT = 'assets/images/placeholders/etudiant.png';
 }

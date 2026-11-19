@@ -10,18 +10,18 @@ class PaiementController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::VIEW_PAIEMENTS);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($selectedAnneeCode !== null) {
+            $aRow = $this->model->getAnneeByCode($selectedAnneeCode);
             if ($aRow) {
                 Session::set('annee_active_code', $aRow['code_annee']);
                 Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
-        $activeYear = $this->getActiveAnneeCode();
+        $activeYear = $selectedAnneeCode;
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $dateDebut = $_GET['date_debut'] ?? null;
@@ -36,10 +36,10 @@ class PaiementController extends BaseController
         $isCaisseOuverte = $deps['isCaisseOuverte'] ?? false;
         $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
-        $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
-        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
-        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
-        $canCancelPaiement = $this->hasPermission('CANCEL_PAIEMENTS');
+        $canRecord = $this->hasPermission([PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canOpenCaisse = $this->hasPermission([PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canCloseCaisse = $this->hasPermission([PERMISSIONS::CLOTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canCancelPaiement = $this->hasPermission(PERMISSIONS::CANCEL_PAIEMENTS);
 
         $this->loadView('../views/paiements/list.php', [
             'stats' => $stats,
@@ -61,18 +61,18 @@ class PaiementController extends BaseController
     public function comptabiliteEtudiants()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_COMPTABILITE_ETUDIANTS', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($selectedAnneeCode !== null) {
+            $aRow = $this->model->getAnneeByCode($selectedAnneeCode);
             if ($aRow) {
                 Session::set('annee_active_code', $aRow['code_annee']);
                 Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
-        $activeYear = $this->getActiveAnneeCode();
+        $activeYear = $selectedAnneeCode;
         $annees = $this->getAccessibleAnnees();
         $deps = $this->model->getListDependencies($activeYear);
 
@@ -80,9 +80,9 @@ class PaiementController extends BaseController
         $isCaisseOuverte = $deps['isCaisseOuverte'] ?? false;
         $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
-        $canRecord = $this->hasPermission(['RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
-        $canOpenCaisse = $this->hasPermission(['OUVERTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
-        $canCloseCaisse = $this->hasPermission(['CLOTURE_CAISSE', 'MANAGE_CAISSE', 'RECORD_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $canRecord = $this->hasPermission([PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canOpenCaisse = $this->hasPermission([PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canCloseCaisse = $this->hasPermission([PERMISSIONS::CLOTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $this->loadView('../views/paiements/comptabilite_etudiants.php', [
             'annees' => $annees,
@@ -102,7 +102,7 @@ class PaiementController extends BaseController
     public function apiComptabiliteEtudiants()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_COMPTABILITE_ETUDIANTS', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
@@ -117,15 +117,20 @@ class PaiementController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::VIEW_PAIEMENTS);
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code') ?? null;
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['status' => 1, 'stats' => []]);
+            return;
+        }
+
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $dateDebut = $_GET['date_debut'] ?? null;
         $dateFin = $_GET['date_fin'] ?? null;
 
-        $stats = $this->model->computeFinancialStats($anneeCode, $niveauCode, $classeCode, $dateDebut, $dateFin, $this->getActiveAnneeCode());
+        $stats = $this->model->computeFinancialStats($anneeCode, $niveauCode, $classeCode, $dateDebut, $dateFin, $anneeCode);
         $this->json(['status' => 1, 'stats' => $stats]);
     }
 
@@ -137,18 +142,21 @@ class PaiementController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::VIEW_PAIEMENTS);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode !== null) {
+            $aRow = $this->model->getAnneeByCode($anneeCode);
             if ($aRow) {
                 Session::set('annee_active_code', $aRow['code_annee']);
                 Session::set('annee_active_libelle', $aRow['libelle_annee']);
             }
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $dateDebut = $_GET['date_debut'] ?? null;
@@ -159,10 +167,11 @@ class PaiementController extends BaseController
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_paiement'];
-            $idCrypte = $this->validator->crypter($id);
+            $idCrypte = !empty($id) ? $this->validator->crypter($id) : (!empty($i['code_paiement']) ? $this->validator->crypter($i['code_paiement']) : '');
             $data[] = array_merge($i, [
                 'id' => $id,
-                'editId' => $idCrypte
+                'editId' => $idCrypte,
+                'encrypted_id' => $idCrypte
             ]);
         }
         $this->json(['data' => $data]);
@@ -171,7 +180,7 @@ class PaiementController extends BaseController
     public function getStudentFinancialSummary()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::VIEW_PAIEMENTS);
 
         $inscriptionCode = $_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? '');
         $etudiantCode = $_GET['etudiant_code'] ?? ($_POST['etudiant_code'] ?? '');
@@ -192,7 +201,7 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('RECORD_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::RECORD_PAIEMENTS);
 
         $userCode = Auth::code() ?: 'SYS';
         $anneeCode = $this->getActiveAnneeCode();
@@ -203,6 +212,30 @@ class PaiementController extends BaseController
 
         $res = $this->model->processEnregistrementPaiement($data, $userCode, $anneeCode, $etabCode, $this->validator);
         if ($res['success']) {
+            $codePmt = $res['data']['code_paiement'] ?? ($data['code_paiement'] ?? '');
+            $montant = $data['montant_paye'] ?? ($data['montant'] ?? 0);
+            $inscrCode = $data['inscription_code'] ?? '';
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'paiements',
+                $codePmt,
+                "Enregistrement d'un versement de " . number_format((float)$montant, 0, ',', ' ') . " GNF pour l'inscription {$inscrCode}",
+                [
+                    'code_paiement' => $codePmt,
+                    'montant' => $montant,
+                    'inscription_code' => $inscrCode,
+                    'mode_paiement' => $data['mode_paiement'] ?? null,
+                    'canal_paiement' => $data['canal_paiement'] ?? null
+                ],
+                $etabCode
+            );
+            $idPmt = (int)($res['data']['id_paiement'] ?? 0);
+            if ($idPmt > 0) {
+                Session::set('last_paiement_id', $idPmt);
+            }
+            if (!empty($codePmt)) {
+                Session::set('last_paiement_code', $codePmt);
+            }
             $this->success($res['message'], $res['data'] ?? []);
         } else {
             $this->error($res['message']);
@@ -213,13 +246,20 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('RECORD_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::RECORD_PAIEMENTS);
         $id = (int)$this->post('id_paiement');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
         unset($data['csrf_token']);
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'paiements',
+                (string)$id,
+                "Modification du versement #{$id}",
+                $filteredData
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -230,7 +270,7 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('CANCEL_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::CANCEL_PAIEMENTS);
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && $this->model->getById($id)) {
@@ -241,6 +281,13 @@ class PaiementController extends BaseController
                 $success = $this->model->toggleStatus($id);
             }
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'paiements',
+                    (string)$id,
+                    "Changement de statut du versement #{$id} : " . ($statut ?: 'inversion'),
+                    ['id' => $id, 'statut' => $statut]
+                );
                 $this->success('Statut du paiement mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -254,7 +301,7 @@ class PaiementController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('CANCEL_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::CANCEL_PAIEMENTS);
 
         $id = (int)($this->post('id_paiement') ?: $this->post('id'));
         $codePaiement = trim($this->post('code_paiement') ?? '');
@@ -265,6 +312,13 @@ class PaiementController extends BaseController
 
         $res = $this->model->annulerVersement($id, $codePaiement, $motif, $userCode, $userName);
         if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'paiements',
+                $codePaiement ?: (string)$id,
+                "Annulation du versement {$codePaiement} (Motif: {$motif})",
+                ['id_paiement' => $id, 'code_paiement' => $codePaiement, 'motif' => $motif]
+            );
             $this->success($res['message'], $res['data'] ?? []);
         } else {
             $this->error($res['message']);
@@ -274,7 +328,7 @@ class PaiementController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_PAIEMENTS');
+        $this->requirePermission(PERMISSIONS::VIEW_PAIEMENTS);
         try {
             $id = $details;
             if (!empty($details)) {
@@ -319,25 +373,34 @@ class PaiementController extends BaseController
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'paiement/list');
-        exit();
+        redirect('paiement/list');
     }
 
     public function formulaire()
     {
         $inscrCode = $_GET['inscription_code'] ?? ($_GET['code'] ?? '');
         $etuCode = $_GET['etudiant_code'] ?? '';
-        $query = '?action=encaissement';
-        if (!empty($inscrCode)) $query .= '&inscription_code=' . urlencode($inscrCode);
-        if (!empty($etuCode)) $query .= '&etudiant_code=' . urlencode($etuCode);
-        header('Location: ' . RACINE . 'paiement/list' . $query);
-        exit();
+        $params = ['action' => 'encaissement'];
+        if (!empty($inscrCode)) $params['inscription_code'] = $inscrCode;
+        if (!empty($etuCode)) $params['etudiant_code'] = $etuCode;
+        redirect('paiement/list', $params);
+    }
+
+    public function recu($details = null)
+    {
+        return $this->imprimerPdf($details);
     }
 
     public function imprimerPdf($details = null)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_PAIEMENTS', 'VIEW_ETUDIANTS', 'VIEW_INSCRIPTIONS']);
+        $this->requirePermission([
+            PERMISSIONS::VIEW_PAIEMENTS,
+            PERMISSIONS::VIEW_ETUDIANTS,
+            PERMISSIONS::VIEW_INSCRIPTIONS,
+            PERMISSIONS::VIEW_CAISSE_ANNEXE,
+            PERMISSIONS::PRINT_FRAIS_ANNEXES
+        ]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         if (empty($details) && !empty($_GET['id'])) {
@@ -352,18 +415,45 @@ class PaiementController extends BaseController
         $id = $details;
         if (!empty($details)) {
             $decrypted = $this->validator->decrypter($details);
-            if (!empty($decrypted)) {
+            if (!empty($decrypted) && $decrypted !== 0 && $decrypted !== '0') {
                 $id = $decrypted;
+            } elseif ($decrypted === 0 || $decrypted === '0') {
+                // Le hash décrypté équivaut à 0 (ex: lien généré avant insertion ou fallback 0)
+                // Récupération prioritaire via la session ou le dernier paiement confirmé
+                $id = Session::get('last_paiement_id') ?: Session::get('last_paiement_code') ?: null;
+                if (empty($id)) {
+                    $db = (new Database())->getCon();
+                    $stmtLast = $db->query("SELECT id_paiement FROM " . TABLES::PAIEMENTS . " WHERE statut_paiement != '" . STATUTS::ANNULE . "' ORDER BY id_paiement DESC LIMIT 1");
+                    $id = (int)($stmtLast->fetchColumn() ?: 0);
+                }
             }
         }
 
         $data = $this->model->getRecuVersementData((string)$id);
+        if (!$data && !empty($details) && (string)$id !== (string)$details) {
+            $data = $this->model->getRecuVersementData((string)$details);
+        }
+        if (!$data && !empty($_GET['code'])) {
+            $data = $this->model->getRecuVersementData((string)$_GET['code']);
+        }
+        if (!$data) {
+            $lastIdInDb = Session::get('last_paiement_id');
+            if (!empty($lastIdInDb)) {
+                $data = $this->model->getRecuVersementData((string)$lastIdInDb);
+            }
+        }
+
         if (!$data) {
             $this->renderNotFound("Le reçu de versement demandé est introuvable.");
             return;
         }
 
-        $templateName = 'recu_versement.php';
+        // Conforme à la règle 9 : injection des configurations institutionnelles
+        $data['etablissement'] = $this->getEtablissementConfig();
+
+        // Conforme à la règle 4 : séparation stricte entre Reçu de Scolarité et Reçu de Frais Annexes
+        $isFraisAnnexes = !empty($data['is_frais_annexes']);
+        $templateName = $isFraisAnnexes ? 'recu_frais_annexes.php' : 'recu_versement.php';
         $html = PdfService::renderTemplate($templateName, $data);
 
         if (isset($_GET['html'])) {
@@ -372,11 +462,19 @@ class PaiementController extends BaseController
         }
 
         $numRecuCode = $data['numero_recu'] ?? 'REC';
-        $filename = 'Recu_Versement_' . $numRecuCode . '.pdf';
+        $docTypeLabel = $isFraisAnnexes ? 'reçu de frais annexes' : 'reçu de versement de scolarité';
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            $isFraisAnnexes ? 'caisse_annexe' : 'paiements',
+            $numRecuCode,
+            "Impression du {$docTypeLabel} N° {$numRecuCode}",
+            ['numero_recu' => $numRecuCode, 'id' => $id, 'categorie' => $isFraisAnnexes ? 'FRAIS_ANNEXES' : 'SCOLARITE']
+        );
+        $filename = ($isFraisAnnexes ? 'Recu_Frais_Annexes_' : 'Recu_Versement_') . $numRecuCode . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
             'format' => 'A4',
-            'title' => 'Reçu de Versement N° ' . $numRecuCode,
+            'title' => ($isFraisAnnexes ? 'Reçu Frais Annexes N° ' : 'Reçu de Versement N° ') . $numRecuCode,
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
@@ -387,7 +485,7 @@ class PaiementController extends BaseController
     public function imprimerComptabiliteEtudiants()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_COMPTABILITE_ETUDIANTS', 'VIEW_PAIEMENTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
@@ -406,6 +504,14 @@ class PaiementController extends BaseController
             return;
         }
 
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'paiements',
+            $anneeCode,
+            "Impression de l'état de synthèse comptable des étudiants (Année: {$anneeCode}, Classe: {$classeCode})",
+            ['annee_code' => $anneeCode, 'niveau_code' => $niveauCode, 'classe_code' => $classeCode, 'regime' => $regime, 'statut_paiement' => $statutPaiement]
+        );
+
         $filename = 'Etat_Comptabilite_Etudiants_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'L',
@@ -421,7 +527,7 @@ class PaiementController extends BaseController
     public function imprimerRegistreEncaissements()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_PAIEMENTS', 'VIEW_COMPTABILITE_ETUDIANTS', 'MANAGE_PAIEMENTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $anneeCode = $_GET['annee_code'] ?? '';
@@ -443,6 +549,14 @@ class PaiementController extends BaseController
             return;
         }
 
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'paiements',
+            $anneeCode ?: 'TOUT',
+            "Impression du registre des encaissements (Année: " . ($anneeCode ?: 'TOUT') . ", Période: {$dateDebut} à {$dateFin})",
+            ['annee_code' => $anneeCode, 'date_debut' => $dateDebut, 'date_fin' => $dateFin, 'classe_code' => $classeCode]
+        );
+
         $filename = 'Registre_Encaissements_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'L',
@@ -458,7 +572,7 @@ class PaiementController extends BaseController
     public function imprimerBilanFinancier($details = null)
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_COMPTABILITE_ETUDIANTS', 'VIEW_PAIEMENTS', 'VIEW_INSCRIPTIONS', 'VIEW_ETUDIANTS']);
+        $this->requirePermission([PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::VIEW_ETUDIANTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         if (empty($details) && !empty($_GET['id'])) {
@@ -496,6 +610,15 @@ class PaiementController extends BaseController
 
         $matricule = $dataView['matricule_etudiant'] ?? 'ETUDIANT';
         $nomComplet = $dataView['nom_prenom_etudiant'] ?? '';
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'paiements',
+            $matricule,
+            "Impression du bilan financier pour l'étudiant {$nomComplet} ({$matricule})",
+            ['id' => $id, 'matricule' => $matricule, 'nom_prenom' => $nomComplet]
+        );
+
         $filename = 'Bilan_Financier_' . $matricule . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',

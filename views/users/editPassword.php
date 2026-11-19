@@ -1,6 +1,6 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php'; 
-$user = isset($user) ? $user : ($_SESSION[USERS_AUTH] ?? []);
+$user = isset($user) ? $user : (Auth::user() ?: []);
 ?>
 
 <div class="app-layout">
@@ -16,7 +16,7 @@ $user = isset($user) ? $user : ($_SESSION[USERS_AUTH] ?? []);
           </h1>
           <p class="page-subtitle" style="color: #64748B; margin: 4px 0 0 0;">Sécurisez votre compte avec un mot de passe robuste</p>
         </div>
-        <a href="<?= RACINE ?>user/profil" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+        <a href="<?= url('user/profil') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
           <i class="fa fa-arrow-left"></i> Retour au profil
         </a>
       </div>
@@ -76,7 +76,7 @@ $user = isset($user) ? $user : ($_SESSION[USERS_AUTH] ?? []);
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 12px;">
-            <a href="<?= RACINE ?>user/profil" class="btn btn-secondary">Annuler</a>
+            <a href="<?= url('user/profil') ?>" class="btn btn-secondary">Annuler</a>
             <button type="submit" class="btn btn-primary btn_actions" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700;">
               <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Mettre à jour mon mot de passe
             </button>
@@ -88,66 +88,7 @@ $user = isset($user) ? $user : ($_SESSION[USERS_AUTH] ?? []);
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-    const baseApi = (typeof LINK !== 'undefined') ? LINK : ((typeof RACINE !== 'undefined') ? RACINE : '/admin-lavex/');
-
-    // Toggle afficher/masquer mot de passe
-    $(document).on('click', '.btn-toggle-pwd', function() {
-        const targetId = $(this).data('target');
-        const input = $('#' + targetId);
-        const icon = $(this).find('i');
-
-        if (input.attr('type') === 'password') {
-            input.attr('type', 'text');
-            icon.removeClass('fa-eye').addClass('fa-eye-slash');
-        } else {
-            input.attr('type', 'password');
-            icon.removeClass('fa-eye-slash').addClass('fa-eye');
-        }
-    });
-
-    // Soumission du formulaire
-    $('#formEditPassword').on('submit', function(e) {
-        e.preventDefault();
-        const form = $(this);
-        const btn = form.find('.btn_actions');
-        const newPwd = $('#new_password').val();
-        const confirmPwd = $('#confirm_password').val();
-
-        if (newPwd !== confirmPwd) {
-            if (typeof showToast === 'function') showToast('Les nouveaux mots de passe ne correspondent pas !', 'error');
-            return;
-        }
-
-        if (typeof loading === 'function') loading(btn, true, 'Mise à jour en cours...');
-
-        $.ajax({
-            url: baseApi + 'user/editPassword',
-            type: 'POST',
-            data: form.serialize(),
-            dataType: 'json',
-            success: function(rep) {
-                if (typeof loading === 'function') loading(btn, false);
-                if (rep.status) {
-                    if (typeof showToast === 'function') showToast(rep.message || 'Mot de passe modifié avec succès !', 'success');
-                    form[0].reset();
-                    setTimeout(function() {
-                        window.location.href = baseApi + 'user/profil';
-                    }, 1000);
-                } else {
-                    if (typeof showToast === 'function') showToast(rep.message || 'Erreur lors de la modification', 'error');
-                }
-            },
-            error: function(xhr) {
-                if (typeof loading === 'function') loading(btn, false);
-                let msg = 'Erreur serveur';
-                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                if (typeof showToast === 'function') showToast(msg, 'error');
-            }
-        });
-    });
-});
-</script>
-
-<?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/users.js']);
+require_once __DIR__ . '/../../public/inc/footer.php';
+?>

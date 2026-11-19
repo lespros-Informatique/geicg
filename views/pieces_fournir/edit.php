@@ -22,7 +22,7 @@ $isEdit = !empty($item['id_piece_fournir']);
           </p>
         </div>
         <div style="display: flex; gap: 10px;">
-          <a href="<?= RACINE ?>piece_fournir/list" class="btn btn-secondary" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
+          <a href="<?= url('piece_fournir/list') ?>" class="btn btn-secondary" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour au Répertoire
           </a>
         </div>
@@ -50,7 +50,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             </span>
           </div>
 
-          <form action="<?= RACINE ?>piece_fournir/edit" method="POST" style="width: 100%;">
+          <form action="<?= url('piece_fournir/edit') ?>" method="POST" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
             <input type="hidden" name="id_piece_fournir" value="<?= (int)($item['id_piece_fournir'] ?? 0) ?>">
 
@@ -78,7 +78,7 @@ $isEdit = !empty($item['id_piece_fournir']);
                 </label>
                 <select name="statut_piece" class="form-select" style="border-radius: 8px; padding: 11px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
                   <option value="actif" <?= ($item['statut_piece'] ?? 'actif') === 'actif' ? 'selected' : '' ?>>Actif (Disponible pour les cycles)</option>
-                  <option value="inactif" <?= ($item['statut_piece'] ?? '') === 'inactif' ? 'selected' : '' ?>>Inactif (Désactivé du catalogue)</option>
+                  <option value="inactif" <?= ($item['statut_piece'] ?? '') === STATUTS::INACTIF ? 'selected' : '' ?>>Inactif (Désactivé du catalogue)</option>
                 </select>
                 <span style="font-size: 12px; color: #64748B; margin-top: 4px; display: block;">
                   Un document inactif ne pourra plus être sélectionné pour de nouveaux cycles d'études.
@@ -102,7 +102,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid #F1F5F9;">
-              <a href="<?= RACINE ?>piece_fournir/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
+              <a href="<?= url('piece_fournir/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
                 Annuler
               </a>
               <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 26px; display: inline-flex; align-items: center; gap: 8px;">
@@ -138,7 +138,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             <p style="color: #64748B; font-size: 13px; margin: 0;">Saisissez les détails de la pièce administrative à ajouter au répertoire général.</p>
           </div>
 
-          <form action="<?= RACINE ?>piece_fournir/add" method="POST" style="width: 100%;">
+          <form action="<?= url('piece_fournir/add') ?>" method="POST" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
@@ -182,7 +182,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid #F1F5F9;">
-              <a href="<?= RACINE ?>piece_fournir/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
+              <a href="<?= url('piece_fournir/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
                 Annuler
               </a>
               <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 26px; display: inline-flex; align-items: center; gap: 8px;">
@@ -208,7 +208,7 @@ $isEdit = !empty($item['id_piece_fournir']);
             </button>
           </div>
 
-          <form action="<?= RACINE ?>piece_fournir/add" method="POST" id="form-batch-pieces" style="width: 100%;">
+          <form action="<?= url('piece_fournir/add') ?>" method="POST" id="form-batch-pieces" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
             <div style="overflow-x: auto; width: 100%; margin-bottom: 24px;">
@@ -280,7 +280,7 @@ $isEdit = !empty($item['id_piece_fournir']);
               </button>
 
               <div style="display: flex; gap: 12px;">
-                <a href="<?= RACINE ?>piece_fournir/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
+                <a href="<?= url('piece_fournir/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 22px;">
                   Annuler
                 </a>
                 <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 26px; display: inline-flex; align-items: center; gap: 8px;">
@@ -299,94 +299,7 @@ $isEdit = !empty($item['id_piece_fournir']);
   </main>
 </div>
 
-<script>
-let batchRowIndex = 2;
-
-function switchPieceTab(tab) {
-  const btnSingle = document.getElementById('tab-btn-single');
-  const btnBatch = document.getElementById('tab-btn-batch');
-  const paneSingle = document.getElementById('pane-single');
-  const paneBatch = document.getElementById('pane-batch');
-
-  if (!btnSingle || !btnBatch || !paneSingle || !paneBatch) return;
-
-  if (tab === 'single') {
-    btnSingle.style.background = '#1E3A5F';
-    btnSingle.style.color = '#FFFFFF';
-    btnSingle.style.border = 'none';
-
-    btnBatch.style.background = '#FFFFFF';
-    btnBatch.style.color = '#64748B';
-    btnBatch.style.border = '1px solid #CBD5E1';
-
-    paneSingle.style.display = 'block';
-    paneBatch.style.display = 'none';
-  } else {
-    btnBatch.style.background = '#1E3A5F';
-    btnBatch.style.color = '#FFFFFF';
-    btnBatch.style.border = 'none';
-
-    btnSingle.style.background = '#FFFFFF';
-    btnSingle.style.color = '#64748B';
-    btnSingle.style.border = '1px solid #CBD5E1';
-
-    paneSingle.style.display = 'none';
-    paneBatch.style.display = 'block';
-  }
-  if (window.lucide) lucide.createIcons();
-}
-
-function addBatchRow() {
-  const container = document.getElementById('batch-rows-container');
-  if (!container) return;
-
-  const rowCount = container.querySelectorAll('.batch-row').length + 1;
-  const tr = document.createElement('tr');
-  tr.className = 'batch-row';
-  tr.style.borderBottom = '1px solid #F1F5F9';
-  tr.innerHTML = `
-    <td style="padding: 12px 14px; font-weight: 700; color: #64748B;">${rowCount}</td>
-    <td style="padding: 12px 14px;">
-      <input type="text" 
-             name="pieces[${batchRowIndex}][libelle]" 
-             placeholder="Ex: Certificat médical d'aptitude" 
-             class="form-control" 
-             style="border-radius: 6px; padding: 9px 12px; border: 1px solid #CBD5E1; font-weight: 600; width: 100%;">
-    </td>
-    <td style="padding: 12px 14px;">
-      <input type="text" 
-             name="pieces[${batchRowIndex}][description]" 
-             placeholder="Ex: Délivré par un médecin agréé" 
-             class="form-control" 
-             style="border-radius: 6px; padding: 9px 12px; border: 1px solid #CBD5E1; font-weight: 500; width: 100%;">
-    </td>
-    <td style="padding: 12px 14px; text-align: center;">
-      <button type="button" onclick="removeBatchRow(this)" class="btn btn-sm btn-danger" style="background: #FEE2E2; color: #DC2626; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer;">
-        <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
-      </button>
-    </td>
-  `;
-  container.appendChild(tr);
-  batchRowIndex++;
-  if (window.lucide) lucide.createIcons();
-}
-
-function removeBatchRow(btn) {
-  const row = btn.closest('tr');
-  if (row) {
-    row.remove();
-    // Renuméroter les lignes
-    const rows = document.querySelectorAll('#batch-rows-container .batch-row');
-    rows.forEach((r, idx) => {
-      const tdNum = r.querySelector('td');
-      if (tdNum) tdNum.textContent = idx + 1;
-    });
-  }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  if (window.lucide) lucide.createIcons();
-});
-</script>
-
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/accessoires.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

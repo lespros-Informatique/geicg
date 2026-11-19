@@ -2,7 +2,7 @@
 
 class ModelInscription extends BaseModel
 {
-    protected string $table = 'inscriptions';
+    protected string $table = TABLES::INSCRIPTIONS;
     protected string $primaryKey = 'id_inscription';
     protected ?string $statusField = 'statut_inscription';
     protected ?string $createdAtField = 'created_at_inscription';
@@ -16,7 +16,7 @@ class ModelInscription extends BaseModel
         try {
             // 1. Tous les étudiants
             $students = $db->query("
-                SELECT id_etudiant, code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, telephone_etudiant, email_etudiant, photo_etudiant, statut_etudiant
+                SELECT id_etudiant, code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, telephone_etudiant, email_etudiant, photo_etudiant, statut_etudiant
                 FROM " . TABLES::ETUDIANTS . "
                 ORDER BY id_etudiant DESC
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -25,7 +25,7 @@ class ModelInscription extends BaseModel
             $stmtCur = $db->prepare("
                 SELECT DISTINCT etudiant_code
                 FROM " . TABLES::INSCRIPTIONS . "
-                WHERE annee_code = ? AND statut_inscription != 'annule'
+                WHERE annee_code = ? AND statut_inscription != '" . STATUTS::ANNULE . "'
             ");
             $stmtCur->execute([$activeAnneeCode]);
             $curCodes = $stmtCur->fetchAll(PDO::FETCH_COLUMN) ?: [];
@@ -45,7 +45,7 @@ class ModelInscription extends BaseModel
                     LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
                     LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
                     LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-                    WHERE i.annee_code = ? AND i.statut_inscription != 'annule'
+                    WHERE i.annee_code = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                     ORDER BY i.id_inscription DESC
                 ");
                 $stmtPrior->execute([$filterAnnee]);
@@ -58,7 +58,7 @@ class ModelInscription extends BaseModel
                     LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
                     LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
                     LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-                    WHERE i.annee_code != ? AND i.statut_inscription != 'annule'
+                    WHERE i.annee_code != ? AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                     ORDER BY i.id_inscription DESC
                 ");
                 $stmtPrior->execute([$activeAnneeCode]);
@@ -145,7 +145,7 @@ class ModelInscription extends BaseModel
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
                 WHERE (i.etudiant_code = ? OR i.etudiant_code = ?)
                   AND i.annee_code = ?
-                  AND i.statut_inscription != 'annule'
+                  AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                 LIMIT 1
             ");
             $stmtThisYear->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant'], $anneeActive]);
@@ -162,6 +162,7 @@ class ModelInscription extends BaseModel
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON (a.code_annee = i.annee_code OR a.id_annee = i.annee_code)
                 WHERE i.etudiant_code = ?
+                  AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                 ORDER BY i.id_inscription DESC
                 LIMIT 1
             ");
@@ -187,17 +188,8 @@ class ModelInscription extends BaseModel
         $db = $this->getCon();
         try {
             $stmt = $db->prepare("
-                SELECT ins.*, 
-                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant, e.sexe_etudiant, e.date_naissance_etudiant,
-                       cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
-                       a.libelle_annee
-                FROM " . TABLES::INSCRIPTIONS . " ins
-                LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = ins.etudiant_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
-                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = ins.annee_code
-                WHERE ins.id_inscription = ? OR ins.code_inscription = ?
+                SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
+                WHERE id_inscription = ? OR code_inscription = ?
                 LIMIT 1
             ");
             $numericId = is_numeric($idOrCode) ? (int)$idOrCode : 0;
@@ -219,7 +211,7 @@ class ModelInscription extends BaseModel
             $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
             $totalPaye = 0;
             foreach ($paiements as $p) {
-                if (($p['statut_paiement'] ?? '') !== 'annule') {
+                if (($p['statut_paiement'] ?? '') !== STATUTS::ANNULE) {
                     $totalPaye += (float)($p['montant_paiement'] ?? 0);
                 }
             }
@@ -268,7 +260,7 @@ class ModelInscription extends BaseModel
                 JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-                WHERE 1=1
+                WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
             ";
 
             $params = [];
@@ -286,9 +278,9 @@ class ModelInscription extends BaseModel
             }
 
             if ($filterPhoto === 'sans_photo') {
-                $sql .= " AND (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '')";
+                $sql .= " AND (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '') AND (e.photo_etudiant IS NULL OR TRIM(e.photo_etudiant) = '')";
             } elseif ($filterPhoto === 'avec_photo') {
-                $sql .= " AND i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != ''";
+                $sql .= " AND ((i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != '') OR (e.photo_etudiant IS NOT NULL AND TRIM(e.photo_etudiant) != ''))";
             }
 
             $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC";
@@ -299,6 +291,66 @@ class ModelInscription extends BaseModel
         } catch (Exception $e) {
             error_log("ModelInscription::getInscriptionsSansPhoto error: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Calcule les métriques et KPIs statistiques de la prise de vue
+     */
+    public function getPriseDeVueStats(string $anneeCode = '', string $filiereCode = '', string $classeCode = ''): array
+    {
+        $db = $this->getCon();
+        try {
+            $sql = "
+                SELECT 
+                    COUNT(DISTINCT i.id_inscription) AS total,
+                    COUNT(DISTINCT CASE 
+                        WHEN (i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != '') 
+                          OR (e.photo_etudiant IS NOT NULL AND TRIM(e.photo_etudiant) != '') 
+                        THEN i.id_inscription 
+                    END) AS avec_photo,
+                    COUNT(DISTINCT CASE 
+                        WHEN (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '') 
+                         AND (e.photo_etudiant IS NULL OR TRIM(e.photo_etudiant) = '') 
+                        THEN i.id_inscription 
+                    END) AS sans_photo
+                FROM " . TABLES::INSCRIPTIONS . " i
+                JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+                JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+                WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
+            ";
+            $params = [];
+            if (!empty($anneeCode)) {
+                $sql .= " AND i.annee_code = ?";
+                $params[] = $anneeCode;
+            }
+            if (!empty($filiereCode)) {
+                $sql .= " AND cl.filiere_code = ?";
+                $params[] = $filiereCode;
+            }
+            if (!empty($classeCode)) {
+                $sql .= " AND i.classe_code = ?";
+                $params[] = $classeCode;
+            }
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $res = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $total = (int)($res['total'] ?? 0);
+            $avecPhoto = (int)($res['avec_photo'] ?? 0);
+            $sansPhoto = (int)($res['sans_photo'] ?? 0);
+            $taux = ($total > 0) ? round(($avecPhoto / $total) * 100, 1) : 0.0;
+
+            return [
+                'total' => $total,
+                'avec_photo' => $avecPhoto,
+                'sans_photo' => $sansPhoto,
+                'taux' => $taux
+            ];
+        } catch (Exception $e) {
+            error_log("ModelInscription::getPriseDeVueStats error: " . $e->getMessage());
+            return ['total' => 0, 'avec_photo' => 0, 'sans_photo' => 0, 'taux' => 0.0];
         }
     }
 
@@ -324,6 +376,7 @@ class ModelInscription extends BaseModel
                 LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
                 WHERE " . (is_numeric($idOrCode) && (int)$idOrCode > 0 ? "i.id_inscription = ?" : "i.code_inscription = ?") . "
+                  AND i.statut_inscription != '" . STATUTS::ANNULE . "'
                 LIMIT 1
             ");
             $stmtInfo->execute([$idOrCode]);
@@ -368,9 +421,9 @@ class ModelInscription extends BaseModel
             $stmtFallback->execute([$activeAnneeCode]);
             $anneesCloturees = $stmtFallback->fetchAll(PDO::FETCH_ASSOC) ?: [];
         }
-        $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         return [
             'anneesCloturees' => $anneesCloturees,
@@ -386,8 +439,8 @@ class ModelInscription extends BaseModel
     public function getPriseDeVueDependencies(): array
     {
         $db = $this->getCon();
-        $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code FROM " . TABLES::CLASSES . " WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         return [
             'filieres' => $filieres,
             'classes' => $classes
@@ -424,7 +477,7 @@ class ModelInscription extends BaseModel
             LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
             WHERE (i.etudiant_code = ? OR i.etudiant_code = ?)
               AND i.annee_code = ?
-              AND i.statut_inscription != 'annule'
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmtThisYear->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant'], $anneeActive]);
@@ -452,6 +505,10 @@ class ModelInscription extends BaseModel
         $hasHistory = false;
         $suggestedNextClassCode = '';
         $suggestedNextClassLibelle = '';
+        $decisionConseil = 'Nouvel inscrit';
+        $decisionBadge = 'secondary';
+        $moyenneN1 = null;
+        $mentionN1 = 'Non évalué';
 
         if ($prevIns) {
             $hasHistory = true;
@@ -460,12 +517,44 @@ class ModelInscription extends BaseModel
             $stmtP = $db->prepare("
                 SELECT SUM(montant_paiement) as total_paye 
                 FROM " . TABLES::PAIEMENTS . " 
-                WHERE inscription_code = ? AND statut_paiement != 'annule'
+                WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'
             ");
             $stmtP->execute([$prevIns['code_inscription']]);
             $rowP = $stmtP->fetch(PDO::FETCH_ASSOC);
             $prevPaye = (float)($rowP['total_paye'] ?? 0);
             $prevSolde = max(0, $prevDue - $prevPaye);
+
+            // Bilan Académique & Décision du Conseil selon le bulletin de la session passée
+            $decisionConseil = 'Autorisé(e) à se réinscrire';
+            $decisionBadge = 'info';
+
+            if (!empty($prevIns['id_inscription'])) {
+                try {
+                    require_once __DIR__ . '/../bulletin/ModelBulletin.php';
+                    $modelBulletin = new ModelBulletin();
+                    $bulletinData = $modelBulletin->calculateBulletinData((int)$prevIns['id_inscription']);
+                    if ($bulletinData && isset($bulletinData['moyenneGenerale'])) {
+                        $mg = (float)$bulletinData['moyenneGenerale'];
+                        $hasNotes = ($mg > 0 || !empty($bulletinData['notesDetails']) || ($bulletinData['totalCoefficients'] ?? 0) > 0);
+                        if ($hasNotes) {
+                            $moyenneN1 = $mg;
+                            $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : ($mg >= 10 ? 'Passable' : 'Ajourné(e)');
+                            if ($mg >= 10) {
+                                $decisionConseil = 'Admis(e) en classe supérieure';
+                                $decisionBadge = 'success';
+                            } else {
+                                $decisionConseil = 'Ajourné(e) / Redoublement';
+                                $decisionBadge = 'warning';
+                            }
+                        } else {
+                            $decisionConseil = 'Autorisé(e) à se réinscrire (Sans notes)';
+                            $decisionBadge = 'info';
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("ModelInscription::getStudentProfileForReinscription bulletin: " . $e->getMessage());
+                }
+            }
 
             if (!empty($prevIns['filiere_code']) && !empty($prevIns['niveau_code'])) {
                 $stmtNiv = $db->prepare("SELECT id_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ? LIMIT 1");
@@ -480,7 +569,7 @@ class ModelInscription extends BaseModel
                         WHERE c.filiere_code = ? 
                           AND n.id_niveau = ?
                           AND (c.annee_code = ? OR ? = '')
-                          AND c.statut_classe = 'actif'
+                          AND c.statut_classe = '" . STATUTS::ACTIF . "'
                         ORDER BY c.id_classe ASC
                         LIMIT 1
                     ");
@@ -508,7 +597,7 @@ class ModelInscription extends BaseModel
             LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = p.inscription_code
             LEFT JOIN " . TABLES::ANNEES . " a ON (a.code_annee = i.annee_code OR a.id_annee = i.annee_code)
             WHERE (i.etudiant_code = ? OR i.etudiant_code = ?)
-              AND p.statut_paiement != 'annule'
+              AND p.statut_paiement != '" . STATUTS::ANNULE . "'
             ORDER BY p.date_paiement DESC, p.id_paiement DESC
         ");
         $stmtPai->execute([$etudiant['code_etudiant'], $etudiant['matricule_etudiant'] ?? '']);
@@ -516,16 +605,16 @@ class ModelInscription extends BaseModel
 
         $stmtAcc = $db->prepare("
             SELECT a.code_accessoire, a.libelle_accessoire, COALESCE(ai.statut_accessoire_inscription, 'actif') as statut
-            FROM accessoire_inscription ai
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
             JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
-            JOIN accessoires a ON a.code_accessoire = ai.accessoire_code
+            JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
             WHERE i.etudiant_code = ?
             ORDER BY (CASE WHEN ai.annee_code = ? THEN 1 ELSE 2 END), ai.id_accessoire_inscription DESC
         ");
         $stmtAcc->execute([$etudiantCode, $anneeActive]);
         $accessoiresEtudiant = $stmtAcc->fetchAll(PDO::FETCH_ASSOC);
         if (empty($accessoiresEtudiant)) {
-            $stmtAllAcc = $db->query("SELECT code_accessoire, libelle_accessoire, 'disponible' as statut FROM accessoires WHERE statut_accessoire = 'actif'");
+            $stmtAllAcc = $db->query("SELECT code_accessoire, libelle_accessoire, 'disponible' as statut FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "'");
             $accessoiresEtudiant = $stmtAllAcc ? $stmtAllAcc->fetchAll(PDO::FETCH_ASSOC) : [];
         }
 
@@ -560,6 +649,10 @@ class ModelInscription extends BaseModel
             'dernier_niveau_code' => $prevIns['niveau_code'] ?? '',
             'derniere_filiere_code' => $prevIns['filiere_code'] ?? '',
             'derniere_annee' => $prevIns['libelle_annee'] ?? '',
+            'decision_conseil' => $decisionConseil,
+            'decision_badge' => $decisionBadge,
+            'moyenne_n1' => $moyenneN1,
+            'mention_n1' => $mentionN1,
             'suggested_next_class_code' => $suggestedNextClassCode,
             'suggested_next_class_libelle' => $suggestedNextClassLibelle,
             'prev_affectation_etat' => (($prevIns['affectation_etat'] ?? '') === 'affecte' || ($prevIns['affectation_etat'] ?? '') === 'oui') ? 'affecte' : 'non_affecte',
@@ -605,12 +698,12 @@ class ModelInscription extends BaseModel
         $activeAnneeCode = !empty($anneeCodeReq) ? $anneeCodeReq : $classAnneeCode;
 
         $stmtSco = $db->prepare("
-            SELECT * FROM scolarites 
+            SELECT * FROM " . TABLES::SCOLARITES . " 
             WHERE filiere_code = ? 
               AND (annee_code = ? OR ? = '')
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
               AND affectation_etat = ?
-              AND statut_scolarite = 'actif'
+              AND statut_scolarite = '" . STATUTS::ACTIF . "'
             ORDER BY 
               (CASE WHEN annee_code = ? THEN 1 ELSE 2 END),
               (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END),
@@ -635,9 +728,9 @@ class ModelInscription extends BaseModel
         $tranches = [];
         if (!empty($codeScolarite)) {
             $stmtTr = $db->prepare("
-                SELECT * FROM tranches_scolarite 
+                SELECT * FROM " . TABLES::TRANCHES_SCOLARITE . " 
                 WHERE scolarite_code = ? 
-                  AND statut_tranche = 'actif'
+                  AND statut_tranche = '" . STATUTS::ACTIF . "'
                 ORDER BY id_tranche ASC
             ");
             $stmtTr->execute([$codeScolarite]);
@@ -669,6 +762,8 @@ class ModelInscription extends BaseModel
         $totalFraisAnnexes = $modelFraisAnnexe->getMontantByTypeFiliere($typeFiliere, $activeAnneeCode, $niveauCode, 'inscription');
         $fraisAnnexeDetails = $modelFraisAnnexe->getFraisAnnexeDetails($typeFiliere, $activeAnneeCode, $niveauCode, 'inscription');
 
+        $kitsEligibles = (new ModelAccessoire())->getEligibleKitsForClass($filiereCode, $niveauCode, $activeAnneeCode);
+
         return [
             'classe_code' => $classe['code_classe'],
             'libelle_classe' => $classe['libelle_classe'],
@@ -696,7 +791,8 @@ class ModelInscription extends BaseModel
             'categorie_frais_annexe' => $fraisAnnexeDetails['categorie_frais_annexe'] ?? 'inscription',
             'libelle_categorie_frais_annexe' => 'Inscription',
             'total_frais_inscription' => $fraisInscription + $totalFraisAnnexes,
-            'total_frais_inscription_formate' => number_format($fraisInscription + $totalFraisAnnexes, 0, ',', ' ') . ' FCFA'
+            'total_frais_inscription_formate' => number_format($fraisInscription + $totalFraisAnnexes, 0, ',', ' ') . ' FCFA',
+            'kits_eligibles' => $kitsEligibles
         ];
     }
 
@@ -720,16 +816,16 @@ class ModelInscription extends BaseModel
 
         $matriculeEtudiant = trim($data['matricule_etudiant'] ?? '');
         if (empty($matriculeEtudiant)) {
-            $matriculeEtudiant = $validator->generateCode('etudiants', 'matricule_etudiant', 'ETU-' . date('Y') . '-', 4);
+            $matriculeEtudiant = $validator->generateCode(TABLES::ETUDIANTS, 'matricule_etudiant', 'ETU-' . date('Y') . '-', 4);
         }
 
-        $codeEtudiant = $validator->generateCode('etudiants', 'code_etudiant', 'ETU-', 8);
+        $codeEtudiant = $validator->generateCode(TABLES::ETUDIANTS, 'code_etudiant', 'ETU-', 8);
 
         try {
             $db->beginTransaction();
 
             // A. Création Étudiant
-            $fkErrEtu = ForeignKeyValidator::validate($db, 'etudiants', [
+            $fkErrEtu = ForeignKeyValidator::validate($db, TABLES::ETUDIANTS, [
                 'etablissement_code' => $etabCode
             ]);
             if ($fkErrEtu !== null) {
@@ -738,7 +834,7 @@ class ModelInscription extends BaseModel
             }
 
             $stmtEtu = $db->prepare("
-                INSERT INTO etudiants 
+                INSERT INTO " . TABLES::ETUDIANTS . " 
                 (code_etudiant, matricule_etudiant, nom_etudiant, prenom_etudiant, sexe_etudiant, date_naissance_etudiant, lieu_naissance_etudiant, nationalite_etudiant, telephone_etudiant, email_etudiant, lieu_residence_etudiant, user_code, etablissement_code, statut_etudiant, created_at_etudiant)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW())
             ");
@@ -760,8 +856,8 @@ class ModelInscription extends BaseModel
 
             // B. Création Parent
             if (!empty($data['nom_tuteur']) || !empty($data['nom_pere']) || !empty($data['nom_mere']) || !empty($data['telephone_tuteur']) || !empty($data['telephone_pere'])) {
-                $codeParent = $validator->generateCode('parents', 'code_parent', 'PAR-', 8);
-                $fkErrPar = ForeignKeyValidator::validate($db, 'parents', [
+                $codeParent = $validator->generateCode(TABLES::PARENTS, 'code_parent', 'PAR-', 8);
+                $fkErrPar = ForeignKeyValidator::validate($db, TABLES::PARENTS, [
                     'etudiant_code' => $codeEtudiant,
                     'etablissement_code' => $etabCode
                 ]);
@@ -771,7 +867,7 @@ class ModelInscription extends BaseModel
                 }
 
                 $stmtPar = $db->prepare("
-                    INSERT INTO parents 
+                    INSERT INTO " . TABLES::PARENTS . " 
                     (code_parent, etudiant_code, nom_pere, telephone_pere, profession_pere, nom_mere, telephone_mere, profession_mere, nom_tuteur, telephone_tuteur, user_code, etablissement_code, created_at_parent)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
@@ -792,8 +888,8 @@ class ModelInscription extends BaseModel
             }
 
             // C. Création Inscription
-            $codeInscription = $validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
-            $fkErrIns = ForeignKeyValidator::validate($db, 'inscriptions', [
+            $codeInscription = $validator->generateCode(TABLES::INSCRIPTIONS, 'code_inscription', 'INS-', 8);
+            $fkErrIns = ForeignKeyValidator::validate($db, TABLES::INSCRIPTIONS, [
                 'etudiant_code' => $codeEtudiant,
                 'classe_code' => $data['classe_code'],
                 'annee_code' => $anneeCode,
@@ -805,7 +901,7 @@ class ModelInscription extends BaseModel
             }
 
             $stmtIns = $db->prepare("
-                INSERT INTO inscriptions 
+                INSERT INTO " . TABLES::INSCRIPTIONS . " 
                 (code_inscription, etudiant_code, classe_code, montant_scolarite_inscription, annee_code, user_code, etablissement_code, statut_inscription, affectation_etat, created_at_inscription)
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'valide', 'non', NOW())
             ");
@@ -818,6 +914,40 @@ class ModelInscription extends BaseModel
                 $userCode,
                 $etabCode
             ]);
+
+            // D. Attribution automatique des Kits / Accessoires configurés pour la classe et l'année académique
+            $kitsCodesToAssign = [];
+            if (!empty($data['accessoires']) && is_array($data['accessoires'])) {
+                $kitsCodesToAssign = array_values(array_filter(array_map('trim', $data['accessoires'])));
+            } else {
+                $stmtClKit = $db->prepare("SELECT filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
+                $stmtClKit->execute([$data['classe_code']]);
+                $clKitRow = $stmtClKit->fetch(PDO::FETCH_ASSOC);
+                if ($clKitRow) {
+                    $eligibleKits = (new ModelAccessoire())->getEligibleKitsForClass($clKitRow['filiere_code'] ?? null, $clKitRow['niveau_code'] ?? null, $anneeCode);
+                    $kitsCodesToAssign = array_column($eligibleKits, 'code_accessoire');
+                }
+            }
+
+            if (!empty($kitsCodesToAssign)) {
+                $stmtAcc = $db->prepare("
+                    INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                    (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+                    VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
+                ");
+                foreach ($kitsCodesToAssign as $accCode) {
+                    if (empty($accCode)) continue;
+                    $codeAccIns = $validator->generateCode(TABLES::ACCESSOIRE_INSCRIPTION, 'code_accessoire_inscription', 'ACI-', 8);
+                    $stmtAcc->execute([
+                        $codeAccIns,
+                        $codeInscription,
+                        $accCode,
+                        $anneeCode,
+                        $userCode,
+                        $etabCode
+                    ]);
+                }
+            }
 
             $db->commit();
             return ['success' => true, 'message' => "Dossier d'inscription créé avec succès pour l'étudiant $nomEtudiant $prenomEtudiant !"];
@@ -851,7 +981,7 @@ class ModelInscription extends BaseModel
             LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
             WHERE (i.etudiant_code = ? OR i.etudiant_code = (SELECT matricule_etudiant FROM " . TABLES::ETUDIANTS . " WHERE code_etudiant = ? LIMIT 1))
               AND i.annee_code = ?
-              AND i.statut_inscription != 'annule'
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmtCheck->execute([$data['etudiant_code'], $data['etudiant_code'], $anneeCode]);
@@ -868,7 +998,7 @@ class ModelInscription extends BaseModel
             LEFT JOIN " . TABLES::ANNEES . " a ON (a.code_annee = i.annee_code OR a.id_annee = i.annee_code)
             WHERE (i.etudiant_code = ? OR i.etudiant_code = (SELECT matricule_etudiant FROM " . TABLES::ETUDIANTS . " WHERE code_etudiant = ? LIMIT 1))
               AND i.annee_code != ?
-              AND i.statut_inscription != 'annule'
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             ORDER BY i.id_inscription DESC
             LIMIT 1
         ");
@@ -877,7 +1007,7 @@ class ModelInscription extends BaseModel
         $prevSolde = 0;
         if ($prevIns) {
             $prevDue = (float)($prevIns['montant_scolarite_inscription'] ?? 0);
-            $stmtP = $db->prepare("SELECT SUM(montant_paiement) as total_paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != 'annule'");
+            $stmtP = $db->prepare("SELECT SUM(montant_paiement) as total_paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'");
             $stmtP->execute([$prevIns['code_inscription']]);
             $prevPaye = (float)($stmtP->fetch(PDO::FETCH_ASSOC)['total_paye'] ?? 0);
             $prevSolde = max(0, $prevDue - $prevPaye);
@@ -924,12 +1054,12 @@ class ModelInscription extends BaseModel
         $codeScolarite = '';
         if ($cl) {
             $stmtSco = $db->prepare("
-                SELECT code_scolarite, montant_scolarite FROM scolarites 
+                SELECT code_scolarite, montant_scolarite FROM " . TABLES::SCOLARITES . " 
                 WHERE filiere_code = ? 
                   AND (annee_code = ? OR ? = '')
                   AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
                   AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
-                  AND statut_scolarite = 'actif'
+                  AND statut_scolarite = '" . STATUTS::ACTIF . "'
                 ORDER BY 
                   (CASE WHEN annee_code = ? THEN 1 ELSE 2 END),
                   (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END),
@@ -962,9 +1092,9 @@ class ModelInscription extends BaseModel
         if (!empty($codeScolarite)) {
             $stmtTr = $db->prepare("
                 SELECT libelle_tranche, montant_tranche, date_limite 
-                FROM tranches_scolarite 
+                FROM " . TABLES::TRANCHES_SCOLARITE . " 
                 WHERE scolarite_code = ? 
-                  AND statut_tranche = 'actif'
+                  AND statut_tranche = '" . STATUTS::ACTIF . "'
                 ORDER BY id_tranche ASC
             ");
             $stmtTr->execute([$codeScolarite]);
@@ -979,7 +1109,7 @@ class ModelInscription extends BaseModel
         $data['date_inscription'] = date('Y-m-d');
 
         if (empty($data['code_inscription'])) {
-            $data['code_inscription'] = $validator->generateCode('inscriptions', 'code_inscription', 'INS-', 8);
+            $data['code_inscription'] = $validator->generateCode(TABLES::INSCRIPTIONS, 'code_inscription', 'INS-', 8);
         }
         $codeInscription = $data['code_inscription'];
         $data['statut_inscription'] = $data['statut_inscription'] ?? 'valide';
@@ -990,6 +1120,43 @@ class ModelInscription extends BaseModel
         
         $filteredData = $this->filterData($data);
         if ($this->create($filteredData)) {
+            // Attribution automatique des Kits / Accessoires configurés pour la filière, le niveau et l'année de réinscription
+            try {
+                $kitsCodesToAssign = [];
+                if (!empty($data['accessoires']) && is_array($data['accessoires'])) {
+                    $kitsCodesToAssign = array_values(array_filter(array_map('trim', $data['accessoires'])));
+                } elseif ($cl) {
+                    $eligibleKits = (new ModelAccessoire())->getEligibleKitsForClass($cl['filiere_code'] ?? null, $cl['niveau_code'] ?? null, $anneeCode);
+                    $kitsCodesToAssign = array_column($eligibleKits, 'code_accessoire');
+                }
+
+                if (!empty($kitsCodesToAssign)) {
+                    $stmtChkAccIns = $db->prepare("SELECT id_accessoire_inscription FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " WHERE inscription_code = ? AND accessoire_code = ? LIMIT 1");
+                    $stmtInsAcc = $db->prepare("
+                        INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
+                        (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+                        VALUES (?, ?, ?, ?, 'actif', 'en_attente', ?, ?, NOW())
+                    ");
+                    foreach ($kitsCodesToAssign as $accCode) {
+                        if (empty($accCode)) continue;
+                        $stmtChkAccIns->execute([$codeInscription, $accCode]);
+                        if ($stmtChkAccIns->fetchColumn()) continue;
+
+                        $codeAccIns = $validator->generateCode(TABLES::ACCESSOIRE_INSCRIPTION, 'code_accessoire_inscription', 'ACI-', 8);
+                        $stmtInsAcc->execute([
+                            $codeAccIns,
+                            $codeInscription,
+                            $accCode,
+                            $anneeCode,
+                            $userCode,
+                            $etabCode
+                        ]);
+                    }
+                }
+            } catch (Exception $eKit) {
+                error_log("ModelInscription::processReinscription kits error: " . $eKit->getMessage());
+            }
+
             $stmtE = $db->prepare("SELECT nom_etudiant, prenom_etudiant, matricule_etudiant, telephone_etudiant FROM " . TABLES::ETUDIANTS . " WHERE code_etudiant = ? OR matricule_etudiant = ? LIMIT 1");
             $stmtE->execute([$data['etudiant_code'], $data['etudiant_code']]);
             $etuRow = $stmtE->fetch(PDO::FETCH_ASSOC);
@@ -1035,12 +1202,12 @@ class ModelInscription extends BaseModel
         if (!$cl) return null;
 
         $stmtSco = $db->prepare("
-            SELECT montant_scolarite FROM scolarites 
+            SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " 
             WHERE filiere_code = ? 
               AND (annee_code = ? OR ? = '')
               AND (niveau_code = ? OR niveau_code = '' OR niveau_code IS NULL)
               AND (affectation_etat = ? OR affectation_etat = '' OR affectation_etat IS NULL)
-              AND statut_scolarite = 'actif'
+              AND statut_scolarite = '" . STATUTS::ACTIF . "'
             ORDER BY 
               (CASE WHEN annee_code = ? THEN 1 ELSE 2 END),
               (CASE WHEN niveau_code = ? THEN 1 ELSE 2 END),
@@ -1070,17 +1237,9 @@ class ModelInscription extends BaseModel
         $id = $param;
 
         $stmtIns = $db->prepare("
-            SELECT i.*, 
-                   e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.matricule_mesrs, 
-                   e.date_naissance_etudiant, e.lieu_naissance_etudiant, e.nationalite_etudiant, e.sexe_etudiant, e.photo_etudiant,
-                   cl.libelle_classe, f.libelle_filiere, f.slug_filiere, n.libelle_niveau, n.slug_niveau, a.libelle_annee
-            FROM " . TABLES::INSCRIPTIONS . " i
-            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-            WHERE i.id_inscription = ? OR i.code_inscription = ? OR e.code_etudiant = ? OR e.matricule_etudiant = ? OR e.id_etudiant = ?
+            SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
+            WHERE (id_inscription = ? OR code_inscription = ? OR code_etudiant = ? OR matricule_etudiant = ? OR id_etudiant = ?)
+              AND statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmtIns->execute([$id, $id, $id, $id, $id]);
@@ -1094,7 +1253,7 @@ class ModelInscription extends BaseModel
             SELECT p.*, u.nom_user, u.prenom_user
             FROM " . TABLES::PAIEMENTS . " p
             LEFT JOIN " . TABLES::USERS . " u ON u.code_user = p.user_code
-            WHERE p.inscription_code = ? AND p.statut_paiement != 'annule'
+            WHERE p.inscription_code = ? AND p.statut_paiement != '" . STATUTS::ANNULE . "'
             ORDER BY p.id_paiement ASC
         ");
         $stmtAllPai->execute([$ins['code_inscription']]);
@@ -1172,7 +1331,7 @@ class ModelInscription extends BaseModel
             }
         }
         if (empty($photoSrc)) {
-            $placeholderPath = __DIR__ . '/../../public/assets/images/placeholders/etudiant.png';
+            $placeholderPath = placeholderPath('etudiant');
             if (file_exists($placeholderPath) && is_file($placeholderPath)) {
                 $photoSrc = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderPath));
             }
@@ -1185,8 +1344,8 @@ class ModelInscription extends BaseModel
         $premiereTrancheMontant = 0;
         if (!empty($filiereCode) && !empty($niveauCode) && !empty($anneeCode)) {
             $stmtTranche = $db->prepare("
-                SELECT montant_tranche FROM tranches_scolarite
-                WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_tranche = 'actif'
+                SELECT montant_tranche FROM " . TABLES::TRANCHES_SCOLARITE . "
+                WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_tranche = '" . STATUTS::ACTIF . "'
                 ORDER BY id_tranche ASC LIMIT 1
             ");
             $stmtTranche->execute([$filiereCode, $niveauCode, $anneeCode]);

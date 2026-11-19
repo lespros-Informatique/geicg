@@ -1,3 +1,10 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -136,25 +143,8 @@
 </head>
 <body>
 
-  <!-- EN-TÊTE -->
-  <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-  ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 22%; vertical-align: middle;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 50px; max-width: 140px;">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#990000; font-size:14px;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 78%; text-align: center; vertical-align: middle;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">AGREE PAR L'ETAT ET LE FDFP</div>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- TITRE DE LA CONVOCATION -->
   <div class="convocation-box">CONVOCATION</div>
@@ -289,9 +279,9 @@
     </table>
     
     <div class="footer-contacts">
-      Contacts : Bouaké quartier Kennedy, route ancien ADDR près de l’ONG SAVE THE CHILDREN<br>
-      01 BP 960 Bouaké 01 – Email : eicgbouake01@gmail.com<br>
-      Tél : 27 31 62 40 57 – Cél : 07 79 37 37 38 / 05 04 59 39 99
+      Contacts : <?= htmlspecialchars($etablissement['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?><br>
+      <?= htmlspecialchars($etablissement['boite_postale'] ?? '01 BP 960 Bouaké 01') ?> – Email : <?= htmlspecialchars($etablissement['email_etablissement'] ?? 'eicgbouake01@gmail.com') ?><br>
+      Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 – Cél : 07 79 37 37 38 / 05 04 59 39 99') ?>
     </div>
   </div>
 

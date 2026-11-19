@@ -1,7 +1,5 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$item = $item ?? [];
-$paiements = $paiements ?? [];
 $kpis = $kpis ?? [];
 
 $fondInitial = (float)($kpis['fond_initial'] ?? ($item['fond_initial'] ?? 0));
@@ -18,14 +16,6 @@ $totalFraisAnnexes = (float)($kpis['total_frais_annexes'] ?? 0);
 $soldeAttendu = (float)($kpis['solde_attendu'] ?? ($fondInitial + $totalValide));
 $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
 ?>
-<style>
-@media print {
-  body { background: #FFF !important; margin: 0; padding: 0; }
-  .app-layout > *:not(.main-content), .main-content > *:not(.content-wrapper), .page-header, .btn-no-print { display: none !important; }
-  .content-wrapper { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-  .print-area { border: none !important; box-shadow: none !important; padding: 0 !important; width: 100% !important; }
-}
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -41,7 +31,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
           <button onclick="window.print()" class="btn btn-secondary btn-no-print" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le PV
           </button>
-          <a href="<?= RACINE ?>session_caisse/list" class="btn btn-secondary btn-no-print" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('session_caisse/list') ?>" class="btn btn-secondary btn-no-print" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour
           </a>
         </div>
@@ -60,7 +50,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
               <img src="<?= $logoUrl ?>" alt="Logo GROUPE EICG" style="max-height: 65px; width: auto; object-fit: contain;">
             <?php endif; ?>
             <div>
-              <span style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 1px;">Établissement GEICG &bull; Service Comptabilité & Caisse</span>
+              <span style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 1px;"><?= htmlspecialchars($etablissementConfig['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?> &bull; <?= htmlspecialchars($etablissementConfig['titre_service_finance'] ?? 'Service Comptabilité & Caisse') ?></span>
               <h2 style="font-size: 22px; font-weight: 900; color: #0F172A; margin: 4px 0 0 0;">Procès-Verbal de Session de Caisse</h2>
               <div style="font-size: 13px; color: #64748B; margin-top: 4px;">
                 Date de session : <strong><?= date('d/m/Y', strtotime($item['date_session'])) ?></strong>
@@ -74,7 +64,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
             <div style="margin-top: 8px;">
               <?php if ($item['statut_session'] === 'ouverte'): ?>
                 <span class="badge" style="background: #DCFCE7; color: #15803D; font-weight: 800; padding: 5px 12px; border-radius: 20px; font-size: 12px;">En cours (Ouverte)</span>
-              <?php elseif ($item['statut_session'] === 'valide'): ?>
+              <?php elseif ($item['statut_session'] === STATUTS::VALIDE): ?>
                 <span class="badge" style="background: #DBEAFE; color: #1E40AF; font-weight: 800; padding: 5px 12px; border-radius: 20px; font-size: 12px;">Clôturée & Validée</span>
               <?php else: ?>
                 <span class="badge" style="background: #FEF3C7; color: #B45309; font-weight: 800; padding: 5px 12px; border-radius: 20px; font-size: 12px;">Clôturée</span>
@@ -234,7 +224,7 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
                 </tr>
               <?php else: ?>
                 <?php $idx = 1; foreach ($paiements as $p): 
-                  $isAnnule = (strtolower($p['statut_paiement'] ?? '') === 'annule');
+                  $isAnnule = (strtolower($p['statut_paiement'] ?? '') === STATUTS::ANNULE);
                   $rowBg = $isAnnule ? '#FEF2F2' : '#FFFFFF';
                   $cat = strtoupper($p['categorie_paiement'] ?? 'SCOLARITE');
                   $typeLib = !empty($p['type_paiement']) ? $p['type_paiement'] : ($cat === 'FRAIS_ANNEXES' ? 'Frais Annexes' : 'Scolarité');
@@ -355,5 +345,4 @@ $ecart = (float)($kpis['ecart_caisse'] ?? ($item['ecart_caisse'] ?? 0));
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

@@ -10,43 +10,48 @@ class ClasseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_CLASSES');
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = (new ModelAnnee())->getByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $modelFiliere = new ModelFiliere();
+        $modelNiveau = new ModelNiveau();
+        $filieres = $modelFiliere->getAll();
+        $niveaux = $modelNiveau->getActifs();
+
+        if ($activeYear === null) {
+            $this->loadView('../views/classes/list.php', [
+                'annees' => $annees,
+                'selectedAnneeCode' => '',
+                'parcoursPivots' => [],
+                'filieres' => $filieres,
+                'niveaux' => $niveaux
+            ]);
+            return;
         }
 
-        $activeYear = $this->getActiveAnneeCode();
-        $annees = (new ModelAnnee())->getAll();
         $parcoursPivots = $this->model->getParcoursPivots();
 
         $this->loadView('../views/classes/list.php', [
             'annees' => $annees,
             'selectedAnneeCode' => $activeYear,
-            'parcoursPivots' => $parcoursPivots
+            'parcoursPivots' => $parcoursPivots,
+            'filieres' => $filieres,
+            'niveaux' => $niveaux
         ]);
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_CLASSES');
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = (new ModelAnnee())->getByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
         $items = $this->model->getAllWithDetails($anneeCode);
         $data = [];
         foreach ($items as $i) {
@@ -64,7 +69,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -103,7 +108,7 @@ class ClasseController extends BaseController
 
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_classe'])) {
-            $data['code_classe'] = $this->validator->generateCode('classes', 'code_classe', 'CLA-', 8);
+            $data['code_classe'] = $this->validator->generateCode(TABLES::CLASSES, 'code_classe', 'CLA-', 8);
         }
         $data['statut_classe'] = (!empty($data['statut_classe']) && in_array($data['statut_classe'], ['actif', 'inactif'], true)) ? $data['statut_classe'] : 'actif';
         $data['created_at_classe'] = date('Y-m-d H:i:s');
@@ -113,7 +118,15 @@ class ClasseController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
-            $this->success('Classe créée avec succès!', ['redirect' => RACINE . 'classe/list']);
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'classes',
+                $data['code_classe'],
+                "Création de la classe '{$data['libelle_classe']}' ({$data['code_classe']})",
+                $filteredData,
+                $etabCode
+            );
+            $this->success('Classe créée avec succès!', ['redirect' => url('classe/list')]);
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de la création de la classe.';
             $this->error($err);
@@ -124,7 +137,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $id = (int)$this->post('id_classe');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -168,7 +181,14 @@ class ClasseController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Classe modifiée avec succès!', ['redirect' => RACINE . 'classe/list']);
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'classes',
+                (string)$id,
+                "Modification de la classe '" . ($data['libelle_classe'] ?? $id) . "'",
+                $filteredData
+            );
+            $this->success('Classe modifiée avec succès!', ['redirect' => url('classe/list')]);
         } else {
             $err = $this->model->getLastError() ?: 'Erreur lors de la modification de la classe.';
             $this->error($err);
@@ -179,10 +199,17 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($cls = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'classes',
+                    $cls['code_classe'] ?? (string)$id,
+                    "Basculement de statut de la classe '" . ($cls['libelle_classe'] ?? $id) . "'",
+                    ['id_classe' => $id, 'code_classe' => $cls['code_classe'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -195,7 +222,7 @@ class ClasseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_CLASSES');
+        $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getClasseWithDetails($id);
@@ -224,14 +251,14 @@ class ClasseController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'classe/list'); exit(); }
+            if (!$item) { redirect('classe/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'classe/list'); exit();
+            redirect('classe/list');
         }
         $this->loadView('../views/classes/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -239,14 +266,14 @@ class ClasseController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
         $this->loadView('../views/classes/edit.php', ['item' => []]);
     }
 
     public function getClassesWithScolarite()
     {
         $this->requireAuth();
-        $this->requirePermission(['VIEW_CLASSES', 'MANAGE_ETUDIANTS', 'VIEW_INSCRIPTIONS', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::VIEW_CLASSES, PERMISSIONS::MANAGE_ETUDIANTS, PERMISSIONS::VIEW_INSCRIPTIONS, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $anneeCode = trim($_GET['annee_code'] ?? ($_POST['annee_code'] ?? ''));
         $affectationEtat = trim($_GET['affectation_etat'] ?? ($_POST['affectation_etat'] ?? ''));
@@ -258,12 +285,17 @@ class ClasseController extends BaseController
         }
 
         $classes = $this->model->getClassesWithScolarite($anneeCode, $affectationEtat);
+        $diagnostics = $this->model->getDiagnosticsAnneeScolarite($anneeCode, $affectationEtat);
 
         $this->json([
             'status' => 1,
             'data' => $classes,
             'annee_code' => $anneeCode,
-            'total' => count($classes)
+            'affectation_etat' => $affectationEtat,
+            'total' => count($classes),
+            'total_classes_annee' => $diagnostics['total_classes_annee'],
+            'total_scolarites_annee' => $diagnostics['total_scolarites_annee'],
+            'total_scolarites_regime' => $diagnostics['total_scolarites_regime']
         ]);
     }
 
@@ -271,7 +303,7 @@ class ClasseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_CLASSES');
+        $this->requirePermission(PERMISSIONS::MANAGE_CLASSES);
 
         $anneeSourceCode = trim($_POST['annee_source_code'] ?? '');
         $anneeCibleCode = trim($_POST['annee_cible_code'] ?? '');
@@ -292,6 +324,14 @@ class ClasseController extends BaseController
         $res = $this->model->reconduireClassesAnnee($anneeSourceCode, $anneeCibleCode, $etabCode, $userCode);
 
         if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'classes',
+                $anneeCibleCode,
+                "Reconduction de {$res['count']} classe(s) depuis l'année {$anneeSourceCode} vers {$anneeCibleCode}",
+                ['source' => $anneeSourceCode, 'cible' => $anneeCibleCode, 'count' => $res['count'], 'skipped' => $res['skipped']],
+                $etabCode
+            );
             $this->success($res['message'], ['reload' => true, 'count' => $res['count'], 'skipped' => $res['skipped']]);
         } else {
             $this->error($res['message']);
@@ -304,7 +344,7 @@ class ClasseController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_CLASSES', 'VIEW_CLASSES', 'PRINT_OFFRE_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
@@ -326,6 +366,15 @@ class ClasseController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('repertoire_classes.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'classes',
+            $anneeCode ?: 'TOUT',
+            "Impression du répertoire des classes (Année: " . ($anneeLibelle ?: 'Toutes') . ", Total: " . count($classes) . ")",
+            ['annee_code' => $anneeCode, 'total' => count($classes)]
+        );
+
         $filename = 'Repertoire_Classes_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
@@ -341,7 +390,7 @@ class ClasseController extends BaseController
     public function imprimerListe($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_CLASSES', 'VIEW_CLASSES', 'VIEW_ETUDIANTS', 'MANAGE_CLASSES']);
+        $this->requirePermission([PERMISSIONS::PRINT_CLASSES, PERMISSIONS::VIEW_CLASSES, PERMISSIONS::VIEW_ETUDIANTS, PERMISSIONS::MANAGE_CLASSES]);
         try {
             $id = $this->validator->decrypter($details);
             if (empty($id)) $id = $details;
@@ -353,8 +402,7 @@ class ClasseController extends BaseController
             $classeCode = $item['code_classe'] ?? '';
             $anneeCode = $item['annee_code'] ?? $this->getActiveAnneeCode();
 
-            header('Location: ' . RACINE . 'etudiant/imprimerPdf?annee_code=' . urlencode($anneeCode) . '&classe_code=' . urlencode($classeCode));
-            exit;
+            redirect('etudiant/imprimerPdf', ['annee_code' => $anneeCode, 'classe_code' => $classeCode]);
         } catch (Exception $e) {
             $this->renderNotFound("Erreur lors de l'accès à la classe.");
         }

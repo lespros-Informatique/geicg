@@ -42,7 +42,7 @@ class GalerieController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
         if (empty($data['code_galerie'])) {
-            $data['code_galerie'] = $this->validator->generateCode('galeries', 'code_galerie', 'GAL-', 8);
+            $data['code_galerie'] = $this->validator->generateCode(TABLES::GALERIES, 'code_galerie', 'GAL-', 8);
         }
         // Gestion upload fichier
         if (!empty($_FILES['fichier_upload']['name']) && $_FILES['fichier_upload']['error'] === UPLOAD_ERR_OK) {
@@ -63,7 +63,15 @@ class GalerieController extends BaseController
         if (in_array('etablissement_code', $cols)) $data['etablissement_code'] = $etabCode;
         if (in_array('annee_code', $cols)) $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
-        if ($this->model->create($filteredData)) {
+        $newId = $this->model->create($filteredData);
+        if ($newId) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'galeries',
+                $newId,
+                "Ajout d'un média à la galerie: " . ($filteredData['titre_galerie'] ?? $filteredData['code_galerie'] ?? ''),
+                ['id_galerie' => $newId, 'code' => $filteredData['code_galerie'] ?? '', 'titre' => $filteredData['titre_galerie'] ?? '']
+            );
             $this->success('Item créé avec succès!');
         } else {
             $this->error('Erreur lors de la création');
@@ -90,6 +98,13 @@ class GalerieController extends BaseController
         }
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'galeries',
+                $id,
+                "Modification du média de la galerie: " . ($filteredData['titre_galerie'] ?? "#{$id}"),
+                ['id_galerie' => $id, 'titre' => $filteredData['titre_galerie'] ?? '']
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -126,7 +141,7 @@ class GalerieController extends BaseController
         }
 
         // Chemin relatif accessible depuis le web
-        $relativePath = RACINE . 'uploads/galeries/' . $newName;
+        $relativePath = url('uploads/galeries/' . $newName);
         return ['success' => true, 'path' => $relativePath];
     }
 
@@ -145,6 +160,13 @@ class GalerieController extends BaseController
                 $success = $this->model->toggleStatus($id);
             }
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'galeries',
+                    $id,
+                    "Changement du statut du média de la galerie ID #{$id}",
+                    ['id_galerie' => $id, 'nouveau_statut' => $statut]
+                );
                 $this->success('Statut de la galerie mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -161,10 +183,10 @@ class GalerieController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'galerie/list'); exit(); }
+            if (!$item) { redirect('galerie/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'galerie/list'); exit();
+            redirect('galerie/list');
         }
         $this->loadView('../views/galeries/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -176,10 +198,10 @@ class GalerieController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'galerie/list'); exit(); }
+            if (!$item) { redirect('galerie/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'galerie/list'); exit();
+            redirect('galerie/list');
         }
         $this->loadView('../views/galeries/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }

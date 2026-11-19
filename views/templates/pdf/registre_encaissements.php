@@ -1,3 +1,10 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -174,28 +181,8 @@
 </head>
 <body>
 
-  <!-- EN-TÊTE ETABLISSEMENT (CENTRÉ) -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 15%; text-align: left; vertical-align: middle;">
-        <?php if (!empty($logo_src)): ?>
-          <img src="<?= $logo_src ?>" style="max-height: 50px; max-width: 130px;">
-        <?php else: ?>
-          <div style="font-weight: bold; color: #800000; font-size: 14pt;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 70%; text-align: center; vertical-align: middle;">
-        <div class="inst-title" style="text-align: center;">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle" style="text-align: center; margin-top: 2px;">AGRÉÉ PAR L'ÉTAT ET LE FDFP &bull; Service de la Comptabilité & Direction Financière</div>
-        <div class="inst-contacts" style="text-align: center; margin-top: 2px;">Tél : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99 &bull; Site web : www.groupe-eicg.net</div>
-      </td>
-      <td style="width: 15%; text-align: right; vertical-align: middle;">
-        <!-- Cellule d'équilibrage pour centrage parfait -->
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE TITRE -->
   <table class="banner-table">
@@ -331,9 +318,9 @@
         <div style="margin-top: 25px; font-weight: bold; font-size: 8.5pt;"><?= htmlspecialchars($agent_nom ?? 'Caisse Principale GEICG') ?></div>
       </td>
       <td style="width: 50%; text-align: right;">
-        <div style="font-size: 8pt; margin-bottom: 2px;">Fait à Bouaké, le <?= date('d/m/Y') ?></div>
-        <div style="font-weight: bold; text-decoration: underline;">Le Chef du Service Financier</div>
-        <div style="margin-top: 25px; font-weight: bold; font-size: 8.5pt;">Direction Financière GEICG</div>
+        <div style="font-size: 8pt; margin-bottom: 2px;">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?></div>
+        <div style="font-weight: bold; text-decoration: underline;"><?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'Le Chef du Service Financier') ?></div>
+        <div style="margin-top: 25px; font-weight: bold; font-size: 8.5pt;"><?= htmlspecialchars($etablissement['nom_responsable_finance'] ?? 'Direction Financière GEICG') ?></div>
       </td>
     </tr>
   </table>

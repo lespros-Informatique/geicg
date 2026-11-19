@@ -83,7 +83,7 @@
 
         <!-- Bouton d'Action CTA -->
         <div style="text-align: center; margin: 32px 0 20px 0;">
-          <a href="<?= htmlspecialchars($loginUrl ?? RACINE) ?>" target="_blank" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F233D 100%); color: #FFFFFF; font-weight: 800; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(30, 58, 95, 0.35); letter-spacing: 0.3px;">
+          <a href="<?= htmlspecialchars($loginUrl ?? url()) ?>" target="_blank" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F233D 100%); color: #FFFFFF; font-weight: 800; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(30, 58, 95, 0.35); letter-spacing: 0.3px;">
             Se Connecter à la Plateforme &rarr;
           </a>
         </div>

@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -14,10 +13,10 @@ $item = isset($item) ? $item : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Kit scolaire, uniformes, insignes et fournitures</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>accessoire/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('accessoire/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux accessoires
           </a>
-          <a href="<?= RACINE ?>accessoire/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('accessoire/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l'accessoire
           </a>
         </div>
@@ -52,7 +51,7 @@ $item = isset($item) ? $item : [];
           <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Statut</span>
             <div style="margin-top: 6px;">
-              <?php if (($item['statut_accessoire'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_accessoire'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Disponible / Actif</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Indisponible</span>
@@ -65,5 +64,4 @@ $item = isset($item) ? $item : [];
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

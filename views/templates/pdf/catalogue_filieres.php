@@ -256,40 +256,8 @@
   </htmlpagefooter>
   <sethtmlpagefooter name="pageFooter" value="on" />
 
-  <!-- ENTÊTE DE L'ÉTABLISSEMENT -->
-  <?php
-    $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-    if (!file_exists($logoPath)) {
-      $logoPath = '/var/www/html/geicg/public/assets/images/logo/logo_eicg.jpg';
-    }
-  ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 22%; text-align: left;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 52px; max-width: 135px;" alt="Logo EICG">
-        <?php else: ?>
-          <div style="font-size: 14pt; font-weight: bold; color: #1E3A5F;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 78%; text-align: center;">
-        <?php
-          $nomEtab = 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION';
-          if (!empty($etablissement['libelle_etablissement']) && !in_array(strtoupper(trim($etablissement['libelle_etablissement'])), ['GROUPE EICG', 'GEICG', 'ETABLISSEMENT A'], true)) {
-              $nomEtab = $etablissement['libelle_etablissement'];
-          }
-        ?>
-        <div class="inst-title"><?= htmlspecialchars($nomEtab) ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars(!empty($etablissement['numero_autorisation_etablissement']) ? 'AGRÉMENT N° ' . $etablissement['numero_autorisation_etablissement'] : 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP') ?></div>
-        <div class="inst-contacts">
-          <?= htmlspecialchars(!empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : 'Bouaké - Côte d\'Ivoire') ?>
-          &nbsp;|&nbsp; Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99
-        </div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- ENTÊTE DE L'ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE DE TITRE -->
   <table class="banner-table">
@@ -456,26 +424,32 @@
   <table style="width: 100%; margin-top: 10px; border-collapse: separate; border-spacing: 15px 0;">
     <tr>
       <td style="width: 50%; border: 1px dashed #94A3B8; background-color: #F8FAFC; padding: 6px 10px; text-align: center; vertical-align: top;">
-        <div style="font-weight: bold; color: #1E3A5F; text-transform: uppercase; font-size: 7.5pt; margin-bottom: 26px;">
-          La Direction des Études & de la Pédagogie
+        <div style="font-weight: bold; color: #1E3A5F; text-transform: uppercase; font-size: 7.5pt; margin-bottom: 4px;">
+          <?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'La Direction des Études & de la Pédagogie') ?>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #334155; margin-bottom: 18px;">
+          <?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?>
         </div>
         <div style="font-size: 6.5pt; color: #64748B; font-style: italic;">
-          Visa pour conformité académique
+          <?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Visa pour conformité académique') ?>
         </div>
       </td>
       <td style="width: 50%; border: 1px dashed #94A3B8; background-color: #F8FAFC; padding: 6px 10px; text-align: center; vertical-align: top;">
-        <div style="font-weight: bold; color: #1E3A5F; text-transform: uppercase; font-size: 7.5pt; margin-bottom: 26px;">
-          La Direction Générale
+        <div style="font-weight: bold; color: #1E3A5F; text-transform: uppercase; font-size: 7.5pt; margin-bottom: 4px;">
+          <?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'La Direction Générale') ?>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #334155; margin-bottom: 18px;">
+          <?= htmlspecialchars($etablissement['nom_directeur_general'] ?? 'La Direction Générale') ?>
         </div>
         <div style="font-size: 6.5pt; color: #64748B; font-style: italic;">
-          Approbation & Cachet de l'Établissement
+          <?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Approbation & Cachet de l\'Établissement') ?>
         </div>
       </td>
     </tr>
   </table>
 
   <div style="margin-top: 10px; font-size: 7.5pt; color: #94A3B8; text-align: center;">
-    Fait à Bouaké, le <?= date('d/m/Y') ?> &bull; Document à usage pédagogique et administratif interne.
+    Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?> &bull; <?= htmlspecialchars($etablissement['texte_pied_page'] ?? 'Document officiel généré par le Système GEICG') ?>
   </div>
 
 </body>

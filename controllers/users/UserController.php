@@ -123,6 +123,23 @@ class UserController extends BaseController
                 $this->model->saveUserAnneeAcces($code_user, $_POST['annee_acces']);
             }
 
+            $nomComplet = trim($nom . ' ' . $prenom);
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'user',
+                $code_user,
+                "Création du compte utilisateur {$nomComplet} ({$code_user})",
+                [
+                    'code_user' => $code_user,
+                    'nom_complet' => $nomComplet,
+                    'email' => $email,
+                    'telephone' => $telephone,
+                    'roles' => $postedRoles,
+                    'fonction_code' => $fonctionCode
+                ],
+                $etabCode
+            );
+
             // Envoi automatique de l'e-mail de bienvenue si email présent
             if (!empty($email)) {
                 $nomComplet = trim($nom . ' ' . $prenom);
@@ -137,14 +154,14 @@ class UserController extends BaseController
                         'userEmail'    => $email,
                         'userPassword' => $rawPassword,
                         'userFonction' => $libelleFonction,
-                        'loginUrl'     => RACINE . 'user/connexion'
+                        'loginUrl'     => url('user/connexion')
                     ]
                 );
             }
 
             $idDisplay = $email ?: ($telephone ?: $nom);
             $this->success("Utilisateur créé avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
-                'redirect' => RACINE . 'user/list',
+                'redirect' => url('user/list'),
                 'password' => $rawPassword
             ]);
         } else {
@@ -155,18 +172,17 @@ class UserController extends BaseController
     public function edit()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            header('Location: ' . RACINE . 'user/list');
-            exit;
+            redirect('user/list');
         }
 
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         $id = (int)$this->post('id_user');
-        if (!$id) { $this->error('Identifiant invalide', RACINE . 'user/list'); return; }
+        if (!$id) { $this->error('Identifiant invalide', url('user/list')); return; }
 
         $user = $this->model->getById($id);
-        if (!$user) { $this->error('Utilisateur introuvable', RACINE . 'user/list'); return; }
+        if (!$user) { $this->error('Utilisateur introuvable', url('user/list')); return; }
 
         $nom = trim($_POST['nom'] ?? '');
         $prenom = trim($_POST['prenom'] ?? '');
@@ -238,7 +254,23 @@ class UserController extends BaseController
                 $this->model->saveUserAnneeAcces($user['code_user'], $_POST['annee_acces']);
             }
 
-            $this->success('Utilisateur et permissions par rôle mis à jour avec succès !', RACINE . 'user/list');
+            $nomComplet = trim($nom . ' ' . $prenom);
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'user',
+                $user['code_user'] ?? (string)$id,
+                "Modification des informations du compte utilisateur {$nomComplet} (" . ($user['code_user'] ?? $id) . ")",
+                [
+                    'id_user' => $id,
+                    'code_user' => $user['code_user'] ?? null,
+                    'nom_complet' => $nomComplet,
+                    'roles' => $postedRoles,
+                    'fonction_code' => $fonctionCode,
+                    'statut' => $statut
+                ]
+            );
+
+            $this->success('Utilisateur et permissions par rôle mis à jour avec succès !', url('user/list'));
         } else {
             $this->error('Erreur lors de la modification de l\'utilisateur.');
         }
@@ -248,10 +280,17 @@ class UserController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_USERS');
+        $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         $id = $this->post('id');
-        if (isset($id) && $this->model->getById($id)) {
+        if (isset($id) && ($usr = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'user',
+                    $usr['code_user'] ?? (string)$id,
+                    "Basculement de statut (actif/inactif) du compte utilisateur #{$id}",
+                    ['id_user' => $id, 'code_user' => $usr['code_user'] ?? null]
+                );
                 $this->success('Statut modifié avec succès!', ['id' => $id, 'reload' => true]);
             } else {
                 $this->error('Erreur lors du changement de statut.');
@@ -264,20 +303,18 @@ class UserController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_USERS');
+        $this->requirePermission(PERMISSIONS::VIEW_USERS);
         try {
             $userId = $this->validator->decrypter($details);
             $userProfile = $this->model->getById($userId);
             if (!$userProfile) {
-                header('Location: ' . RACINE . 'user/list');
-                exit();
+                redirect('user/list');
             }
             $userRoles = $this->model->getUserRoles($userProfile['code_user']);
             $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
             $encryptedId = $this->validator->crypter($userId);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'user/list');
-            exit();
+            redirect('user/list');
         }
 
         $this->loadView('../views/users/details.php', [
@@ -291,7 +328,7 @@ class UserController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_USERS');
+        $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         $roles = (new ModelRole())->getAll();
         $fonctions = (new ModelFonction())->getAll();
         $allAnneesList = (new ModelAnnee())->getAll();
@@ -310,14 +347,13 @@ class UserController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_USERS');
+        $this->requirePermission(PERMISSIONS::MANAGE_USERS);
         try {
             $decryptedId = $this->validator->decrypter($details);
             $userProfile = $this->model->getById($decryptedId);
 
             if (!$userProfile) {
-                header('Location: ' . RACINE . 'user/list');
-                exit();
+                redirect('user/list');
             }
             $userRoles = $this->model->getUserRoles($userProfile['code_user']);
             $userRoleCodes = $this->model->getUserRoleCodes($userProfile['code_user']);
@@ -327,8 +363,7 @@ class UserController extends BaseController
             $allAnneesList = (new ModelAnnee())->getAll();
             $userAnneeAcces = $this->model->getUserAnneeAcces($userProfile['code_user']);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'user/list');
-            exit();
+            redirect('user/list');
         }
 
         $this->loadView('../views/users/edit.php', [
@@ -428,6 +463,14 @@ class UserController extends BaseController
                     Auth::login($sessionData, $roleCodes, $allPermissions);
                     Session::set('roles', $roleCodes);
 
+                    // Journalisation de la connexion
+                    AuditLogger::logLogin(
+                        (int)$user['id_user'],
+                        $user['code_user'] ?? '',
+                        trim(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? '')),
+                        $user['email_user'] ?? $login
+                    );
+
                     // Année académique active
                     $anneeActive = $this->model->getActiveAnneeAcademique();
                     if ($anneeActive) {
@@ -442,7 +485,7 @@ class UserController extends BaseController
                         ? 'Bienvenue Professeur ' . htmlspecialchars($user['nom_user'] . ' ' . ($user['prenom_user'] ?? '')) . ' !'
                         : 'Connexion réussie ! Bienvenue sur GEICG.';
 
-                    $this->success($welcomeMsg, ['redirect' => RACINE]);
+                    $this->success($welcomeMsg, ['redirect' => url()]);
                     return;
                 } else {
                     $this->error('Ce compte utilisateur est inactif ou suspendu. Veuillez contacter l\'administrateur.');
@@ -459,9 +502,9 @@ class UserController extends BaseController
 
     public function decon()
     {
+        AuditLogger::logLogout();
         Auth::logout();
-        header('Location: ' . RACINE . 'user/connexion');
-        exit();
+        redirect('user/connexion');
     }
 
     public function logout()
@@ -516,9 +559,78 @@ class UserController extends BaseController
 
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         if ($this->model->updatePassword($hash, (int)$userId)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'user',
+                $user['code_user'] ?? (string)$userId,
+                "Modification du mot de passe de l'utilisateur " . trim(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? '')),
+                ['id_user' => $userId, 'code_user' => $user['code_user'] ?? null]
+            );
             $this->success('Votre mot de passe a été modifié avec succès !');
         } else {
             $this->error('Erreur lors de la mise à jour du mot de passe.');
+        }
+    }
+
+    /**
+     * Génère et imprime la fiche officielle d'un utilisateur en PDF
+     */
+    public function imprimerFichePdf($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_USERS);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        try {
+            $userId = $this->validator->decrypter($details);
+            if (!$userId || !is_numeric($userId)) {
+                $userId = is_numeric($details) ? (int)$details : 0;
+            }
+
+            $userProfile = $this->model->getById((int)$userId);
+            if (!$userProfile) {
+                redirect('user/list');
+            }
+
+            $userRoles = $this->model->getUserRoles($userProfile['code_user'] ?? '');
+            $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
+
+            $dataView = [
+                'user' => $userProfile,
+                'role' => $primaryRole,
+                'userRoles' => $userRoles,
+                'etablissement' => $this->getEtablissementConfig()
+            ];
+
+            $html = PdfService::renderTemplate('fiche_utilisateur.php', $dataView);
+            if (isset($_GET['html'])) {
+                echo $html;
+                return;
+            }
+
+            $nomClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim(($userProfile['nom_user'] ?? '') . '_' . ($userProfile['prenom_user'] ?? '')));
+            $filename = 'Fiche_Utilisateur_' . ($nomClean ?: 'Compte') . '_' . date('Ymd_His') . '.pdf';
+
+            // Journalisation de l'impression
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'user',
+                $userProfile['code_user'] ?? (string)$userId,
+                "Impression de la fiche de l'utilisateur " . trim(($userProfile['nom_user'] ?? '') . ' ' . ($userProfile['prenom_user'] ?? ''))
+            );
+
+            PdfService::generate($html, $filename, [
+                'orientation' => 'P',
+                'format' => 'A4',
+                'title' => 'Fiche Utilisateur - ' . trim(($userProfile['nom_user'] ?? '') . ' ' . ($userProfile['prenom_user'] ?? '')),
+                'margin_left' => 8,
+                'margin_right' => 8,
+                'margin_top' => 8,
+                'margin_bottom' => 8
+            ]);
+        } catch (Exception $e) {
+            error_log("UserController::imprimerFichePdf error: " . $e->getMessage());
+            redirect('user/list');
         }
     }
 }

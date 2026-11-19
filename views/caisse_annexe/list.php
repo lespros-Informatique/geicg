@@ -1,278 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<style>
-@media print {
-  @page {
-    size: A4 landscape;
-    margin: 8mm;
-  }
-  body, html, .app-layout, .main-content, .content-wrapper {
-    background: #FFFFFF !important;
-    color: #000000 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    box-shadow: none !important;
-  }
-  header, .topbar, .topbar *, .sidebar, .sidebar *, aside, nav, .main-nav, .page-header, .no-print, 
-  .card-filters, .card-kpi-container, .kpi-section-title,
-  .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate,
-  button, a.btn, input, select, textarea, .form-control, .select2, .select2-container {
-    display: none !important;
-  }
-  /* Masquer la colonne Actions lors de l'impression */
-  #table-caisse-annexe th:last-child,
-  #table-caisse-annexe td:last-child {
-    display: none !important;
-  }
-  .card {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  table#table-caisse-annexe {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    margin-top: 10px !important;
-  }
-  table#table-caisse-annexe th,
-  table#table-caisse-annexe td {
-    border: 1px solid #334155 !important;
-    padding: 6px 8px !important;
-    font-size: 11px !important;
-    color: #000000 !important;
-  }
-  table#table-caisse-annexe th {
-    background: #F1F5F9 !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-  }
-  table#table-caisse-annexe tr {
-    page-break-inside: avoid !important;
-  }
-  #print-header-banner, .print-signatures-block {
-    display: block !important;
-  }
-}
-
-#print-header-banner, .print-signatures-block {
-  display: none;
-}
-
-/* --- ANIMATIONS ET INTERACTIONS PREMIUM --- */
-@keyframes kpiEntrance {
-  0% {
-    opacity: 0;
-    transform: translateY(18px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes liveRadar {
-  0% { transform: scale(0.6); opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-
-@keyframes btnPulseGlow {
-  0%, 100% {
-    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
-    transform: translateY(0);
-  }
-  50% {
-    box-shadow: 0 6px 22px rgba(217, 119, 6, 0.45);
-    transform: translateY(-1.5px);
-  }
-}
-
-@keyframes modalZoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.card-kpi-container {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-@media (max-width: 1200px) {
-  .card-kpi-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 640px) {
-  .card-kpi-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-.kpi-card {
-  position: relative;
-  overflow: hidden;
-  min-height: 118px !important;
-  padding: 22px 22px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  box-sizing: border-box;
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
-              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
-              border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: kpiEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  cursor: default;
-}
-
-.kpi-card > div:first-child {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-}
-
-.kpi-card [id^="kpi-"] {
-  font-size: 20px;
-  font-weight: 900;
-}
-
-/* Staggered animation */
-.card-kpi-container:nth-of-type(1) .kpi-card:nth-child(1) { animation-delay: 0.04s; }
-.card-kpi-container:nth-of-type(1) .kpi-card:nth-child(2) { animation-delay: 0.08s; }
-.card-kpi-container:nth-of-type(1) .kpi-card:nth-child(3) { animation-delay: 0.12s; }
-.card-kpi-container:nth-of-type(1) .kpi-card:nth-child(4) { animation-delay: 0.16s; }
-
-.card-kpi-container:nth-of-type(2) .kpi-card:nth-child(1) { animation-delay: 0.20s; }
-.card-kpi-container:nth-of-type(2) .kpi-card:nth-child(2) { animation-delay: 0.24s; }
-.card-kpi-container:nth-of-type(2) .kpi-card:nth-child(3) { animation-delay: 0.28s; }
-.card-kpi-container:nth-of-type(2) .kpi-card:nth-child(4) { animation-delay: 0.32s; }
-
-.card-kpi-container:nth-of-type(3) .kpi-card:nth-child(1) { animation-delay: 0.36s; }
-.card-kpi-container:nth-of-type(3) .kpi-card:nth-child(2) { animation-delay: 0.40s; }
-.card-kpi-container:nth-of-type(3) .kpi-card:nth-child(3) { animation-delay: 0.44s; }
-.card-kpi-container:nth-of-type(3) .kpi-card:nth-child(4) { animation-delay: 0.48s; }
-
-.kpi-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.08), 0 6px 10px -3px rgba(15, 23, 42, 0.03) !important;
-}
-
-.kpi-icon-box {
-  width: 48px !important;
-  height: 48px !important;
-  border-radius: 12px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-shrink: 0 !important;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
-}
-
-.kpi-icon-box svg, .kpi-icon-box i {
-  width: 24px !important;
-  height: 24px !important;
-}
-
-.kpi-card:hover .kpi-icon-box {
-  transform: scale(1.15) rotate(4deg);
-}
-
-/* Effet Shimmer shine */
-.kpi-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -120%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  transform: skewX(-22deg);
-  pointer-events: none;
-}
-
-.kpi-card:hover::after {
-  left: 180%;
-  transition: left 0.85s ease-in-out;
-}
-
-/* Bouton Encaisser pulse */
-#btn-open-encaissement-annexe-modal {
-  animation: btnPulseGlow 2.8s infinite ease-in-out;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-#btn-open-encaissement-annexe-modal:hover {
-  transform: translateY(-2px) scale(1.03);
-}
-
-/* Indicateur radar */
-.live-status-pulse {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #D97706;
-  position: relative;
-  margin-right: 6px;
-  vertical-align: middle;
-}
-.live-status-pulse::after {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background-color: rgba(217, 119, 6, 0.55);
-  animation: liveRadar 2s infinite ease-out;
-}
-
-/* Filtres */
-.card-filters {
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
-}
-.card-filters:focus-within {
-  box-shadow: 0 6px 18px rgba(30, 58, 95, 0.08) !important;
-  border-color: #CBD5E1 !important;
-}
-
-/* Animation DataTables */
-#table-caisse-annexe tbody tr {
-  transition: background-color 0.18s ease;
-}
-#table-caisse-annexe tbody tr:hover {
-  background-color: #FFFBEB !important;
-}
-
-#table-caisse-annexe a.btn {
-  transition: transform 0.16s ease, box-shadow 0.16s ease;
-}
-#table-caisse-annexe a.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-#modal-encaisser-annexe > div,
-#modal-recu-annexe-success > div {
-  animation: modalZoomIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-}
-</style>
 <?php
-$isCaisseOuverte = $isCaisseOuverte ?? false;
-$activeSession = $activeSession ?? null;
-$encryptedSessionId = $encryptedSessionId ?? '';
 $canRecord = $canRecord ?? false;
-$canOpenCaisse = $canOpenCaisse ?? false;
-$canCloseCaisse = $canCloseCaisse ?? false;
+$canCancel = $canCancel ?? false;
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -284,7 +13,9 @@ $canCloseCaisse = $canCloseCaisse ?? false;
       <div id="print-header-banner" style="margin-bottom: 16px; border-bottom: 2px solid #1E3A5F; padding-bottom: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">GEICG - GROUPE ÉCOLE D'INGÉNIEURS ET DE COMMERCE DE GAGNOA</h2>
+            <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">
+              <?= htmlspecialchars(!empty($etablissement['nom_etablissement']) ? $etablissement['nom_etablissement'] : 'GROUPE EICG') ?>
+            </h2>
             <div style="font-size: 12px; font-weight: 800; color: #0F172A; margin-top: 3px;">CAISSE ANNEXE - BILAN DES FRAIS ANNEXES & ENCAISSEMENTS</div>
             <div style="font-size: 11px; color: #475569; margin-top: 3px;" id="print-filter-summary-text">
               Année Académique : All &bull; Niveau : Tous &bull; Classe : Toutes
@@ -292,7 +23,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
           </div>
           <div style="text-align: right; font-size: 11px; color: #475569;">
             <div>Date d'impression : <strong><?= date('d/m/Y H:i') ?></strong></div>
-            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim(($_SESSION['prenom_utilisateur'] ?? $_SESSION['nom_utilisateur'] ?? 'Caissier'))) ?></strong></div>
+            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim((Auth::fullName() ?: 'Caissier'))) ?></strong></div>
           </div>
         </div>
         
@@ -310,25 +41,20 @@ $canCloseCaisse = $canCloseCaisse ?? false;
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="background: #FEF3C7; color: #B45309; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; border: 1px solid #FDE68A;">
-              Guichet Annexe
-            </span>
-            <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Caisse Annexe & Bilan des Frais Annexes</h1>
+            <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Caisse des Frais Annexes</h1>
           </div>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Journal des encaissements, suivi du recouvrement et bilan comptable des frais annexes</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Journal des encaissements des frais annexes</p>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-          <a href="<?= RACINE ?>fraisAnnexe/list" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 16px; text-decoration: none;" title="Consulter et configurer la grille tarifaire des frais annexes">
-            <i data-lucide="package-check" style="width: 18px; height: 18px; color: #B45309;"></i> Grille des Tarifs
-          </a>
-
-          <button onclick="printRegistry()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; cursor: pointer;" title="Imprimer le bilan des frais annexes">
-            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
-          </button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;" class="no-print">
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::PRINT_FRAIS_ANNEXES, PERMISSIONS::VIEW_PAIEMENTS]))): ?>
+            <button type="button" onclick="printRegistry()" id="btn-print-caisse-annexe" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease; cursor: pointer;" title="Générer & imprimer le registre officiel de la caisse annexe en PDF">
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Registre (PDF)
+            </button>
+          <?php endif; ?>
 
           <?php if (!empty($isCaisseOuverte)): ?>
             <?php if (!empty($canCloseCaisse)): ?>
-              <a href="<?= RACINE ?>session_caisse/cloturer/<?= !empty($encryptedSessionId) ? $encryptedSessionId : '' ?>" class="btn btn-danger" style="background: #DC2626; border-color: #DC2626; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(220,38,38,0.2); text-decoration: none;" title="Clôturer la session de caisse du jour (<?= htmlspecialchars($activeSession['code_session'] ?? '') ?>)">
+              <a href="<?= url('session_caisse/cloturer/' . (!empty($encryptedSessionId) ? $encryptedSessionId : '')) ?>" class="btn btn-danger" style="background: #DC2626; border-color: #DC2626; color: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 4px rgba(220,38,38,0.2); text-decoration: none;" title="Clôturer la session de caisse du jour (<?= htmlspecialchars($activeSession['code_session'] ?? '') ?>)">
                 <i data-lucide="lock" style="width: 18px; height: 18px;"></i> Fermeture caisse
               </a>
             <?php endif; ?>
@@ -360,7 +86,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
               <?php foreach (($annees ?? []) as $a): ?>
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '' ?>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '' ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -404,20 +130,6 @@ $canCloseCaisse = $canCloseCaisse ?? false;
             </select>
           </div>
 
-          <!-- Filtre Mode de Règlement -->
-          <div class="form-group" style="margin: 0;">
-            <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="credit-card" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Mode de Paiement :
-            </label>
-            <select id="filter-mode" class="form-control select2" style="width: 100%;">
-              <option value="ALL">-- Tous les modes --</option>
-              <option value="espece">💵 Espèces (Guichet)</option>
-              <option value="mobile_money">📱 Mobile Money</option>
-              <option value="cheque">🏦 Chèque</option>
-              <option value="virement">🏛️ Virement</option>
-            </select>
-          </div>
-
           <!-- Filtre Période : Date Début -->
           <div class="form-group" style="margin: 0;">
             <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
@@ -446,7 +158,23 @@ $canCloseCaisse = $canCloseCaisse ?? false;
       
       <div class="card-kpi-container">
         
-        <!-- 1. Total Encaissé Frais Annexes -->
+        <!-- 1. Budget Frais Annexes Attendus -->
+        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Total Budget Exigible</div>
+            <div style="font-size: 18px; font-weight: 900; color: #1E3A8A; margin-top: 3px;">
+              <span id="kpi-total-frais-annexes-attendus"><?= number_format((float)($stats['total_frais_annexes_attendus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
+              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? (Session::get('annee_active_libelle', 'En session'))) ?></strong>
+            </div>
+          </div>
+          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- 2. Total Encaissé Frais Annexes -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FDE68A; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Total Annexes Encaissé</div>
@@ -462,7 +190,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
           </div>
         </div>
 
-        <!-- 2. Encaissements Jour -->
+        <!-- 3. Encaissements Jour -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Jour (Annexes)</div>
@@ -478,20 +206,6 @@ $canCloseCaisse = $canCloseCaisse ?? false;
           </div>
         </div>
 
-        <!-- 3. Caisse Espèces -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Espèces (Caisse Guichet)</div>
-            <div style="font-size: 18px; font-weight: 900; color: #15803D; margin-top: 3px;">
-              <span id="kpi-encaisse-especes"><?= number_format((float)($stats['encaisse_especes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Frais annexes en liquide</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="banknote" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
         <!-- 4. Reste à Recouvrer -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FCA5A5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
@@ -503,75 +217,6 @@ $canCloseCaisse = $canCloseCaisse ?? false;
           </div>
           <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- SECTION 2 : RÉPARTITION PAR FILIÈRE & MODES DIGITAUX (4 CARTES) -->
-      <div class="kpi-section-title" style="margin-bottom: 8px; margin-top: 20px;">
-        <h4 style="font-size: 12px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px;">
-          <i data-lucide="pie-chart" style="width: 15px; height: 15px; color: #0284C7;"></i> Répartition Filières & Canaux de Règlement
-        </h4>
-      </div>
-
-      <div class="card-kpi-container">
-        
-        <!-- 5. Filière Industrielle -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px;">Filière Industrielle</div>
-            <div style="font-size: 18px; font-weight: 900; color: #0369A1; margin-top: 3px;">
-              <span id="kpi-encaisse-industrielle"><?= number_format((float)($stats['encaisse_industrielle'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Annexes filière industrielle</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="cpu" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 6. Filière Tertiaire -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #4338CA; text-transform: uppercase; letter-spacing: 0.5px;">Filière Tertiaire</div>
-            <div style="font-size: 18px; font-weight: 900; color: #3730A3; margin-top: 3px;">
-              <span id="kpi-encaisse-tertiaire"><?= number_format((float)($stats['encaisse_tertiaire'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Annexes filière tertiaire</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="briefcase" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 7. Mobile Money & Digital -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #0E7490; text-transform: uppercase; letter-spacing: 0.5px;">Mobile Money / Banque</div>
-            <div style="font-size: 18px; font-weight: 900; color: #0E7490; margin-top: 3px;">
-              <span id="kpi-encaisse-mobile-money"><?= number_format((float)(($stats['encaisse_mobile_money'] ?? 0) + ($stats['encaisse_banque'] ?? 0)), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Paiements digitaux & virements</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #CFFAFE; color: #0E7490; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="smartphone" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 8. Budget Frais Annexes Attendus -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Total Budget Exigible</div>
-            <div style="font-size: 18px; font-weight: 900; color: #1E3A8A; margin-top: 3px;">
-              <span id="kpi-total-frais-annexes-attendus"><?= number_format((float)($stats['total_frais_annexes_attendus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">
-              Exercice : <strong style="color: #1E40AF;" id="kpi-exercice-session-libelle"><?= htmlspecialchars($stats['annee_exercice_libelle'] ?? ($_SESSION['annee_active_libelle'] ?? 'En session')) ?></strong>
-            </div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="layers" style="width: 20px; height: 20px;"></i>
           </div>
         </div>
 
@@ -614,21 +259,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
           </div>
         </div>
 
-        <!-- 11. Total Reçus Émis -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FEF3C7; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #B45309; text-transform: uppercase; letter-spacing: 0.5px;">Quittances & Reçus Émis</div>
-            <div style="font-size: 18px; font-weight: 900; color: #B45309; margin-top: 3px;">
-              <span id="kpi-total-recus"><?= number_format((int)($stats['total_recus'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">versement(s)</span>
-            </div>
-            <div style="font-size: 10.5px; font-weight: 600; color: #64748B; margin-top: 2px;">Transactions enregistrées</div>
-          </div>
-          <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-
-        <!-- 12. Effectif Total Inscrits -->
+        <!-- 11. Effectif Total Inscrits -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E9D5FF; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #7E22CE; text-transform: uppercase; letter-spacing: 0.5px;">Total Effectif Suivi</div>
@@ -662,11 +293,9 @@ $canCloseCaisse = $canCloseCaisse ?? false;
                 <th style="padding: 12px; width: 120px;">Réf. Reçu</th>
                 <th style="padding: 12px; width: 120px;">Date & Heure</th>
                 <th style="padding: 12px; width: 110px;">Matricule</th>
-                <th style="padding: 12px;">Étudiant</th>
-                <th style="padding: 12px; width: 110px;">Classe</th>
-                <th style="padding: 12px;">Filière</th>
+                <th style="padding: 12px; ">Étudiant</th>
+                <th style="padding: 12px; ">Classe</th>
                 <th style="padding: 12px;">Motif / Libellé</th>
-                <th style="padding: 12px;">Mode</th>
                 <th style="padding: 12px; width: 130px; text-align: right;">Montant Versé</th>
                 <th style="padding: 12px; width: 90px; text-align: center;">Actions</th>
               </tr>
@@ -739,7 +368,7 @@ $canCloseCaisse = $canCloseCaisse ?? false;
             <?php foreach (($inscriptions ?? []) as $in): ?>
               <?php 
                 $photoPath = !empty($in['photo_inscription']) ? trim($in['photo_inscription']) : (!empty($in['photo_etudiant']) ? trim($in['photo_etudiant']) : '');
-                $photoUrl = !empty($photoPath) ? RACINE . ltrim($photoPath, '/') : '';
+                $photoUrl = !empty($photoPath) ? url($photoPath) : '';
               ?>
               <option value="<?= htmlspecialchars($in['code_inscription']) ?>" 
                       data-nom="<?= htmlspecialchars(trim(($in['nom_etudiant'] ?? '') . ' ' . ($in['prenom_etudiant'] ?? ''))) ?>"
@@ -914,491 +543,16 @@ $canCloseCaisse = $canCloseCaisse ?? false;
   </div>
 </div>
 
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
-
-<script>
-$(document).ready(function() {
-
-  function escapeHtml(text) {
-    if (text === null || text === undefined) return '';
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  if ($.fn.select2) {
-    $('.select2').select2({ width: '100%' });
-  }
-
-  // Animation compteur
-  function animateCounter($elem, targetValue, isFloat, duration) {
-    if (!$elem || !$elem.length) return;
-    duration = duration || 650;
-    var rawText = ($elem.text() || '0').toString().replace(/\s/g, '').replace(/,/g, '.');
-    var startValue = parseFloat($elem.data('current-val') !== undefined ? $elem.data('current-val') : rawText.replace(/[^0-9.-]/g, '')) || 0;
-    $elem.data('current-val', targetValue);
-    var startTime = null;
-
-    function step(timestamp) {
-      if (!startTime) startTime = timestamp;
-      var progress = Math.min((timestamp - startTime) / duration, 1);
-      var easeOut = 1 - Math.pow(1 - progress, 3);
-      var current = startValue + (targetValue - startValue) * easeOut;
-
-      if (isFloat) {
-        $elem.text(current.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
-      } else {
-        $elem.text(Math.round(current).toLocaleString('fr-FR'));
-      }
-
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      } else {
-        if (isFloat) {
-          $elem.text(targetValue.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
-        } else {
-          $elem.text(Math.round(targetValue).toLocaleString('fr-FR'));
-        }
-      }
-    }
-    window.requestAnimationFrame(step);
-  }
-
-  // Défilement initial
-  setTimeout(function() {
-    $('.card-kpi-container [id^="kpi-"]').each(function() {
-      var $el = $(this);
-      var raw = $el.text().replace(/\s/g, '').replace(/,/g, '.');
-      var val = parseFloat(raw) || 0;
-      var isFloat = ($el.attr('id') === 'kpi-taux-recouvrement-fa');
-      $el.data('current-val', 0);
-      $el.text(isFloat ? '0,0' : '0');
-      animateCounter($el, val, isFloat, 750);
-    });
-  }, 120);
-
-  // Initialisation DataTables Caisse Annexe
-  var table = $('#table-caisse-annexe').DataTable({
-    order: [],
-    ajax: {
-      url: '<?= RACINE ?>caisse_annexe/apiList',
-      data: function(d) {
-        d.annee_code = $('#filter-annee').val();
-        d.type_filiere = $('#filter-type-filiere').val();
-        d.niveau_code = $('#filter-niveau').val();
-        d.classe_code = $('#filter-classe').val();
-        d.mode_paiement = $('#filter-mode').val();
-        d.date_debut = $('#filter-date-debut').val();
-        d.date_fin = $('#filter-date-fin').val();
-      }
-    },
-    processing: true,
-    autoWidth: false,
-    columns: [
-      { data: null, width: '45px', className: 'text-center', render: function(d, type, row, meta) {
-        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-      }},
-      { data: 'code_paiement', width: '120px', render: function(d) {
-        return '<code style="font-weight:800; color:#B45309; background:#FEF3C7; border:1px solid #FDE68A; padding:3px 8px; border-radius:6px; font-size:12px;">' + escapeHtml(d || '-') + '</code>';
-      } },
-      { data: 'date_paiement', width: '120px', render: function(d) {
-        if (!d) return '-';
-        var parts = d.split(' ');
-        var dateParts = parts[0].split('-');
-        if (dateParts.length === 3) {
-          return '<span style="font-weight:600; color:#0F172A;">' + dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0] + '</span>' +
-                 (parts[1] ? ' <small style="color:#64748B; font-size:10.5px;">' + parts[1].substr(0,5) + '</small>' : '');
-        }
-        return d;
-      } },
-      { data: 'matricule_etudiant', width: '110px', render: function(d) {
-        return '<code style="font-weight:700; color:#1E3A5F; background:#EFF6FF; border:1px solid #BFDBFE; padding:2px 6px; border-radius:4px;">' + escapeHtml(d || '-') + '</code>';
-      } },
-      { data: 'etudiant_nom', render: function(d, type, row) {
-        var photo = row.photo_inscription || row.photo_etudiant;
-        var inits = (d || 'ET').split(' ').filter(function(x){return x;}).map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
-        var photoHtml = '';
-        if (photo && photo.trim() !== '') {
-          var pUrl = window.RACINE + photo.replace(/^\/+/, '');
-          photoHtml = '<div style="width:32px; height:32px; border-radius:8px; overflow:hidden; flex-shrink:0; border:1px solid #CBD5E1; background:#F8FAFC;">' +
-                        '<img src="' + escapeHtml(pUrl) + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display=\'none\'; $(this).next().show();">' +
-                        '<span style="display:none; font-size:11px; font-weight:800; color:#1E3A5F;">' + escapeHtml(inits) + '</span>' +
-                      '</div>';
-        } else {
-          photoHtml = '<div style="width:32px; height:32px; border-radius:8px; background:#EFF6FF; color:#1E3A5F; font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">' + escapeHtml(inits) + '</div>';
-        }
-        return '<div style="display:flex; align-items:center; gap:9px;">' +
-                 photoHtml +
-                 '<span style="font-weight:700; color:#0F172A;">' + escapeHtml(d || '-') + '</span>' +
-               '</div>';
-      } },
-      { data: 'libelle_classe', width: '110px', render: function(d, type, row) {
-        var niv = row.libelle_niveau || '';
-        return '<div>' +
-                 '<strong style="color:#1E3A5F;">' + escapeHtml(d || '-') + '</strong>' +
-                 (niv ? '<div style="font-size:10.5px; color:#64748B;">' + escapeHtml(niv) + '</div>' : '') +
-               '</div>';
-      } },
-      { data: 'type_filiere', render: function(d, type, row) {
-        var t = (d || '').toUpperCase();
-        var isIndus = (t === 'INDUSTRIELLE');
-        var bg = isIndus ? '#E0F2FE' : '#E0E7FF';
-        var col = isIndus ? '#0369A1' : '#3730A3';
-        var brd = isIndus ? '#BAE6FD' : '#C7D2FE';
-        var lbl = isIndus ? 'Industrielle' : 'Tertiaire';
-        return '<span style="font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; background:' + bg + '; color:' + col + '; border:1px solid ' + brd + ';">' + lbl + '</span>';
-      } },
-      { data: 'type_paiement', render: function(d) {
-        return '<span style="font-weight:600; color:#475569;"><i data-lucide="tag" style="width:13px;height:13px;vertical-align:middle;color:#B45309;margin-right:4px;"></i>' + escapeHtml(d || 'Frais Annexes') + '</span>';
-      } },
-      { data: 'mode_paiement', render: function(d) {
-        var m = (d || '').toLowerCase();
-        var badgeStyle = 'background:#F1F5F9; color:#475569; border:1px solid #CBD5E1;';
-        var label = ucfirst(m || 'Espèce');
-        if (m.indexOf('espece') !== -1 || m.indexOf('cash') !== -1) {
-          badgeStyle = 'background:#DCFCE7; color:#15803D; border:1px solid #86EFAC;';
-          label = '💵 Espèces';
-        } else if (m.indexOf('mobile') !== -1 || m.indexOf('wave') !== -1 || m.indexOf('orange') !== -1 || m.indexOf('mtn') !== -1 || m.indexOf('moov') !== -1) {
-          badgeStyle = 'background:#CFFAFE; color:#0E7490; border:1px solid #A5F3FC;';
-          label = '📱 Mobile Money';
-        } else if (m.indexOf('cheque') !== -1) {
-          badgeStyle = 'background:#FEF3C7; color:#B45309; border:1px solid #FDE68A;';
-          label = '🏦 Chèque';
-        } else if (m.indexOf('virement') !== -1) {
-          badgeStyle = 'background:#F3E8FF; color:#7E22CE; border:1px solid #D8B4FE;';
-          label = '🏛️ Virement';
-        }
-        return '<span style="font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-block; ' + badgeStyle + '">' + label + '</span>';
-      } },
-      { data: 'montant_paiement', className: 'text-end', width: '130px', render: function(d) {
-        var val = parseFloat(d) || 0;
-        return '<span style="font-weight:900; font-size:13.5px; color:#15803D; background:#F0FDF4; padding:3px 8px; border-radius:6px; border:1px solid #BBF7D0;">' + val.toLocaleString('fr-FR') + ' FCFA</span>';
-      } },
-      { data: null, className: 'text-center', width: '90px', orderable: false, render: function(d, type, row) {
-        var idCrypte = row.encrypted_id || row.editId || row.id_paiement;
-        return '<div style="display:flex; justify-content:center; gap:6px;">' +
-                 '<a href="' + window.RACINE + 'paiement/imprimerPdf/' + idCrypte + '" target="_blank" class="btn btn-sm btn-outline-primary" style="padding:4px 8px; border-radius:6px;" title="Imprimer le reçu officiel">' +
-                   '<i data-lucide="printer" style="width:14px;height:14px;"></i>' +
-                 '</a>' +
-                 '<a href="' + window.RACINE + 'paiement/recu/' + idCrypte + '" target="_blank" class="btn btn-sm btn-outline-secondary" style="padding:4px 8px; border-radius:6px;" title="Consulter la quittance">' +
-                   '<i data-lucide="eye" style="width:14px;height:14px;"></i>' +
-                 '</a>' +
-               '</div>';
-      } }
-    ],
-    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
-    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
-  });
-
-  function ucfirst(str) {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  // Rafraîchissement des KPIs AJAX
-  function refreshKpis() {
-    $.ajax({
-      url: '<?= RACINE ?>caisse_annexe/apiStats',
-      type: 'GET',
-      data: {
-        annee_code: $('#filter-annee').val(),
-        type_filiere: $('#filter-type-filiere').val(),
-        niveau_code: $('#filter-niveau').val(),
-        classe_code: $('#filter-classe').val(),
-        date_debut: $('#filter-date-debut').val(),
-        date_fin: $('#filter-date-fin').val()
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 && res.stats) {
-          var s = res.stats;
-          animateCounter($('#kpi-total-encaisse'), Number(s.total_encaisse || 0), false);
-          animateCounter($('#kpi-taux-recouvrement-fa'), Number(s.taux_recouvrement_fa || 0), true);
-          animateCounter($('#kpi-encaisse-aujourdhui'), Number(s.encaisse_aujourdhui || 0), false);
-          animateCounter($('#kpi-encaisse-especes'), Number(s.encaisse_especes || 0), false);
-          animateCounter($('#kpi-attente-frais-annexes'), Number(s.attente_frais_annexes || 0), false);
-
-          animateCounter($('#kpi-encaisse-industrielle'), Number(s.encaisse_industrielle || 0), false);
-          animateCounter($('#kpi-encaisse-tertiaire'), Number(s.encaisse_tertiaire || 0), false);
-          animateCounter($('#kpi-encaisse-mobile-money'), Number((s.encaisse_mobile_money || 0) + (s.encaisse_banque || 0)), false);
-          animateCounter($('#kpi-total-frais-annexes-attendus'), Number(s.total_frais_annexes_attendus || 0), false);
-
-          animateCounter($('#kpi-eleves-soldes'), Number(s.eleves_soldes || 0), false);
-          animateCounter($('#kpi-eleves-non-soldes'), Number(s.eleves_non_soldes || 0), false);
-          animateCounter($('#kpi-total-recus'), Number(s.total_recus || 0), false);
-          animateCounter($('#kpi-total-inscrits'), Number(s.total_inscrits || 0), false);
-
-          if (s.annee_exercice_libelle) {
-            $('#kpi-exercice-session-libelle').text(s.annee_exercice_libelle);
-          }
-
-          // Mise à jour de la bannière d'impression
-          $('#print-kpi-total').text(Number(s.total_encaisse || 0).toLocaleString('fr-FR') + ' FCFA');
-          $('#print-kpi-especes').text(Number(s.encaisse_especes || 0).toLocaleString('fr-FR') + ' FCFA');
-          $('#print-kpi-mobile-money').text(Number(s.encaisse_mobile_money || 0).toLocaleString('fr-FR') + ' FCFA');
-          $('#print-kpi-budget').text(Number(s.total_frais_annexes_attendus || 0).toLocaleString('fr-FR') + ' FCFA');
-          $('#print-kpi-reste').text(Number(s.attente_frais_annexes || 0).toLocaleString('fr-FR') + ' FCFA');
-        }
-      }
-    });
-  }
-
-  // Événements de filtre
-  $('#filter-annee, #filter-type-filiere, #filter-niveau, #filter-classe, #filter-mode, #filter-date-debut, #filter-date-fin').on('change input', function() {
-    table.ajax.reload();
-    refreshKpis();
-  });
-
-  // Impression
-  window.printRegistry = function() {
-    var params = {
-      annee_code: $('#filter-annee').val() || '',
-      type_filiere: $('#filter-type-filiere').val() || '',
-      niveau_code: $('#filter-niveau').val() || '',
-      classe_code: $('#filter-classe').val() || '',
-      mode_paiement: $('#filter-mode').val() || '',
-      date_debut: $('#filter-date-debut').val() || '',
-      date_fin: $('#filter-date-fin').val() || ''
-    };
-    var url = '<?= RACINE ?>caisse_annexe/imprimerRegistre?' + $.param(params);
-    window.open(url, '_blank');
-  };
-
-  // =========================================================================
-  // GESTION DU MODAL D'ENCAISSEMENT DIRECT DE FRAIS ANNEXE
-  // =========================================================================
-  function openEncaissementModal() {
-    $('#modal-encaisser-annexe').css('display', 'flex');
-    if ($.fn.select2) {
-      $('#modal_select_inscription').select2({
-        dropdownParent: $('#modal-encaisser-annexe'),
-        width: '100%',
-        placeholder: "-- Tapez le nom, matricule ou classe de l'étudiant --",
-        allowClear: true
-      });
-    }
-    if (window.lucide) lucide.createIcons();
-  }
-
-  function closeEncaissementModal() {
-    $('#modal-encaisser-annexe').hide();
-    $('#form-encaissement-annexe')[0].reset();
-    if ($.fn.select2) {
-      $('#modal_select_inscription').val('').trigger('change.select2');
-    }
-    $('#encaisse-stu-photo').hide().attr('src', '');
-    $('#encaisse-stu-avatar').show().text('ET');
-    $('#encaisse-student-summary-card').hide();
-    $('#encaisse-payment-inputs-section').hide();
-  }
-
-  $('#btn-open-encaissement-annexe-modal').on('click', function() {
-    openEncaissementModal();
-  });
-
-  $('.btn-close-modal-encaissement').on('click', function() {
-    closeEncaissementModal();
-  });
-
-  $('.btn-close-modal-success').on('click', function() {
-    $('#modal-recu-annexe-success').hide();
-  });
-
-  $('#modal-encaisser-annexe').on('click', function(e) {
-    if ($(e.target).is('#modal-encaisser-annexe')) {
-      closeEncaissementModal();
-    }
-  });
-
-  $('#modal_select_inscription').on('change', function() {
-    var val = $(this).val();
-    if (!val) {
-      $('#encaisse-student-summary-card').slideUp(150);
-      $('#encaisse-payment-inputs-section').slideUp(150);
-      return;
-    }
-
-    $.ajax({
-      url: '<?= RACINE ?>caisse_annexe/getStudentAnnexesSummary',
-      type: 'GET',
-      data: { inscription_code: val },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 && res.data) {
-          var d = res.data;
-          var inits = (d.nom_complet || 'ET').split(' ').filter(function(x){return x;}).map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
-
-          $('#encaisse-stu-avatar').text(inits || 'ET');
-          $('#encaisse-stu-nom').text(d.nom_complet);
-          $('#encaisse-stu-mat').text(d.matricule);
-          $('#encaisse-stu-classe').text(d.classe + (d.filiere ? ' - ' + d.filiere : ''));
-          $('#encaisse-stu-filiere-badge').text('Filière ' + d.type_filiere);
-
-          if (d.photo_url && d.photo_url.trim() !== '') {
-            $('#encaisse-stu-photo').attr('src', d.photo_url).show();
-            $('#encaisse-stu-avatar').hide();
-          } else {
-            $('#encaisse-stu-photo').hide();
-            $('#encaisse-stu-avatar').show();
-          }
-
-          $('#encaisse-lbl-exigible').text(d.libelle_frais_annexe || 'Tarif Frais Annexes');
-          $('#encaisse-val-exigible').text(d.montant_exigible_fmt);
-          $('#encaisse-val-paye').text(d.deja_paye_fmt);
-          $('#encaisse-val-reste').text(d.reste_a_payer_fmt);
-
-          $('#encaisse-student-summary-card').stop(true, true).slideDown(200);
-
-          // Saisie du montant restant
-          var reste = parseFloat(d.reste_a_payer || 0);
-          $('#input-montant-versement').val(reste > 0 ? reste : 0);
-
-          if (d.is_solde) {
-            $('#montant-max-hint').html('<span style="color:#15803D; font-weight:800;">🎉 Cet étudiant a déjà intégralement soldé ses frais annexes.</span>');
-            $('#btn-submit-encaissement').prop('disabled', true);
-          } else {
-            $('#montant-max-hint').html('Montant attendu pour solder les annexes : <strong style="color:#B45309;">' + d.reste_a_payer_fmt + '</strong>');
-            $('#btn-submit-encaissement').prop('disabled', false);
-          }
-
-          $('#encaisse-payment-inputs-section').stop(true, true).slideDown(200);
-          if (window.lucide) lucide.createIcons();
-        }
-      }
-    });
-  });
-
-  // Fonction centrale d'affichage des alertes d'erreur caisse annexe
-  function showEncaissementAnnexeError(message) {
-    message = message || 'Une erreur est survenue lors de l\'enregistrement.';
-    var isCaisseError = (message.indexOf("session de caisse") !== -1 || message.indexOf("Session de caisse") !== -1 || message.indexOf("OUVERTE") !== -1 || message.indexOf("ouverte") !== -1);
-    
-    if (window.Swal) {
-      if (isCaisseError) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Session de Caisse Requise',
-          html: '<div style="font-size: 13.5px; color: #334155; line-height: 1.5; text-align: left; padding: 4px;">' +
-                  '<div style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 12px 14px; border-radius: 6px; margin-bottom: 12px; color: #991B1B; font-weight: 600;">' +
-                    '<i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> ' + escapeHtml(message) +
-                  '</div>' +
-                  '<p style="margin: 0 0 8px 0; color: #475569; font-size: 13px;">Pour enregistrer un règlement en espèces au guichet, vous devez obligatoirement ouvrir la session de caisse du jour.</p>' +
-                  '<p style="margin: 0; color: #64748B; font-size: 12px; font-style: italic;">💡 Les modes Mobile Money, Chèque et Virement sont immédiatement acceptés sans ouverture de caisse.</p>' +
-                '</div>',
-          showCancelButton: true,
-          confirmButtonColor: '#1E3A5F',
-          cancelButtonColor: '#64748B',
-          confirmButtonText: '<i class="fas fa-cash-register"></i> Ouvrir la Session de Caisse',
-          cancelButtonText: 'Fermer',
-          reverseButtons: true,
-          focusConfirm: true
-        }).then(function(result) {
-          if (result.isConfirmed) {
-            $('.btn-open-session-caisse').first().trigger('click');
-          }
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Opération non validée',
-          text: message,
-          confirmButtonColor: '#1E3A5F',
-          confirmButtonText: 'D\'accord'
-        });
-      }
-    } else if (typeof showToast === 'function') {
-      showToast(message, 'error');
-    } else if (window.toastr) {
-      toastr.error(message);
-    } else {
-      alert(message);
-    }
-  }
-
-  // Validation Formulaire Encaissement Annexe
-  $('#form-encaissement-annexe').on('submit', function(e) {
-    e.preventDefault();
-    var montant = parseFloat($('#input-montant-versement').val() || 0);
-    if (montant <= 0) {
-      showEncaissementAnnexeError('Le montant du versement doit être supérieur à 0 FCFA.');
-      return;
-    }
-
-    var $btn = $('#btn-submit-encaissement');
-    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right:6px;"></span> Validation...');
-
-    $.ajax({
-      url: '<?= RACINE ?>caisse_annexe/encaisser',
-      type: 'POST',
-      data: $(this).serialize(),
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      dataType: 'json',
-      success: function(res) {
-        $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider le Règlement');
-        if (window.lucide) lucide.createIcons();
-
-        if (res.status === 1) {
-          closeEncaissementModal();
-          table.ajax.reload(null, false);
-          refreshKpis();
-
-          var codePaiement = res.code_paiement || 'REC-FA-CONFIRME';
-          var idCrypte = res.encrypted_id || res.id_paiement;
-          $('#success-recu-num').text(codePaiement);
-          $('#success-recu-print-link').attr('href', window.RACINE + 'paiement/imprimerPdf/' + idCrypte);
-          $('#modal-recu-annexe-success').css('display', 'flex');
-          if (window.lucide) lucide.createIcons();
-        } else {
-          showEncaissementAnnexeError(res.message || 'Erreur lors de l\'enregistrement.');
-        }
-      },
-      error: function(xhr) {
-        $btn.prop('disabled', false).html('<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Valider le Règlement');
-        if (window.lucide) lucide.createIcons();
-        var errMsg = 'Une erreur est survenue lors de la communication avec le serveur.';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-          errMsg = xhr.responseJSON.message;
-        }
-        showEncaissementAnnexeError(errMsg);
-      }
-    });
-  });
-
-  // Gestion session de caisse
-  $(document).on('click', '.btn-open-session-caisse', function(e) {
-    e.preventDefault();
-    $('#modal-open-session-caisse').css('display', 'flex');
-    if (window.lucide) lucide.createIcons();
-  });
-
-  $(document).on('click', '.btn-close-modal-session', function() {
-    $('#modal-open-session-caisse').hide();
-  });
-
-  $('#form-open-session-caisse').on('submit', function(e) {
-    e.preventDefault();
-    var $btn = $('#btn-submit-session');
-    $btn.prop('disabled', true).text('Ouverture...');
-
-    $.ajax({
-      url: window.RACINE + 'session_caisse/add',
-      type: 'POST',
-      data: $(this).serialize(),
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      dataType: 'json',
-      success: function(res) {
-        $btn.prop('disabled', false).text('Confirmer l\'Ouverture');
-        if (res.status === 1) {
-          window.location.reload();
-        } else {
-          alert(res.message || 'Erreur lors de l\'ouverture de la session.');
-        }
-      }
-    });
-  });
-
-});
+<script type="application/json" id="caisse-annexe-config">
+<?= json_encode([
+    'racine' => RACINE,
+    'csrfToken' => Validator::generateCsrfToken(),
+    'canCancel' => !empty($canCancel),
+    'canRecord' => !empty($canRecord)
+]) ?>
 </script>
+
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/caisse_annexe.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

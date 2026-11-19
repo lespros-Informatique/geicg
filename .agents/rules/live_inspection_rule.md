@@ -114,3 +114,126 @@ Dans toute opération de refactorisation ou d'évolution du code, l'architecture
 7. **Sécurisation par Middlewares & Filtrage d'Accès** :
    - Les contrôleurs doivent systématiser la vérification de l'authentification (`Auth::check()`) et le contrôle RBAC (`Auth::can(...)` ou `$this->requirePermission(...)`) dès l'initialisation des actions.
    - Toute soumission de formulaire critique doit intégrer la validation CSRF.
+
+---
+
+## 6. RÈGLE D'ARCHITECTURE JAVASCRIPT MODULAIRE & UNIFIÉ (FRONT-END STANDARDS)
+
+Afin d'éviter la prolifération de fichiers JavaScript atomiques ou isolés et de simplifier la maintenance :
+
+1. **Unification par Domaine Métier (One Module JS per Domain)** :
+   - Tous les scripts relatifs à une entité métier ou à ses fonctionnalités connexes doivent être regroupés dans un **fichier JavaScript unique** placé dans `public/assets/js/modules/<module>.js` (ex: `etudiants.js` regroupe liste, édition, détails, wizard et parents ; `paiements.js` regroupe règlements, détails, compta, arriérés, impayés et sessions de caisse ; `annees.js` regroupe années et semestres ; `documents.js` regroupe documents et galeries ; `accessoires.js` regroupe accessoires et pièces à fournir ; etc.).
+   - Ne **JAMAIS** créer de fichiers JavaScript distincts et dispersés pour des sous-actions (proscrire `*_list.js`, `*_edit.js`, `*_details.js` dès lors qu'un module unifié `<module>.js` existe).
+
+2. **Garde d'Exécution et Isolation de Portée Obligatoires (Element Presence Guards & IIFE)** :
+   - Chaque sous-partie ou écran au sein du module unifié doit impérativement être encapsulée dans une IIFE protégée par une condition vérifiant l'existence de ses éléments cibles dans le DOM :
+     ```javascript
+     // Exemple d'isolation pour une section :
+     if ($('#table-xyz, #xyz-config').length) {
+       (function() {
+         // Logique spécifique à cette interface
+       })();
+     }
+     ```
+   - Cette règle prévient formellement tout plantage JavaScript ou initialisation superflue (DataTables, écouteurs d'événements, etc.) sur les vues du module qui ne contiennent pas ces composants.
+
+3. **Exposition des Fonctions Invoquées Inline (Window Scoping)** :
+   - Si une vue utilise des attributs d'événements HTML inline (ex: `onclick="switchTab(...)"`), les fonctions correspondantes doivent obligatoirement être attachées à l'objet global `window` (`window.switchTab = switchTab;`), ou converties en délégation d'événements jQuery (`$(document).on(...)`).
+
+4. **Suppression Systématique des Anciens Fichiers Remplacés** :
+   - Dès qu'un fichier JavaScript est intégré dans un module unifié et que les vues correspondantes sont mises à jour, supprimer immédiatement les anciens scripts individuels afin d'éviter les doublons et les régressions de maintenance.
+
+---
+
+## 7. PROTOCOLE D'ÉCHANGE DE DONNÉES & CONFIGURATIONS PHP $\rightarrow$ JS (ZERO INLINE SCRIPT)
+
+1. **Injection Déclarative via ViewContext** :
+   - L'inclusion des scripts front-end dans les vues PHP doit s'effectuer exclusivement via l'helper applicatif, positionné en bas de vue juste avant l'inclusion de `footer-link.php` :
+     ```php
+     ViewContext::setScripts(['public/assets/js/modules/<module>.js']);
+     require_once __DIR__ . '/../../public/inc/footer-link.php';
+     ```
+   - Ne **JAMAIS** insérer de balise `<script src="...">` en dur dans le corps des gabarits HTML.
+
+2. **Passage de Configuration Sécurisé par Balises JSON (Zero PHP dans le JS)** :
+   - Proscrire l'injection de variables PHP au sein de blocs JavaScript (`var racine = '<?= RACINE ?>';`).
+   - Toutes les métadonnées serveur nécessaires au script (jeton CSRF, URL racine, identifiants chiffrés, états initiaux) doivent être encapsulées dans une balise JSON typée :
+     ```html
+     <script type="application/json" id="<module>-config">
+     <?= json_encode([
+         'racine' => RACINE,
+         'csrfToken' => Validator::generateCsrfToken(),
+         // ... autres paramètres dynamiques
+     ]) ?>
+     </script>
+     ```
+   - Le module JavaScript lit cette configuration proprement via `JSON.parse(document.getElementById('<module>-config').textContent)`.
+
+---
+
+## 8. PROTOCOLE DE VALIDATION TECHNIQUE ET CONTRÔLE DE SYNTAXE (LINTING)
+
+Après toute refactorisation de fichier ou regroupement de modules :
+
+1. **Validation Systématique du JavaScript** :
+   - Vérifier l'intégrité syntaxique de chaque fichier JS créé ou modifié à l'aide du compilateur Node.js :
+     `node -c <chemin_du_fichier.js>`
+   - Aucune erreur de syntaxe ou parenthèse/accolade manquante ne doit subsister.
+
+2. **Validation Systématique des Vues PHP** :
+   - Vérifier la validité syntaxique de chaque vue PHP éditée à l'aide du linting PHP CLI :
+     `php -l <chemin_de_la_vue.php>`
+   - Le statut retourné doit obligatoirement être `No syntax errors detected`.
+
+---
+
+## 9. RÈGLE DES FICHIERS D'IMPRESSION (PDF & JS) & CONSOMMATION OBLIGATOIRE DE LA TABLE CONFIGURATIONS
+
+Lors de la création ou modification de tout fichier, flux ou vue d'impression (modèles PDF mPDF via `PdfService`, modales d'émargement imprimables, popups JS `window.open` + `window.print()` ou zones `@media print`) :
+
+1. **Source de Vérité Institutionnelle Unique (`configurations`)** :
+   - Toutes les informations relatives à l'établissement, aux contacts, aux signatures et aux mentions officielles doivent **obligatoirement provenir de la table `configurations`**.
+   - Côté PHP / Contrôleurs : Récupérer les données via `$this->getEtablissementConfig()` et les injecter systématiquement dans le gabarit d'impression :
+     ```php
+     $dataView['etablissement'] = $this->getEtablissementConfig();
+     ```
+   - Côté JavaScript : Exploiter systématiquement l'objet global `window.ETABLISSEMENT_CONFIG` exposé dans `public/inc/header.php`.
+
+2. **Interdiction Formelle du Hard-coding des Données Établissement (Zéro Texte Figé)** :
+   - **Identité Institutionnelle** :
+     - Nom officiel : `$etablissement['nom_etablissement']`
+     - Sigle : `$etablissement['sigle_etablissement']`
+     - Slogan : `$etablissement['slogan_etablissement']`
+     - Numéro d'autorisation / Agrément : `$etablissement['numero_autorisation']`
+     - Ministère de tutelle : `$etablissement['ministere_tutelle']`
+     - Logo : `$etablissement['logo_etablissement']`
+   - **Coordonnées & Localisation** :
+     - Adresse physique : `$etablissement['adresse_etablissement']`
+     - Boîte postale : `$etablissement['boite_postale']`
+     - Ville et Pays : `$etablissement['ville_etablissement']`, `$etablissement['pays_etablissement']`
+     - Téléphones & Standard : `$etablissement['contacts_formatted']` (ou `$telephone_fixe`, `$telephone_mobile`, `$telephone_mobile2`)
+     - Email & Site web : `$etablissement['email_etablissement']`, `$etablissement['site_web']`
+   - **Titres et Noms des Responsables Signataires** :
+     - Direction des Études / Pédagogie : Titre (`$etablissement['titre_direction_pedagogique']`) et Nom (`$etablissement['nom_directeur_etudes']`). Ne JAMAIS figer le nom du Directeur des Études.
+     - Direction Générale : Titre (`$etablissement['titre_direction_generale']`) et Nom (`$etablissement['nom_directeur_general']`).
+     - Service Financier / Caisse : Titre (`$etablissement['titre_service_finance']`) et Nom (`$etablissement['nom_responsable_finance']`).
+     - Service Scolarité & Inscriptions : Titre (`$etablissement['titre_service_scolarite']`) et Nom (`$etablissement['nom_responsable_scolarite']`).
+     - Secrétariat Général : Nom (`$etablissement['nom_secretaire_general']`).
+   - **Mentions Officielles, Dates & Cachets** :
+     - Lieu de délivrance / signature : Utiliser dynamiquement `Fait à <?= htmlspecialchars($etablissement['ville_signature']) ?>, le ...` (proscrire le mot figé `Fait à Bouaké`).
+     - Mention cachet : `$etablissement['mention_cachet_signature']`.
+     - Bas de page / Référence : `$etablissement['texte_pied_page']` et `$etablissement['prefixe_reference']`.
+
+3. **Garde d'Initialisation Autonome dans les Templates PDF** :
+   - Tout gabarit situé dans `views/templates/pdf/*.php` doit inclure en tête une initialisation défensive garantissant la disponibilité de `$etablissement` même en appel direct ou en sous-vue :
+     ```php
+     if (empty($etablissement) || !is_array($etablissement)) {
+         if (class_exists('ModelConfiguration')) {
+             $etablissement = (new ModelConfiguration())->getConfig();
+         }
+     }
+     ```
+
+4. **Impressions Front-End JavaScript (`window.print()`)** :
+   - Ne jamais injecter de nom d'école ou de contacts en dur dans les fonctions générant du HTML pour l'impression en JS. Toujours lire `window.ETABLISSEMENT_CONFIG || {}` et en extraire `nom_etablissement`, `sigle_etablissement`, `contacts_formatted`, `titre_direction_pedagogique`, etc.
+

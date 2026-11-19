@@ -1,30 +1,4 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<style>
-@media print {
-  .sidebar, .main-nav, nav, .no-print, .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate, button, a.btn {
-    display: none !important;
-  }
-  .main-content, .content-wrapper, .app-layout {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-  .card {
-    box-shadow: none !important;
-    border: 1px solid #CBD5E1 !important;
-  }
-  table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-  }
-  th, td {
-    border: 1px solid #94A3B8 !important;
-    padding: 6px 8px !important;
-    font-size: 11px !important;
-  }
-}
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -37,16 +11,16 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Réinscriptions</h1>
             <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 8px;">
-              Session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'Aucune') ?>
+              Session <?= htmlspecialchars(Session::get('annee_active_libelle', 'Aucune')) ?>
             </span>
           </div>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Liste des étudiants à réinscrire pour l'année académique active</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
-          <button onclick="window.print()" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste des inscrits">
+          <button type="button" id="btn-print-list" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste des candidats à la réinscription">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </button>
-          <a href="<?= RACINE ?>inscription/formulaire" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 6px rgba(30,58,95,0.25);">
+          <a href="<?= url('inscription/formulaire') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 2px 6px rgba(30,58,95,0.25);">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> REINSCRIPTION
           </a>
         </div>
@@ -74,7 +48,7 @@
               <option value="">-- Choisir l'année académique --</option>
               <?php foreach (($annees ?? []) as $a): ?>
                 <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= (($selectedAnneeCode ?? '') === $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'cloture' ? ' (Clôturée)' : (($a['statut_annee'] ?? '') === 'actif' ? ' (Active)' : '') ?>
+                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= ($a['statut_annee'] ?? '') === 'cloture' ? ' (Clôturée)' : (($a['statut_annee'] ?? '') === STATUTS::ACTIF ? ' (Active)' : '') ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -131,10 +105,10 @@
                 <th style="padding: 14px 12px; width: 45px;">#</th>
                 <th style="padding: 14px 12px;">Matricule</th>
                 <th style="padding: 14px 12px;">Nom & Prénoms</th>
-                <th style="padding: 14px 12px;">Contact</th>
-                <th style="padding: 14px 12px;">Filière & Niveau Antérieur</th>
-                <th style="padding: 14px 12px;">Classe Antérieure (N-1)</th>
-                <th style="padding: 14px 12px; text-align: right;">Action</th>
+                <th style="padding: 14px 12px;" class="text-center">Date - Nais</th>
+                <th style="padding: 14px 12px;" class="text-center">Sexe</th>
+                <th style="padding: 14px 12px;">Classe Antérieure</th>
+                <th style="padding: 14px 12px; text-align: center; width: 130px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -146,154 +120,7 @@
   </main>
 </div>
 
-<script>
-$(document).ready(function() {
-  if ($.fn.select2) {
-    $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').select2({
-      width: '100%'
-    });
-  }
-
-  var table = $('#table-inscriptions').DataTable({
-    order: [],
-    ajax: {
-      url: '<?= RACINE ?>inscription/apiList',
-      data: function(d) {
-        d.annee_code = $('#filter-annee').val();
-        d.filiere_code = $('#filter-filiere').val();
-        d.niveau_code = $('#filter-niveau').val();
-        d.classe_code = $('#filter-classe').val();
-      }
-    },
-    processing: true,
-    autoWidth: false,
-    columns: [
-      { data: null, width: '45px', render: function(d, type, row, meta) {
-        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-      }},
-      { data: 'matricule_etudiant', render: function(d) {
-        return '<code style="font-weight:800; color:#1E3A5F; background:#EFF6FF; padding:3px 7px; border-radius:6px; font-size:12px;">' + (d || '-') + '</code>';
-      }},
-      { data: 'nom_complet', render: function(d) {
-        return '<span style="font-weight:800; color:#0F172A; font-size:13.5px;">' + (d || '-') + '</span>';
-      }},
-      { data: 'telephone', render: function(d) {
-        if (!d || d === '-') return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Non renseigné</span>';
-        return '<span style="color:#334155; font-weight:700; font-size:12.5px;"><i data-lucide="phone" style="width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:4px;color:#2563EB;"></i>' + d + '</span>';
-      }},
-      { data: 'filiere_precedente', render: function(d, type, row) {
-        var fil = d || 'Non définie';
-        return '<div>' +
-               '  <div style="font-weight:700; color:#1E3A5F; font-size:13px;">' + fil + '</div>' +
-               '  <div style="font-size:11.5px; color:#64748B;">' + (row.niveau_precedent || 'Niveau non défini') + '</div>' +
-               '</div>';
-      } },
-      { data: 'classe_precedente', render: function(d, type, row) {
-        if (!d) {
-          return '<span style="color:#94A3B8; font-style:italic; font-size:12px;">Nouveau / Sans historique</span>';
-        }
-        var annee = row.annee_precedente ? ' <span style="font-size:11px; color:#64748B;">(' + row.annee_precedente + ')</span>' : '';
-        return '<div style="font-weight:700; color:#334155; font-size:13px;">' + d + annee + '</div>';
-      } },
-      { data: null, orderable: false, width: '220px', className: 'text-end', render: function(d, type, row) {
-        var idInscription = row.editId || row.id_inscription;
-        var printUrl = idInscription ? ('<?= RACINE ?>inscription/details/' + idInscription + '?print=1') : ('<?= RACINE ?>etudiant/details/' + encodeURIComponent(row.code_etudiant || row.id_etudiant) + '?print=1');
-        return '<div style="display:inline-flex; align-items:center; gap:6px; justify-content:flex-end;">' +
-               '  <a href="' + printUrl + '" target="_blank" class="btn btn-sm btn-outline-primary" style="font-weight:700; border-radius:6px; padding:5px 9px; display:inline-flex; align-items:center; gap:3px;" title="Imprimer la fiche"><i data-lucide="printer" style="width:13px;height:13px;"></i> Imprimer</a>' +
-               '  <a href="<?= RACINE ?>inscription/formulaire?etudiant_code=' + encodeURIComponent(row.code_etudiant) + '" class="btn btn-sm btn-primary" style="background:#1E3A5F; border-color:#1E3A5F; font-weight:700; border-radius:6px; padding:5px 10px; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(30,58,95,0.2);">' +
-               '    <i data-lucide="user-check" style="width:13px;height:13px;"></i> Réinscrire' +
-               '  </a>' +
-               '</div>';
-      } }
-    ],
-
-    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
-    drawCallback: function() { 
-      if (window.lucide) lucide.createIcons(); 
-    }
-  });
-
-  function toggleFieldsByAnnee() {
-    var val = $('#filter-annee').val();
-    var hasAnnee = !!(val && val !== '');
-    var $targets = $('#filter-filiere, #filter-niveau, #filter-classe');
-
-    $targets.prop('disabled', !hasAnnee);
-    if (!hasAnnee) {
-      $targets.attr('readonly', 'readonly');
-      $('#btn-reset-filters').prop('disabled', true).addClass('disabled').css('opacity', '0.5');
-    } else {
-      $targets.removeAttr('readonly');
-      $('#btn-reset-filters').prop('disabled', false).removeClass('disabled').css('opacity', '1');
-    }
-
-    if ($.fn.select2) {
-      $targets.trigger('change.select2');
-      $targets.each(function() {
-        var $container = $(this).next('.select2-container');
-        if (!hasAnnee) {
-          $container.find('.select2-selection').css({
-            'background-color': '#F8FAFC',
-            'cursor': 'not-allowed',
-            'opacity': '0.7'
-          });
-        } else {
-          $container.find('.select2-selection').css({
-            'background-color': '#FFFFFF',
-            'cursor': 'pointer',
-            'opacity': '1'
-          });
-        }
-      });
-    }
-    return hasAnnee;
-  }
-
-  toggleFieldsByAnnee();
-
-  $('#filter-annee').on('change', function() {
-    var hasAnnee = toggleFieldsByAnnee();
-    if (!hasAnnee) {
-      $('#filter-filiere').val('ALL').trigger('change.select2');
-      $('#filter-niveau').val('ALL').trigger('change.select2');
-      $('#filter-classe').val('ALL').trigger('change.select2');
-    }
-  });
-
-  // Rechargement sur changement des filtres (y compris Année Académique)
-  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').on('change', function() {
-    var filSelected = $('#filter-filiere').val();
-    var nivSelected = $('#filter-niveau').val();
-
-    // Filtre interactif de la liste déroulante des classes
-    $('#filter-classe option').each(function() {
-      var val = $(this).val();
-      if (val === 'ALL') return;
-      var cFil = $(this).attr('data-filiere');
-      var cNiv = $(this).attr('data-niveau');
-
-      var matchFil = (filSelected === 'ALL' || cFil === filSelected);
-      var matchNiv = (nivSelected === 'ALL' || cNiv === nivSelected);
-
-      if (matchFil && matchNiv) {
-        $(this).show();
-      } else {
-        $(this).hide();
-      }
-    });
-
-    table.ajax.reload();
-  });
-
-  // Bouton Réinitialiser
-  $('#btn-reset-filters').on('click', function() {
-    if ($('#btn-reset-filters').is(':disabled')) return;
-    $('#filter-filiere').val('ALL').trigger('change.select2');
-    $('#filter-niveau').val('ALL').trigger('change.select2');
-    $('#filter-classe').val('ALL').trigger('change.select2');
-    $('#filter-classe option').show();
-    table.ajax.reload();
-  });
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/inscriptions.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

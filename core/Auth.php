@@ -116,9 +116,8 @@ class Auth
 
         $roles = self::roles();
         return in_array(ROLES::SUPER_ADMIN, $roles, true)
-            || in_array('ROLE_SUPERADMIN', $roles, true)
             || in_array('superadmin', $roles, true)
-            || in_array('all_control', $roles, true);
+            || in_array(ROLES::ALL_CONTROL, $roles, true);
     }
 
     /**
@@ -142,9 +141,9 @@ class Auth
             $inClause = implode(',', array_fill(0, count($roles), '?'));
             $stmt = $db->prepare("
                 SELECT DISTINCT rp.permission_code 
-                FROM role_permissions rp
-                JOIN permissions p ON rp.permission_code = p.code_permission
-                WHERE rp.role_code IN ($inClause) AND p.statut_permission = 'actif'
+                FROM " . TABLES::ROLE_PERMISSIONS . " rp
+                JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
+                WHERE rp.role_code IN ($inClause) AND p.statut_permission = '" . STATUTS::ACTIF . "'
             ");
             $stmt->execute($roles);
             $perms = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];

@@ -15,7 +15,7 @@
             <?= !empty($item['id_piece_cycle']) ? 'Mise à jour des critères d\'exigence de la pièce pour ce cycle' : 'Sélectionnez les pièces administratives à exiger aux étudiants pour ce cycle académique' ?>
           </p>
         </div>
-        <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
+        <a href="<?= url('piece_fournir_cycle/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
           <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour à la liste
         </a>
       </div>
@@ -23,7 +23,7 @@
       <?php if (!empty($item['id_piece_cycle'])): ?>
         <!-- FORMULAIRE MODIFICATION UNITAIRE -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-          <form action="<?= RACINE ?>piece_fournir_cycle/edit" method="POST" style="width: 100%;">
+          <form action="<?= url('piece_fournir_cycle/edit') ?>" method="POST" style="width: 100%;">
             <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
             <input type="hidden" name="id_piece_cycle" value="<?= $item['id_piece_cycle'] ?>">
 
@@ -96,14 +96,14 @@
               <div>
                 <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Statut</label>
                 <select name="statut_piece_cycle" class="form-select" style="border-radius: 8px; padding: 10px 14px; border: 1px solid #CBD5E1; font-weight: 700; width: 100%;">
-                  <option value="actif" <?= ($item['statut_piece_cycle'] ?? '') === 'actif' ? 'selected' : '' ?>>Actif</option>
-                  <option value="inactif" <?= ($item['statut_piece_cycle'] ?? '') === 'inactif' ? 'selected' : '' ?>>Inactif</option>
+                  <option value="actif" <?= ($item['statut_piece_cycle'] ?? '') === STATUTS::ACTIF ? 'selected' : '' ?>>Actif</option>
+                  <option value="inactif" <?= ($item['statut_piece_cycle'] ?? '') === STATUTS::INACTIF ? 'selected' : '' ?>>Inactif</option>
                 </select>
               </div>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 12px;">
-              <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Annuler</a>
+              <a href="<?= url('piece_fournir_cycle/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">Annuler</a>
               <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer les modifications</button>
             </div>
           </form>
@@ -111,7 +111,7 @@
 
       <?php else: ?>
         <!-- FORMULAIRE AJOUT RAPIDE / PANIER DE PIÈCES À FOURNIR PAR CYCLE -->
-        <form action="<?= RACINE ?>piece_fournir_cycle/add" method="POST" id="form-bulk-piece-cycle" style="width: 100%;">
+        <form action="<?= url('piece_fournir_cycle/add') ?>" method="POST" id="form-bulk-piece-cycle" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
 
           <!-- Choix du Cycle & Niveau -->
@@ -184,7 +184,7 @@
             </div>
 
             <div style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
-              <a href="<?= RACINE ?>piece_fournir/formulaire" target="_blank" style="font-size: 12.5px; font-weight: 700; color: #3B82F6; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+              <a href="<?= url('piece_fournir/formulaire') ?>" target="_blank" style="font-size: 12.5px; font-weight: 700; color: #3B82F6; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                 <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Créer une nouvelle pièce dans le répertoire &rarr;
               </a>
             </div>
@@ -192,7 +192,7 @@
 
           <!-- Bottom Submit Bar -->
           <div style="display: flex; justify-content: flex-end; align-items: center; gap: 14px;">
-            <a href="<?= RACINE ?>piece_fournir_cycle/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 12px 24px;">Annuler</a>
+            <a href="<?= url('piece_fournir_cycle/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 12px 24px;">Annuler</a>
             <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; font-size: 14px; border-radius: 8px; padding: 12px 32px; box-shadow: 0 4px 12px rgba(30,58,95,0.25); display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Enregistrer le Dossier du Cycle
             </button>
@@ -204,405 +204,18 @@
   </main>
 </div>
 
-<script>
-var pieceOptions = <?= json_encode(array_map(function($p) {
-  return [
-    'code' => $p['code_piece_fournir'],
-    'libelle' => $p['libelle_piece']
-  ];
-}, $pieces ?? [])) ?>;
-
-var alreadyAssignedCodes = [];
-
-$(document).ready(function() {
-  var rowIndex = 0;
-
-  function loadAssignedPiecesForCycle(cycleCode, niveauCode) {
-    if (!cycleCode) {
-      alreadyAssignedCodes = [];
-      refreshAllDropdowns();
-      return;
-    }
-
-    $.ajax({
-      url: '<?= RACINE ?>piece_fournir_cycle/getByCycleApi',
-      type: 'GET',
-      data: { 
-        cycle_code: cycleCode,
-        niveau_code: niveauCode || ''
-      },
-      dataType: 'json',
-      success: function(res) {
-        alreadyAssignedCodes = res.assignedCodes || [];
-        refreshAllDropdowns();
-        if (alreadyAssignedCodes.length > 0) {
-          if (window.toastr) toastr.info(alreadyAssignedCodes.length + ' pièce(s) sont déjà enregistrées pour cette configuration.');
-        }
-      }
-    });
-  }
-
-  function showDuplicateWarning(msg) {
-    if (window.toastr) {
-      toastr.warning(msg);
-    }
-    $('#duplicate-warning-text').html(msg);
-    $('#duplicate-warning-banner').css('display', 'flex').hide().fadeIn(200);
-  }
-
-  function hideDuplicateWarning() {
-    var selected = [];
-    var hasDup = false;
-    $('.sel-piece').each(function() {
-      var v = $(this).val();
-      if (v) {
-        if (selected.indexOf(v) !== -1 || alreadyAssignedCodes.indexOf(v) !== -1) {
-          hasDup = true;
-        }
-        selected.push(v);
-      }
-    });
-    if (!hasDup) {
-      $('#duplicate-warning-banner').fadeOut(200);
-    }
-  }
-
-  function highlightDuplicateSelect(selectElem) {
-    selectElem.css({
-      'border': '2px solid #EF4444',
-      'background-color': '#FEF2F2',
-      'box-shadow': '0 0 0 3px rgba(239, 68, 68, 0.2)'
-    });
-    setTimeout(function() {
-      selectElem.css({
-        'border': '',
-        'background-color': '',
-        'box-shadow': ''
-      });
-    }, 2500);
-  }
-
-  function refreshAllDropdowns() {
-    $('.bulk-row-cycle').each(function() {
-      var currentSelect = $(this).find('.sel-piece');
-      var currentVal = currentSelect.val();
-
-      var selectedInOtherRows = [];
-      $('.sel-piece').not(currentSelect).each(function() {
-        var v = $(this).val();
-        if (v) selectedInOtherRows.push(v);
-      });
-
-      currentSelect.find('option').each(function() {
-        var optVal = $(this).val();
-        if (!optVal) return;
-
-        var isAlreadyInDb = alreadyAssignedCodes.indexOf(optVal) !== -1;
-        var isSelectedOther = selectedInOtherRows.indexOf(optVal) !== -1;
-
-        var baseLibelle = '';
-        for (var i = 0; i < pieceOptions.length; i++) {
-          if (pieceOptions[i].code === optVal) {
-            baseLibelle = pieceOptions[i].libelle;
-            break;
-          }
-        }
-
-        if (isAlreadyInDb) {
-          $(this).prop('disabled', true);
-          $(this).text(baseLibelle + ' (Déjà configuré dans ce cycle)');
-        } else if (isSelectedOther) {
-          $(this).prop('disabled', true);
-          $(this).text(baseLibelle + ' (Déjà sélectionné ci-dessus)');
-        } else {
-          $(this).prop('disabled', false);
-          $(this).text(baseLibelle);
-        }
-      });
-
-      if (alreadyAssignedCodes.indexOf(currentVal) !== -1) {
-        currentSelect.val('');
-      }
-    });
-  }
-
-  function createRow(selectedCode, nbEx, nature) {
-    selectedCode = selectedCode || '';
-    nbEx = nbEx || 1;
-    nature = nature || 'photocopie_simple';
-
-    var optHtml = '<option value="">-- Choisir une pièce à fournir --</option>';
-    pieceOptions.forEach(function(item) {
-      var isAlreadyInDb = alreadyAssignedCodes.indexOf(item.code) !== -1;
-      var isSel = (item.code === selectedCode && !isAlreadyInDb) ? 'selected' : '';
-      var disabled = isAlreadyInDb ? 'disabled' : '';
-      var suffix = isAlreadyInDb ? ' (Déjà configuré dans ce cycle)' : '';
-      optHtml += '<option value="' + item.code + '" ' + isSel + ' ' + disabled + '>' + $('<div>').text(item.libelle + suffix).html() + '</option>';
-    });
-
-    var html = '<tr class="bulk-row-cycle" data-idx="' + rowIndex + '" style="border-bottom: 1px solid #F1F5F9;">' +
-      '<td style="padding: 10px 12px;">' +
-        '<select name="items[' + rowIndex + '][piece_code]" required class="form-select sel-piece" style="border-radius:6px; font-weight:700; font-size:13px; padding:8px 12px; width:100%; box-sizing:border-box;">' +
-          optHtml +
-        '</select>' +
-      '</td>' +
-      '<td style="padding: 10px 12px; text-align:center;">' +
-        '<input type="number" min="1" step="1" name="items[' + rowIndex + '][nombre_exemplaires]" value="' + nbEx + '" required class="form-control" style="border-radius:6px; font-weight:700; text-align:center; font-size:13px; padding:8px; width:100%; box-sizing:border-box;">' +
-      '</td>' +
-      '<td style="padding: 10px 12px;">' +
-        '<select name="items[' + rowIndex + '][nature_document]" class="form-select" style="border-radius:6px; font-weight:600; font-size:12.5px; padding:8px 10px; width:100%; box-sizing:border-box;">' +
-          '<option value="photocopie_simple" ' + (nature === 'photocopie_simple' ? 'selected' : '') + '>Photocopie Simple</option>' +
-          '<option value="photocopie_legalisee" ' + (nature === 'photocopie_legalisee' ? 'selected' : '') + '>Photocopie Légalisée</option>' +
-          '<option value="original" ' + (nature === 'original' ? 'selected' : '') + '>Original Requis</option>' +
-          '<option value="numerique" ' + (nature === 'numerique' ? 'selected' : '') + '>Fichier Numérique (Scan)</option>' +
-          '<option value="aucun" ' + (nature === 'aucun' ? 'selected' : '') + '>Aucun</option>' +
-        '</select>' +
-      '</td>' +
-      '<td style="padding: 10px 12px; text-align:center;">' +
-        '<button type="button" class="btn btn-sm btn-delete-row-cycle" style="background:#FEE2E2; color:#B91C1C; border:none; border-radius:6px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;" title="Supprimer la ligne">' +
-          '✕' +
-        '</button>' +
-      '</td>' +
-    '</tr>';
-
-    $('#bulk-rows-cycle-container').append(html);
-    rowIndex++;
-    refreshAllDropdowns();
-  }
-
-  // Prepopulate initial empty lines
-  if ($('#bulk-rows-cycle-container').length && $('#bulk-rows-cycle-container tr').length === 0) {
-    createRow('', 1, 'photocopie_simple');
-    createRow('', 1, 'original');
-  }
-
-  // Dynamic cycle selection -> reload niveaux & pieces
-  $('#select_target_cycle').on('change', function() {
-    var cycleCode = $(this).val();
-    var $nivSelect = $('#select_target_niveau');
-
-    if (!cycleCode) {
-      $nivSelect.empty()
-        .append('<option value="">-- Sélectionnez d\'abord un cycle --</option>')
-        .prop('disabled', true)
-        .attr('readonly', 'readonly')
-        .css({
-          'background-color': '#F8FAFC',
-          'color': '#94A3B8',
-          'cursor': 'not-allowed'
-        });
-      alreadyAssignedCodes = [];
-      refreshAllDropdowns();
-      return;
-    }
-
-    // Affichage de chargement
-    $nivSelect.empty()
-      .append('<option value="">Chargement des niveaux d\'études...</option>')
-      .prop('disabled', true)
-      .attr('readonly', 'readonly')
-      .css({
-        'background-color': '#F8FAFC',
-        'color': '#64748B',
-        'cursor': 'wait'
-      });
-
-    $.ajax({
-      url: '<?= RACINE ?>piece_fournir_cycle/getByCycleApi',
-      type: 'GET',
-      data: { 
-        cycle_code: cycleCode,
-        niveau_code: ''
-      },
-      dataType: 'json',
-      success: function(res) {
-        alreadyAssignedCodes = res.assignedCodes || [];
-        refreshAllDropdowns();
-
-        // Remplir les niveaux d'études spécifiques à ce cycle
-        $nivSelect.empty();
-        $nivSelect.append('<option value="">-- Sélectionner un niveau d\'étude --</option>');
-        if (res.niveaux && res.niveaux.length > 0) {
-          res.niveaux.forEach(function(niv) {
-            $nivSelect.append('<option value="' + niv.code_niveau + '">' + $('<div>').text(niv.libelle_niveau).html() + '</option>');
-          });
-        }
-
-        // Débloquer le champ niveau d'étude
-        $nivSelect
-          .prop('disabled', false)
-          .removeAttr('readonly')
-          .css({
-            'background-color': '#FFFFFF',
-            'color': '#0F172A',
-            'cursor': 'pointer'
-          });
-
-        if (alreadyAssignedCodes.length > 0) {
-          if (window.toastr) toastr.info(alreadyAssignedCodes.length + ' pièce(s) sont déjà enregistrées pour ce cycle.');
-        }
-      },
-      error: function() {
-        $nivSelect.empty()
-          .append('<option value="">-- Sélectionner un niveau d\'étude --</option>')
-          .prop('disabled', false)
-          .removeAttr('readonly')
-          .css({
-            'background-color': '#FFFFFF',
-            'color': '#0F172A',
-            'cursor': 'pointer'
-          });
-      }
-    });
-  });
-
-  // Niveau change -> reload assigned pieces for (cycle, niveau)
-  $('#select_target_niveau').on('change', function() {
-    var cycle = $('#select_target_cycle').val();
-    var niveau = $(this).val();
-    if (cycle) {
-      loadAssignedPiecesForCycle(cycle, niveau);
-    }
-  });
-
-  // Support modification unitaire : mise à jour des niveaux lors du changement de cycle
-  $('#select_edit_cycle').on('change', function() {
-    var cycleCode = $(this).val();
-    var $niv = $('#select_edit_niveau');
-    if (!cycleCode) {
-      $niv.empty().append('<option value="">-- Sélectionner un niveau d\'étude --</option>');
-      return;
-    }
-    $.ajax({
-      url: '<?= RACINE ?>piece_fournir_cycle/getByCycleApi',
-      type: 'GET',
-      data: { cycle_code: cycleCode },
-      dataType: 'json',
-      success: function(res) {
-        var cur = $niv.val();
-        $niv.empty().append('<option value="">-- Sélectionner un niveau d\'étude --</option>');
-        if (res.niveaux && res.niveaux.length > 0) {
-          res.niveaux.forEach(function(n) {
-            var sel = (n.code_niveau === cur) ? 'selected' : '';
-            $niv.append('<option value="' + n.code_niveau + '" ' + sel + '>' + $('<div>').text(n.libelle_niveau).html() + '</option>');
-          });
-        }
-      }
-    });
-  });
-
-  // Check on piece select change
-  $(document).on('change', '.sel-piece', function() {
-    var changedVal = $(this).val();
-    var thisSelect = $(this);
-    if (!changedVal) {
-      hideDuplicateWarning();
-      refreshAllDropdowns();
-      return;
-    }
-
-    var rawObj = pieceOptions.find(function(p) { return p.code === changedVal; });
-    var pieceLibelle = rawObj ? rawObj.libelle : 'Document';
-
-    // 1. Check if already assigned in DB
-    if (alreadyAssignedCodes.indexOf(changedVal) !== -1) {
-      thisSelect.val('');
-      showDuplicateWarning('<strong>Pièce déjà existante :</strong> La pièce « <b>' + $('<div>').text(pieceLibelle).html() + '</b> » est déjà enregistrée pour ce cycle académique.');
-      highlightDuplicateSelect(thisSelect);
-      refreshAllDropdowns();
-      return;
-    }
-
-    // 2. Check if selected in another row
-    var count = 0;
-    $('.sel-piece').each(function() {
-      if ($(this).val() === changedVal) count++;
-    });
-
-    if (count > 1) {
-      thisSelect.val('');
-      showDuplicateWarning('<strong>Doublon détecté :</strong> Vous avez déjà sélectionné la pièce « <b>' + $('<div>').text(pieceLibelle).html() + '</b> » dans une autre ligne de ce dossier.');
-      highlightDuplicateSelect(thisSelect);
-      refreshAllDropdowns();
-    } else {
-      hideDuplicateWarning();
-      refreshAllDropdowns();
-    }
-  });
-
-  $('#btn-add-row-cycle').on('click', function() {
-    createRow('', 1, 'photocopie_simple', 'obligatoire');
-  });
-
-  $(document).on('click', '.btn-delete-row-cycle', function() {
-    if ($('#bulk-rows-cycle-container tr').length > 1) {
-      $(this).closest('tr').remove();
-      hideDuplicateWarning();
-      refreshAllDropdowns();
-    } else {
-      if (window.toastr) toastr.info('Vous devez conserver au moins un document dans le dossier.');
-    }
-  });
-
-  $('#form-bulk-piece-cycle').on('submit', function(e) {
-    $('#select_target_niveau').prop('disabled', false);
-    var cycle = $('#select_target_cycle').val();
-    if (!cycle) {
-      e.preventDefault();
-      var msg = 'Veuillez sélectionner le cycle académique ciblé.';
-      if (window.toastr) toastr.error(msg);
-      showDuplicateWarning(msg);
-      $('#select_target_cycle').focus();
-      return false;
-    }
-
-    var niveau = $('#select_target_niveau').val();
-    if (!niveau) {
-      e.preventDefault();
-      var msg = 'Veuillez sélectionner le niveau d\'étude.';
-      if (window.toastr) toastr.error(msg);
-      showDuplicateWarning(msg);
-      $('#select_target_niveau').focus();
-      return false;
-    }
-
-    var selectedPieces = [];
-    var hasDuplicate = false;
-    var duplicateName = '';
-    var hasValid = false;
-
-    $('.sel-piece').each(function() {
-      var val = $.trim($(this).val());
-      var rawObj = pieceOptions.find(function(p) { return p.code === val; });
-      var pieceLibelle = rawObj ? rawObj.libelle : 'Document';
-
-      if (val !== '') {
-        hasValid = true;
-        if (alreadyAssignedCodes.indexOf(val) !== -1 || selectedPieces.indexOf(val) !== -1) {
-          hasDuplicate = true;
-          duplicateName = pieceLibelle;
-        }
-        selectedPieces.push(val);
-      }
-    });
-
-    if (!hasValid) {
-      e.preventDefault();
-      var msg = 'Veuillez sélectionner au moins une pièce à fournir dans le dossier.';
-      if (window.toastr) toastr.error(msg);
-      showDuplicateWarning(msg);
-      return false;
-    }
-
-    if (hasDuplicate) {
-      e.preventDefault();
-      var msg = '<strong>Attention :</strong> La pièce « <b>' + $('<div>').text(duplicateName).html() + '</b> » est en doublon ou existe déjà pour ce cycle.';
-      if (window.toastr) toastr.error(msg);
-      showDuplicateWarning(msg);
-      return false;
-    }
-  });
-});
-</script>
-
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+$pieceFournirCycleEditConfig = [
+  'pieceOptions' => array_map(function($p) {
+    return [
+      'code' => $p['code_piece_fournir'],
+      'libelle' => $p['libelle_piece']
+    ];
+  }, $pieces ?? [])
+];
+?>
+<script type="application/json" id="piece-fournir-cycle-edit-config"><?= json_encode($pieceFournirCycleEditConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?></script>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/accessoires.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

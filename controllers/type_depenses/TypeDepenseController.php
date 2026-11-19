@@ -10,14 +10,14 @@ class TypeDepenseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         $this->loadView('../views/type_depenses/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,7 +35,7 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_type_depense'])) {
@@ -46,7 +46,7 @@ class TypeDepenseController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_type_depense'])) {
-            $data['code_type_depense'] = $this->validator->generateCode('type_depenses', 'code_type_depense', 'TYP-', 8);
+            $data['code_type_depense'] = $this->validator->generateCode(TABLES::TYPE_DEPENSES, 'code_type_depense', 'TYP-', 8);
         }
         $data['statut_type_depense'] = $data['statut_type_depense'] ?? 'actif';
         $data['created_at_type_depense'] = date('Y-m-d H:i:s');
@@ -70,7 +70,7 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $id = (int)$this->post('id_type_depense');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -96,7 +96,7 @@ class TypeDepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::MANAGE_TYPES_DEPENSE);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -112,17 +112,17 @@ class TypeDepenseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_TYPES_DEPENSE');
+        $this->requirePermission(PERMISSIONS::VIEW_TYPES_DEPENSE);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'type_depense/list'); exit(); }
+            if (!$item) { redirect('type_depense/list'); }
 
             $depenses = $this->model->getDepensesForType($item['code_type_depense']);
 
             $totalDepenses = 0;
             foreach ($depenses as $d) {
-                if (($d['statut_depense'] ?? '') !== 'annule') {
+                if (($d['statut_depense'] ?? '') !== STATUTS::ANNULE) {
                     $totalDepenses += (float)($d['montant_depense'] ?? 0);
                 }
             }
@@ -143,13 +143,11 @@ class TypeDepenseController extends BaseController
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'type_depense/list');
-        exit();
+        redirect('type_depense/list');
     }
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'type_depense/list');
-        exit();
+        redirect('type_depense/list');
     }
 }

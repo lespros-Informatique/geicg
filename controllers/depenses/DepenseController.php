@@ -10,7 +10,7 @@ class DepenseController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
 
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
@@ -27,8 +27,8 @@ class DepenseController extends BaseController
 
         $typeDepenses = (new ModelTypeDepense())->getAll();
 
-        $canValidate = $this->hasPermission('VALIDATE_DEPENSES');
-        $canRecord = $this->hasPermission('RECORD_DEPENSES');
+        $canValidate = $this->hasPermission(PERMISSIONS::VALIDATE_DEPENSES);
+        $canRecord = $this->hasPermission(PERMISSIONS::RECORD_DEPENSES);
 
         $this->loadView('../views/depenses/list.php', [
             'annees' => $annees,
@@ -43,7 +43,7 @@ class DepenseController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $typeCode = !empty($_GET['type_depense_code']) ? trim($_GET['type_depense_code']) : null;
         $dateDebut = !empty($_GET['date_debut']) ? trim($_GET['date_debut']) : null;
@@ -56,7 +56,7 @@ class DepenseController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
         if (!empty($_GET['annee_code'])) {
             $getAnnee = trim($_GET['annee_code']);
             $aRow = $this->model->getAnneeByCode($getAnnee);
@@ -82,6 +82,89 @@ class DepenseController extends BaseController
             ]);
         }
         $this->json(['data' => $data]);
+    }
+
+    /**
+     * Génère et imprime le registre des dépenses en PDF
+     */
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_DEPENSES, PERMISSIONS::RECORD_DEPENSES, PERMISSIONS::VALIDATE_DEPENSES]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : $this->getActiveAnneeCode();
+        $typeCode = !empty($_GET['type_depense_code']) ? trim($_GET['type_depense_code']) : null;
+        $dateDebut = !empty($_GET['date_debut']) ? trim($_GET['date_debut']) : null;
+        $dateFin = !empty($_GET['date_fin']) ? trim($_GET['date_fin']) : null;
+
+        $depenses = $this->model->getAll($anneeCode, $typeCode, $dateDebut, $dateFin);
+        $stats = $this->model->getStats($anneeCode, $typeCode, $dateDebut, $dateFin);
+        $etablissement = $this->getEtablissementConfig();
+
+        $anneeLibelle = $this->getActiveAnneeLibelle();
+        if (!empty($anneeCode)) {
+            $aRow = $this->model->getAnneeByCode($anneeCode);
+            if ($aRow && !empty($aRow['libelle_annee'])) {
+                $anneeLibelle = $aRow['libelle_annee'];
+            }
+        }
+
+        $typeLibelle = 'Toutes les catégories';
+        if (!empty($typeCode)) {
+            $modelType = new ModelTypeDepense();
+            $tTypes = $modelType->getAll();
+            foreach ($tTypes as $t) {
+                if (($t['code_type_depense'] ?? '') === $typeCode) {
+                    $typeLibelle = $t['libelle_type_depense'] ?? $typeCode;
+                    break;
+                }
+            }
+        }
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'depenses',
+            $anneeCode ?: 'TOUT',
+            "Impression du registre des dépenses (Année: {$anneeLibelle}, Catégorie: {$typeLibelle})",
+            [
+                'annee_code' => $anneeCode,
+                'type_depense_code' => $typeCode,
+                'date_debut' => $dateDebut,
+                'date_fin' => $dateFin,
+                'total_depenses' => count($depenses)
+            ],
+            $this->getActiveEtablissementCode()
+        );
+
+        $dataView = [
+            'etablissement' => $etablissement,
+            'depenses' => $depenses,
+            'stats' => $stats,
+            'anneeLibelle' => $anneeLibelle,
+            'typeLibelle' => $typeLibelle,
+            'dateDebut' => $dateDebut,
+            'dateFin' => $dateFin,
+            'imprimePar' => Auth::fullName() ?: 'Service Comptabilité'
+        ];
+
+        $html = PdfService::renderTemplate('registre_depenses.php', $dataView);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Depenses_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre des Dépenses - ' . ($etablissement['nom_etablissement'] ?? 'GEICG'),
+            'margin_left' => 6,
+            'margin_right' => 6,
+            'margin_top' => 6,
+            'margin_bottom' => 6
+        ]);
     }
 
     private function handleFileUpload(?array $fileInfo): ?string
@@ -122,7 +205,7 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('RECORD_DEPENSES');
+        $this->requirePermission(PERMISSIONS::RECORD_DEPENSES);
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -148,18 +231,26 @@ class DepenseController extends BaseController
         ]);
 
         if (empty($data['code_depense'])) {
-            $data['code_depense'] = $this->validator->generateCode('depenses', 'code_depense', 'DEP-', 8);
+            $data['code_depense'] = $this->validator->generateCode(TABLES::DEPENSES, 'code_depense', 'DEP-', 8);
         }
         if (empty($data['periode_depense'])) {
             $data['periode_depense'] = date('Y-m-d H:i:s');
         }
-        $data['statut_depense'] = 'en_attente';
+        $data['statut_depense'] = STATUTS::EN_ATTENTE;
         $data['created_at_depense'] = date('Y-m-d H:i:s');
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
         $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'depenses',
+                $data['code_depense'],
+                "Enregistrement d'une dépense de " . number_format((float)($data['montant_depense'] ?? 0), 0, ',', ' ') . " GNF pour : " . ($data['description_depense'] ?? $data['code_depense']),
+                $filteredData,
+                $etabCode
+            );
             $this->success('Dépense enregistrée avec le statut "En attente" !');
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la création de la dépense');
@@ -170,14 +261,14 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('RECORD_DEPENSES');
+        $this->requirePermission(PERMISSIONS::RECORD_DEPENSES);
         $id = (int)$this->post('id_depense');
         if (!$id) { $this->error('Identifiant invalide'); return; }
 
         $item = $this->model->getById($id);
         if (!$item) { $this->error('Dépense introuvable'); return; }
 
-        if (($item['statut_depense'] ?? '') !== 'en_attente') {
+        if (($item['statut_depense'] ?? '') !== STATUTS::EN_ATTENTE) {
             $currentLabel = ($item['statut_depense'] === 'approuve') ? 'Approuvée' : 'Annulée';
             $this->error('Seule une dépense au statut "En attente" peut être modifiée. Cette dépense est actuellement : ' . $currentLabel);
             return;
@@ -197,6 +288,13 @@ class DepenseController extends BaseController
         $filteredData = $this->model->filterData($data);
 
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'depenses',
+                $item['code_depense'] ?? (string)$id,
+                "Modification de la dépense {$item['code_depense']}",
+                $filteredData
+            );
             $this->success('Dépense modifiée avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -207,7 +305,7 @@ class DepenseController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('VALIDATE_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VALIDATE_DEPENSES);
         $id = (int)$this->post('id');
         $statut = trim($this->post('statut') ?: $this->post('status') ?: '');
 
@@ -235,6 +333,13 @@ class DepenseController extends BaseController
                 'approuve' => 'approuvée',
                 'annule' => 'annulée'
             ];
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'depenses',
+                $item['code_depense'] ?? (string)$id,
+                "Changement de statut de la dépense {$item['code_depense']} : " . ($labels[$statut] ?? $statut),
+                ['id_depense' => $id, 'code_depense' => $item['code_depense'] ?? null, 'nouveau_statut' => $statut, 'user_validation' => $userCode]
+            );
             $this->success('Dépense marquée comme ' . ($labels[$statut] ?? $statut) . ' avec succès!', ['reload' => true]);
         } else {
             $this->error('Erreur lors de la mise à jour du statut');
@@ -244,14 +349,14 @@ class DepenseController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_DEPENSES');
+        $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getDetailsById((int)$id);
-            if (!$item) { header('Location: ' . RACINE . 'depense/list'); exit(); }
+            if (!$item) { redirect('depense/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'depense/list'); exit();
+            redirect('depense/list');
         }
         $this->loadView('../views/depenses/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -259,14 +364,14 @@ class DepenseController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('RECORD_DEPENSES');
+        $this->requirePermission(PERMISSIONS::RECORD_DEPENSES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'depense/list'); exit(); }
+            if (!$item) { redirect('depense/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'depense/list'); exit();
+            redirect('depense/list');
         }
         $this->loadView('../views/depenses/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -274,7 +379,7 @@ class DepenseController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('RECORD_DEPENSES');
+        $this->requirePermission(PERMISSIONS::RECORD_DEPENSES);
         $this->loadView('../views/depenses/edit.php', ['item' => []]);
     }
 }

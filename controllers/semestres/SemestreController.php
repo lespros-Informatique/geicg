@@ -10,7 +10,7 @@ class SemestreController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
         $annees = $this->getAccessibleAnnees();
         
         if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
@@ -35,7 +35,7 @@ class SemestreController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
         $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
         $items = $this->model->getAll($anneeCode);
         $data = [];
@@ -108,7 +108,7 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -151,15 +151,38 @@ class SemestreController extends BaseController
         }
 
         if (empty($data['code_semestre'])) {
-            $data['code_semestre'] = $this->validator->generateCode('semestres', 'code_semestre', 'SEM-', 8);
+            $data['code_semestre'] = $this->validator->generateCode(TABLES::SEMESTRES, 'code_semestre', 'SEM-', 8);
         }
-        $data['statut_semestre'] = (!empty($data['statut_semestre']) && in_array($data['statut_semestre'], ['planifie', 'cloture'], true)) ? $data['statut_semestre'] : 'planifie';
+        $data['statut_semestre'] = (!empty($data['statut_semestre']) && in_array($data['statut_semestre'], ['planifie', 'actif', 'cloture'], true)) ? $data['statut_semestre'] : 'planifie';
+
+        if ($data['statut_semestre'] === 'actif') {
+            $actErr = '';
+            if (!$this->model->canActivate($data, $actErr)) {
+                $this->error($actErr);
+                return;
+            }
+        }
+
         $data['created_at_semestre'] = date('Y-m-d H:i:s');
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
         $data['annee_code'] = $anneeCode;
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            if ($data['statut_semestre'] === 'actif') {
+                $created = $this->model->getByCode($data['code_semestre']);
+                if (!empty($created['id_semestre'])) {
+                    $this->model->setActiveSemester((int)$created['id_semestre']);
+                }
+            }
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'semestres',
+                $data['code_semestre'],
+                "Création du '{$libelle}' ({$data['code_semestre']}) pour l'année {$anneeCode}",
+                $filteredData,
+                $etabCode
+            );
             $this->success('Semestre créé avec succès!');
         } else {
             $this->error('Erreur lors de la création du semestre.');
@@ -170,7 +193,7 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $id = (int)$this->post('id_semestre');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         
@@ -208,6 +231,15 @@ class SemestreController extends BaseController
             return;
         }
 
+        if (($data['statut_semestre'] ?? '') === 'actif') {
+            $actErr = '';
+            $checkData = array_merge($current, $data);
+            if (!$this->model->canActivate($checkData, $actErr)) {
+                $this->error($actErr);
+                return;
+            }
+        }
+
         // Contrôle d'unicité par année académique (en excluant l'enregistrement en cours d'édition)
         if ($this->model->checkSemestreExists($libelle, $anneeCode, $id)) {
             $this->error("Le $libelle est déjà enregistré pour cette année académique.");
@@ -216,6 +248,16 @@ class SemestreController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            if (($data['statut_semestre'] ?? '') === 'actif') {
+                $this->model->setActiveSemester($id);
+            }
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'semestres',
+                $current['code_semestre'] ?? (string)$id,
+                "Modification du '{$libelle}' (" . ($current['code_semestre'] ?? $id) . ")",
+                $filteredData
+            );
             $this->success('Semestre modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification du semestre.');
@@ -226,7 +268,7 @@ class SemestreController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $id = (int)$this->post('id');
         $item = $id ? $this->model->getById($id) : null;
         if ($item) {
@@ -247,6 +289,14 @@ class SemestreController extends BaseController
 
             if ($this->model->toggleStatus($id)) {
                 $msg = ($currentStatus === 'actif') ? 'Semestre clôturé avec succès !' : 'Semestre activé avec succès !';
+                $newStat = ($currentStatus === 'actif') ? 'cloture' : 'actif';
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'semestres',
+                    $item['code_semestre'] ?? (string)$id,
+                    "Changement de statut du semestre '{$item['libelle_semestre']}' vers {$newStat}",
+                    ['id_semestre' => $id, 'code_semestre' => $item['code_semestre'] ?? null, 'nouveau_statut' => $newStat]
+                );
                 $this->success($msg, ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -259,11 +309,11 @@ class SemestreController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getSemestreWithAnnee($id);
-            if (!$item) { header('Location: ' . RACINE . 'semestre/list'); exit(); }
+            if (!$item) { redirect('semestre/list'); }
 
             $semestreCode = $item['code_semestre'];
             $stats = $this->model->getStatsForSemestre($semestreCode);
@@ -283,17 +333,16 @@ class SemestreController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item || ($item['statut_semestre'] ?? '') === 'actif') { 
-                header('Location: ' . RACINE . 'semestre/list'); 
-                exit(); 
+            if (!$item || ($item['statut_semestre'] ?? '') === STATUTS::ACTIF) { 
+                redirect('semestre/list'); 
             }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'semestre/list'); exit();
+            redirect('semestre/list');
         }
         $this->loadView('../views/semestres/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -301,7 +350,7 @@ class SemestreController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SEMESTRES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SEMESTRES);
         $this->loadView('../views/semestres/edit.php', ['item' => []]);
     }
 

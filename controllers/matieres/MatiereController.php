@@ -10,14 +10,14 @@ class MatiereController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_MATIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_MATIERES);
         $this->loadView('../views/matieres/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_MATIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_MATIERES);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,7 +35,7 @@ class MatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $data = $_POST;
         unset($data['csrf_token']);
         unset($data['id_matiere']);
@@ -48,7 +48,7 @@ class MatiereController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_matiere'])) {
-            $data['code_matiere'] = $this->validator->generateCode('matieres', 'code_matiere', 'MAT-', 8);
+            $data['code_matiere'] = $this->validator->generateCode(TABLES::MATIERES, 'code_matiere', 'MAT-', 8);
         }
         $data['statut_matiere'] = $data['statut_matiere'] ?? 'actif';
         $data['created_at_matiere'] = date('Y-m-d H:i:s');
@@ -58,6 +58,14 @@ class MatiereController extends BaseController
         $libelle = trim($data['libelle_matiere'] ?? '');
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'matieres',
+                $data['code_matiere'],
+                "Création de la matière '{$libelle}' ({$data['code_matiere']})",
+                $filteredData,
+                $etabCode
+            );
             $msg = !empty($libelle) ? "La matière « {$libelle} » a été créée avec succès !" : "Matière créée avec succès !";
             $this->success($msg);
         } else {
@@ -72,7 +80,7 @@ class MatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $id = (int)$this->post('id_matiere');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -84,6 +92,13 @@ class MatiereController extends BaseController
         $libelle = trim($data['libelle_matiere'] ?? '');
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'matieres',
+                (string)$id,
+                "Modification de la matière '{$libelle}'",
+                $filteredData
+            );
             $msg = !empty($libelle) ? "La matière « {$libelle} » a été modifiée avec succès !" : "Matière modifiée avec succès !";
             $this->success($msg);
         } else {
@@ -98,10 +113,17 @@ class MatiereController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $id = $this->post('id') ?: $this->post('id_matiere');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($mat = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'matieres',
+                    $mat['code_matiere'] ?? (string)$id,
+                    "Basculement de statut de la matière '" . ($mat['libelle_matiere'] ?? $id) . "'",
+                    ['id_matiere' => $id, 'code_matiere' => $mat['code_matiere'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -114,18 +136,18 @@ class MatiereController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_MATIERES');
+        $this->requirePermission(PERMISSIONS::VIEW_MATIERES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'matiere/list'); exit(); }
+            if (!$item) { redirect('matiere/list'); }
 
             $matiereCode = $item['code_matiere'];
             $affectations = $this->model->getAffectationsForMatiere($matiereCode);
             $stats = $this->model->getStatsForMatiere($matiereCode, count($affectations));
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'matiere/list'); exit();
+            redirect('matiere/list');
         }
         $this->loadView('../views/matieres/details.php', [
             'item' => $item, 
@@ -138,14 +160,14 @@ class MatiereController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'matiere/list'); exit(); }
+            if (!$item) { redirect('matiere/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'matiere/list'); exit();
+            redirect('matiere/list');
         }
         $this->loadView('../views/matieres/edit.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -153,7 +175,7 @@ class MatiereController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_MATIERES');
+        $this->requirePermission(PERMISSIONS::MANAGE_MATIERES);
         $this->loadView('../views/matieres/edit.php', ['item' => []]);
     }
 }

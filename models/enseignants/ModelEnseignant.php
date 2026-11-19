@@ -2,10 +2,62 @@
 
 class ModelEnseignant extends BaseModel
 {
-    protected string $table = 'enseignants';
+    protected string $table = TABLES::ENSEIGNANTS;
     protected string $primaryKey = 'id_enseignant';
     protected ?string $statusField = 'statut_enseignant';
     protected ?string $createdAtField = 'created_at_enseignant';
+
+    public function getStats(): array
+    {
+        $db = $this->getCon();
+        try {
+            $stmt = $db->query("
+                SELECT 
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN LOWER(TRIM(e.statut_enseignant)) = '" . STATUTS::ACTIF . "' THEN 1 ELSE 0 END) AS actifs,
+                    SUM(CASE WHEN LOWER(TRIM(e.type_contrat)) = 'permanent' THEN 1 ELSE 0 END) AS permanents,
+                    SUM(CASE WHEN LOWER(TRIM(e.type_contrat)) IN ('vacataire', 'prestataire') THEN 1 ELSE 0 END) AS vacataires,
+                    SUM(CASE WHEN UPPER(TRIM(COALESCE(u.sexe_user, ''))) IN ('M', 'MASCULIN') THEN 1 ELSE 0 END) AS hommes,
+                    SUM(CASE WHEN UPPER(TRIM(COALESCE(u.sexe_user, ''))) IN ('F', 'FEMININ') THEN 1 ELSE 0 END) AS femmes
+                FROM " . TABLES::ENSEIGNANTS . " e
+                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
+            ");
+            $res = $stmt->fetch(PDO::FETCH_ASSOC);
+            return [
+                'total' => (int)($res['total'] ?? 0),
+                'actifs' => (int)($res['actifs'] ?? 0),
+                'permanents' => (int)($res['permanents'] ?? 0),
+                'vacataires' => (int)($res['vacataires'] ?? 0),
+                'hommes' => (int)($res['hommes'] ?? 0),
+                'femmes' => (int)($res['femmes'] ?? 0)
+            ];
+        } catch (Exception $e) {
+            error_log("ModelEnseignant::getStats error: " . $e->getMessage());
+            return [
+                'total' => 0,
+                'actifs' => 0,
+                'permanents' => 0,
+                'vacataires' => 0,
+                'hommes' => 0,
+                'femmes' => 0
+            ];
+        }
+    }
+
+    public function getDistinctGrades(): array
+    {
+        try {
+            $stmt = $this->getCon()->query("
+                SELECT DISTINCT grade_enseignant 
+                FROM " . TABLES::ENSEIGNANTS . " 
+                WHERE grade_enseignant IS NOT NULL AND TRIM(grade_enseignant) != ''
+                ORDER BY grade_enseignant ASC
+            ");
+            return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
 
     public function getAll(): array
     {
@@ -23,9 +75,16 @@ class ModelEnseignant extends BaseModel
                    u.prenom_user AS prenom_enseignant,
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
-                   u.sexe_user AS sexe_enseignant
-            FROM enseignants e
-            JOIN users u ON u.code_user = e.code_enseignant
+                   u.sexe_user AS sexe_enseignant,
+                   ROUND(COALESCE(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 0), 1) AS volume_horaire,
+                   GROUP_CONCAT(DISTINCT edt.annee_code SEPARATOR ',') AS annees_codes,
+                   GROUP_CONCAT(DISTINCT edt.matiere_code SEPARATOR ',') AS matieres_codes,
+                   GROUP_CONCAT(DISTINCT m.libelle_matiere SEPARATOR ', ') AS matieres_libelles
+            FROM " . TABLES::ENSEIGNANTS . " e
+            JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
+            LEFT JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON (edt.enseignant_code = e.code_enseignant OR edt.enseignant_code = e.user_code)
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            GROUP BY e.id_enseignant
             ORDER BY e.id_enseignant DESC
         ";
         try {
@@ -54,9 +113,9 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant
-            FROM enseignants e
-            JOIN users u ON u.code_user = e.code_enseignant
-            WHERE e.statut_enseignant = 'actif' AND u.statut_user = 'actif'
+            FROM " . TABLES::ENSEIGNANTS . " e
+            JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
+            WHERE e.statut_enseignant = '" . STATUTS::ACTIF . "' AND u.statut_user = '" . STATUTS::ACTIF . "'
             ORDER BY u.nom_user ASC, u.prenom_user ASC
         ";
         try {
@@ -86,8 +145,8 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant
-            FROM enseignants e
-            JOIN users u ON u.code_user = e.code_enseignant
+            FROM " . TABLES::ENSEIGNANTS . " e
+            JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
             WHERE e.id_enseignant = ?
             LIMIT 1
         ";
@@ -119,8 +178,8 @@ class ModelEnseignant extends BaseModel
                    u.email_user AS email_enseignant,
                    u.telephone_user AS telephone_enseignant,
                    u.sexe_user AS sexe_enseignant
-            FROM enseignants e
-            JOIN users u ON u.code_user = e.code_enseignant
+            FROM " . TABLES::ENSEIGNANTS . " e
+            JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
             WHERE e.code_enseignant = ?
             LIMIT 1
         ";
@@ -138,9 +197,9 @@ class ModelEnseignant extends BaseModel
     {
         $sql = "
             SELECT u.id_user, u.code_user, u.nom_user, u.prenom_user, u.email_user, u.telephone_user, u.sexe_user
-            FROM users u
-            WHERE u.statut_user = 'actif'
-              AND u.code_user NOT IN (SELECT code_enseignant FROM enseignants)
+            FROM " . TABLES::USERS . " u
+            WHERE u.statut_user = '" . STATUTS::ACTIF . "'
+              AND u.code_user NOT IN (SELECT code_enseignant FROM " . TABLES::ENSEIGNANTS . ")
             ORDER BY u.nom_user ASC, u.prenom_user ASC
         ";
         try {
@@ -153,17 +212,23 @@ class ModelEnseignant extends BaseModel
     }
 
     /**
-     * Récupère les cours / matières affectés à un enseignant
+     * Récupère les cours / matières planifiés pour un enseignant
      */
     public function getCoursForEnseignant(string $codeEnseignant): array
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT em.*, m.libelle_matiere, cl.libelle_classe
-                FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = em.classe_code
-                WHERE em.enseignant_code = ?
+                SELECT DISTINCT 
+                       edt.matiere_code, 
+                       edt.classe_code, 
+                       m.libelle_matiere, 
+                       cl.libelle_classe,
+                       ROUND(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 1) AS volume_horaire
+                FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+                WHERE edt.enseignant_code = ?
+                GROUP BY edt.matiere_code, edt.classe_code, m.libelle_matiere, cl.libelle_classe
                 ORDER BY cl.libelle_classe ASC, m.libelle_matiere ASC
             ");
             $stmt->execute([$codeEnseignant]);
@@ -239,16 +304,16 @@ class ModelEnseignant extends BaseModel
             return null;
         }
 
-        $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
+        $fkErrRole = ForeignKeyValidator::validate($db, TABLES::USER_ROLES, [
             'user_code' => $codeUser,
-            'role_code' => 'ROLE_ENSEIGNANT'
+            'role_code' => ROLES::ENSEIGNANT
         ]);
         if ($fkErrRole !== null) {
             $errorMsg = $fkErrRole;
             return null;
         }
 
-        $fkErrEns = ForeignKeyValidator::validate($db, 'enseignants', [
+        $fkErrEns = ForeignKeyValidator::validate($db, TABLES::ENSEIGNANTS, [
             'etablissement_code' => $etabCode
         ]);
         if ($fkErrEns !== null) {
@@ -260,7 +325,7 @@ class ModelEnseignant extends BaseModel
         try {
             $stmtRole = $db->prepare("
                 INSERT IGNORE INTO " . TABLES::USER_ROLES . " (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
-                VALUES (?, 'ROLE_ENSEIGNANT', 1, 1, 1, 0)
+                VALUES (?, '" . ROLES::ENSEIGNANT . "', 1, 1, 1, 0)
             ");
             $stmtRole->execute([$codeUser]);
 
@@ -300,7 +365,7 @@ class ModelEnseignant extends BaseModel
         $rawPassword = !empty($userData['password_raw']) ? trim($userData['password_raw']) : ('ENS' . rand(100000, 999999));
         $hashedPassword = password_hash($rawPassword, PASSWORD_DEFAULT);
 
-        $fkErrUser = ForeignKeyValidator::validate($db, 'users', [
+        $fkErrUser = ForeignKeyValidator::validate($db, TABLES::USERS, [
             'etablissement_code' => $etabCode
         ]);
         if ($fkErrUser !== null) {
@@ -308,16 +373,7 @@ class ModelEnseignant extends BaseModel
             return null;
         }
 
-        $fkErrRole = ForeignKeyValidator::validate($db, 'user_roles', [
-            'user_code' => $codeUser,
-            'role_code' => 'ROLE_ENSEIGNANT'
-        ]);
-        if ($fkErrRole !== null) {
-            $errorMsg = $fkErrRole;
-            return null;
-        }
-
-        $fkErrEns = ForeignKeyValidator::validate($db, 'enseignants', [
+        $fkErrEns = ForeignKeyValidator::validate($db, TABLES::ENSEIGNANTS, [
             'etablissement_code' => $etabCode
         ]);
         if ($fkErrEns !== null) {
@@ -345,9 +401,19 @@ class ModelEnseignant extends BaseModel
                 $etabCode
             ]);
 
+            $fkErrRole = ForeignKeyValidator::validate($db, TABLES::USER_ROLES, [
+                'user_code' => $codeUser,
+                'role_code' => ROLES::ENSEIGNANT
+            ]);
+            if ($fkErrRole !== null) {
+                $db->rollBack();
+                $errorMsg = $fkErrRole;
+                return null;
+            }
+
             $stmtRole = $db->prepare("
                 INSERT INTO " . TABLES::USER_ROLES . " (user_code, role_code, create_permission, edit_permission, show_permission, delete_permission)
-                VALUES (?, 'ROLE_ENSEIGNANT', 1, 1, 1, 0)
+                VALUES (?, '" . ROLES::ENSEIGNANT . "', 1, 1, 1, 0)
             ");
             $stmtRole->execute([$codeUser]);
 
@@ -429,5 +495,137 @@ class ModelEnseignant extends BaseModel
             $errorMsg = 'Erreur lors de la modification : ' . $e->getMessage();
             return false;
         }
+    }
+
+    /**
+     * Récupère le programme des cours et séances d'une journée donnée (avec filtres optionnels enseignant/année)
+     */
+    public function getProgrammeJourData(?string $date = null, ?string $ensCode = null, ?string $anneeCode = null): array
+    {
+        $date = trim($date ?? date('Y-m-d'));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = date('Y-m-d');
+        }
+
+        $jours = [
+            1 => 'lundi', 2 => 'mardi', 3 => 'mercredi',
+            4 => 'jeudi', 5 => 'vendredi', 6 => 'samedi', 7 => 'dimanche'
+        ];
+        $joursFr = [
+            1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi',
+            4 => 'Jeudi', 5 => 'Vendredi', 6 => 'Samedi', 7 => 'Dimanche'
+        ];
+        $moisFr = [
+            1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
+            5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
+            9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
+        ];
+
+        $time = strtotime($date);
+        $numJour = (int)date('N', $time);
+        $jourDb = $jours[$numJour] ?? 'lundi';
+        $jourFr = $joursFr[$numJour] ?? 'Lundi';
+        $moisNum = (int)date('n', $time);
+        $dateFormatee = $jourFr . ' ' . date('d', $time) . ' ' . ($moisFr[$moisNum] ?? '') . ' ' . date('Y', $time);
+        $isToday = ($date === date('Y-m-d'));
+
+        $sql = "
+            SELECT edt.id_emploi,
+                   edt.code_emploi,
+                   edt.classe_code,
+                   edt.matiere_code,
+                   edt.enseignant_code,
+                   edt.salle_code,
+                   edt.annee_code,
+                   edt.jour,
+                   edt.heure_debut,
+                   edt.heure_fin,
+                   ROUND(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut)) / 3600, 1) AS duree,
+                   m.libelle_matiere,
+                   cl.libelle_classe,
+                   s.libelle_salle,
+                   u.code_user,
+                   u.nom_user AS nom_enseignant,
+                   u.prenom_user AS prenom_enseignant,
+                   u.telephone_user AS telephone_enseignant,
+                   u.email_user AS email_enseignant,
+                   u.photo_user,
+                   e.type_contrat,
+                   e.grade_enseignant
+            FROM " . TABLES::EMPLOIS_TEMPS . " edt
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
+            WHERE LOWER(edt.jour) = ?
+              AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+        ";
+        $params = [$jourDb];
+
+        if (!empty($anneeCode)) {
+            $sql .= " AND edt.annee_code = ? ";
+            $params[] = $anneeCode;
+        }
+
+        if (!empty($ensCode)) {
+            $sql .= " AND edt.enseignant_code = ? ";
+            $params[] = $ensCode;
+        }
+
+        $sql .= " ORDER BY edt.heure_debut ASC, cl.libelle_classe ASC ";
+
+        $items = [];
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $ex) {
+            error_log("ModelEnseignant::getProgrammeJourData error: " . $ex->getMessage());
+            $items = [];
+        }
+
+        $totalHeures = 0;
+        $profsSet = [];
+        $classesSet = [];
+        $sallesSet = [];
+        foreach ($items as $item) {
+            $totalHeures += (float)($item['duree'] ?? 0);
+            if (!empty($item['enseignant_code'])) $profsSet[$item['enseignant_code']] = true;
+            if (!empty($item['classe_code'])) $classesSet[$item['classe_code']] = true;
+            if (!empty($item['salle_code'])) $sallesSet[$item['salle_code']] = true;
+        }
+
+        $ensInfo = null;
+        if (!empty($ensCode)) {
+            try {
+                $stmtEns = $this->getCon()->prepare("
+                    SELECT e.*, u.nom_user, u.prenom_user, u.telephone_user, u.email_user, u.photo_user 
+                    FROM " . TABLES::ENSEIGNANTS . " e 
+                    LEFT JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant 
+                    WHERE e.code_enseignant = ? OR u.code_user = ? 
+                    LIMIT 1
+                ");
+                $stmtEns->execute([$ensCode, $ensCode]);
+                $ensInfo = $stmtEns->fetch(PDO::FETCH_ASSOC) ?: null;
+            } catch (Exception $e) {}
+        }
+
+        return [
+            'date' => $date,
+            'jour' => $jourDb,
+            'jour_libelle' => $jourFr,
+            'date_formatee' => $dateFormatee,
+            'is_today' => $isToday,
+            'stats' => [
+                'total_cours' => count($items),
+                'total_heures' => round($totalHeures, 1),
+                'nb_profs' => count($profsSet),
+                'nb_classes' => count($classesSet),
+                'nb_salles' => count($sallesSet)
+            ],
+            'items' => $items,
+            'enseignant' => $ensInfo
+        ];
     }
 }

@@ -35,7 +35,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES, PERMISSIONS::MANAGE_CLASSES]);
         $data = $_POST;
         unset($data['csrf_token']);
         unset($data['id_filiere_cycle']);
@@ -56,7 +56,7 @@ class FiliereCycleController extends BaseController
         $etabCode = $this->getActiveEtablissementCode();
 
         if (empty($data['code_filiere_cycle'])) {
-            $data['code_filiere_cycle'] = $this->validator->generateCode('filiere_cycles', 'code_filiere_cycle', 'FCYC-', 8);
+            $data['code_filiere_cycle'] = $this->validator->generateCode(TABLES::FILIERE_CYCLES, 'code_filiere_cycle', 'FCYC-', 8);
         }
 
         // Auto-déduction du type de filière depuis le catalogue des filières si non renseigné
@@ -75,7 +75,7 @@ class FiliereCycleController extends BaseController
         unset($filteredData['id_filiere_cycle']);
 
         if ($this->model->create($filteredData)) {
-            $this->success('Assignation Parcours Pivot créée avec succès!', RACINE . 'filiere_cycle/list');
+            $this->success('Assignation Parcours Pivot créée avec succès!', url('filiere_cycle/list'));
         } else {
             $msg = method_exists($this->model, 'getLastError') && $this->model->getLastError() 
                 ? $this->model->getLastError() 
@@ -88,7 +88,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES', 'MANAGE_CLASSES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES, PERMISSIONS::MANAGE_CLASSES]);
         $id = (int)$this->post('id_filiere_cycle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -121,7 +121,7 @@ class FiliereCycleController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
-            $this->success('Assignation Parcours Pivot modifiée avec succès!', RACINE . 'filiere_cycle/list');
+            $this->success('Assignation Parcours Pivot modifiée avec succès!', url('filiere_cycle/list'));
         } else {
             $this->error('Erreur lors de la modification');
         }
@@ -131,7 +131,7 @@ class FiliereCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES]);
         $id = $this->post('id');
         if ($id && $this->model->getById($id)) {
             if ($this->model->toggleStatus($id)) {
@@ -175,14 +175,14 @@ class FiliereCycleController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES]);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'filiere_cycle/list'); exit(); }
+            if (!$item) { redirect('filiere_cycle/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'filiere_cycle/list'); exit();
+            redirect('filiere_cycle/list');
         }
         $filieresList = $this->model->getActiveFilieres();
         $cyclesList = $this->model->getActiveCycles();
@@ -197,7 +197,7 @@ class FiliereCycleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_FILIERES', 'MANAGE_CYCLES']);
+        $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES]);
         $filieresList = $this->model->getActiveFilieres();
         $cyclesList = $this->model->getActiveCycles();
         $this->loadView('../views/filiere_cycles/edit.php', [
@@ -213,7 +213,7 @@ class FiliereCycleController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_OFFRE_ACADEMIQUE', 'VIEW_FILIERES', 'VIEW_CYCLES']);
+        $this->requirePermission([PERMISSIONS::PRINT_OFFRE_ACADEMIQUE, PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_CYCLES]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
         require_once __DIR__ . '/../../models/cycles/ModelCycle.php';

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/AuditLogger.php';
+
 abstract class BaseController
 {
     protected $validator;
@@ -14,48 +16,57 @@ abstract class BaseController
     abstract protected function resolveModel();
 
     /**
+     * Enregistre une action utilisateur dans le journal d'audit
+     */
+    protected function logAction(string $action, string $module, ?string $entiteId = null, string $description = '', ?array $details = null, ?string $etablissementCode = null): bool
+    {
+        $etabCode = $etablissementCode ?? $this->getActiveEtablissementCode();
+        return AuditLogger::log($action, $module, $entiteId, $description, $details, null, null, null, $etabCode);
+    }
+
+    /**
      * Récupère le code de l'année académique active en session (avec initialisation auto)
      */
     protected function getActiveAnneeCode(): string
     {
         $db = (new Database())->getCon();
-        $code = $_SESSION['annee_active_code'] ?? '';
+        $code = (string)Session::get('annee_active_code', '');
 
         // Vérifier si l'année en session existe toujours en base
         if (!empty($code)) {
-            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtCheck->execute([$code]);
             $exists = $stmtCheck->fetch(PDO::FETCH_ASSOC);
             if (!$exists) {
-                unset($_SESSION['annee_active_code']);
-                unset($_SESSION['annee_active_libelle']);
+                Session::remove('annee_active_code');
+                Session::remove('annee_active_libelle');
                 $code = '';
             } else {
-                $_SESSION['annee_active_libelle'] = $exists['libelle_annee'];
+                Session::set('annee_active_libelle', $exists['libelle_annee']);
             }
         }
 
-        if (empty($_SESSION['annee_active_code'])) {
+        if (!Session::has('annee_active_code') || empty(Session::get('annee_active_code'))) {
             try {
-                $stmt = $db->query("SELECT code_annee, libelle_annee FROM annees WHERE statut_annee = 'actif' ORDER BY id_annee DESC LIMIT 1");
+                $stmt = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
                 $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
                 if (!$row) {
-                    $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM annees ORDER BY id_annee DESC LIMIT 1");
+                    $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
                     $row = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
                 }
                 if ($row) {
-                    $_SESSION['annee_active_code'] = $row['code_annee'];
-                    $_SESSION['annee_active_libelle'] = $row['libelle_annee'];
+                    Session::set('annee_active_code', $row['code_annee']);
+                    Session::set('annee_active_libelle', $row['libelle_annee']);
                 } else {
-                    $_SESSION['annee_active_code'] = '';
-                    $_SESSION['annee_active_libelle'] = 'Aucune';
+                    Session::set('annee_active_code', '');
+                    Session::set('annee_active_libelle', 'Aucune');
                 }
             } catch (Exception $e) {
-                $_SESSION['annee_active_code'] = '';
-                $_SESSION['annee_active_libelle'] = 'Aucune';
+                Session::set('annee_active_code', '');
+                Session::set('annee_active_libelle', 'Aucune');
             }
         }
-        return $_SESSION['annee_active_code'] ?? '';
+        return (string)Session::get('annee_active_code', '');
     }
 
     /**
@@ -64,7 +75,7 @@ abstract class BaseController
     protected function getActiveAnneeLibelle(): string
     {
         $this->getActiveAnneeCode();
-        return $_SESSION['annee_active_libelle'] ?? 'Aucune année';
+        return (string)Session::get('annee_active_libelle', 'Aucune année');
     }
 
     /**
@@ -72,23 +83,31 @@ abstract class BaseController
      */
     protected function getActiveEtablissementCode(): string
     {
-        if (!empty($_SESSION['etablissement_active_code'])) {
-            return $_SESSION['etablissement_active_code'];
+        if (!empty(Session::get('etablissement_active_code'))) {
+            return (string)Session::get('etablissement_active_code');
         }
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->query("SELECT code_etablissement FROM etablissements WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
+            $stmt = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = '" . STATUTS::ACTIF . "' ORDER BY id_etablissement DESC LIMIT 1");
             $code = $stmt ? $stmt->fetchColumn() : null;
             if (!$code) {
-                $stmtFb = $db->query("SELECT code_etablissement FROM etablissements ORDER BY id_etablissement DESC LIMIT 1");
+                $stmtFb = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
                 $code = $stmtFb ? $stmtFb->fetchColumn() : null;
             }
             if ($code) {
-                $_SESSION['etablissement_active_code'] = (string)$code;
+                Session::set('etablissement_active_code', (string)$code);
                 return (string)$code;
             }
         } catch (Exception $e) {}
         return '';
+    }
+
+    /**
+     * Alias de rétrocompatibilité pour getActiveEtablissementCode()
+     */
+    protected function getEtablissementCode(): string
+    {
+        return $this->getActiveEtablissementCode();
     }
 
     /**
@@ -99,7 +118,7 @@ abstract class BaseController
         $code = $this->getActiveAnneeCode();
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->prepare("SELECT * FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmt->execute([$code]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
@@ -116,20 +135,20 @@ abstract class BaseController
         if (empty($anneeCode)) return true;
 
         $activeAnnee = $this->getActiveAnnee();
-        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === STATUTS::ACTIF) {
             return true;
         }
 
-        if ($this->hasPermission('VIEW_ANNEES_ANTERIEURES') || $this->hasPermission('*')) {
+        if ($this->hasPermission(PERMISSIONS::VIEW_ANNEES_ANTERIEURES) || $this->hasPermission('*')) {
             return true;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
         if (empty($userCode)) return false;
 
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->prepare("SELECT niveau_acces FROM user_annee_acces WHERE user_code = ? AND annee_code = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ? AND annee_code = ? LIMIT 1");
             $stmt->execute([$userCode, $anneeCode]);
             $level = $stmt->fetchColumn();
             return !empty($level) && in_array($level, ['lecture', 'ecriture'], true);
@@ -147,20 +166,20 @@ abstract class BaseController
         if (empty($anneeCode)) return true;
 
         $activeAnnee = $this->getActiveAnnee();
-        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === STATUTS::ACTIF) {
             return true;
         }
 
-        if ($this->hasPermission('EDIT_ANNEES_ANTERIEURES') || $this->hasPermission('*')) {
+        if ($this->hasPermission(PERMISSIONS::EDIT_ANNEES_ANTERIEURES) || $this->hasPermission('*')) {
             return true;
         }
 
-        $userCode = $_SESSION[USERS_AUTH]['code_user'] ?? '';
+        $userCode = Auth::code() ?? '';
         if (empty($userCode)) return false;
 
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->prepare("SELECT niveau_acces FROM user_annee_acces WHERE user_code = ? AND annee_code = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT niveau_acces FROM " . TABLES::USER_ANNEE_ACCES . " WHERE user_code = ? AND annee_code = ? LIMIT 1");
             $stmt->execute([$userCode, $anneeCode]);
             $level = $stmt->fetchColumn();
             return $level === 'ecriture';
@@ -177,7 +196,7 @@ abstract class BaseController
         $anneeCode = $anneeCode ?: $this->getActiveAnneeCode();
         $activeAnnee = $this->getActiveAnnee();
 
-        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === 'actif') {
+        if (!empty($activeAnnee['code_annee']) && $activeAnnee['code_annee'] === $anneeCode && ($activeAnnee['statut_annee'] ?? '') === STATUTS::ACTIF) {
             return false;
         }
 
@@ -192,6 +211,99 @@ abstract class BaseController
         return (new ModelAnnee())->getAccessibleAnnees();
     }
 
+    /**
+     * Instance du Guard de sécurité académique (Principes SOLID)
+     */
+    protected function academicGuard(): AcademicSecurityGuard
+    {
+        return AcademicSecurityGuard::getInstance();
+    }
+
+    /**
+     * Résout l'année académique cible pour la requête et garantit qu'elle est autorisée en lecture.
+     * Renvoie null si aucune année active n'existe et que l'utilisateur n'a pas accès à l'historique.
+     */
+    protected function resolveTargetAcademicYear(?string $paramYear = null): ?string
+    {
+        return $this->academicGuard()->resolveOperationalYearCode($paramYear);
+    }
+
+    /**
+     * Vérifie si l'utilisateur courant peut accéder en lecture à une année académique donnée
+     */
+    protected function canAccessAcademicYear(string $anneeCode): bool
+    {
+        return $this->academicGuard()->canUserReadYear($anneeCode);
+    }
+
+    /**
+     * Vérifie si l'utilisateur courant peut modifier / écrire sur une année académique donnée
+     */
+    protected function canWriteAcademicYear(string $anneeCode): bool
+    {
+        return $this->academicGuard()->canUserWriteYear($anneeCode);
+    }
+
+    /**
+     * Exige l'autorisation d'accès en lecture à une année académique (arrête l'exécution sinon)
+     */
+    protected function requireAcademicYearReadAccess(string $anneeCode): void
+    {
+        if (!$this->academicGuard()->canUserReadYear($anneeCode)) {
+            $this->error("Accès refusé : vous n'avez pas l'autorisation de consulter les données de cette année académique.");
+        }
+    }
+
+    /**
+     * Exige l'autorisation d'accès en écriture à une année académique (arrête l'exécution sinon)
+     */
+    protected function requireAcademicYearWriteAccess(string $anneeCode): void
+    {
+        if (!$this->academicGuard()->canUserWriteYear($anneeCode)) {
+            $this->error("Accès refusé : cette année académique est clôturée ou vous n'avez pas l'autorisation de la modifier.");
+        }
+    }
+
+    /**
+     * Résout le contexte enseignant pour restreindre les données aux classes/matières assignées
+     */
+    protected function getTeacherContext(): array
+    {
+        $userCode = Auth::code();
+        $teacherCodes = [];
+        $isTeacherOnly = false;
+
+        $hasFullAcademicAccess = Auth::isSuperAdmin()
+            || Auth::hasRole([ROLES::SUPER_ADMIN, ROLES::DIR_GENERAL, ROLES::DIR_ETUDES])
+            || Auth::can([PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::LOCK_NOTES, PERMISSIONS::CONFIG_SYSTEM]);
+
+        if (!$hasFullAcademicAccess) {
+            $teacherCodes = [$userCode];
+            try {
+                $db = (new Database())->getCon();
+                $stmt = $db->prepare("SELECT code_enseignant, user_code FROM " . TABLES::ENSEIGNANTS . " WHERE user_code = ? OR code_enseignant = ?");
+                $stmt->execute([$userCode, $userCode]);
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    if (!empty($row['code_enseignant'])) $teacherCodes[] = $row['code_enseignant'];
+                    if (!empty($row['user_code'])) $teacherCodes[] = $row['user_code'];
+                }
+                $teacherCodes = array_values(array_unique(array_filter($teacherCodes)));
+            } catch (Exception $e) {}
+
+            $sessionUser = Session::get('user') ?? [];
+            $isEnseignantFlag = !empty($sessionUser['is_enseignant']) || !empty($sessionUser['code_enseignant']);
+
+            if (Auth::hasRole(ROLES::ENSEIGNANT) || $isEnseignantFlag || count($teacherCodes) > 1) {
+                $isTeacherOnly = true;
+            }
+        }
+
+        return [
+            'isTeacherOnly' => $isTeacherOnly,
+            'teacherCodes' => $isTeacherOnly ? $teacherCodes : []
+        ];
+    }
+
     protected function requirePost(bool $checkCsrf = true): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -203,21 +315,43 @@ abstract class BaseController
         }
 
         if ($checkCsrf && !Validator::validateCsrfToken($_POST['csrf_token'] ?? null)) {
+            Auth::logout();
             if ($this->isAjax()) {
-                $this->json(['status' => 0, 'message' => 'Session ou jeton de sécurité expiré. Veuillez réactualiser la page.'], 419);
+                $this->json([
+                    'status' => 0, 
+                    'session_expired' => true,
+                    'redirect' => RACINE . 'user/connexion?expired=1',
+                    'message' => 'Session expirée. Redirection vers la page de connexion...'
+                ], 401);
             } else {
-                $this->renderError('Jeton de sécurité CSRF expiré ou invalide. Veuillez rafraîchir la page et réessayer.', 419);
+                header('Location: ' . RACINE . 'user/connexion?expired=1');
+                exit();
             }
         }
     }
 
     protected function requireAuth(): void
     {
+        // Déconnexion automatique après 2 heures (7200s) d'inactivité
+        if (Auth::check()) {
+            $lastActivity = (int)Session::get('last_activity_time', 0);
+            if ($lastActivity > 0 && (time() - $lastActivity) > 7200) {
+                Auth::logout();
+            } else {
+                Session::set('last_activity_time', time());
+            }
+        }
+
         if (!Auth::check()) {
             if ($this->isAjax()) {
-                $this->json(['status' => 0, 'message' => 'Authentification requise pour cette opération'], 401);
+                $this->json([
+                    'status' => 0, 
+                    'session_expired' => true,
+                    'redirect' => RACINE . 'user/connexion?expired=1',
+                    'message' => 'Session expirée. Veuillez vous reconnecter.'
+                ], 401);
             } else {
-                header('Location: ' . RACINE . 'user/connexion');
+                header('Location: ' . RACINE . 'user/connexion?expired=1');
                 exit();
             }
         }
@@ -285,7 +419,7 @@ abstract class BaseController
 
     protected function unsetSession(): void
     {
-        $_SESSION = [];
+        Session::destroy();
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_unset();
             @session_destroy();
@@ -332,12 +466,12 @@ abstract class BaseController
     {
         $extraData = is_array($extra) ? $extra : ['redirect' => (string)$extra];
         if (!empty($extraData['redirect'])) {
-            $_SESSION['flash_success'] = $message;
+            Session::set('flash_success', $message);
         }
         if ($this->isAjax()) {
             $this->json(array_merge(['status' => 1, 'message' => $message], $extraData));
         } else {
-            $_SESSION['flash_success'] = $message;
+            Session::set('flash_success', $message);
             $redirect = $extraData['redirect'] ?? ($extraData['url'] ?? ($_SERVER['HTTP_REFERER'] ?? RACINE));
             header('Location: ' . $redirect);
             exit;
@@ -358,13 +492,13 @@ abstract class BaseController
         }
 
         if (!empty($redirect)) {
-            $_SESSION['flash_error'] = $message;
+            Session::set('flash_error', $message);
         }
 
         if ($this->isAjax()) {
             $this->json(['status' => 0, 'message' => $message], $httpCode);
         } else {
-            $_SESSION['flash_error'] = $message;
+            Session::set('flash_error', $message);
             $target = $redirect ?? ($_SERVER['HTTP_REFERER'] ?? RACINE);
             header('Location: ' . $target);
             exit;
@@ -430,19 +564,73 @@ abstract class BaseController
      */
     protected function getEtablissementConfig(): array
     {
-        if (isset($_SESSION['etablissement_config']) && is_array($_SESSION['etablissement_config'])) {
-            return $_SESSION['etablissement_config'];
+        if (is_array(Session::get('etablissement_config'))) {
+            return Session::get('etablissement_config');
         }
         try {
             $db = (new Database())->getCon();
-            $stmt = $db->query("SELECT * FROM etablissements WHERE statut_etablissement = 'actif' ORDER BY id_etablissement DESC LIMIT 1");
-            $config = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
-            if (!$config) {
-                $stmtFb = $db->query("SELECT * FROM etablissements ORDER BY id_etablissement DESC LIMIT 1");
-                $config = $stmtFb ? $stmtFb->fetch(PDO::FETCH_ASSOC) : [];
+            // 1. Récupération des paramètres institutionnels globaux
+            $configInstitution = [];
+            try {
+                $stmtConf = $db->query("SELECT * FROM " . TABLES::CONFIGURATIONS . " ORDER BY id_configuration ASC LIMIT 1");
+                $configInstitution = $stmtConf ? $stmtConf->fetch(PDO::FETCH_ASSOC) : [];
+            } catch (Exception $e) {
+                // Table configurations potentiellement en cours de migration
             }
-            $_SESSION['etablissement_config'] = $config ?: [];
-            return $_SESSION['etablissement_config'];
+
+            // 2. Récupération de l'établissement actif
+            $configEtab = [];
+            $stmt = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " WHERE statut_etablissement = '" . STATUTS::ACTIF . "' ORDER BY id_etablissement DESC LIMIT 1");
+            $configEtab = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
+            if (!$configEtab) {
+                $stmtFb = $db->query("SELECT * FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
+                $configEtab = $stmtFb ? $stmtFb->fetch(PDO::FETCH_ASSOC) : [];
+            }
+
+            // Fusion en donnant la priorité aux données institutionnelles récentes
+            $config = array_merge($configEtab ?: [], $configInstitution ?: []);
+
+            // Normalisation et rétrocompatibilité des alias de champs
+            if (empty($config['libelle_etablissement']) && !empty($config['nom_etablissement'])) {
+                $config['libelle_etablissement'] = $config['nom_etablissement'];
+            }
+            if (empty($config['nom_etablissement']) && !empty($config['libelle_etablissement'])) {
+                $config['nom_etablissement'] = $config['libelle_etablissement'];
+            }
+            if (empty($config['numero_autorisation_etablissement']) && !empty($config['numero_autorisation'])) {
+                $config['numero_autorisation_etablissement'] = $config['numero_autorisation'];
+            }
+            if (empty($config['numero_autorisation']) && !empty($config['numero_autorisation_etablissement'])) {
+                $config['numero_autorisation'] = $config['numero_autorisation_etablissement'];
+            }
+            if (empty($config['telephone_etablissement']) && !empty($config['telephone_mobile'])) {
+                $config['telephone_etablissement'] = $config['telephone_mobile'];
+            }
+            if (empty($config['telephone_etablissement2']) && !empty($config['telephone_mobile2'])) {
+                $config['telephone_etablissement2'] = $config['telephone_mobile2'];
+            }
+            if (empty($config['telephone_fixe']) && !empty($config['telephone_etablissement'])) {
+                $config['telephone_fixe'] = $config['telephone_etablissement'];
+            }
+
+            // Responsables & Signataires par défaut
+            $config['nom_directeur_etudes'] = !empty($config['nom_directeur_etudes']) ? $config['nom_directeur_etudes'] : 'Dr COULIBALY Sonan Hamed';
+            $config['nom_directeur_general'] = !empty($config['nom_directeur_general']) ? $config['nom_directeur_general'] : 'La Direction Générale';
+            $config['titre_service_scolarite'] = !empty($config['titre_service_scolarite']) ? $config['titre_service_scolarite'] : 'Le Service Scolarité & Inscriptions';
+            $config['nom_responsable_scolarite'] = !empty($config['nom_responsable_scolarite']) ? $config['nom_responsable_scolarite'] : 'Service Scolarité & Inscriptions';
+            $config['nom_responsable_finance'] = !empty($config['nom_responsable_finance']) ? $config['nom_responsable_finance'] : 'Direction Financière GEICG';
+            $config['nom_secretaire_general'] = !empty($config['nom_secretaire_general']) ? $config['nom_secretaire_general'] : 'Le Secrétaire Général';
+
+            // Contacts formatés pour les en-têtes et pieds de page PDF
+            $telephones = array_filter([
+                $config['telephone_fixe'] ?? '',
+                $config['telephone_mobile'] ?? ($config['telephone_etablissement'] ?? ''),
+                $config['telephone_mobile2'] ?? ($config['telephone_etablissement2'] ?? '')
+            ]);
+            $config['contacts_formatted'] = implode(' / ', array_unique($telephones));
+
+            Session::set('etablissement_config', $config ?: []);
+            return Session::get('etablissement_config', []);
         } catch (Exception $e) {
             return [];
         }
@@ -450,6 +638,9 @@ abstract class BaseController
 
     protected function loadView(string $path, array $data = []): void
     {
+        // Valeurs par défaut centralisées (le contrôleur reste prioritaire)
+        $data = array_merge(ViewContext::defaults(), $data);
+
         $etabCfg = $this->getEtablissementConfig();
         $data['etablissementConfig'] = $etabCfg;
         $data['useSlugFiliere'] = !empty($etabCfg['use_slug_filiere']);
@@ -459,7 +650,7 @@ abstract class BaseController
         $data['isSuperAdmin'] = $this->isSuperAdmin();
         $data['currentUserName'] = $data['currentUserName'] ?? (Auth::user('nom_user') ?? (Auth::user('nom') ?? 'Utilisateur'));
         $data['currentUserEmail'] = $data['currentUserEmail'] ?? (Auth::user('email_user') ?? (Auth::user('email') ?? ''));
-        $data['currentUserRole'] = Auth::role() ?? 'ROLE_USER';
+        $data['currentUserRole'] = Auth::role() ?? ROLES::USER;
 
         $rawLogo = $etabCfg['logo_etablissement'] ?? '';
         $etabNom = $etabCfg['libelle_etablissement'] ?? ($etabCfg['nom_etablissement'] ?? 'GEICG');
@@ -470,6 +661,12 @@ abstract class BaseController
         $data['loginLogo'] = $data['loginLogo'] ?? $rawLogo;
         $data['logoSrc'] = $data['logoSrc'] ?? $resolvedLogo;
         $data['etabLogoUrl'] = $data['etabLogoUrl'] ?? $resolvedLogo;
+
+        // Support standardisé des scripts JS modulaires de page
+        if (!isset($data['pageScripts']) && isset($data['scripts'])) {
+            $data['pageScripts'] = $data['scripts'];
+        }
+        $data['pageScripts'] = (array)($data['pageScripts'] ?? []);
 
         if (!file_exists($path)) {
             $candidate = __DIR__ . '/../' . ltrim(str_replace('../', '', $path), '/\\');
@@ -530,14 +727,14 @@ abstract class BaseController
 
     protected function getCurrentUserCode(): ?string
     {
-        return $_SESSION[USERS_AUTH]['code_user'] ?? null;
+        return Auth::code();
     }
 
     protected function getCurrentUserRoles(): array
     {
-        $roles = $_SESSION[USERS_AUTH]['roles'] ?? [];
+        $roles = Auth::roles();
         if (empty($roles)) {
-            $roleCode = $_SESSION[USERS_AUTH]['role_code'] ?? ($_SESSION['role_code'] ?? '');
+            $roleCode = Auth::role() ?? (string)Session::get('role_code', '');
             if ($roleCode !== '') {
                 $roles = [$roleCode];
             }
@@ -560,7 +757,7 @@ abstract class BaseController
 
     protected function isSuperAdmin(): bool
     {
-        return $this->hasAnyRole(['ROLE_SUPERADMIN', 'ROLE_DIR_GENERAL']);
+        return $this->hasAnyRole([ROLES::SUPER_ADMIN, ROLES::DIR_GENERAL]);
     }
 
     /**
@@ -571,7 +768,7 @@ abstract class BaseController
         $this->requireAuth();
         if (!$this->isSuperAdmin()) {
             $msg = !empty($customMessage) ? $customMessage : "Cette action est réservée exclusivement à la Direction Générale et à l'Administration Système.";
-            $this->renderForbidden($msg, 'ROLE_SUPERADMIN');
+            $this->renderForbidden($msg, ROLES::SUPER_ADMIN);
         }
     }
 
@@ -590,10 +787,10 @@ abstract class BaseController
             $inClause = implode(',', array_fill(0, count($roles), '?'));
             $sql = "
                 SELECT DISTINCT rp.permission_code 
-                FROM role_permissions rp
-                JOIN permissions p ON rp.permission_code = p.code_permission
+                FROM " . TABLES::ROLE_PERMISSIONS . " rp
+                JOIN " . TABLES::PERMISSIONS . " p ON rp.permission_code = p.code_permission
                 WHERE rp.role_code IN ($inClause)
-                  AND p.statut_permission = 'actif'
+                  AND p.statut_permission = '" . STATUTS::ACTIF . "'
             ";
             $stmt = $pdo->prepare($sql);
             $stmt->execute($roles);
@@ -623,7 +820,7 @@ abstract class BaseController
      */
     protected function hasActionPermission(string $action): bool
     {
-        $perms = $_SESSION[USERS_AUTH]['permissions'] ?? [];
+        $perms = Auth::user('permissions') ?? [];
         if (!empty($perms[$action])) {
             return true;
         }

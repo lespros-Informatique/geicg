@@ -2,7 +2,7 @@
 
 class ModelImpayes extends BaseModel
 {
-    protected string $table = 'relances_impayes';
+    protected string $table = TABLES::RELANCES_IMPAYES;
     protected string $primaryKey = 'id_relance';
     protected ?string $createdAtField = 'created_at_relance';
 
@@ -10,11 +10,11 @@ class ModelImpayes extends BaseModel
     {
         try {
             $sql = "SELECT r.*, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, cl.libelle_classe, n.libelle_niveau 
-                    FROM relances_impayes r
-                    LEFT JOIN etudiants e ON r.etudiant_code = e.code_etudiant
-                    LEFT JOIN inscriptions ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.statut_inscription != 'annule'))
-                    LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-                    LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code";
+                    FROM " . TABLES::RELANCES_IMPAYES . " r
+                    LEFT JOIN " . TABLES::ETUDIANTS . " e ON r.etudiant_code = e.code_etudiant
+                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON (ins.code_inscription = r.inscription_code OR (ins.etudiant_code = r.etudiant_code AND ins.annee_code = r.annee_code AND ins.statut_inscription != '" . STATUTS::ANNULE . "'))
+                    LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                    LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code";
             $conditions = [];
             $params = [];
             if (!empty($anneeCode)) {
@@ -49,14 +49,14 @@ class ModelImpayes extends BaseModel
             require_once __DIR__ . '/../frais_annexes/ModelFraisAnnexe.php';
             $modelFA = new ModelFraisAnnexe();
 
-            $where = "WHERE i.statut_inscription != 'annule'";
+            $where = "WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'";
             $params = [];
             if (!empty($anneeCode)) {
                 $where .= " AND i.annee_code = ?";
                 $params[] = $anneeCode;
             }
             if (!empty($niveauCode) && $niveauCode !== 'ALL') {
-                $where .= " AND c.niveau_code = ?";
+                $where .= " AND i.niveau_code = ?";
                 $params[] = $niveauCode;
             }
             if (!empty($classeCode) && $classeCode !== 'ALL') {
@@ -65,64 +65,30 @@ class ModelImpayes extends BaseModel
             }
 
             $sqlInscr = "
-                SELECT 
-                    i.id_inscription,
-                    i.code_inscription,
-                    i.statut_inscription,
-                    i.affectation_etat,
-                    i.montant_scolarite_inscription,
-                    i.photo_inscription,
-                    i.annee_code,
-                    e.code_etudiant,
-                    e.matricule_etudiant,
-                    e.nom_etudiant,
-                    e.prenom_etudiant,
-                    e.telephone_etudiant,
-                    e.photo_etudiant,
-                    c.code_classe,
-                    c.libelle_classe,
-                    c.filiere_code,
-                    c.niveau_code,
-                    f.libelle_filiere,
-                    f.slug_filiere,
-                    f.type_filiere,
-                    n.libelle_niveau,
-                    n.slug_niveau,
-                    p.nom_pere, p.telephone_pere,
-                    p.nom_mere, p.telephone_mere,
-                    p.nom_tuteur, p.telephone_tuteur
-                FROM inscriptions i
-                JOIN etudiants e ON i.etudiant_code = e.code_etudiant
-                LEFT JOIN classes c ON i.classe_code = c.code_classe
-                LEFT JOIN filieres f ON c.filiere_code = f.code_filiere
-                LEFT JOIN niveaux n ON c.niveau_code = n.code_niveau
-                LEFT JOIN parents p ON p.etudiant_code = e.code_etudiant
-                {$where}
-                ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
+                SELECT i.*
+                FROM " . VIEWS::INSCRIPTIONS_COMPLETES . " i
+                WHERE i.code_etudiant IS NOT NULL AND " . substr($where, 6) . "
+                ORDER BY i.nom_etudiant ASC, i.prenom_etudiant ASC
             ";
             $stmtInscr = $db->prepare($sqlInscr);
             $stmtInscr->execute($params);
             $inscriptions = $stmtInscr->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            // Totaux paiements effectués
-            $stmtPay = $db->prepare("
-                SELECT inscription_code, SUM(montant_paiement) as total_paye
-                FROM paiements
-                WHERE statut_paiement != 'annule'
-                GROUP BY inscription_code
-            ");
-            $stmtPay->execute();
+            // Totaux paiements de scolarité effectués via la vue d'agrégation v_bilan_paiements_inscriptions
+            $stmtPay = $db->query("SELECT inscription_code, total_paye_scolarite AS total_paye FROM " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . "");
             $paymentsGrouped = [];
-            foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $pRow) {
-                $paymentsGrouped[$pRow['inscription_code']] = (float)$pRow['total_paye'];
+            if ($stmtPay) {
+                foreach ($stmtPay->fetchAll(PDO::FETCH_ASSOC) as $pRow) {
+                    $paymentsGrouped[$pRow['inscription_code']] = (float)$pRow['total_paye'];
+                }
             }
 
             // Scolarités & Tranches
-            $stmtSco = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM scolarites WHERE statut_scolarite = 'actif'");
+            $stmtSco = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "'");
             $stmtSco->execute();
             $scolariteGrid = $stmtSco->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            $stmtTranches = $db->prepare("SELECT * FROM tranches_scolarite WHERE statut_tranche = 'actif' ORDER BY date_limite ASC, id_tranche ASC");
+            $stmtTranches = $db->prepare("SELECT * FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE statut_tranche = '" . STATUTS::ACTIF . "' ORDER BY date_limite ASC, id_tranche ASC");
             $stmtTranches->execute();
             $tranchesGrid = $stmtTranches->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -160,7 +126,7 @@ class ModelImpayes extends BaseModel
                 }
 
                 $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $aCode, $nCode, 'inscription');
-                $totalAttendu = $scolariteDue + $fraisAnnexesDus;
+                $totalAttendu = $scolariteDue;
                 $totalEncaisse = $paymentsGrouped[$codeIns] ?? 0;
                 $soldeRestant = max(0, $totalAttendu - $totalEncaisse);
 
@@ -334,7 +300,7 @@ class ModelImpayes extends BaseModel
             $moyenneJoursRetard = ($kpiTotalEtudiantsRetard > 0) ? round($totalJoursAccumules / $kpiTotalEtudiantsRetard) : 0;
 
             // Nombre de relances effectuées le mois courant
-            $stmtCountRelances = $db->prepare("SELECT COUNT(*) as cnt FROM relances_impayes WHERE MONTH(created_at_relance) = MONTH(CURRENT_DATE()) AND YEAR(created_at_relance) = YEAR(CURRENT_DATE())");
+            $stmtCountRelances = $db->prepare("SELECT COUNT(*) as cnt FROM " . TABLES::RELANCES_IMPAYES . " WHERE MONTH(created_at_relance) = MONTH(CURRENT_DATE()) AND YEAR(created_at_relance) = YEAR(CURRENT_DATE())");
             $stmtCountRelances->execute();
             $relancesMois = (int)($stmtCountRelances->fetchColumn() ?: 0);
 
@@ -389,38 +355,9 @@ class ModelImpayes extends BaseModel
     public function getInscriptionDetailsForRappel($idOrCode): ?array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT 
-                i.id_inscription,
-                i.code_inscription,
-                i.montant_scolarite_inscription,
-                i.affectation_etat,
-                i.annee_code,
-                e.code_etudiant,
-                e.matricule_etudiant,
-                e.nom_etudiant,
-                e.prenom_etudiant,
-                e.telephone_etudiant,
-                e.photo_etudiant,
-                c.libelle_classe,
-                c.filiere_code,
-                c.niveau_code,
-                f.libelle_filiere,
-                f.slug_filiere,
-                f.type_filiere,
-                n.libelle_niveau,
-                n.slug_niveau,
-                a.libelle_annee,
-                p.nom_pere, p.telephone_pere,
-                p.nom_mere, p.telephone_mere,
-                p.nom_tuteur, p.telephone_tuteur
-            FROM " . TABLES::INSCRIPTIONS . " i
-            JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
-            LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
-            LEFT JOIN " . TABLES::FILIERES . " f ON c.filiere_code = f.code_filiere
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON c.niveau_code = n.code_niveau
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-            LEFT JOIN " . TABLES::PARENTS . " p ON p.etudiant_code = e.code_etudiant
-            WHERE i.id_inscription = ? OR i.code_inscription = ?
+            SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
+            WHERE (id_inscription = ? OR code_inscription = ?)
+              AND statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmt->execute([$idOrCode, $idOrCode]);
@@ -433,58 +370,73 @@ class ModelImpayes extends BaseModel
         if (empty($ids)) return [];
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->getCon()->prepare("
-            SELECT 
-                i.id_inscription,
-                i.code_inscription,
-                i.montant_scolarite_inscription,
-                i.affectation_etat,
-                i.annee_code,
-                e.code_etudiant,
-                e.matricule_etudiant,
-                e.nom_etudiant,
-                e.prenom_etudiant,
-                e.telephone_etudiant,
-                e.photo_etudiant,
-                c.libelle_classe,
-                c.filiere_code,
-                c.niveau_code,
-                f.libelle_filiere,
-                f.slug_filiere,
-                f.type_filiere,
-                n.libelle_niveau,
-                n.slug_niveau,
-                a.libelle_annee,
-                p.nom_pere, p.telephone_pere,
-                p.nom_mere, p.telephone_mere,
-                p.nom_tuteur, p.telephone_tuteur
-            FROM " . TABLES::INSCRIPTIONS . " i
-            JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
-            LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
-            LEFT JOIN " . TABLES::FILIERES . " f ON c.filiere_code = f.code_filiere
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON c.niveau_code = n.code_niveau
-            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-            LEFT JOIN " . TABLES::PARENTS . " p ON p.etudiant_code = e.code_etudiant
-            WHERE i.id_inscription IN ({$placeholders}) OR i.code_inscription IN ({$placeholders})
-            ORDER BY e.nom_etudiant ASC
+            SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
+            WHERE (id_inscription IN ({$placeholders}) OR code_inscription IN ({$placeholders}))
+              AND statut_inscription != '" . STATUTS::ANNULE . "'
+            ORDER BY nom_etudiant ASC
         ");
         $execParams = array_merge($ids, $ids);
         $stmt->execute($execParams);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    private static array $scolariteDueCache = [];
+
+    public function getTotalPayeByInscriptions(array $inscriptionCodes): array
+    {
+        if (empty($inscriptionCodes)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($inscriptionCodes), '?'));
+        $stmt = $this->getCon()->prepare("
+            SELECT inscription_code, COALESCE(SUM(montant_paiement), 0) as total_paye 
+            FROM " . TABLES::PAIEMENTS . " 
+            WHERE inscription_code IN ({$placeholders})
+              AND statut_paiement != '" . STATUTS::ANNULE . "'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+              AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
+            GROUP BY inscription_code
+        ");
+        $stmt->execute(array_values($inscriptionCodes));
+        $map = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $map[$r['inscription_code']] = (float)$r['total_paye'];
+        }
+        return $map;
+    }
+
     public function getTotalPayeByInscription(string $inscriptionCode): float
     {
-        $stmt = $this->getCon()->prepare("SELECT SUM(montant_paiement) as total_paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != 'annule'");
+        $stmt = $this->getCon()->prepare("
+            SELECT SUM(montant_paiement) as total_paye 
+            FROM " . TABLES::PAIEMENTS . " 
+            WHERE inscription_code = ? 
+              AND statut_paiement != '" . STATUTS::ANNULE . "'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+              AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
+        ");
         $stmt->execute([$inscriptionCode]);
         return (float)($stmt->fetchColumn() ?: 0);
     }
 
     public function getScolariteDue(string $filiereCode, string $niveauCode, ?string $anneeCode = null): ?float
     {
-        $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND (annee_code = ? OR annee_code IS NULL OR annee_code = '') AND statut_scolarite = 'actif' LIMIT 1");
+        if (empty($anneeCode)) {
+            return null;
+        }
+
+        $cacheKey = "{$filiereCode}|{$niveauCode}|{$anneeCode}";
+        if (array_key_exists($cacheKey, self::$scolariteDueCache)) {
+            return self::$scolariteDueCache[$cacheKey];
+        }
+        $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_scolarite = '" . STATUTS::ACTIF . "' LIMIT 1");
         $stmt->execute([$filiereCode, $niveauCode, $anneeCode]);
         $val = $stmt->fetchColumn();
-        return $val !== false ? (float)$val : null;
+        $res = $val !== false ? (float)$val : null;
+        self::$scolariteDueCache[$cacheKey] = $res;
+        return $res;
     }
 }
 

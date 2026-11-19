@@ -7,12 +7,23 @@ $selectedClasseCode = $selectedClasseCode ?? '';
 $selectedSemestreCode = $selectedSemestreCode ?? '';
 $selectedSemestreLibelle = $selectedSemestreLibelle ?? $selectedSemestreCode;
 $anneeLibelle = $anneeLibelle ?? '-';
+
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } elseif (file_exists(__DIR__ . '/../../../models/configurations/ModelConfiguration.php')) {
+        require_once __DIR__ . '/../../../models/configurations/ModelConfiguration.php';
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Procès-Verbal de Délibération - GROUPE EICG</title>
+  <title>Procès-Verbal de Délibération<?= !empty($etablissement['sigle_etablissement']) ? (' - ' . htmlspecialchars($etablissement['sigle_etablissement'])) : '' ?></title>
   <style>
     @page {
       margin-top: 8mm;
@@ -146,6 +157,12 @@ $anneeLibelle = $anneeLibelle ?? '-';
       font-weight: bold;
       text-align: center;
     }
+    .pv-table .noneval-cell {
+      background-color: #F1F5F9 !important;
+      color: #475569 !important;
+      font-weight: bold;
+      text-align: center;
+    }
     .pv-table .note-danger {
       color: #DC2626;
       font-weight: bold;
@@ -190,33 +207,8 @@ $anneeLibelle = $anneeLibelle ?? '-';
 </head>
 <body>
 
-  <!-- 1. En-tête Officiel -->
-  <?php 
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-  ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 15%; text-align: left;">
-        <?php if (file_exists($logoPath)): ?>
-          <img src="<?= $logoPath ?>" style="max-height: 40px; max-width: 100px;">
-        <?php else: ?>
-          <div style="font-weight: bold; color: #990000; font-size: 11pt;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 60%; text-align: center;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">AGRÉÉ PAR L'ÉTAT ET LE FDFP &bull; ENSEIGNEMENT SUPÉRIEUR</div>
-        <div class="inst-contacts">Direction des Études &bull; Commission des Examens, Notes et Délibérations</div>
-      </td>
-      <td style="width: 25%; text-align: right; font-size: 7pt; color: #475569;">
-        <div><strong>Édition :</strong> <?= date('d/m/Y H:i') ?></div>
-        <div><strong>Année :</strong> <?= htmlspecialchars($anneeLibelle ?? '-') ?></div>
-        <div><strong>Période :</strong> <?= htmlspecialchars($selectedSemestreCode ?? '-') ?></div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- 1. En-tête Officiel Unifié GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- 2. Bannière Titre -->
   <table class="banner-table">
@@ -272,11 +264,18 @@ $anneeLibelle = $anneeLibelle ?? '-';
         </tr>
       <?php else: ?>
         <?php foreach ($pvRows as $r): 
-          $isAdmis = ($r['decision'] === 'Admis(e)');
+          $isNonEval = ($r['decision'] === 'Non éval.' || (float)($r['total_coef'] ?? 0) <= 0);
+          $isAdmis = (!$isNonEval && $r['decision'] === 'Admis(e)');
+          $decisionClass = $isNonEval ? 'noneval-cell' : ($isAdmis ? 'admis-cell' : 'ajourne-cell');
+          $moyColorPdf = $isNonEval ? '#64748B' : ($isAdmis ? '#15803D' : '#991B1B');
         ?>
           <tr>
             <td style="text-align: center; font-weight: bold; color: #1E3A5F;">
-              <?= $r['rang'] ?><sup><?= $r['rang'] == 1 ? 'er' : 'e' ?></sup>
+              <?php if ($r['rang'] !== null): ?>
+                <?= (int)$r['rang'] ?><sup><?= ((int)$r['rang'] === 1) ? 'er' : 'e' ?></sup><?= !empty($r['ex_aequo']) ? ' <span style="font-size:6pt;font-weight:normal;">ex</span>' : '' ?>
+              <?php else: ?>
+                -
+              <?php endif; ?>
             </td>
             <td style="font-family: monospace; font-weight: bold; color: #334155;">
               <?= htmlspecialchars($r['matricule'] ?: '-') ?>
@@ -292,12 +291,12 @@ $anneeLibelle = $anneeLibelle ?? '-';
               </td>
             <?php endforeach; ?>
             <td style="text-align: center; font-weight: bold; color: #334155;">
-              <?= number_format($r['total_points'], 2) ?>
+              <?= $isNonEval ? '-' : number_format($r['total_points'], 2) ?>
             </td>
-            <td style="text-align: center; font-weight: 800; font-size: 8pt; color: <?= $isAdmis ? '#15803D' : '#991B1B' ?>;">
-              <?= number_format($r['moyenne_generale'], 2) ?>
+            <td style="text-align: center; font-weight: 800; font-size: 8pt; color: <?= $moyColorPdf ?>;">
+              <?= $isNonEval ? '-' : number_format($r['moyenne_generale'], 2) ?>
             </td>
-            <td class="<?= $isAdmis ? 'admis-cell' : 'ajourne-cell' ?>">
+            <td class="<?= $decisionClass ?>">
               <?= htmlspecialchars($r['decision']) ?>
             </td>
           </tr>
@@ -312,24 +311,33 @@ $anneeLibelle = $anneeLibelle ?? '-';
       <td>
         <div class="sig-title">Le Chef de Département / Enseignant</div>
         <div style="height: 38px;"></div>
-        <div class="sig-cachet">Signature & Date</div>
+        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
       </td>
       <td>
-        <div class="sig-title">Le Directeur des Études</div>
-        <div style="height: 38px;"></div>
-        <div class="sig-cachet">Signature, Visa & Cachet</div>
+        <div class="sig-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? '') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
+        <div style="height: 20px;"></div>
+        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
       </td>
       <td>
-        <div class="sig-title">Le Président du Jury / Directeur Général</div>
-        <div style="height: 38px;"></div>
-        <div class="sig-cachet">Signature, Visa & Cachet</div>
+        <div class="sig-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? '') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? '') ?></div>
+        <div style="height: 20px;"></div>
+        <div class="sig-cachet"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
       </td>
     </tr>
   </table>
 
   <!-- 6. Footer -->
+  <?php
+    $footerParts = array_filter([
+      $etablissement['nom_etablissement'] ?? '',
+      $etablissement['texte_pied_page'] ?? '',
+      !empty($etablissement['ville_signature']) ? ('Fait à ' . $etablissement['ville_signature'] . ', le ' . date('d/m/Y')) : ('Le ' . date('d/m/Y'))
+    ], fn($p) => trim((string)$p) !== '');
+  ?>
   <div class="footer-text">
-    GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION &bull; Document officiel généré par le Système Intégré de Délibérations &bull; Fait le <?= date('d/m/Y') ?>
+    <?= htmlspecialchars(implode(' • ', $footerParts)) ?>
   </div>
 
 </body>

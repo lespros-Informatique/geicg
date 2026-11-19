@@ -1,138 +1,13 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
-<style>
-@media print {
-  @page {
-    size: A4 landscape;
-    margin: 8mm;
-  }
-  body, html, .app-layout, .main-content, .content-wrapper {
-    background: #FFFFFF !important;
-    color: #000000 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    box-shadow: none !important;
-  }
-  header, .topbar, .topbar *, .sidebar, .sidebar *, aside, nav, .main-nav, .page-header, .no-print, 
-  .card-filters, .card-kpi-container, .kpi-section-title,
-  .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate,
-  button, a.btn, input, select, textarea, .form-control, .select2, .select2-container {
-    display: none !important;
-  }
-  #table-comptabilite-etudiants th:last-child,
-  #table-comptabilite-etudiants td:last-child {
-    display: none !important;
-  }
-  .card {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  table#table-comptabilite-etudiants {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    margin-top: 10px !important;
-  }
-  table#table-comptabilite-etudiants th,
-  table#table-comptabilite-etudiants td {
-    border: 1px solid #334155 !important;
-    padding: 6px 8px !important;
-    font-size: 11px !important;
-    color: #000000 !important;
-  }
-  table#table-comptabilite-etudiants th {
-    background: #F1F5F9 !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-  }
-  table#table-comptabilite-etudiants tr {
-    page-break-inside: avoid !important;
-  }
-  #print-header-banner, .print-signatures-block {
-    display: block !important;
-  }
-}
-
-#print-header-banner, .print-signatures-block {
-  display: none;
-}
-
-/* Animations and Premium Layout */
-@keyframes kpiEntrance {
-  0% { opacity: 0; transform: translateY(18px) scale(0.98); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes btnPulseGlow {
-  0%, 100% { box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25); transform: translateY(0); }
-  50% { box-shadow: 0 6px 22px rgba(22, 163, 74, 0.45); transform: translateY(-1.5px); }
-}
-
-@keyframes modalZoomIn {
-  from { opacity: 0; transform: scale(0.95) translateY(-8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.kpi-card {
-  animation: kpiEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transition: all 0.25s ease;
-  border-radius: 12px;
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  padding: 18px 20px;
-}
-.kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.08);
-  border-color: #CBD5E1;
-}
-
-.badge-status {
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  text-transform: uppercase;
-}
-.badge-success { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
-.badge-warning { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
-.badge-danger { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
-.badge-info { background: #E0F2FE; color: #0369A1; border: 1px solid #7DD3FC; }
-.badge-secondary { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
-
-.student-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #E2E8F0;
-}
-.student-avatar-initials {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%);
-  color: #FFFFFF;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 13.5px;
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(15,23,42,0.15);
-  border: 1.5px solid #CBD5E1;
-}
-</style>
-
-<div class="content-wrapper">
-
+<?php
+$canRecord = $canRecord ?? false;
+$niveaux = $niveaux ?? [];
+?>
+<div class="app-layout">
+  <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
+  <main class="main-content">
+    <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
+    <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
   <!-- BANNIÈRE D'IMPRESSION  -->
   <div id="print-header-banner">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 15px;">
@@ -142,7 +17,7 @@
       </div>
       <div style="text-align: right;">
         <h3 style="margin:0; font-size: 16px; font-weight: 800;">SUIVI COMPTABLE DES ÉTUDIANTS</h3>
-        <p style="margin: 3px 0 0 0; font-size: 11px; color: #555;">Année Académique: <strong id="print-annee-label"><?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'En Cours') ?></strong></p>
+        <p style="margin: 3px 0 0 0; font-size: 11px; color: #555;">Année Académique: <strong id="print-annee-label"><?= htmlspecialchars(Session::get('annee_active_libelle', 'En Cours')) ?></strong></p>
         <p style="margin: 1px 0 0 0; font-size: 10px; color: #666;">Édité le: <?= date('d/m/Y H:i') ?></p>
       </div>
     </div>
@@ -205,7 +80,7 @@
           <select id="filter_annee_code" name="annee_code" class="form-control" style="border-radius: 8px; font-weight: 700; font-size: 13px;" onchange="applyComptaFilters()">
             <?php foreach ($annees as $a): ?>
               <option value="<?= htmlspecialchars($a['code_annee']) ?>" <?= ($a['code_annee'] === $selectedAnneeCode) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === 'actif') ? ' (Active)' : '' ?>
+                <?= htmlspecialchars($a['libelle_annee']) ?> <?= (($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' (Active)' : '' ?>
               </option>
             <?php endforeach; ?>
           </select>
@@ -259,86 +134,74 @@
   </div>
 
   <!-- INDICATEURS COMPTABLES (KPI BAR) -->
-  <div class="card-kpi-container no-print" style="margin-bottom: 24px;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+  <div class="card-kpi-container no-print" style="margin-bottom: 24px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
 
-      <!-- KPI 1 : Effectif Total Inscrit -->
-      <div class="kpi-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Inscrits</div>
-            <div id="kpi-total-etudiants" style="font-size: 24px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; color: #475569;">
-            <i data-lucide="users" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Comptes actifs filtrés</div>
+    <!-- KPI 1 : Effectif Total Inscrit -->
+    <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Étudiants Inscrits</div>
+        <div id="kpi-total-etudiants" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
+        <div style="font-size: 11.5px; color: #64748B; margin-top: 4px;">Comptes actifs filtrés</div>
       </div>
-
-      <!-- KPI 2 : Total Scolarités Dues -->
-      <div class="kpi-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Scolarités Dues</div>
-            <div id="kpi-total-scolarites" style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 FCFA</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #E0F2FE; display: flex; align-items: center; justify-content: center; color: #0284C7;">
-            <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Total scolarités théoriques</div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #F1F5F9; display: flex; align-items: center; justify-content: center; color: #475569; flex-shrink: 0;">
+        <i data-lucide="users" style="width: 20px; height: 20px;"></i>
       </div>
-
-      <!-- KPI 3 : Taux de Recouvrement Global -->
-      <div class="kpi-card" style="border-left: 4px solid #3B82F6;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Taux de Recouvrement</div>
-            <div id="kpi-taux-recouvrement" style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 %</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; color: #2563EB;">
-            <i data-lucide="percent" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 8px;">Progression des encaissements</div>
-      </div>
-
-      <!-- KPI 5 : Total Encaissé -->
-      <div class="kpi-card" style="border-left: 4px solid #16A34A; background: #F0FDF4;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé (Paiements)</div>
-            <div id="kpi-total-encaisse" style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 4px;">0 FCFA</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #DCFCE7; display: flex; align-items: center; justify-content: center; color: #16A34A;">
-            <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #16A34A; margin-top: 8px; font-weight: 700;">Somme reçue en caisse</div>
-      </div>
-
-      <!-- KPI 6 : Reste à Recouvrer -->
-      <div class="kpi-card" style="border-left: 4px solid #DC2626; background: #FEF2F2;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Solde Restant (Créances)</div>
-            <div id="kpi-reste-recouvrer" style="font-size: 20px; font-weight: 900; color: #DC2626; margin-top: 4px;">0 FCFA</div>
-          </div>
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: #FEE2E2; display: flex; align-items: center; justify-content: center; color: #DC2626;">
-            <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
-          </div>
-        </div>
-        <div style="font-size: 11.5px; color: #B91C1C; margin-top: 8px; font-weight: 700;">Créances dues non réglées</div>
-      </div>
-
     </div>
+
+    <!-- KPI 2 : Total Scolarités Dues -->
+    <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #E0F2FE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Scolarités Dues</div>
+        <div id="kpi-total-scolarites" style="font-size: 19px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 FCFA</div>
+        <div style="font-size: 11.5px; color: #64748B; margin-top: 4px;">Total scolarités théoriques</div>
+      </div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #E0F2FE; display: flex; align-items: center; justify-content: center; color: #0284C7; flex-shrink: 0;">
+        <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
+    <!-- KPI 3 : Taux de Recouvrement Global -->
+    <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #DBEAFE; border-left: 4px solid #3B82F6; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.5px;">Taux de Recouvrement</div>
+        <div id="kpi-taux-recouvrement" style="font-size: 20px; font-weight: 900; color: #1E3A5F; margin-top: 4px;">0 %</div>
+        <div style="font-size: 11.5px; color: #64748B; margin-top: 4px;">Progression des encaissements</div>
+      </div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; color: #2563EB; flex-shrink: 0;">
+        <i data-lucide="percent" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
+    <!-- KPI 5 : Total Encaissé -->
+    <div class="card kpi-card" style="background: #F0FDF4; border-radius: 12px; padding: 16px 18px; border: 1px solid #BBF7D0; border-left: 4px solid #16A34A; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.5px;">Total Encaissé (Paiements)</div>
+        <div id="kpi-total-encaisse" style="font-size: 19px; font-weight: 900; color: #15803D; margin-top: 4px;">0 FCFA</div>
+        <div style="font-size: 11.5px; color: #16A34A; margin-top: 4px; font-weight: 700;">Somme reçue en caisse</div>
+      </div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #DCFCE7; display: flex; align-items: center; justify-content: center; color: #16A34A; flex-shrink: 0;">
+        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
+    <!-- KPI 6 : Reste à Recouvrer -->
+    <div class="card kpi-card" style="background: #FEF2F2; border-radius: 12px; padding: 16px 18px; border: 1px solid #FECACA; border-left: 4px solid #DC2626; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Solde Restant (Créances)</div>
+        <div id="kpi-reste-recouvrer" style="font-size: 19px; font-weight: 900; color: #DC2626; margin-top: 4px;">0 FCFA</div>
+        <div style="font-size: 11.5px; color: #B91C1C; margin-top: 4px; font-weight: 700;">Créances dues non réglées</div>
+      </div>
+      <div class="kpi-icon-box" style="width: 40px; height: 40px; border-radius: 10px; background: #FEE2E2; display: flex; align-items: center; justify-content: center; color: #DC2626; flex-shrink: 0;">
+        <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+      </div>
+    </div>
+
   </div>
 
   <!-- TABLEAU DES COMPTES ÉTUDIANTS -->
-  <div class="card" style="background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+  <div class="card" style="background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;" class="no-print">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;" class="no-print">
       <div>
         <h2 style="font-size: 16px; font-weight: 900; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
           <i data-lucide="table" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Relevé Comptable Individuel des Étudiants
@@ -350,22 +213,22 @@
       </div>
     </div>
 
-    <div class="table-responsive">
-      <table id="table-comptabilite-etudiants" class="table table-hover align-middle" style="width: 100%;">
+    <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+      <table id="table-comptabilite-etudiants" class="table table-hover align-middle" style="width: 100%; max-width: 100%; border-collapse: collapse;">
         <thead>
           <tr style="background: #F8FAFC; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
-            <th style="padding: 12px; font-weight: 800;">Étudiant & Matricule</th>
-            <th style="padding: 12px; font-weight: 800;">Classe / Niveau</th>
-            <th style="padding: 12px; font-weight: 800; text-align: center;">Régime</th>
-            <th style="padding: 12px; font-weight: 800; text-align: right;">Scolarité Due</th>
-            <th style="padding: 12px; font-weight: 800; text-align: right;">Total Encaissé</th>
-            <th style="padding: 12px; font-weight: 800; text-align: right;">Solde Dû</th>
-            <th style="padding: 12px; font-weight: 800; text-align: center;">Taux %</th>
-            <th style="padding: 12px; font-weight: 800; text-align: center;">Statut</th>
-            <th style="padding: 12px; font-weight: 800; text-align: center;" class="no-print">Actions</th>
+            <th style="padding: 10px 8px; font-weight: 800;">Étudiant & Matricule</th>
+            <th style="padding: 10px 8px; font-weight: 800;">Classe / Niveau</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: center;">Régime</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: right;">Scolarité Due</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: right;">Total Encaissé</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: right;">Solde Dû</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: center;">Taux %</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: center;">Statut</th>
+            <th style="padding: 10px 8px; font-weight: 800; text-align: center;" class="no-print">Actions</th>
           </tr>
         </thead>
-        <tbody style="font-size: 13px;">
+        <tbody style="font-size: 12.5px;">
           <!-- Chargé dynamiquement en AJAX -->
         </tbody>
       </table>
@@ -391,6 +254,8 @@
     </div>
   </div>
 
+    </div>
+  </main>
 </div>
 
 <!-- ========================================================================= -->
@@ -493,14 +358,14 @@
       <button type="button" class="btn-close-modal-encaissement" style="background: transparent; border: none; color: #FFFFFF; font-size: 24px; cursor: pointer;">&times;</button>
     </div>
 
-    <form id="form-encaisse-versement" action="<?= RACINE ?>paiement/add" method="POST" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
+    <form id="form-encaisse-versement" action="<?= url('paiement/add') ?>" method="POST" style="display: flex; flex-direction: column; overflow: hidden; height: 100%;">
       <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
 
         <input type="hidden" id="modal_select_inscription" name="inscription_code" value="" required>
 
         <div id="encaisse-student-summary-card" style="display: none; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-            <img id="encaisse-photo-preview" src="<?= RACINE ?>public/assets/images/default-avatar.png" class="student-avatar" alt="Avatar">
+            <img id="encaisse-photo-preview" src="<?= asset('assets/images/default-avatar.png') ?>" class="student-avatar" alt="Avatar">
             <div>
               <div id="encaisse-student-name" style="font-size: 15px; font-weight: 900; color: #0F172A;">Nom Étudiant</div>
               <div id="encaisse-student-meta" style="font-size: 12px; color: #64748B;">Matricule: - | Classe: -</div>
@@ -590,489 +455,17 @@
 <?php endif; ?>
 
 <!-- SCRIPTS DE GESTION DU TABLEAU ET AJAX -->
-<script>
-let dataTableCompta = null;
-
-document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('statut_paiement')) {
-        const selStatut = document.getElementById('filter_statut_paiement');
-        if (selStatut) selStatut.value = urlParams.get('statut_paiement');
-    }
-    if (urlParams.has('annee_code')) {
-        const selAnnee = document.getElementById('filter_annee_code');
-        if (selAnnee) selAnnee.value = urlParams.get('annee_code');
-    }
-    if (urlParams.has('niveau_code')) {
-        const selNiveau = document.getElementById('filter_niveau_code');
-        if (selNiveau) selNiveau.value = urlParams.get('niveau_code');
-    }
-    if (urlParams.has('classe_code')) {
-        const selClasse = document.getElementById('filter_classe_code');
-        if (selClasse) selClasse.value = urlParams.get('classe_code');
-    }
-    if (urlParams.has('regime')) {
-        const selRegime = document.getElementById('filter_regime');
-        if (selRegime) selRegime.value = urlParams.get('regime');
-    }
-
-    initDataTableCompta();
-    loadComptaData();
-
-    // Event handlers close modals
-    document.querySelectorAll('.btn-close-modal-encaissement').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('modal-encaisse-versement').style.display = 'none';
-        });
-    });
-
-    // Handle form encaissement submit
-    const formEncaisse = document.getElementById('form-encaisse-versement');
-    if (formEncaisse) {
-        formEncaisse.addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitEncaissementForm(this);
-        });
-    }
-
-    // Handle inscription change in modal
-    const selInscr = document.getElementById('modal_select_inscription');
-    if (selInscr) {
-        selInscr.addEventListener('change', function() {
-            onInscriptionSelected(this.value);
-        });
-    }
-
-    // Handle tranche change in modal
-    const selTranche = document.getElementById('modal_select_tranche');
-    if (selTranche) {
-        selTranche.addEventListener('change', function() {
-            const selectedOpt = this.options[this.selectedIndex];
-            if (selectedOpt) {
-                const mTranche = parseFloat(selectedOpt.dataset.montantTranche || 0);
-                document.getElementById('hidden_montant_tranche').value = mTranche;
-                document.getElementById('input-montant-versement').value = mTranche;
-            }
-        });
-    }
-});
-
-function initDataTableCompta() {
-    if ($.fn.DataTable.isDataTable('#table-comptabilite-etudiants')) {
-        $('#table-comptabilite-etudiants').DataTable().destroy();
-    }
-
-    dataTableCompta = $('#table-comptabilite-etudiants').DataTable({
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
-        },
-        pageLength: 25,
-        order: [[0, 'asc']],
-        dom: '<"row no-print"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row no-print"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-        columns: [
-            { data: null, render: function(d) {
-                const initStr = d.initiales || 'E';
-                let avatarHtml = '';
-                if (d.has_photo && d.photo) {
-                    avatarHtml = `<img src="${d.photo}" class="student-avatar" alt="Photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">` +
-                                 `<div class="student-avatar-initials" style="display:none;">${initStr}</div>`;
-                } else {
-                    avatarHtml = `<div class="student-avatar-initials">${initStr}</div>`;
-                }
-                return `<div style="display: flex; align-items: center; gap: 10px;">
-                            ${avatarHtml}
-                            <div>
-                                <div style="font-weight: 800; color: #0F172A;">${d.nom_complet}</div>
-                                <div style="font-size: 11.5px; color: #64748B;">Matricule: <strong style="color: #1E3A5F;">${d.matricule}</strong></div>
-                            </div>
-                        </div>`;
-            }},
-            { data: null, render: function(d) {
-                return `<div>
-                            <div style="font-weight: 700; color: #1E3A5F;">${d.classe}</div>
-                            <div style="font-size: 11px; color: #64748B;">Niveau: ${d.niveau}</div>
-                        </div>`;
-            }},
-            { data: null, className: 'text-center', render: function(d) {
-                const bCls = (d.regime_code === 'affecte') ? 'badge-info' : 'badge-secondary';
-                return `<span class="badge-status ${bCls}">${d.regime}</span>`;
-            }},
-            { data: 'scolarite_due', className: 'text-end font-monospace', render: function(v) { return formatFCFA(v); }},
-            { data: 'total_encaisse', className: 'text-end font-monospace text-success fw-bold', render: function(v) { return formatFCFA(v); }},
-            { data: 'solde_restant', className: 'text-end font-monospace text-danger fw-bold', render: function(v) { return formatFCFA(v); }},
-            { data: null, className: 'text-center', render: function(d) {
-                let barColor = (d.taux_reglement >= 100) ? '#16A34A' : ((d.taux_reglement > 0) ? '#D97706' : '#DC2626');
-                return `<div style="min-width: 80px;">
-                            <div style="font-size: 11px; font-weight: 800; margin-bottom: 2px;">${d.taux_reglement}%</div>
-                            <div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden;">
-                                <div style="width: ${d.taux_reglement}%; height: 100%; background: ${barColor};"></div>
-                            </div>
-                        </div>`;
-            }},
-            { data: null, className: 'text-center', render: function(d) {
-                return `<span class="badge-status ${d.badge_class}">${d.statut_libelle}</span>`;
-            }},
-            { data: null, className: 'text-center no-print', render: function(d) {
-                let btnEncaisse = '';
-                const canRecord = <?= $canRecord ? 'true' : 'false' ?>;
-                const isCaisseOuverte = <?= $isCaisseOuverte ? 'true' : 'false' ?>;
-
-                if (canRecord && isCaisseOuverte) {
-                    btnEncaisse = `<button type="button" onclick="openModalPayementForStudent('${d.code_inscription}')" 
-                                           class="btn btn-sm btn-success" 
-                                           style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 800; background: #16A34A; border: none; color: #FFF; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(22,163,74,0.25);" 
-                                           title="Encaisser un versement de scolarité">
-                                    <i data-lucide="credit-card" style="width: 15px; height: 15px;"></i>
-                                   </button>`;
-                } else if (canRecord && !isCaisseOuverte) {
-                    btnEncaisse = `<button type="button" onclick="alert('La caisse du jour est actuellement fermée. Veuillez d\'abord ouvrir une session de caisse.')" 
-                                           class="btn btn-sm btn-secondary" 
-                                           style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 800; opacity: 0.6; display: inline-flex; align-items: center; justify-content: center;" 
-                                           title="Caisse du jour fermée">
-                                    <i data-lucide="credit-card" style="width: 15px; height: 15px;"></i>
-                                   </button>`;
-                }
-
-                let btnVoir = `<button type="button" onclick="openStudentFinancialSummaryModal('${d.code_inscription}')" 
-                                       class="btn btn-sm btn-primary" 
-                                       style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 800; background: #1E3A5F; border-color: #1E3A5F; color: #FFF; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(30,58,95,0.2);" 
-                                       title="Voir résumé financier & récapitulatif">
-                                <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
-                               </button>`;
-
-                let btnRecuInscription = (d.encrypted_inscription_id || d.encrypted_inscription_code) ? 
-                    `<a href="${window.RACINE}paiement/imprimerBilanFinancier/${d.encrypted_inscription_id || d.encrypted_inscription_code}" target="_blank" 
-                        class="btn btn-sm btn-info" 
-                        style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: #0EA5E9; border-color: #0EA5E9; color: #FFF; box-shadow: 0 2px 4px rgba(14,165,233,0.25);" 
-                        title="Imprimer bilan financier de l'étudiant">
-                        <i data-lucide="printer" style="width: 15px; height: 15px;"></i>
-                     </a>` : '';
-
-                let btnProfil = d.encrypted_etudiant_code ? 
-                    `<a href="${window.RACINE}etudiant/details/${d.encrypted_etudiant_code}" target="_blank" 
-                        class="btn btn-sm btn-outline-secondary" 
-                        style="width: 32px; height: 32px; padding: 0; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; color: #475569; border-color: #CBD5E1;" 
-                        title="Consulter le dossier profil de l'étudiant">
-                        <i data-lucide="user" style="width: 15px; height: 15px;"></i>
-                     </a>` : '';
-
-                return `<div style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: nowrap;">
-                            ${btnEncaisse}
-                            ${btnVoir}
-                            ${btnRecuInscription}
-                            ${btnProfil}
-                        </div>`;
-            }}
-        ],
-        drawCallback: function() {
-            if (window.lucide) { lucide.createIcons(); }
-        }
-    });
-}
-
-function loadComptaData() {
-    const selAnneeObj = document.getElementById('filter_annee_code');
-    const anneeCode = selAnneeObj.value;
-    const niveauCode = document.getElementById('filter_niveau_code').value;
-    const classeCode = document.getElementById('filter_classe_code').value;
-    const regime = document.getElementById('filter_regime').value;
-    const statutPaiement = document.getElementById('filter_statut_paiement').value;
-
-    if (selAnneeObj && selAnneeObj.options[selAnneeObj.selectedIndex]) {
-        const lbl = selAnneeObj.options[selAnneeObj.selectedIndex].text.replace('(Active)', '').trim();
-        const printLbl = document.getElementById('print-annee-label');
-        if (printLbl) printLbl.innerText = lbl;
-    }
-
-    const url = `<?= RACINE ?>paiement/apiComptabiliteEtudiants?annee_code=${anneeCode}&niveau_code=${niveauCode}&classe_code=${classeCode}&regime=${regime}&statut_paiement=${statutPaiement}`;
-
-    fetch(url)
-    .then(r => r.json())
-    .then(res => {
-        if (res.success && res.data) {
-            // Update KPIs
-            document.getElementById('kpi-total-etudiants').innerText = res.kpis.total_etudiants;
-            document.getElementById('kpi-total-scolarites').innerText = formatFCFA(res.kpis.total_scolarites);
-            document.getElementById('kpi-total-encaisse').innerText = formatFCFA(res.kpis.total_encaisse);
-            document.getElementById('kpi-reste-recouvrer').innerText = formatFCFA(res.kpis.reste_a_recouvrer);
-            if (document.getElementById('kpi-taux-recouvrement')) {
-                document.getElementById('kpi-taux-recouvrement').innerText = (res.kpis.taux_recouvrement || 0) + ' %';
-            }
-
-            document.getElementById('compta-records-count').innerText = `${res.data.length} Étudiants enregistrés`;
-
-            // Update DataTable
-            dataTableCompta.clear().rows.add(res.data).draw();
-        }
-    })
-    .catch(err => {
-        console.error("Erreur chargement données comptables :", err);
-    });
-}
-
-function applyComptaFilters() {
-    loadComptaData();
-}
-
-function resetComptaFilters() {
-    document.getElementById('filter_niveau_code').value = 'ALL';
-    document.getElementById('filter_classe_code').value = 'ALL';
-    document.getElementById('filter_regime').value = 'ALL';
-    document.getElementById('filter_statut_paiement').value = 'ALL';
-    loadComptaData();
-}
-
-function printEtatComptabilite() {
-    const anneeCode = document.getElementById('filter_annee_code') ? document.getElementById('filter_annee_code').value : '';
-    const niveauCode = document.getElementById('filter_niveau_code') ? document.getElementById('filter_niveau_code').value : 'ALL';
-    const classeCode = document.getElementById('filter_classe_code') ? document.getElementById('filter_classe_code').value : 'ALL';
-    const regime = document.getElementById('filter_regime') ? document.getElementById('filter_regime').value : 'ALL';
-    const statutPaiement = document.getElementById('filter_statut_paiement') ? document.getElementById('filter_statut_paiement').value : 'ALL';
-
-    const url = `<?= RACINE ?>paiement/imprimerComptabiliteEtudiants?annee_code=${encodeURIComponent(anneeCode)}&niveau_code=${encodeURIComponent(niveauCode)}&classe_code=${encodeURIComponent(classeCode)}&regime=${encodeURIComponent(regime)}&statut_paiement=${encodeURIComponent(statutPaiement)}`;
-    window.open(url, '_blank');
-}
-
-function formatFCFA(amount) {
-    return new Intl.NumberFormat('fr-FR').format(Math.round(amount || 0)) + ' FCFA';
-}
-
-function openStudentFinancialSummaryModal(inscriptionCode) {
-    const anneeCode = document.getElementById('filter_annee_code').value;
-    fetch(`<?= RACINE ?>paiement/getStudentFinancialSummary?inscription_code=${encodeURIComponent(inscriptionCode)}&annee_code=${encodeURIComponent(anneeCode)}`)
-    .then(r => r.json())
-    .then(res => {
-        if (res.status === 1 || res.success) {
-            const data = res.data || res;
-            
-            const studentName = data.etudiant_nom || data.nom_complet || (data.nom_etudiant ? (data.nom_etudiant + ' ' + (data.prenom_etudiant || '')) : 'Étudiant');
-            const studentMatricule = data.matricule || data.matricule_etudiant || '-';
-            const studentClasse = data.classe || data.libelle_classe || '-';
-
-            document.getElementById('sum-student-name').innerText = studentName;
-            document.getElementById('sum-student-details').innerText = `Matricule: ${studentMatricule} | Classe: ${studentClasse}`;
-            document.getElementById('sum-student-photo').src = data.photo || data.photo_url || '<?= RACINE ?>public/assets/images/default-avatar.png';
-
-            document.getElementById('sum-val-scolarite').innerText = formatFCFA(data.scolarite_due);
-            document.getElementById('sum-val-paye').innerText = formatFCFA(data.total_paye);
-            document.getElementById('sum-val-reste').innerText = formatFCFA(data.solde_restant);
-
-            // Populate tranches
-            let htmlTr = '';
-            if (data.tranches && data.tranches.length > 0) {
-                data.tranches.forEach(tr => {
-                    const libelle = tr.libelle || tr.libelle_tranche || 'Tranche';
-                    const montant = tr.montant || tr.montant_tranche || 0;
-                    const dejaPaye = tr.deja_paye !== undefined ? tr.deja_paye : 0;
-                    const reste = tr.reste !== undefined ? tr.reste : (tr.reste_a_payer !== undefined ? tr.reste_a_payer : 0);
-                    const badge = tr.badge || 'badge-info';
-                    const statut = tr.statut || tr.statut_libelle || 'En attente';
-
-                    htmlTr += `<tr>
-                        <td><strong>${libelle}</strong></td>
-                        <td style="text-align: right;">${formatFCFA(montant)}</td>
-                        <td style="text-align: right;" class="text-success">${formatFCFA(dejaPaye)}</td>
-                        <td style="text-align: right;" class="text-danger">${formatFCFA(reste)}</td>
-                        <td style="text-align: center;"><span class="badge-status ${badge}">${statut}</span></td>
-                    </tr>`;
-                });
-            } else {
-                htmlTr = '<tr><td colspan="5" class="text-center text-muted">Aucune tranche configurée.</td></tr>';
-            }
-            document.getElementById('sum-tbody-tranches').innerHTML = htmlTr;
-
-            // Populate payments history
-            let htmlPay = '';
-            const payments = data.all_payments || data.historique_paiements || [];
-            if (payments.length > 0) {
-                payments.forEach(p => {
-                    const codePaiement = p.code_paiement || ('PAI-' + p.id_paiement);
-                    const datePaiement = p.date_paiement_fmt || p.date_paiement || '-';
-                    const modePaiement = p.mode_paiement_fmt || p.mode_paiement || 'Espèces';
-                    const typePaiement = p.type_transaction || p.type_paiement || 'Versement';
-                    const encId = p.encrypted_id || p.id_crypte || '';
-
-                    htmlPay += `<tr>
-                        <td>${datePaiement}</td>
-                        <td class="font-monospace"><strong>${codePaiement}</strong></td>
-                        <td>${typePaiement}</td>
-                        <td class="text-uppercase">${modePaiement}</td>
-                        <td style="text-align: right;" class="fw-bold text-success">${formatFCFA(p.montant_paiement)}</td>
-                        <td style="text-align: center;">
-                            <a href="<?= RACINE ?>paiement/imprimerPdf/${encId}" target="_blank" class="btn btn-sm btn-outline-primary" style="padding: 2px 6px; font-size: 11px;" title="Imprimer le reçu de versement (PDF)">
-                                Reçu <i data-lucide="printer" style="width: 12px; height: 12px;"></i>
-                            </a>
-                        </td>
-                    </tr>`;
-                });
-            } else {
-                htmlPay = '<tr><td colspan="6" class="text-center text-muted">Aucun règlement encaissé pour le moment.</td></tr>';
-            }
-            document.getElementById('sum-tbody-paiements').innerHTML = htmlPay;
-
-            document.getElementById('modal-student-financial-summary').style.display = 'flex';
-            if (window.lucide) { lucide.createIcons(); }
-        } else {
-            alert(res.message || "Impossible de charger les données financières de cet étudiant.");
-        }
-    })
-    .catch(err => {
-        console.error("Erreur résumé financier :", err);
-        alert("Une erreur de communication est survenue.");
-    });
-}
-
-function closeStudentSummaryModal() {
-    document.getElementById('modal-student-financial-summary').style.display = 'none';
-}
-
-function openModalEncaissementCompta() {
-    if (dataTableCompta && dataTableCompta.rows().count() > 0) {
-        const firstStudent = dataTableCompta.row(0).data();
-        if (firstStudent && firstStudent.code_inscription) {
-            openModalPayementForStudent(firstStudent.code_inscription);
-            return;
-        }
-    }
-    document.getElementById('modal-encaisse-versement').style.display = 'flex';
-}
-
-function openModalPayementForStudent(inscriptionCode) {
-    document.getElementById('modal-encaisse-versement').style.display = 'flex';
-    const sel = document.getElementById('modal_select_inscription');
-    if (sel) {
-        sel.value = inscriptionCode;
-        onInscriptionSelected(inscriptionCode);
-    }
-}
-
-function onInscriptionSelected(inscriptionCode) {
-    if (!inscriptionCode) {
-        document.getElementById('encaisse-student-summary-card').style.display = 'none';
-        document.getElementById('encaisse-payment-inputs-section').style.display = 'none';
-        return;
-    }
-
-    const anneeCode = document.getElementById('filter_annee_code').value;
-    fetch(`<?= RACINE ?>paiement/getStudentFinancialSummary?inscription_code=${encodeURIComponent(inscriptionCode)}&annee_code=${encodeURIComponent(anneeCode)}`)
-    .then(r => r.json())
-    .then(res => {
-        if (res.status === 1 || res.success) {
-            const data = res.data || res;
-
-            const studentName = data.etudiant_nom || data.nom_complet || (data.nom_etudiant ? (data.nom_etudiant + ' ' + (data.prenom_etudiant || '')) : 'Étudiant');
-            const studentMatricule = data.matricule || data.matricule_etudiant || '-';
-            const studentClasse = data.classe || data.libelle_classe || '-';
-
-            document.getElementById('encaisse-student-name').innerText = studentName;
-            document.getElementById('encaisse-student-meta').innerText = `Matricule: ${studentMatricule} | Classe: ${studentClasse}`;
-            document.getElementById('encaisse-photo-preview').src = data.photo || data.photo_url || '<?= RACINE ?>public/assets/images/default-avatar.png';
-
-            document.getElementById('encaisse-val-scolarite').innerText = formatFCFA(data.scolarite_due);
-            document.getElementById('encaisse-val-paye').innerText = formatFCFA(data.total_paye);
-            document.getElementById('encaisse-val-reste').innerText = formatFCFA(data.solde_restant);
-
-            // Populate tranches
-            const selTr = document.getElementById('modal_select_tranche');
-            selTr.innerHTML = '';
-            if (data.tranches && data.tranches.length > 0) {
-                let suggested = null;
-                data.tranches.forEach(tr => {
-                    const opt = document.createElement('option');
-                    const trCode = tr.code_tranche || '';
-                    const libelle = tr.libelle || tr.libelle_tranche || 'Tranche';
-                    const reste = tr.reste !== undefined ? tr.reste : (tr.reste_a_payer !== undefined ? tr.reste_a_payer : 0);
-                    
-                    opt.value = trCode;
-                    opt.text = `${libelle} - Dû: ${formatFCFA(reste)}`;
-                    opt.dataset.montantTranche = reste;
-                    selTr.appendChild(opt);
-
-                    if (reste > 0 && !suggested) { 
-                        suggested = trCode; 
-                    }
-                });
-                if (suggested) selTr.value = suggested;
-            }
-
-            const selectedOpt = selTr.options[selTr.selectedIndex];
-            const currentTrancheMontant = selectedOpt ? parseFloat(selectedOpt.dataset.montantTranche || 0) : parseFloat(data.suggested_tranche_reste || 0);
-            document.getElementById('hidden_montant_tranche').value = currentTrancheMontant;
-            document.getElementById('input-montant-versement').value = currentTrancheMontant;
-
-            document.getElementById('encaisse-student-summary-card').style.display = 'block';
-            document.getElementById('encaisse-payment-inputs-section').style.display = 'block';
-        } else {
-            alert(res.message || "Erreur de chargement des données de l'étudiant.");
-        }
-    })
-    .catch(err => {
-        console.error("Erreur encaissement étudiant :", err);
-        alert("Une erreur de communication est survenue.");
-    });
-}
-
-function updateSubmitButtonStateCompta() {
-    const isCaisseActive = <?= !empty($isCaisseOuverte) ? 'true' : 'false' ?>;
-    const selMode = document.getElementById('modal_select_mode');
-    const mode = selMode ? selMode.value : 'espece';
-    const isCash = (mode === 'espece' || mode === 'especes' || mode === 'cash');
-    const btnSubmit = document.getElementById('btn-submit-encaissement');
-    const note = document.getElementById('caisse-status-footer-note');
-
-    if (!btnSubmit) return;
-
-    if (isCash && !isCaisseActive) {
-        btnSubmit.disabled = true;
-        btnSubmit.style.background = '#94A3B8';
-        btnSubmit.style.cursor = 'not-allowed';
-        btnSubmit.style.opacity = '0.65';
-        btnSubmit.title = "Session de caisse fermée : veuillez d'abord ouvrir la caisse du jour pour encaisser en espèces.";
-        if (note) note.style.display = 'inline-flex';
-    } else {
-        btnSubmit.disabled = false;
-        btnSubmit.style.background = '#16A34A';
-        btnSubmit.style.cursor = 'pointer';
-        btnSubmit.style.opacity = '1';
-        btnSubmit.removeAttribute('title');
-        if (note) note.style.display = 'none';
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const selMode = document.getElementById('modal_select_mode');
-    if (selMode) {
-        selMode.addEventListener('change', updateSubmitButtonStateCompta);
-    }
-    updateSubmitButtonStateCompta();
-});
-
-function submitEncaissementForm(form) {
-    const btnSubmit = document.getElementById('btn-submit-encaissement');
-    if (btnSubmit) { btnSubmit.disabled = true; }
-
-    const formData = new FormData(form);
-    fetch(form.action, {
-        method: 'POST',
-        body: formData
-    })
-    .then(r => r.json())
-    .then(res => {
-        if (btnSubmit) { updateSubmitButtonStateCompta(); }
-        if (res.status === 1 || res.success) {
-            document.getElementById('modal-encaisse-versement').style.display = 'none';
-            loadComptaData();
-            alert(res.message || "Versement encaissé avec succès !");
-        } else {
-            alert(res.message || res.error || "Erreur lors de l'enregistrement du versement.");
-        }
-    })
-    .catch(err => {
-        if (btnSubmit) { updateSubmitButtonStateCompta(); }
-        console.error("Erreur encaissement :", err);
-        alert("Une erreur de communication est survenue avec le serveur.");
-    });
-}
+<?php
+$comptaConfig = [
+    'canRecord' => (bool)(!empty($canRecord)),
+    'isCaisseOuverte' => (bool)(!empty($isCaisseOuverte)),
+    'racine' => RACINE
+];
+?>
+<script type="application/json" id="paiements-compta-config">
+<?= json_encode($comptaConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
 </script>
-
-<?php require_once __DIR__ . '/../../public/inc/footer.php'; ?>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/paiements.js']);
+require_once __DIR__ . '/../../public/inc/footer.php'; 
+?>

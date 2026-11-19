@@ -2,48 +2,34 @@
 
 class ModelAbsence extends BaseModel
 {
-    protected string $table = 'absences';
+    protected string $table = TABLES::ABSENCES;
     protected string $primaryKey = 'id_absence';
     protected ?string $createdAtField = 'created_at_absence';
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "
-            SELECT abs.*, 
-                   CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, '')) as nom_etudiant,
-                   e.matricule_etudiant,
-                   e.code_etudiant,
-                   cl.code_classe,
-                   cl.libelle_classe,
-                   n.libelle_niveau,
-                   m.libelle_matiere,
-                   abs.motif as motif_absence
-            FROM " . TABLES::ABSENCES . " abs
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = abs.inscription_code
-            LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = ins.etudiant_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = abs.matiere_code
-        ";
+        if (empty($anneeCode)) {
+            return [];
+        }
+
+        $sql = "SELECT * FROM " . VIEWS::ABSENCES_COMPLETES . "";
         $conditions = [];
         $params = [];
-        if (!empty($anneeCode)) {
-            $conditions[] = "(abs.annee_code = ? OR ins.annee_code = ?)";
-            $params[] = $anneeCode;
-            $params[] = $anneeCode;
-        }
+        $conditions[] = "(annee_code = ? OR inscription_annee_code = ?)";
+        $params[] = $anneeCode;
+        $params[] = $anneeCode;
         if (!empty($niveauCode)) {
-            $conditions[] = "cl.niveau_code = ?";
+            $conditions[] = "niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "ins.classe_code = ?";
+            $conditions[] = "classe_code = ?";
             $params[] = $classeCode;
         }
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
-        $sql .= " ORDER BY abs.date_absence DESC, abs.id_absence DESC ";
+        $sql .= " ORDER BY date_absence DESC, id_absence DESC ";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
@@ -66,7 +52,7 @@ class ModelAbsence extends BaseModel
             SELECT DISTINCT e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant,
                    i.code_inscription, i.classe_code, cl.libelle_classe
             FROM " . TABLES::ETUDIANTS . " e
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
             ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC
         ";
@@ -83,19 +69,9 @@ class ModelAbsence extends BaseModel
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT abs.*, 
-                       e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.telephone_etudiant, e.email_etudiant, e.code_etudiant,
-                       cl.code_classe, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
-                       m.libelle_matiere,
-                       abs.motif as motif_absence
-                FROM " . TABLES::ABSENCES . " abs
-                LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = abs.inscription_code
-                LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = ins.etudiant_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
-                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
-                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = abs.matiere_code
-                WHERE abs.id_absence = ? OR abs.code_absence = ?
+                SELECT *, etu_nom AS nom_etudiant, etu_prenom AS prenom_etudiant
+                FROM " . VIEWS::ABSENCES_COMPLETES . "
+                WHERE id_absence = ? OR code_absence = ?
                 LIMIT 1
             ");
             $stmt->execute([$id, (string)$id]);
@@ -108,15 +84,19 @@ class ModelAbsence extends BaseModel
 
     public function getStudentsByClasse(string $classeCode, string $anneeCode): array
     {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT i.code_inscription, e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant
                 FROM " . TABLES::INSCRIPTIONS . " i
                 INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
-                WHERE i.classe_code = ? AND (i.annee_code = ? OR ? IS NULL OR ? = '') AND (i.statut_inscription != 'annule' OR i.statut_inscription IS NULL)
+                WHERE i.classe_code = ? AND i.annee_code = ? AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
                 ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
             ");
-            $stmt->execute([$classeCode, $anneeCode, $anneeCode, $anneeCode]);
+            $stmt->execute([$classeCode, $anneeCode]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelAbsence::getStudentsByClasse error: " . $e->getMessage());
@@ -131,7 +111,7 @@ class ModelAbsence extends BaseModel
                 SELECT abs.*, ins.etudiant_code, abs.motif as motif_absence
                 FROM " . TABLES::ABSENCES . " abs
                 INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = abs.inscription_code
-                WHERE ins.classe_code = ? AND abs.date_absence = ?
+                WHERE ins.classe_code = ? AND abs.date_absence = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "'
             ";
             $paramsAbs = [$classeCode, $dateAbsence];
             if (!empty($matiereCode)) {
@@ -154,14 +134,14 @@ class ModelAbsence extends BaseModel
 
     public function getInscriptionCodeByEtudiant(string $etudiantCode, ?string $classeCode = null, ?string $anneeCode = null): ?string
     {
-        $sql = "SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ?";
+        $sql = "SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ? AND statut_inscription != '" . STATUTS::ANNULE . "'";
         $params = [$etudiantCode];
         if (!empty($classeCode)) {
             $sql .= " AND classe_code = ?";
             $params[] = $classeCode;
         }
         if (!empty($anneeCode)) {
-            $sql .= " AND (annee_code = ? OR annee_code = '' OR annee_code IS NULL)";
+            $sql .= " AND annee_code = ?";
             $params[] = $anneeCode;
         }
         $sql .= " ORDER BY id_inscription DESC LIMIT 1";
@@ -184,43 +164,55 @@ class ModelAbsence extends BaseModel
         $db->beginTransaction();
 
         try {
+            $matCodeNorm = $matiereCode ?? '';
+            $stmtCheck = $db->prepare("
+                SELECT id_absence FROM " . TABLES::ABSENCES . " 
+                WHERE inscription_code = ? AND date_absence = ? AND (matiere_code = ? OR (matiere_code = '' AND ? = ''))
+            ");
+            $stmtUpd = $db->prepare("
+                UPDATE " . TABLES::ABSENCES . " 
+                SET duree_heures = ?, justifiee = ?, motif = ?
+                WHERE id_absence = ?
+            ");
+            $stmtIns = $db->prepare("
+                INSERT INTO " . TABLES::ABSENCES . " (
+                    code_absence, inscription_code, emploi_code, matiere_code, date_absence, 
+                    duree_heures, justifiee, motif, annee_code, etablissement_code, created_at_absence
+                ) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+            $stmtDel = $db->prepare("DELETE FROM " . TABLES::ABSENCES . " WHERE id_absence = ?");
+
+            // Pré-chargement en 1 seule requête des inscriptions de la classe
+            $inscriptionsByEtudiant = [];
+            if (!empty($classeCode)) {
+                foreach ($this->getStudentsByClasse($classeCode, $anneeCode) as $st) {
+                    $inscriptionsByEtudiant[$st['code_etudiant']] = $st['code_inscription'];
+                }
+            }
+
             foreach ($absencesData as $etudiantCode => $info) {
                 $isAbsent = !empty($info['is_absent']);
                 $justifiee = !empty($info['justifiee']) ? $info['justifiee'] : 'non';
                 $motif = trim($info['motif'] ?? ($info['motif_absence'] ?? ''));
 
-                $inscCode = $this->getInscriptionCodeByEtudiant($etudiantCode, $classeCode, $anneeCode);
+                $inscCode = $inscriptionsByEtudiant[$etudiantCode]
+                    ?? $this->getInscriptionCodeByEtudiant($etudiantCode, $classeCode, $anneeCode);
                 if (empty($inscCode)) {
                     continue;
                 }
 
-                $stmtCheck = $db->prepare("
-                    SELECT id_absence FROM " . TABLES::ABSENCES . " 
-                    WHERE inscription_code = ? AND date_absence = ? AND (matiere_code = ? OR (matiere_code = '' AND ? = ''))
-                ");
-                $stmtCheck->execute([$inscCode, $dateAbsence, $matiereCode ?? '', $matiereCode ?? '']);
+                $stmtCheck->execute([$inscCode, $dateAbsence, $matCodeNorm, $matCodeNorm]);
                 $existingId = $stmtCheck->fetchColumn();
 
                 if ($isAbsent) {
                     if ($existingId) {
-                        $stmtUpd = $db->prepare("
-                            UPDATE " . TABLES::ABSENCES . " 
-                            SET duree_heures = ?, justifiee = ?, motif = ?
-                            WHERE id_absence = ?
-                        ");
                         $stmtUpd->execute([$dureeHeures, $justifiee, $motif, $existingId]);
                     } else {
-                        $codeAbs = $validator->generateCode('absences', 'code_absence', 'ABS-', 8);
-                        $stmtIns = $db->prepare("
-                            INSERT INTO " . TABLES::ABSENCES . " (
-                                code_absence, inscription_code, emploi_code, matiere_code, date_absence, 
-                                duree_heures, justifiee, motif, annee_code, etablissement_code, created_at_absence
-                            ) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, NOW())
-                        ");
+                        $codeAbs = $validator->generateCode(TABLES::ABSENCES, 'code_absence', 'ABS-', 8);
                         $stmtIns->execute([
                             $codeAbs,
                             $inscCode,
-                            $matiereCode ?? '',
+                            $matCodeNorm,
                             $dateAbsence,
                             $dureeHeures,
                             $justifiee,
@@ -231,7 +223,6 @@ class ModelAbsence extends BaseModel
                     }
                 } else {
                     if ($existingId) {
-                        $stmtDel = $db->prepare("DELETE FROM " . TABLES::ABSENCES . " WHERE id_absence = ?");
                         $stmtDel->execute([$existingId]);
                     }
                 }

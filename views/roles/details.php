@@ -17,10 +17,10 @@ $users = isset($users) ? $users : [];
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des privilèges et liste des utilisateurs titulaires</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>role/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('role/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
           </a>
-          <a href="<?= RACINE ?>role/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('role/edition/' . ($encryptedId)) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Configurer ce rôle
           </a>
         </div>
@@ -70,7 +70,7 @@ $users = isset($users) ? $users : [];
           <div>
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Statut d'Activité</span>
             <div>
-              <?php if (($role['statut_role'] ?? '') === 'actif'): ?>
+              <?php if (($role['statut_role'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 14px; border-radius:10px; font-weight:700; font-size:12px; display: inline-block;">Actif</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 14px; border-radius:10px; font-weight:700; font-size:12px; display: inline-block;">Inactif</span>
@@ -165,5 +165,4 @@ $users = isset($users) ? $users : [];
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

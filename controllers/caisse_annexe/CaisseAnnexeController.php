@@ -18,17 +18,29 @@ class CaisseAnnexeController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        // Synchronisation de l'année académique si passée en paramètre GET
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $annees = $this->getAccessibleAnnees();
+        $activeYear = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($activeYear === null) {
+            $this->loadView('../views/caisse_annexe/list.php', [
+                'stats' => ['total_encaisse' => 0, 'nb_operations' => 0, 'encaisse_especes' => 0, 'encaisse_mobile' => 0],
+                'annees' => $annees,
+                'niveaux' => [],
+                'classes' => [],
+                'filieres' => [],
+                'selectedAnneeCode' => '',
+                'inscriptions' => [],
+                'isCaisseOuverte' => false,
+                'activeSession' => null,
+                'encryptedSessionId' => '',
+                'canRecord' => false,
+                'canCancel' => false,
+                'canOpenCaisse' => false,
+                'canCloseCaisse' => false
+            ]);
+            return;
         }
 
-        $activeYear = $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $typeFiliere = $_GET['type_filiere'] ?? 'ALL';
@@ -36,7 +48,6 @@ class CaisseAnnexeController extends BaseController
         $dateDebut = $_GET['date_debut'] ?? null;
         $dateFin = $_GET['date_fin'] ?? null;
 
-        $annees = $this->getAccessibleAnnees();
         $niveaux = $this->model->getNiveauxActifs();
         $classes = $this->model->getClassesActives();
         $filieres = $this->model->getFilieresActives();
@@ -55,10 +66,12 @@ class CaisseAnnexeController extends BaseController
         $encryptedSessionId = ($activeSession && !empty($activeSession['id_session'])) ? $this->validator->crypter($activeSession['id_session']) : '';
 
         $canRecord = $this->hasPermission([PERMISSIONS::MANAGE_CAISSE_ANNEXE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+        $canCancel = $this->hasPermission([PERMISSIONS::CANCEL_CAISSE_ANNEXE, PERMISSIONS::CANCEL_PAIEMENTS]);
         $canOpenCaisse = $this->hasPermission([PERMISSIONS::OUVERTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         $canCloseCaisse = $this->hasPermission([PERMISSIONS::CLOTURE_CAISSE, PERMISSIONS::MANAGE_CAISSE, PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
         $this->loadView('../views/caisse_annexe/list.php', [
+            'etablissement' => $this->getEtablissementConfig(),
             'stats' => $stats,
             'annees' => $annees,
             'niveaux' => $niveaux,
@@ -70,6 +83,7 @@ class CaisseAnnexeController extends BaseController
             'activeSession' => $activeSession,
             'encryptedSessionId' => $encryptedSessionId,
             'canRecord' => $canRecord,
+            'canCancel' => $canCancel,
             'canOpenCaisse' => $canOpenCaisse,
             'canCloseCaisse' => $canCloseCaisse
         ]);
@@ -83,16 +97,12 @@ class CaisseAnnexeController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_FRAIS_ANNEXES, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
         }
 
-        $anneeCode = $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $typeFiliere = $_GET['type_filiere'] ?? null;
@@ -105,7 +115,7 @@ class CaisseAnnexeController extends BaseController
 
         foreach ($items as $i) {
             $id = $i['id_paiement'];
-            $idCrypte = $this->validator->crypter($id);
+            $idCrypte = !empty($id) ? $this->validator->crypter($id) : (!empty($i['code_paiement']) ? $this->validator->crypter($i['code_paiement']) : '');
             $encInscrId = !empty($i['inscription_code']) ? $this->validator->crypter($i['inscription_code']) : '';
 
             $data[] = array_merge($i, [
@@ -195,7 +205,7 @@ class CaisseAnnexeController extends BaseController
         $isSolde = ($montantExigible > 0 && $resteAPayer <= 0);
 
         $photoPath = !empty($ins['photo_inscription']) ? trim($ins['photo_inscription']) : (!empty($ins['photo_etudiant']) ? trim($ins['photo_etudiant']) : '');
-        $photoUrl = !empty($photoPath) ? RACINE . ltrim($photoPath, '/') : '';
+        $photoUrl = !empty($photoPath) ? url($photoPath) : '';
 
         $this->json([
             'status' => 1,
@@ -294,9 +304,38 @@ class CaisseAnnexeController extends BaseController
                 'user_code' => $userCode
             ];
 
-            $newId = $this->model->recordPayment($paymentData);
+            $newId = (int)$this->model->recordPayment($paymentData);
+            if ($newId <= 0 && !empty($codePaiement)) {
+                $db = (new Database())->getCon();
+                $stmtFind = $db->prepare("SELECT id_paiement FROM " . TABLES::PAIEMENTS . " WHERE code_paiement = ? LIMIT 1");
+                $stmtFind->execute([$codePaiement]);
+                $newId = (int)($stmtFind->fetchColumn() ?: 0);
+            }
+            if ($newId <= 0) {
+                $this->error($this->model->getLastError() ?: "Erreur lors de l'enregistrement du règlement des frais annexes.");
+                return;
+            }
             $encryptedId = $this->validator->crypter($newId);
             $encryptedInscrId = $this->validator->crypter($inscription['id_inscription'] ?? $codeInscription);
+
+            Session::set('last_paiement_id', $newId);
+            Session::set('last_paiement_code', $codePaiement);
+
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'caisse_annexe',
+                $codePaiement,
+                "Encaissement de frais annexes de " . number_format($montant, 0, ',', ' ') . " GNF pour l'inscription {$codeInscription}",
+                [
+                    'code_paiement' => $codePaiement,
+                    'inscription_code' => $codeInscription,
+                    'montant' => $montant,
+                    'mode_paiement' => $modePaiement,
+                    'reference' => $reference,
+                    'session_code' => $sessionCode
+                ],
+                $etabCode
+            );
 
             $this->success("Encaissement des frais annexes enregistré avec succès !", [
                 'code_paiement' => $codePaiement,
@@ -317,6 +356,7 @@ class CaisseAnnexeController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_RAPPORTS_FINANCIERS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
 
         $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
         $niveauCode = $_GET['niveau_code'] ?? null;
@@ -335,13 +375,94 @@ class CaisseAnnexeController extends BaseController
             $anneeLibelle = $aRow['libelle_annee'] ?? $anneeCode;
         }
 
-        // Rendu de la vue d'impression épurée
-        $this->loadView('../views/caisse_annexe/print.php', [
+        $niveauLibelle = 'Tous les niveaux';
+        if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+            $nRow = $this->model->getNiveauByCode($niveauCode);
+            $niveauLibelle = $nRow['libelle_niveau'] ?? $niveauCode;
+        }
+
+        $classeLibelle = 'Toutes les classes';
+        if (!empty($classeCode) && $classeCode !== 'ALL') {
+            $cRow = $this->model->getClasseByCode($classeCode);
+            $classeLibelle = $cRow['libelle_classe'] ?? $classeCode;
+        }
+
+        $agentNom = trim(Auth::fullName());
+        if (empty($agentNom)) {
+            $agentNom = 'Service Caisse & Comptabilité';
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'caisse_annexe',
+            $anneeCode ?: 'TOUT',
+            "Impression du registre de caisse annexe (Année: " . ($anneeLibelle ?? 'Toutes') . ", Période: " . ($dateDebut ?: 'début') . " à " . ($dateFin ?: 'fin') . ")",
+            ['annee_code' => $anneeCode, 'niveau_code' => $niveauCode, 'classe_code' => $classeCode, 'date_debut' => $dateDebut, 'date_fin' => $dateFin]
+        );
+
+        $dataView = [
+            'etablissement' => $etablissement,
             'paiements' => $paiements,
             'stats' => $stats,
             'anneeLibelle' => $anneeLibelle,
+            'niveauLibelle' => $niveauLibelle,
+            'classeLibelle' => $classeLibelle,
+            'typeFiliere' => $typeFiliere,
             'dateDebut' => $dateDebut,
-            'dateFin' => $dateFin
+            'dateFin' => $dateFin,
+            'agentNom' => $agentNom,
+            'dateImpression' => date('d/m/Y à H:i:s')
+        ];
+
+        $html = PdfService::renderTemplate('registre_caisse_annexe.php', $dataView);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Caisse_Annexe_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre Caisse Annexe - GEICG',
+            'margin_left' => 6,
+            'margin_right' => 6,
+            'margin_top' => 6,
+            'margin_bottom' => 6
         ]);
+    }
+
+    /**
+     * Annulation d'un encaissement de la Caisse Annexe
+     */
+    public function annuler()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::CANCEL_CAISSE_ANNEXE, PERMISSIONS::CANCEL_PAIEMENTS]);
+
+        $id = (int)($this->post('id_paiement') ?: $this->post('id'));
+        $codePaiement = trim($this->post('code_paiement') ?? '');
+        $motif = trim($this->post('motif') ?? '');
+
+        $userCode = Auth::code() ?: 'SYS';
+        $userName = trim(Auth::user('prenom') . ' ' . Auth::user('nom'));
+
+        $res = $this->model->annulerEncaissement($id, $codePaiement, $motif, $userCode, $userName);
+        if ($res['success']) {
+            $this->logAction(
+                AuditLogger::ACTION_DELETE,
+                'caisse_annexe',
+                $codePaiement ?: (string)$id,
+                "Annulation de l'encaissement de frais annexe {$codePaiement} (Motif: {$motif})",
+                ['id_paiement' => $id, 'code_paiement' => $codePaiement, 'motif' => $motif]
+            );
+            $this->success($res['message'], $res['data'] ?? []);
+        } else {
+            $this->error($res['message']);
+        }
     }
 }

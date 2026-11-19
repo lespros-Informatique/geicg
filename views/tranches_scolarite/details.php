@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
 $montantTranche = (float)($item['montant_tranche'] ?? 0);
 $montantScolarite = (float)($item['montant_scolarite'] ?? 0);
 $pct = ($montantScolarite > 0) ? round(($montantTranche / $montantScolarite) * 100, 1) : 0;
@@ -16,17 +15,17 @@ $pct = ($montantScolarite > 0) ? round(($montantTranche / $montantScolarite) * 1
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">Fiche Tranche : <?= htmlspecialchars($item['libelle_tranche'] ?? 'Tranche') ?></h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span>Année : <strong><?= htmlspecialchars($item['libelle_annee'] ?? '-') ?></strong></span> &bull;
-            <span>Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong></span> &bull; 
-            <span>Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong></span> &bull;
+            <span>Filière : <strong title="<?= htmlspecialchars($item['libelle_filiere'] ?? '') ?>"><?= htmlspecialchars(!empty($item['slug_filiere']) ? $item['slug_filiere'] : ($item['libelle_filiere'] ?? '-')) ?></strong></span> &bull; 
+            <span>Niveau : <strong title="<?= htmlspecialchars($item['libelle_niveau'] ?? '') ?>"><?= htmlspecialchars(!empty($item['slug_niveau']) ? $item['slug_niveau'] : ($item['libelle_niveau'] ?? '-')) ?></strong></span> &bull;
             <span>Régime : <span class="badge" style="background: <?= (($item['affectation_etat'] ?? '') === 'affecte') ? '#DCFCE7' : '#F1F5F9' ?>; color: <?= (($item['affectation_etat'] ?? '') === 'affecte') ? '#15803D' : '#475569' ?>; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?= (($item['affectation_etat'] ?? '') === 'affecte') ? 'Affecté (État)' : 'Non Affecté (Privé)' ?></span></span>
           </p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>scolarite/list?tab=tranches" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux tranches
+          <a href="<?= url('scolarite/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux scolarités
           </a>
-          <a href="<?= RACINE ?>tranche/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la tranche
+          <a href="<?= !empty($scolariteEncryptedId) ? url('scolarite/edition/' . $scolariteEncryptedId) : url('scolarite/list') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+            <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier dans la scolarité
           </a>
         </div>
       </div>
@@ -61,7 +60,7 @@ $pct = ($montantScolarite > 0) ? round(($montantTranche / $montantScolarite) * 1
           <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px;">
             <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Statut</span>
             <div style="margin-top: 6px;">
-              <?php if (($item['statut_tranche'] ?? '') === 'actif'): ?>
+              <?php if (($item['statut_tranche'] ?? '') === STATUTS::ACTIF): ?>
                 <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Actif</span>
               <?php else: ?>
                 <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:4px 12px; border-radius:10px; font-weight:700; font-size:12px;">Inactif</span>
@@ -74,5 +73,4 @@ $pct = ($montantScolarite > 0) ? round(($montantTranche / $montantScolarite) * 1
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

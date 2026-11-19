@@ -174,39 +174,8 @@
 </head>
 <body>
 
-  <!-- EN-TÊTE ÉTABLISSEMENT -->
-  <?php 
-    $candidateLogos = [
-        __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg',
-        __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg',
-        '/var/www/html/geicg/public/assets/images/logo/logo_eicg.jpg'
-    ];
-    $logoSrc = null;
-    foreach ($candidateLogos as $lPath) {
-        if (file_exists($lPath) && is_file($lPath)) {
-            $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($lPath));
-            break;
-        }
-    }
-  ?>
-  <table class="header-table">
-    <tr>
-      <td style="width: 20%;">
-        <?php if ($logoSrc): ?>
-          <img src="<?= $logoSrc ?>" style="max-height: 48px; max-width: 130px;">
-        <?php else: ?>
-          <div style="font-weight: bold; color: #990000; font-size: 12pt;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 80%; text-align: center;">
-        <div class="inst-title"><?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION') ?></div>
-        <div class="inst-subtitle"><?= htmlspecialchars($etablissement['sous_titre'] ?? 'AGREE PAR L\'ETAT ET LE FDFP') ?></div>
-        <div class="inst-contacts">Contacts : <?= htmlspecialchars($etablissement['telephone'] ?? '27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99') ?> — Site Web : www.groupe-eicg.net</div>
-      </td>
-    </tr>
-  </table>
-
-  <div class="divider-line"></div>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE PRINCIPALE -->
   <table class="banner-table">

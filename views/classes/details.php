@@ -1,7 +1,5 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$item = isset($item) ? $item : [];
-$etudiants = isset($etudiants) ? $etudiants : [];
 $matieres = isset($matieres) ? $matieres : [];
 $capacite = (int)($item['capacite_max_classe'] ?? 40);
 $nbInscrits = count($etudiants);
@@ -21,14 +19,17 @@ $encryptedId = $encryptedId ?? '';
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Filière : <strong><?= htmlspecialchars($item['libelle_filiere'] ?? '-') ?></strong> &bull; Niveau : <strong><?= htmlspecialchars($item['libelle_niveau'] ?? '-') ?></strong> &bull; Année : <strong><?= htmlspecialchars($item['libelle_annee'] ?? 'En cours') ?></strong></p>
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <a href="<?= RACINE ?>classe/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('classe/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux classes
           </a>
-          <a href="<?= RACINE ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['annee_code'] ?? '') ?>&classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste nominative des étudiants de cette classe">
+          <a href="<?= url() ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['annee_code'] ?? '') ?>&classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer la liste nominative des étudiants de cette classe">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Liste de la Classe
           </a>
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['MANAGE_CLASSES']))): ?>
-            <a href="<?= RACINE ?>classe/edition/<?= $encryptedId ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url() ?>emploi/imprimerPdf?classe_code=<?= urlencode($item['code_classe'] ?? '') ?>&annee_code=<?= urlencode($item['annee_code'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #0284C7; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; transition: all 0.2s;" title="Imprimer l'emploi du temps officiel de cette classe">
+            <i data-lucide="calendar" style="width: 18px; height: 18px; color: #0284C7;"></i> Imprimer Emploi du Temps
+          </a>
+          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_CLASSES]))): ?>
+            <a href="<?= url('classe/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
               <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier la classe
             </a>
           <?php endif; ?>
@@ -119,7 +120,7 @@ $encryptedId = $encryptedId ?? '';
                     </td>
                     <td style="padding: 10px; color: #334155;"><?= htmlspecialchars($e['telephone_etudiant'] ?? '-') ?></td>
                     <td style="padding: 10px; text-align: right;">
-                      <a href="<?= RACINE ?>etudiant/details/<?= $this->validator->crypter($e['id_etudiant']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
+                      <a href="<?= url() ?>etudiant/details/<?= $this->validator->crypter($e['id_etudiant']) ?>" class="btn btn-sm btn-info" style="font-weight: 600; border-radius: 6px; font-size: 12px;">
                         Fiche élève
                       </a>
                     </td>
@@ -136,25 +137,24 @@ $encryptedId = $encryptedId ?? '';
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
           <div>
             <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="book-open" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Programme Pédagogique & Enseignants Assignés (<?= count($matieres) ?>)
+              <i data-lucide="book-open" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Matières & Enseignements de la Classe (<?= count($matieres) ?>)
             </h3>
           </div>
-          <a href="<?= RACINE ?>enseignant_matiere/formulaire" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Affecter un cours
+          <a href="<?= url() ?>emploi/formulaire?classe_code=<?= urlencode($item['code_classe'] ?? '') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="calendar-plus" style="width: 14px; height: 14px;"></i> + Programmer un créneau
           </a>
         </div>
 
         <?php if (empty($matieres)): ?>
-          <p style="color: #94A3B8; text-align: center; padding: 30px 0; font-style: italic;">Aucune matière n'a encore été assignée à cette classe.</p>
+          <p style="color: #94A3B8; text-align: center; padding: 30px 0; font-style: italic;">Aucun cours n'est actuellement programmé pour cette classe dans l'emploi du temps.</p>
         <?php else: ?>
           <div style="width: 100%; overflow-x: auto;">
             <table class="table" style="width: 100%; border-collapse: collapse;">
               <thead>
                 <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px;">
                   <th style="padding: 10px;">Matière</th>
-                  <th style="padding: 10px;">Enseignant Titulaire</th>
-                  <th style="padding: 10px; text-align: center;">Coefficient</th>
-                  <th style="padding: 10px; text-align: center;">Volume Horaire</th>
+                  <th style="padding: 10px;">Enseignant</th>
+                  <th style="padding: 10px; text-align: center;">Volume Hebdo</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,16 +164,13 @@ $encryptedId = $encryptedId ?? '';
                       <?= htmlspecialchars($m['libelle_matiere'] ?? 'Matière') ?>
                     </td>
                     <td style="padding: 10px; color: #1E3A5F; font-weight: 600;">
-                      <?= htmlspecialchars(($m['nom_prof'] ?? '') . ' ' . ($m['prenom_prof'] ?? '')) ?>
+                      <?= htmlspecialchars(trim(($m['nom_prof'] ?? '') . ' ' . ($m['prenom_prof'] ?? '')) ?: 'Non spécifié') ?>
                       <?php if (!empty($m['grade_enseignant'])): ?>
                         <span style="font-size: 11px; color: #64748B; font-weight: normal;">(<?= htmlspecialchars($m['grade_enseignant']) ?>)</span>
                       <?php endif; ?>
                     </td>
-                    <td style="padding: 10px; text-align: center; font-weight: 800; color: #15803D;">
-                      <?= htmlspecialchars($m['coefficient_enseignant_matiere'] ?? '1') ?>
-                    </td>
-                    <td style="padding: 10px; text-align: center; color: #64748B;">
-                      <?= (int)($m['volume_horaire'] ?? 0) ?> h
+                    <td style="padding: 10px; text-align: center; font-weight: 700; color: #0284C7;">
+                      <?= !empty($m['volume_horaire']) ? $m['volume_horaire'] . ' h' : '-' ?>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -186,5 +183,4 @@ $encryptedId = $encryptedId ?? '';
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

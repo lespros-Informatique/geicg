@@ -33,7 +33,7 @@ class Validator
 
     public function hasRole($role)
     {
-        return in_array($role, $_SESSION['roles'] ?? []);
+        return in_array($role, Session::get('roles', []));
     }
 
     public function verif($table, $field, $value)
@@ -435,23 +435,42 @@ class Validator
 
     public static function generateCsrfToken(): string
     {
-        if (!isset($_SESSION['csrf_token']) || empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-            $_SESSION['csrf_token_time'] = time();
+        $token = Session::get('csrf_token');
+        $time = (int)Session::get('csrf_token_time', 0);
+        // Durée de validité glissante : 7200s (2 heures)
+        if (empty($token) || empty($time) || (time() - $time) > 7200) {
+            $token = bin2hex(random_bytes(32));
+            Session::set('csrf_token', $token);
+            Session::set('csrf_token_time', time());
+        } else {
+            // Renouvellement glissant de l'activité sur la page
+            Session::set('csrf_token_time', time());
         }
-        return $_SESSION['csrf_token'];
+        return (string)$token;
     }
 
-    public static function validateCsrfToken(?string $token): bool
+    public static function validateCsrfToken(?string $token = null): bool
     {
-        if (!isset($_SESSION['csrf_token']) || empty($_SESSION['csrf_token'])) {
+        if (empty($token)) {
+            $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+        }
+        $sessionToken = Session::get('csrf_token');
+        if (empty($sessionToken) || empty($token)) {
             return false;
         }
-        if (!isset($_SESSION['csrf_token_time']) || (time() - $_SESSION['csrf_token_time']) > 3600) {
-            unset($_SESSION['csrf_token'], $_SESSION['csrf_token_time']);
+        // Durée glissante de 7200s (2 heures d'inactivité)
+        $tokenTime = (int)Session::get('csrf_token_time', 0);
+        if ($tokenTime > 0 && (time() - $tokenTime) > 7200) {
+            Session::remove('csrf_token');
+            Session::remove('csrf_token_time');
             return false;
         }
-        return hash_equals($_SESSION['csrf_token'], (string)$token);
+        if (hash_equals((string)$sessionToken, (string)$token)) {
+            // Renouvellement glissant lors d'une validation réussie
+            Session::set('csrf_token_time', time());
+            return true;
+        }
+        return false;
     }
 
     public static function csrfField(): string
@@ -684,7 +703,7 @@ class Validator
 
     public static function isConnected(): bool
     {
-        return isset($_SESSION[USERS_AUTH]['code_user']) && !empty($_SESSION[USERS_AUTH]['code_user']);
+        return !empty(Auth::code());
     }
 
     public static function hashPassword(string $password): string
@@ -734,11 +753,11 @@ class Validator
         if (is_array($data)) {
             if (sizeof($data) > 0 && !empty($entity)) {
                 foreach ($data as $key => $value) {
-                    $_SESSION[$entity][$key] = $value;
+                    Session::set($entity . '.' . $key, $value);
                 }
             }
         } else {
-            $_SESSION[$entity] = $data;
+            Session::set($entity, $data);
         }
     }
 
@@ -785,12 +804,10 @@ class Validator
     public static function getSesion(string $entity, string $field = "")
     {
         if (!empty($field) && !empty($entity)) {
-            if (isset($_SESSION[$entity]) && key_exists($field, $_SESSION[$entity])) {
-                return $_SESSION[$entity][$field];
-            } else {
-                if (isset($_SESSION[$entity])) {
-                    return $_SESSION[$entity];
-                }
+            if (Session::has($entity . '.' . $field)) {
+                return Session::get($entity . '.' . $field);
+            } elseif (Session::has($entity)) {
+                return Session::get($entity);
             }
         }
         return null;

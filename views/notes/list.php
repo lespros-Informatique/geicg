@@ -1,37 +1,77 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
-$annees = $annees ?? [];
 $niveaux = $niveaux ?? [];
 $classes = $classes ?? [];
-$selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? '');
+$annees = $annees ?? [];
+$matieres = $matieres ?? [];
+$semestres = $semestres ?? [];
+$compositions = $compositions ?? [];
+$selectedAnneeCode = $selectedAnneeCode ?? '';
+$isTeacherOnly = !empty($isTeacherOnly);
+$canEnterNotes = isset($canEnterNotes) ? (bool)$canEnterNotes : true;
+$canViewNotes = isset($canViewNotes) ? (bool)$canViewNotes : true;
+$canManageCompos = isset($canManageCompos) ? (bool)$canManageCompos : true;
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
     <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
+      
+      <!-- EN-TÊTE D'IMPRESSION (VISIBLE UNIQUEMENT À L'IMPRESSION) -->
+      <div id="print-header-banner" style="margin-bottom: 16px; border-bottom: 2px solid #1E3A5F; padding-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-size: 16px; font-weight: 900; color: #1E3A5F; margin: 0; text-transform: uppercase;">GEICG - GROUPE ÉCOLE D'INGÉNIEURS ET DE COMMERCE DE GAGNOA</h2>
+            <div style="font-size: 12px; font-weight: 800; color: #0F172A; margin-top: 3px;">REGISTRE DES ÉVALUATIONS & SESSIONS DE NOTES</div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #475569;">
+            <div>Date d'impression : <strong><?= date('d/m/Y H:i') ?></strong></div>
+            <div style="margin-top: 2px;">Imprimé par : <strong><?= htmlspecialchars(trim(Auth::fullName() ?: (!empty($isTeacherOnly) ? 'Enseignant' : 'Direction des Études'))) ?></strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page Header -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Saisie des Notes & Évaluations</h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Saisie des Notes & Évaluations</p>
+          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <i data-lucide="award" style="width: 26px; height: 26px; color: #1E3A5F;"></i>
+            Registre des Évaluations
+            <?php if ($isTeacherOnly): ?>
+              <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
+                <i data-lucide="user-check" style="width: 14px; height: 14px;"></i> Mes Classes & Matières
+              </span>
+            <?php endif; ?>
+          </h1>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">
+            <?= $isTeacherOnly ? "Sessions d'évaluations de vos classes et matières assignées" : "Synthèse des sessions d'évaluations par classe" ?>
+          </p>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess(['ENTER_NOTES']))): ?>
-          <a href="<?= RACINE ?>note/saisieClasse" id="btn-saisie-classe" class="btn btn-outline-primary" style="border-color: #1E3A5F; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
-            <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie par Classe
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <a href="<?= url() ?>note/imprimerRegistrePdf<?= !empty($selectedAnneeCode) ? ('?annee_code=' . urlencode($selectedAnneeCode)) : '' ?>" id="btn-print-registre-notes" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; cursor: pointer; transition: all 0.2s;" title="Générer et imprimer le registre officiel des évaluations en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer (PDF)
           </a>
-          <a href="<?= RACINE ?>note/formulaire" id="btn-add-note" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 10px rgba(30,58,95,0.25);">
-            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Note / Évaluation
+          <?php if ($canEnterNotes): ?>
+          <a href="<?= url('note/saisieClasse') ?>" id="btn-saisie-classe" class="btn btn-primary" style="background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); border: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">
+            <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i> Saisie des Notes
+          </a>
+          <?php endif; ?>
+          <?php if ($canManageCompos): ?>
+          <a href="<?= url() ?>composition/formulaire?type=EXAMEN" class="btn btn-outline-secondary" style="border-color: #CBD5E1; color: #334155; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; background: #FFFFFF;">
+            <i data-lucide="calendar-plus" style="width: 18px; height: 18px;"></i> Planifier un Examen
           </a>
           <?php endif; ?>
         </div>
       </div>
 
-      <!-- Filtres Multi-Critères (Année, Niveau & Classe Select2) -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: center;">
+      <!-- Filtres Multi-Critères -->
+      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 22px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: center;">
           <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Année Académique</label>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="calendar" style="width: 14px; height: 14px; color: #64748B;"></i> Année Académique
+            </label>
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
               <option value="">-- Toutes les années --</option>
               <?php foreach ($annees as $a): ?>
@@ -42,7 +82,23 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
             </select>
           </div>
           <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau d'Études</label>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="clock" style="width: 14px; height: 14px; color: #64748B;"></i> Semestre
+            </label>
+            <select id="filter-semestre" class="form-control select2" style="width: 100%;">
+              <option value="" data-statut="">-- Tous les semestres --</option>
+              <?php foreach ($semestres as $s): ?>
+                <?php $isCloture = (($s['statut_semestre'] ?? '') === 'cloture'); ?>
+                <option value="<?= htmlspecialchars($s['code_semestre']) ?>" data-statut="<?= htmlspecialchars($s['statut_semestre'] ?? '') ?>">
+                  <?= htmlspecialchars($s['libelle_semestre']) ?><?= $isCloture ? ' (Clôturé)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="layers" style="width: 14px; height: 14px; color: #64748B;"></i> Niveau d'Études
+            </label>
             <select id="filter-niveau" class="form-control select2" style="width: 100%;">
               <option value="">-- Tous les niveaux --</option>
               <?php foreach ($niveaux as $n): ?>
@@ -51,7 +107,9 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
             </select>
           </div>
           <div>
-            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Classe</label>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="graduation-cap" style="width: 14px; height: 14px; color: #64748B;"></i> Classe
+            </label>
             <select id="filter-classe" class="form-control select2" style="width: 100%;">
               <option value="">-- Toutes les classes --</option>
               <?php foreach ($classes as $c): ?>
@@ -59,21 +117,121 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
               <?php endforeach; ?>
             </select>
           </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="tag" style="width: 14px; height: 14px; color: #64748B;"></i> Type Évaluation
+            </label>
+            <select id="filter-type-eval" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les types --</option>
+              <option value="EXAMEN">Examens / Compositions</option>
+              <option value="DEVOIR">Devoirs Surveillés</option>
+              <option value="INTERROGATION">Interrogations Écrites</option>
+              <option value="AUTRE">Autres Évaluations</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="file-text" style="width: 14px; height: 14px; color: #64748B;"></i> Libellé Compo
+            </label>
+            <select id="filter-compo" class="form-control select2" style="width: 100%;">
+              <option value="" data-statut="">-- Toutes les compos --</option>
+              <?php foreach ($compositions as $cp): ?>
+                <?php 
+                  $cpStatut = strtolower(trim($cp['statut_composition'] ?? ''));
+                  if ($cpStatut === STATUTS::ANNULE) {
+                      continue;
+                  }
+                  $statutLabel = '';
+                  if ($cpStatut === 'cloture' || $cpStatut === 'termine') {
+                      $statutLabel = ' [Clôturée]';
+                  }
+                ?>
+                <option value="<?= htmlspecialchars($cp['code_composition']) ?>" data-type="<?= htmlspecialchars($cp['type_composition'] ?? '') ?>" data-statut="<?= htmlspecialchars($cpStatut) ?>">
+                  <?= htmlspecialchars($cp['libelle_composition']) ?> (<?= htmlspecialchars($cp['type_composition'] ?? 'Évaluation') ?>)<?= $statutLabel ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="book-open" style="width: 14px; height: 14px; color: #64748B;"></i> Matière
+            </label>
+            <select id="filter-matiere" class="form-control select2" style="width: 100%;">
+              <option value="">-- Toutes les matières --</option>
+              <?php foreach ($matieres as $m): ?>
+                <option value="<?= htmlspecialchars($m['code_matiere']) ?>"><?= htmlspecialchars($m['libelle_matiere']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
         </div>
       </div>
 
+      <!-- KPI CARDS : STATISTIQUES DES ÉVALUATIONS PAR CLASSE -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+        
+        <!-- Total Sessions -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="clipboard-list" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Sessions Totales</div>
+            <div style="font-size: 20px; font-weight: 900; color: #0F172A; margin-top: 2px;" id="kpi-total-sessions">0</div>
+          </div>
+        </div>
+
+        <!-- Examens -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; color: #4338CA; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="award" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Épreuves d'Examens</div>
+            <div style="font-size: 20px; font-weight: 900; color: #4338CA; margin-top: 2px;" id="kpi-total-examens">0</div>
+          </div>
+        </div>
+
+        <!-- Devoirs & Interros -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #FEF3C7; color: #B45309; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="file-edit" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Devoirs & Interros</div>
+            <div style="font-size: 20px; font-weight: 900; color: #B45309; margin-top: 2px;" id="kpi-total-controles">0</div>
+          </div>
+        </div>
+
+        <!-- Saisies Complètes -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="check-circle" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Saisies Complètes</div>
+            <div style="font-size: 20px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-total-complets">0</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- DataTables Sessions d'Évaluations par Classe -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
         <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-notes" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
-              <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
-                <th style="padding: 12px; width: 50px;">#</th>
-                <th style="padding: 12px;">Élève / Inscription</th>
-                <th style="padding: 12px;">Matière Évaluée</th>
-                <th style="padding: 12px;">Type Évaluation</th>
-                <th style="padding: 12px;">Note /20</th>
-                <th style="padding: 12px;">Statut</th>
-                <th style="padding: 12px; text-align: right;">Actions</th>
+              <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                <th style="padding: 12px 14px; width: 45px;">#</th>
+                <th style="padding: 12px 14px;">Classe</th>
+                <th style="padding: 12px 14px;">Évaluation</th>
+                <th style="padding: 12px 14px; text-align: center;">Type Éval</th>
+                <th style="padding: 12px 14px;">Matière</th>
+                <th style="padding: 12px 14px;">Semestre</th>
+                <th style="padding: 12px 14px; text-align: center; width: 70px;">Coef</th>
+                <th style="padding: 12px 14px; text-align: center; width: 115px;"> Enr</th>
+                <th style="padding: 12px 14px; text-align: center;">Progression</th>
+                <th style="padding: 12px 14px; text-align: center;">Moy CLasse</th>
+                <th style="padding: 12px 14px; text-align: right; width: 130px;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -83,121 +241,143 @@ $selectedAnneeCode = $selectedAnneeCode ?? ($_SESSION['annee_active_code'] ?? ''
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
-  }
 
-  // Filtrage en cascade Niveau -> Classe
-  $('#filter-niveau').on('change', function() {
-    var niveauCode = $(this).val();
-    $('#filter-classe option').each(function() {
-      var optNiveau = $(this).data('niveau');
-      if (!niveauCode || !optNiveau || optNiveau === niveauCode || $(this).val() === '') {
-        $(this).prop('disabled', false);
-      } else {
-        $(this).prop('disabled', true);
-      }
-    });
-    if ($('#filter-classe option:selected').prop('disabled')) {
-      $('#filter-classe').val('').trigger('change.select2');
-    } else {
-      $('#filter-classe').select2({ width: '100%' });
-    }
-    table.ajax.reload();
-  });
+<!-- MODALE DÉTAILS DES NOTES DE LA CLASSE -->
+<div id="modal-details-notes" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); z-index: 9999; justify-content: center; align-items: center; padding: 16px; overflow-y: auto;">
+  <div style="max-width: 920px; width: 100%; margin: auto; max-height: calc(100vh - 40px); display: flex; flex-direction: column; background: #FFFFFF; border-radius: 14px; border: 1px solid #E2E8F0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+    
+    <!-- En-tête Modale -->
+    <div style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #DBEAFE;">
+          <i data-lucide="clipboard-check" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div style="min-width: 0; flex: 1;">
+          <h5 id="modal-compo-title" style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            Détails des Notes
+          </h5>
+          <div id="modal-compo-subtitle" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px;">
+            <span style="font-size: 13px; color: #64748B;">Classe : - &bull; Matière : -</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn-close-details-modal" aria-label="Fermer" style="background: #F1F5F9; border: 1px solid #E2E8F0; font-size: 20px; cursor: pointer; color: #64748B; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;" title="Fermer la fenêtre">&times;</button>
+    </div>
 
-  $('#filter-classe, #filter-annee').on('change', function() {
-    var cls = $('#filter-classe').val();
-    if (cls) {
-      $('#btn-add-note').attr('href', '<?= RACINE ?>note/formulaire?classe_code=' + encodeURIComponent(cls));
-      $('#btn-saisie-classe').attr('href', '<?= RACINE ?>note/saisieClasse?classe_code=' + encodeURIComponent(cls));
-    } else {
-      $('#btn-add-note').attr('href', '<?= RACINE ?>note/formulaire');
-      $('#btn-saisie-classe').attr('href', '<?= RACINE ?>note/saisieClasse');
-    }
-    table.ajax.reload();
-  });
+    <div style="padding: 24px; overflow-y: auto; flex: 1;">
+      <!-- Loading Spinner -->
+      <div id="modal-loading-spinner" style="text-align: center; padding: 50px 20px; display: none;">
+        <div class="spinner-border text-primary" role="status" style="width: 36px; height: 36px;"></div>
+        <p style="margin-top: 12px; font-size: 13px; font-weight: 600; color: #64748B;">Chargement des notes de la classe...</p>
+      </div>
 
-  var table = $('#table-notes').DataTable({
-    ajax: {
-      url: '<?= RACINE ?>note/apiList',
-      type: 'GET',
-      data: function(d) {
-        d.annee_code = $('#filter-annee').val();
-        d.niveau_code = $('#filter-niveau').val();
-        d.classe_code = $('#filter-classe').val();
-      }
-    },
-    processing: true,
-    autoWidth: false,
-    columns: [
-      { data: null, width: '50px', render: function(d, type, row, meta) {
-        return '<span style="font-weight:700; color:#64748B;">' + (meta.row + 1 + (meta.settings._iDisplayStart || 0)) + '</span>';
-      }},
-      { data: 'nom_etudiant', defaultContent: '', render: function(d, t, r) {
-        var name = (d && d.trim()) ? d : (r.inscription_code || '-');
-        var mat = r.matricule_etudiant ? ' <small style="color:#64748B;">(' + r.matricule_etudiant + ')</small>' : '';
-        return '<strong>' + name + '</strong>' + mat;
-      }},
-      { data: 'libelle_matiere', defaultContent: '', render: function(d, t, r) { return d || r.matiere_code || '-'; } },
-      { data: 'type_evaluation_code', defaultContent: '-', width: '110px' },
-      { data: 'valeur_note', defaultContent: '-', width: '80px', render: function(d) {
-        return '<strong style="color:#0F172A;">' + (d || '0') + '/20</strong>';
-      } },
-      { data: 'statut_note', width: '90px', className: 'text-center', render: function(d, type, row) {
-        var isActif = (d === 'actif');
-        var checkedAttr = isActif ? 'checked' : '';
-        return '<div style="display:flex; justify-content:center; align-items:center;">' +
-               '<label style="position:relative; display:inline-block; width:38px; height:20px; margin:0; cursor:pointer;" title="' + (isActif ? 'Actif - Cliquez pour désactiver' : 'Inactif - Cliquez pour activer') + '">' +
-               '<input type="checkbox" class="toggle-statut-note" data-id="' + row.id_note + '" ' + checkedAttr + ' style="opacity:0; width:0; height:0;">' +
-               '<span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:' + (isActif ? '#15803D' : '#CBD5E1') + '; transition:.3s; border-radius:20px;">' +
-               '<span style="position:absolute; content:\'\'; height:14px; width:14px; left:' + (isActif ? '20px' : '3px') + '; bottom:3px; background-color:white; transition:.3s; border-radius:50%;"></span>' +
-               '</span>' +
-               '</label>' +
-               '</div>';
-      }},
-      { data: null, width: '160px', orderable: false, render: function(d) {
-        return '<a href="' + window.RACINE + 'note/edition/' + (d.editId || d.id_note) + '" class="btn btn-sm btn-secondary" style="margin-right:5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</a>'
-             + '<a href="' + window.RACINE + 'note/details/' + (d.editId || d.id_note) + '" class="btn btn-sm btn-info" style="font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
-      }, className: 'text-end' }
-    ],
-    language: { url: '<?= RACINE ?>json/datatables-i18n-fr-FR.json' },
-    drawCallback: function() { if (window.lucide) lucide.createIcons(); }
-  });
+      <!-- Content Container -->
+      <div id="modal-details-content">
+        
+        <!-- Cartouches KPIs (Strictement sur 1 seule ligne horizontale grâce à Flexbox) -->
+        <div style="display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; align-items: stretch !important; gap: 12px !important; margin-bottom: 20px !important; width: 100% !important; box-sizing: border-box !important;">
+          
+          <!-- Total Inscrits -->
+          <div style="flex: 1 1 0 !important; min-width: 0 !important; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex !important; flex-direction: row !important; align-items: center !important; gap: 10px !important; box-sizing: border-box !important;">
+            <div style="width: 38px; height: 38px; min-width: 38px; border-radius: 10px; background: #EEF2FF; color: #4338CA; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
+              <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div style="min-width: 0 !important; flex: 1 !important; overflow: hidden !important;">
+              <div style="font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;">Total Inscrits</div>
+              <div style="font-size: 19px; font-weight: 900; color: #0F172A; line-height: 1.2; margin-top: 1px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;" id="md-total-etudiants">0</div>
+              <div style="font-size: 10px; color: #94A3B8; font-weight: 600; margin-top: 1px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;">Effectif classe</div>
+            </div>
+          </div>
 
+          <!-- Notes Saisies -->
+          <div style="flex: 1 1 0 !important; min-width: 0 !important; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex !important; flex-direction: row !important; align-items: center !important; gap: 10px !important; box-sizing: border-box !important;">
+            <div style="width: 38px; height: 38px; min-width: 38px; border-radius: 10px; background: #EFF6FF; color: #1D4ED8; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
+              <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div style="min-width: 0 !important; flex: 1 !important; overflow: hidden !important;">
+              <div style="font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;">Copies Saisies</div>
+              <div style="font-size: 19px; font-weight: 900; color: #1D4ED8; line-height: 1.2; margin-top: 1px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;" id="md-nb-notes">0</div>
+              <div style="font-size: 10px; color: #94A3B8; font-weight: 600; margin-top: 1px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;" id="md-progression-text">Progression saisie</div>
+            </div>
+          </div>
 
-  $(document).on('change', '.toggle-statut-note', function() {
-    var id = $(this).data('id');
-    var isChecked = $(this).is(':checked');
-    var $input = $(this);
+          <!-- Moyenne Classe -->
+          <div style="flex: 1 1 0 !important; min-width: 0 !important; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex !important; flex-direction: row !important; align-items: center !important; gap: 10px !important; box-sizing: border-box !important;">
+            <div style="width: 38px; height: 38px; min-width: 38px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
+              <i data-lucide="award" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div style="min-width: 0 !important; flex: 1 !important; overflow: hidden !important;">
+              <div style="font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;">Moyenne Classe</div>
+              <div style="font-size: 19px; font-weight: 900; color: #059669; line-height: 1.2; margin-top: 1px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;" id="md-moyenne-classe">-</div>
+              <div style="font-size: 10px; color: #94A3B8; font-weight: 600; margin-top: 1px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;">Barème / 20</div>
+            </div>
+          </div>
 
-    $.ajax({
-      url: '<?= RACINE ?>note/changer',
-      type: 'POST',
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      data: {
-        id: id,
-        csrf_token: '<?= Validator::generateCsrfToken() ?>'
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 || res.success) {
-          if (window.toastr) toastr.success(res.message || 'Statut mis à jour avec succès');
-          table.ajax.reload(null, false);
-        } else {
-          if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut');
-          $input.prop('checked', !isChecked);
-        }
-      },
-      error: function() {
-        if (window.toastr) toastr.error('Erreur réseau');
-        $input.prop('checked', !isChecked);
-      }
-    });
-  });
-});
+          <!-- Taux de Réussite -->
+          <div style="flex: 1 1 0 !important; min-width: 0 !important; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex !important; flex-direction: row !important; align-items: center !important; gap: 10px !important; box-sizing: border-box !important;">
+            <div style="width: 38px; height: 38px; min-width: 38px; border-radius: 10px; background: #FFFBEB; color: #D97706; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
+              <i data-lucide="trending-up" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div style="min-width: 0 !important; flex: 1 !important; overflow: hidden !important;">
+              <div style="font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;">Taux de Réussite</div>
+              <div style="font-size: 19px; font-weight: 900; color: #D97706; line-height: 1.2; margin-top: 1px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;" id="md-taux-reussite">-</div>
+              <div style="font-size: 10px; color: #94A3B8; font-weight: 600; margin-top: 1px; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;">Notes &ge; 10/20</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Students Marks Table -->
+        <div style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden;">
+          <table class="table" style="width: 100%; margin: 0; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; color: #64748B; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                <th style="padding: 10px 14px; width: 40px;">#</th>
+                <th style="padding: 10px 14px;">Matricule</th>
+                <th style="padding: 10px 14px;">Nom & Prénom(s)</th>
+                <th style="padding: 10px 14px; text-align: center;">Note / 20</th>
+                <th style="padding: 10px 14px; text-align: center;">Rang</th>
+                <th style="padding: 10px 14px; text-align: center;">Mention</th>
+                <th style="padding: 10px 14px;">Observations</th>
+              </tr>
+            </thead>
+            <tbody id="md-students-list"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+      <button type="button" class="btn btn-secondary btn-close-details-modal" style="border-radius: 8px; font-weight: 700; padding: 8px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">
+        Fermer
+      </button>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <?php if ($canViewNotes): ?>
+        <a href="#" id="md-btn-go-print" target="_blank" class="btn btn-outline-secondary" style="border: 1px solid #CBD5E1; color: #1E293B; background: #FFFFFF; border-radius: 8px; font-weight: 700; padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px;" title="Imprimer la fiche de notes (PDF)">
+          <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer (PDF)
+        </a>
+        <?php endif; ?>
+        <?php if ($canEnterNotes): ?>
+        <a href="#" id="md-btn-go-saisie" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; border-radius: 8px; font-weight: 700; padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px; color: #FFFFFF; text-decoration: none;">
+          <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i> Saisir / Modifier les Notes
+        </a>
+        <?php endif; ?>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="application/json" id="notes-list-config">
+<?= json_encode([
+    'csrfToken' => Validator::generateCsrfToken(),
+    'canEnterNotes' => (bool)$canEnterNotes,
+    'canViewNotes' => (bool)$canViewNotes,
+    'isTeacherOnly' => (bool)$isTeacherOnly
+]) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/notes.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

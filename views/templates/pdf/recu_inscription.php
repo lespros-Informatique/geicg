@@ -24,7 +24,7 @@ if (!empty($logo_src)) {
     $logoSrc = $logo_src;
 } else {
     $logoEicgFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-    $logoSrc = defined('RACINE') ? RACINE . 'assets/images/logo/logo_eicg.jpg' : '/geicg/public/assets/images/logo/logo_eicg.jpg';
+    $logoSrc = asset('assets/images/logo/logo_eicg.jpg');
     if (file_exists($logoEicgFile)) {
         $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
     }
@@ -34,7 +34,7 @@ if (!empty($logo_src)) {
 if (!empty($photo_etudiant)) {
     $photo_src = $photo_etudiant;
 } else if (empty($photo_src)) {
-    $placeholderPhotoFile = __DIR__ . '/../../../public/assets/images/placeholders/etudiant.png';
+    $placeholderPhotoFile = placeholderPath('etudiant');
     if (file_exists($placeholderPhotoFile)) {
         $photo_src = 'data:image/png;base64,' . base64_encode(file_get_contents($placeholderPhotoFile));
     }
@@ -373,21 +373,12 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     <!-- 1. PARTIE SUPERIEURE : REÇU D'INSCRIPTION ETUDIANT -->
     <!-- ========================================================================= -->
 
-    <!-- EN-TÊTE ÉTABLISSEMENT -->
-    <table class="header-table">
-      <tr>
-        <td class="header-logo-cell">
-          <img src="<?= $logoSrc ?>" alt="Logo EICG" class="header-logo-img">
-        </td>
-        <td class="header-text-cell">
-          <h1 class="header-title" style="color: #700303ff; font-weight: bold;">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h1>
-          <br>
-          <div class="header-subtitle-1">Agréé par l'Etat et le FDFP</div>
-          <div class="header-subtitle-2">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
-          <div class="header-subtitle-2">Site web : www.groupe-eicg.net</div>
-        </td>
-      </tr>
-    </table>
+    <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG (MODE COMPACT) -->
+    <?php 
+      $headerMode = 'compact';
+      $showHeaderDivider = false;
+      include __DIR__ . '/components/header_institution.php'; 
+    ?>
 
     <!-- BANNIÈRE PRINCIPALE ET ANNÉE -->
     <div class="banner-title-box">REÇU D'INSCRIPTION</div>

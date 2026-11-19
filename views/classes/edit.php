@@ -18,8 +18,8 @@ if (!empty($item['filiere_code'])) {
 }
 $niveaux = (new ModelNiveau())->getAll();
 $annees = (new ModelAnnee())->getAll();
-$currentAnneeCode = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
-$currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
+$currentAnneeCode = $item['annee_code'] ?? (Session::get('annee_active_code', ''));
+$currentAnneeLibelle = Session::get('annee_active_libelle', 'Session Active');
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -31,12 +31,12 @@ $currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_classe']) ? 'Éditer ' : 'Ajouter ' ?> Classe</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Création intelligente et gestion des classes</p>
         </div>
-        <a href="<?= RACINE ?>classe/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('classe/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour à la liste
         </a>
       </div>
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form id="form-edit-classe" action="<?= RACINE ?>classe/<?= !empty($item['id_classe']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form id="form-edit-classe" action="<?= url() ?>classe/<?= !empty($item['id_classe']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_classe'])): ?>
             <input type="hidden" name="id_classe" value="<?= $item['id_classe'] ?>">
@@ -52,7 +52,7 @@ $currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
               <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; font-weight: 800; pointer-events: none; cursor: not-allowed;" tabindex="-1" readonly>
                 <?php foreach($annees as $an): ?>
                   <option value="<?= htmlspecialchars($an['code_annee']) ?>" <?= ($currentAnneeCode == $an['code_annee']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($an['libelle_annee']) ?> <?= ($an['statut_annee'] === 'actif') ? '(Session Active)' : '' ?>
+                    <?= htmlspecialchars($an['libelle_annee']) ?> <?= ($an['statut_annee'] === STATUTS::ACTIF) ? '(Session Active)' : '' ?>
                   </option>
                 <?php endforeach; ?>
                 <?php if (empty($annees)): ?>
@@ -102,90 +102,14 @@ $currentAnneeLibelle = $_SESSION['annee_active_libelle'] ?? 'Session Active';
           </div>
           <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; width: 100%;">
             <button type="submit" id="btn-submit-classe" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px;">Enregistrer</button>
-            <a href="<?= RACINE ?>classe/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
+            <a href="<?= url('classe/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Annuler</a>
           </div>
         </form>
       </div>
     </div>
   </main>
 </div>
-<script>
-$(document).ready(function() {
-  if (window.lucide) lucide.createIcons();
-
-  if ($.fn.select2) {
-    $('#sel_filiere_classe').select2({ placeholder: "-- Choisir une filière --", allowClear: true, width: '100%' });
-    $('#sel_niveau_classe').select2({ placeholder: "-- Choisir un niveau --", allowClear: true, width: '100%' });
-  }
-
-  // Génération automatique intelligente du libellé de la classe
-  function updateLibelleClasse() {
-    var filiereText = $('#sel_filiere_classe option:selected').data('nom') || $('#sel_filiere_classe option:selected').text().trim();
-    var niveauText  = $('#sel_niveau_classe option:selected').data('nom') || $('#sel_niveau_classe option:selected').text().trim();
-    
-    // Si placeholder sélectionné
-    if (!$('#sel_filiere_classe').val()) filiereText = '';
-    if (!$('#sel_niveau_classe').val()) niveauText = '';
-
-    if (filiereText && niveauText) {
-      $('#libelle_classe_input').val(filiereText + ' - ' + niveauText);
-    } else if (filiereText) {
-      $('#libelle_classe_input').val(filiereText);
-    } else if (niveauText) {
-      $('#libelle_classe_input').val(niveauText);
-    }
-  }
-
-  $('#sel_filiere_classe, #sel_niveau_classe').on('change', function() {
-    updateLibelleClasse();
-  });
-
-  // Soumission AJAX du formulaire classe (Création & Modification)
-  $('#form-edit-classe').on('submit', function(e) {
-    e.preventDefault();
-    var $form = $(this);
-    var $btn = $('#btn-submit-classe');
-    var originalText = $btn.html();
-
-    $btn.prop('disabled', true).html('<i data-lucide="loader" style="width:16px;height:16px;display:inline-block;animation:spin 1s linear infinite;"></i> Enregistrement...');
-    if (window.lucide) lucide.createIcons();
-
-    $.ajax({
-      url: $form.attr('action'),
-      type: 'POST',
-      data: $form.serialize(),
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 || res.success) {
-          if (window.toastr) {
-            toastr.success(res.message || 'Classe enregistrée avec succès !');
-          }
-          var targetUrl = res.redirect || '<?= RACINE ?>classe/list';
-          setTimeout(function() {
-            window.location.href = targetUrl;
-          }, 500);
-        } else {
-          $btn.prop('disabled', false).html(originalText);
-          if (window.lucide) lucide.createIcons();
-          if (window.toastr) {
-            toastr.error(res.message || 'Erreur lors de l\'enregistrement de la classe.');
-          }
-        }
-      },
-      error: function(xhr) {
-        $btn.prop('disabled', false).html(originalText);
-        if (window.lucide) lucide.createIcons();
-        var msg = 'Erreur réseau lors de la communication avec le serveur.';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-          msg = xhr.responseJSON.message;
-        }
-        if (window.toastr) {
-          toastr.error(msg);
-        }
-      }
-    });
-  });
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php
+ViewContext::setScripts(['public/assets/js/modules/classes.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

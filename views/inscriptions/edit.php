@@ -19,81 +19,6 @@ $annees = (new ModelAnnee())->getAll();
 $globalEtablissementLogo = $globalEtablissementLogo ?? getEtablissementLogoUrl();
 $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libelle_etablissement'] ?? 'GEICG');
 ?>
-<style>
-@media print {
-  body {
-    background: #FFFFFF !important;
-  }
-  .app-layout, .sidebar, .main-nav, nav, .page-header, .card, #quitus-financial-status-box, #smart_class_suggestion_hint, form, .btn, .no-print {
-    display: none !important;
-  }
-  
-  /* Impression spécifique Fiche Financière Étudiant */
-  body.printing-financial-statement #modal_fiche_navette {
-    display: none !important;
-  }
-  body.printing-financial-statement #financial-statement-modal {
-    display: block !important;
-    position: static !important;
-    background: #FFFFFF !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    box-shadow: none !important;
-    z-index: 999999 !important;
-  }
-  body.printing-financial-statement #financial-statement-modal > div {
-    box-shadow: none !important;
-    border: none !important;
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  body.printing-financial-statement #printable-financial-zone {
-    display: block !important;
-    visibility: visible !important;
-    padding: 20px !important;
-  }
-
-  /* Impression spécifique Fiche Navette */
-  body:not(.printing-financial-statement) #modal_fiche_navette {
-    display: block !important;
-    position: static !important;
-    background: none !important;
-    padding: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    z-index: 1 !important;
-  }
-  body:not(.printing-financial-statement) #modal_fiche_navette > div {
-    box-shadow: none !important;
-    border: none !important;
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  body:not(.printing-financial-statement) #modal_fiche_navette .btn-close-fiche-navette,
-  body:not(.printing-financial-statement) #modal_fiche_navette .modal-custom-header,
-  body:not(.printing-financial-statement) #modal_fiche_navette .modal-custom-footer,
-  body:not(.printing-financial-statement) #modal_fiche_navette .no-print {
-    display: none !important;
-  }
-  body:not(.printing-financial-statement) #printable-voucher-zone {
-    display: block !important;
-    visibility: visible !important;
-    position: static !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 24px !important;
-    border: 2px solid #1E3A5F !important;
-    box-sizing: border-box !important;
-  }
-}
-.btn-is-loading {
-  opacity: 0.7;
-  pointer-events: none;
-}
-</style>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -102,14 +27,14 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Bureau d\'Inscription : Guichet de Réinscription Étudiant' ?></h1>
+            <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;"><?= !empty($item['id_inscription']) ? 'Éditer Inscription' : 'Bureau d\'Inscription' ?></h1>
             <span class="badge" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 8px;">
-              Session <?= htmlspecialchars($_SESSION['annee_active_libelle'] ?? 'en cours') ?>
+              Session <?= htmlspecialchars(Session::get('annee_active_libelle', 'en cours')) ?>
             </span>
           </div>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Contrôle du quitus financier N-1, progression académique et émission de la Fiche Navette pour le Bureau des Versements</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Reinscription</p>
         </div>
-        <a href="<?= RACINE ?>reinscription/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+        <a href="<?= url('reinscription/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
           <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux Réinscriptions
         </a>
       </div>
@@ -144,18 +69,17 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
           <div style="padding: 20px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
             <!-- Boîtier Photo / Avatar -->
             <div style="position: relative; flex-shrink: 0; text-align: center;">
-              <div style="width: 84px; height: 84px; border-radius: 14px; background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 3px solid #CBD5E1; box-shadow: 0 4px 12px rgba(0,0,0,0.12); overflow: hidden; position: relative;">
-                <img id="prev_stu_photo_img" src="" alt="Photo d'identité" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-                <span id="prev_stu_avatar">ET</span>
+              <div style="width: 100px; height: 100px; border-radius: 14px; background: #F8FAFC; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 3px solid #CBD5E1; box-shadow: 0 4px 12px rgba(0,0,0,0.12); overflow: hidden; position: relative;">
+                <img id="prev_stu_photo_img" src="<?= placeholderUrl('etudiant') ?>" alt="Photo d'identité" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                <span id="prev_stu_avatar" style="display: none;">ET</span>
               </div>
-              <div style="font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 6px; letter-spacing: 0.5px;">Photo d'identité</div>
             </div>
 
             <!-- Détails de l'étudiant -->
             <div style="flex: 1; min-width: 260px;">
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
-                <h2 id="prev_stu_nom" style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.2px;">Nom et Prénoms</h2>
-                <span id="prev_stu_badge_sexe" class="badge" style="background: #E0F2FE; color: #0369A1; font-weight: 700; font-size: 11.5px; padding: 4px 10px; border-radius: 20px; border: 1px solid #BAE6FD;">Masculin (M)</span>
+                <h2 id="prev_stu_nom" style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.2px;">Nom et Prénoms</h2>
+              
                 <span id="prev_stu_badge_redoublant" class="badge" style="display: none; background: #FEE2E2; color: #991B1B; font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 20px; border: 1px solid #FCA5A5;">Redoublant</span>
               </div>
 
@@ -167,6 +91,10 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
                 <span style="display: inline-flex; align-items: center; gap: 6px; background: #F8FAFC; padding: 4px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
                   <i data-lucide="globe" style="width: 14px; height: 14px; color: #059669;"></i>
                   <strong>Nationalité :</strong> <span id="prev_stu_nationalite" style="font-weight: 700; color: #0F172A;">Ivoirienne</span>
+                </span>
+                 <span style="display: inline-flex; align-items: center; gap: 6px; background: #F8FAFC; padding: 4px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                  <i data-lucide="globe" style="width: 14px; height: 14px; color: #059669;"></i>
+                  <strong>Sexe :</strong> <span id="prev_stu_badge_sexe" style="font-weight: 700; color: #0F172A;"></span>
                 </span>
               </div>
             </div>
@@ -211,6 +139,10 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
               <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Niveau d'études :</span> <span id="prev_stu_niveau" style="font-weight: 700;">-</span></div>
               <div style="display: flex; justify-content: space-between;"><span style="color: #64748B;">Classe passée :</span> <span id="prev_stu_classe" style="font-weight: 700;">-</span></div>
               <div style="font-size: 12px; color: #64748B; margin-top: 2px;"><span id="prev_stu_annee_detail">-</span></div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 6px; border-top: 1px dashed #E2E8F0;">
+                <span style="color: #64748B;">Décision du conseil :</span> 
+                <span id="prev_stu_decision" style="font-weight: 800; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;">-</span>
+              </div>
               <div style="margin-top: 6px; padding: 8px 12px; background: #FEF2F2; border-radius: 8px; border: 1px solid #FCA5A5; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 11.5px; font-weight: 700; color: #991B1B;">Solde restant antérieur :</span>
                 <span id="prev_stu_solde" style="font-weight: 900; font-size: 13.5px; color: #DC2626;">0 FCFA</span>
@@ -329,7 +261,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
 
       <!-- FORMULAIRE D'INSCRIPTION STANDARD -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
-        <form id="form_inscription_main" action="<?= RACINE ?>inscription/<?= !empty($item['id_inscription']) ? 'edit' : 'add' ?>" method="POST" style="width: 100%;">
+        <form id="form_inscription_main" action="<?= url('inscription/' . (!empty($item['id_inscription']) ? 'edit' : 'add')) ?>" method="POST" style="width: 100%;">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
           <?php if (!empty($item['id_inscription'])): ?>
             <input type="hidden" name="id_inscription" value="<?= $item['id_inscription'] ?>">
@@ -403,21 +335,53 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
             <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Le montant et l'échéancier des tranches s'ajustent automatiquement selon le régime sélectionné.</small>
           </div>
 
-          <!-- ANNÉE ACADÉMIQUE D'INSCRIPTION -->
+          <!-- ANNÉE ACADÉMIQUE D'INSCRIPTION (EN LECTURE SEULE / FIXÉE À L'ANNÉE SÉLECTIONNÉE) -->
           <div class="form-group" style="width: 100%; box-sizing: border-box; margin-bottom: 20px;">
             <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">
               Année Académique d'Inscription <span style="color: #EF4444;">*</span>
             </label>
-            <select class="form-control select2" id="sel_annee_inscription" style="width: 100%; box-sizing: border-box;" name="annee_code" required>
-              <?php 
-                $selectedAnneeIns = $item['annee_code'] ?? ($_SESSION['annee_active_code'] ?? '');
-                foreach($annees as $a): 
-              ?>
-                <option value="<?= $a['code_annee'] ?>" <?= ($selectedAnneeIns == $a['code_annee']) ? 'selected' : '' ?>>
-                  <?= htmlspecialchars($a['libelle_annee']) ?> <?= (!empty($a['est_active']) || ($a['statut_annee'] ?? '') === 'actif') ? ' (Active)' : '' ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
+            <?php 
+              $selectedAnneeIns = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : (!empty($item['annee_code']) ? $item['annee_code'] : Session::get('annee_active_code', ''));
+              if (empty($selectedAnneeIns)) {
+                  foreach ($annees as $a) {
+                      if (($a['statut_annee'] ?? '') === STATUTS::ACTIF) {
+                          $selectedAnneeIns = $a['code_annee'];
+                          break;
+                      }
+                  }
+                  if (empty($selectedAnneeIns) && !empty($annees)) {
+                      $selectedAnneeIns = $annees[0]['code_annee'];
+                  }
+              }
+
+              $selectedAnneeLibelle = '';
+              foreach ($annees as $a) {
+                  if ($a['code_annee'] === $selectedAnneeIns) {
+                      $selectedAnneeLibelle = $a['libelle_annee'] . ((($a['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' (Active)' : '');
+                      break;
+                  }
+              }
+              if (empty($selectedAnneeLibelle) && !empty($selectedAnneeIns)) {
+                  try {
+                      $rowAnn = (new ModelAnnee())->getByCode($selectedAnneeIns);
+                      if ($rowAnn && !empty($rowAnn['libelle_annee'])) {
+                          $selectedAnneeLibelle = $rowAnn['libelle_annee'] . ((($rowAnn['statut_annee'] ?? '') === STATUTS::ACTIF) ? ' (Active)' : '');
+                      }
+                  } catch (Exception $e) {}
+              }
+              if (empty($selectedAnneeLibelle)) {
+                  $selectedAnneeLibelle = Session::get('annee_active_libelle', 'Session active');
+              }
+            ?>
+            <div style="position: relative;">
+              <input type="text" class="form-control" id="disp_annee_inscription" value="<?= htmlspecialchars($selectedAnneeLibelle) ?>" readonly 
+                     style="background-color: #F8FAFC; color: #1E3A5F; font-weight: 700; cursor: not-allowed; border: 1.5px solid #CBD5E1; padding-left: 38px; height: 42px; width: 100%; box-sizing: border-box;">
+              <i data-lucide="calendar" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #64748B;"></i>
+            </div>
+            <input type="hidden" id="sel_annee_inscription" name="annee_code" value="<?= htmlspecialchars($selectedAnneeIns) ?>">
+            <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">
+              Verrouillée sur l'année académique active sélectionnée.
+            </small>
           </div>
 
           <!-- SÉLECTION DE LA CLASSE D'AFFECTATION (PLEINE LARGEUR) -->
@@ -472,7 +436,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
             <button type="submit" id="btn_submit_inscription" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 11px 26px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(30,58,95,0.25);">
               <i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Valider la Réinscription & Émettre Fiche Navette
             </button>
-            <a href="<?= RACINE ?>reinscription/list" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px;">Annuler</a>
+            <a href="<?= url('reinscription/list') ?>" class="btn btn-secondary" style="font-weight: 600; border-radius: 8px; padding: 11px 24px;">Annuler</a>
             <span id="submit_block_notice" style="display: none; font-size: 12.5px; font-weight: 700; color: #DC2626;"></span>
           </div>
         </form>
@@ -578,7 +542,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
 
         <!-- Boutons d'Action Modal -->
         <div class="modal-custom-footer" style="background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0;">
-          <a href="<?= RACINE ?>reinscription/list" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; background: #64748B; color: #FFFFFF; border: none; text-decoration: none;">
+          <a href="<?= url('reinscription/list') ?>" class="btn btn-secondary" style="font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; background: #64748B; color: #FFFFFF; border: none; text-decoration: none;">
             <i data-lucide="list" style="width: 16px; height: 16px;"></i> Retour au registre
           </a>
 
@@ -589,7 +553,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
             <button type="button" id="btn-print-voucher" class="btn btn-outline-primary" style="border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
               <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer la Fiche Navette
             </button>
-            <a id="btn-goto-caisse" href="<?= RACINE ?>paiement/formulaire" class="btn btn-success" style="background: #15803D; border: 1px solid #15803D; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+            <a id="btn-goto-caisse" href="<?= url('paiement/formulaire') ?>" class="btn btn-success" style="background: #15803D; border: 1px solid #15803D; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
               <i data-lucide="arrow-right-circle" style="width: 18px; height: 18px;"></i> Passer au Bureau des Versements (Caisse)
             </a>
           </div>
@@ -630,7 +594,7 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
                 <img src="<?= htmlspecialchars($globalEtablissementLogo) ?>" alt="Logo" style="max-height: 56px; width: auto; object-fit: contain; flex-shrink: 0;">
               <?php endif; ?>
               <div>
-                <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; letter-spacing: 0.5px;">GROUPE EICG - DIRECTION FINANCIÈRE</div>
+                <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; letter-spacing: 0.5px;"><?= htmlspecialchars($etablissementConfig['sigle_etablissement'] ?? 'GROUPE EICG') ?> - <?= htmlspecialchars(strtoupper($etablissementConfig['titre_service_finance'] ?? 'DIRECTION FINANCIÈRE')) ?></div>
                 <div style="font-size: 11.5px; color: #64748B; font-weight: 700; margin-top: 2px;">SERVICE COMPTABILITÉ & RECOUVREMENT • RELEVÉ DE COMPTE ÉTUDIANT</div>
                 <div style="font-size: 11px; color: #059669; font-weight: 700; margin-top: 3px;">Date d'édition : <span id="fin_doc_date">-</span></div>
               </div>
@@ -644,9 +608,9 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
           <!-- Bloc Cartouche Étudiant (Photo + Identité) -->
           <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 18px 22px; margin-bottom: 22px; display: flex; align-items: center; gap: 22px;">
             <!-- Boîtier Photo -->
-            <div style="width: 80px; height: 80px; border-radius: 12px; background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 2.5px solid #CBD5E1; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-              <img id="fin_stu_photo_img" src="" alt="Photo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-              <span id="fin_stu_avatar">ET</span>
+            <div style="width: 80px; height: 80px; border-radius: 12px; background: #F8FAFC; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 26px; border: 2.5px solid #CBD5E1; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+              <img id="fin_stu_photo_img" src="<?= placeholderUrl('etudiant') ?>" alt="Photo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+              <span id="fin_stu_avatar" style="display: none;">ET</span>
             </div>
 
             <!-- Détails de l'étudiant -->
@@ -721,7 +685,8 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
           <!-- Signatures & Visas  -->
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding-top: 16px; border-top: 1px solid #CBD5E1; font-size: 11.5px;">
             <div>
-              <div style="font-weight: 800; color: #334155; margin-bottom: 40px;">Le Service Scolarité / Comptabilité :</div>
+              <div style="font-weight: 800; color: #334155; margin-bottom: 4px;"><?= htmlspecialchars($etablissementConfig['titre_service_finance'] ?? 'Le Service Comptabilité & Caisse') ?> :</div>
+              <div style="font-weight: 700; color: #1E3A5F; font-size: 11px; margin-bottom: 32px;"><?= htmlspecialchars($etablissementConfig['nom_responsable_finance'] ?? 'Direction Financière GEICG') ?></div>
               <div style="font-size: 10.5px; color: #64748B; font-style: italic;">Signature & Cachet</div>
             </div>
             <div style="text-align: right;">
@@ -737,714 +702,12 @@ $globalEtablissementNom = $globalEtablissementNom ?? ($etablissementConfig['libe
   </main>
 </div>
 
-<script>
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons();
-  if ($.fn.select2) {
-    $('#sel_etudiant_inscription').select2({
-      placeholder: "-- Rechercher par nom, matricule ou téléphone --",
-      allowClear: !$('#sel_etudiant_inscription').hasClass('readonly-select'),
-      width: '100%'
-    });
-
-    if ($('#sel_etudiant_inscription').hasClass('readonly-select')) {
-      $('#sel_etudiant_inscription').next('.select2-container').css({
-        'pointer-events': 'none',
-        'cursor': 'not-allowed'
-      }).find('.select2-selection').css({
-        'background-color': '#F1F5F9',
-        'border-color': '#CBD5E1',
-        'color': '#334155',
-        'cursor': 'not-allowed'
-      });
-      $('#sel_etudiant_inscription').on('select2:opening', function(e) {
-        e.preventDefault();
-      });
-    }
-
-    $('#sel_classe_inscription').select2({
-      placeholder: "-- Choisir la classe --",
-      allowClear: true,
-      width: '100%'
-    });
-  }
-
-  var currentStudentData = null;
-
-  // 1. Récupération et affichage dynamique de la fiche synthèse complète de l'étudiant
-  function fetchStudentProfile(etudiantCode) {
-    if (!etudiantCode) {
-      currentStudentData = null;
-      $('#student-profile-preview-banner').slideUp(200);
-      return;
-    }
-
-    $.ajax({
-      url: '<?= RACINE ?>inscription/getStudentProfileSummary',
-      type: 'GET',
-      data: { 
-        etudiant_code: etudiantCode,
-        annee_code: $('#sel_annee_inscription').val()
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 && res.data) {
-          var d = res.data;
-          currentStudentData = d;
-
-          var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
-          if (d.photo_url) {
-            $('#prev_stu_photo_img').off('error').on('error', function() {
-              $(this).hide();
-              $('#prev_stu_avatar').text(initials || 'ET').show();
-            }).attr('src', d.photo_url).show();
-            $('#prev_stu_avatar').hide();
-          } else {
-            $('#prev_stu_photo_img').hide();
-            $('#prev_stu_avatar').text(initials || 'ET').show();
-          }
-
-          // Étape 1 : Identité & Coordonnées
-          $('#prev_stu_nom').text(d.nom_complet);
-          $('#prev_stu_nom_famille').text(d.nom_famille || '-');
-          $('#prev_stu_prenoms').text(d.prenom || '-');
-          $('#prev_stu_matricule').text(d.matricule);
-          $('#prev_stu_badge_sexe').text(d.sexe === 'M' ? 'Masculin (M)' : (d.sexe === 'F' ? 'Féminin (F)' : d.sexe));
-          $('#prev_stu_naissance').text(d.date_naissance);
-          $('#prev_stu_lieu_naissance').text(d.lieu_naissance || 'Non renseigné');
-          $('#prev_stu_nationalite').text(d.nationalite || 'Ivoirienne');
-          $('#prev_stu_residence').text(d.residence || 'Non renseigné');
-          $('#prev_stu_contact').text(d.telephone);
-          $('#prev_stu_email').text(d.email);
-
-          // Étape 2 : Parents & Tuteurs
-          $('#prev_stu_parent').text(d.parent_nom + ' (' + d.parent_role + ')');
-          $('#prev_stu_parent_tel').text(d.parent_tel);
-          $('#prev_stu_parent_prof').text(d.parent_profession || 'Non renseignée');
-          if (d.nom_mere) {
-            $('#prev_stu_mere').text(d.nom_mere);
-            $('#prev_stu_mere_tel').text(d.telephone_mere || '-');
-            $('#prev_box_mere').show();
-          } else {
-            $('#prev_box_mere').hide();
-          }
-
-          // Étape 3 : Cursus & Situation Antérieure (N-1)
-          if (d.has_history) {
-            $('#prev_stu_filiere').text(d.derniere_filiere || 'Filière antérieure').show();
-            $('#prev_stu_niveau').text(d.dernier_niveau || 'Niveau antérieur').show();
-            $('#prev_stu_classe').text(d.derniere_classe || 'Classe antérieure').show();
-            $('#prev_stu_annee_detail').text((d.derniere_annee ? 'Session ' + d.derniere_annee + ' • ' : '') + 'Régime : ' + d.prev_regime);
-            
-            var solde = Number(d.prev_solde || 0);
-            if (solde <= 0) {
-              $('#prev_stu_solde').css('color', '#15803D').text('Compte Soldé (0 FCFA)');
-              // Quitus Financier Antérieur Validé
-              $('#quitus-financial-status-box').css({
-                'background': '#F0FDF4',
-                'border-color': '#86EFAC'
-              }).show();
-              $('#quitus_icon_box').css('background', '#DCFCE7');
-              $('#quitus_icon').attr('data-lucide', 'shield-check').css('color', '#15803D');
-              $('#quitus_title').css('color', '#166534').text('✅ Quitus Financier Antérieur Validé');
-              $('#quitus_desc').css('color', '#166534').text('L\'étudiant est entièrement à jour de ses règlements sur les sessions précédentes. Aucune dette antérieure enregistrée.');
-              $('#quitus_badge_box').html('<span class="badge" style="background:#15803D; color:#FFFFFF; padding:6px 12px; border-radius:6px; font-weight:800; font-size:12px;">Quitus Accordé</span>');
-              $('#quitus_derogation_zone').hide();
-              $('#submit_block_notice').hide();
-              $('#btn_submit_inscription').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
-            } else {
-              $('#prev_stu_solde').css('color', '#DC2626').text(solde.toLocaleString('fr-FR') + ' FCFA (Reliquat)');
-              // Arriérés détectés : Blocage par défaut avec dérogation
-              $('#quitus-financial-status-box').css({
-                'background': '#FEF2F2',
-                'border-color': '#FECACA'
-              }).show();
-              $('#quitus_icon_box').css('background', '#FEE2E2');
-              $('#quitus_icon').attr('data-lucide', 'alert-octagon').css('color', '#DC2626');
-              $('#quitus_title').css('color', '#991B1B').text('⚠️ Alerte Financière : Arriérés Antérieurs Détectés (' + solde.toLocaleString('fr-FR') + ' FCFA)');
-              $('#quitus_desc').css('color', '#991B1B').html('L\'étudiant présente un reliquat impayé de <strong>' + solde.toLocaleString('fr-FR') + ' FCFA</strong> sur la session précédente (' + (d.derniere_annee || 'antérieure') + '). La réinscription normale requiert la régularisation préalable au <strong>Bureau des Versements</strong>.');
-              $('#quitus_badge_box').html('<span class="badge" style="background:#DC2626; color:#FFFFFF; padding:6px 12px; border-radius:6px; font-weight:800; font-size:12px;">Solde Débiteur</span>');
-              $('#quitus_derogation_zone').show();
-
-              // Si dérogation non cochée, bloquer le bouton de validation
-              updateSubmitButtonQuitusState();
-            }
-
-            // Présélection automatique du régime (Affecté / Non Affecté) selon l'historique
-            if (d.prev_affectation_etat === 'affecte') {
-              $('input[name="affectation_etat"][value="affecte"]').prop('checked', true);
-            } else {
-              $('input[name="affectation_etat"][value="non_affecte"]').prop('checked', true);
-            }
-            $('input[name="affectation_etat"]').each(function() {
-              var isChecked = $(this).is(':checked');
-              $(this).closest('label').css({
-                'border-color': isChecked ? '#1E3A5F' : '#CBD5E1',
-                'background': isChecked ? '#EFF6FF' : '#FFFFFF',
-                'color': isChecked ? '#1E3A5F' : '#334155'
-              });
-            });
-
-
-
-            // Gestion automatique de l'état Redoublant / Passant avec suggestion intelligente
-            handleRedoublantState();
-          } else {
-            $('#prev_stu_badge_redoublant').hide();
-            $('#prev_stu_filiere').text('Non définie');
-            $('#prev_stu_niveau').text('Non défini');
-            $('#prev_stu_classe').text('Nouvel Inscrit');
-            $('#prev_stu_annee_detail').text('Première inscription dans l\'établissement');
-            $('#prev_stu_solde').css('color', '#15803D').text('Aucun arriéré (0 FCFA)');
-            $('#quitus-financial-status-box').hide();
-            $('#smart_class_suggestion_hint').hide();
-            $('#submit_block_notice').hide();
-            $('#btn_submit_inscription').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
-          }
-
-          // Étape 4 : Accessoires & Kits d'Inscription
-          if (d.accessoires_etudiant && d.accessoires_etudiant.length > 0) {
-            var accHtml = '';
-            d.accessoires_etudiant.forEach(function(acc) {
-              accHtml += '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; border:1px solid #BFDBFE; padding:4px 8px; border-radius:6px; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="check-circle" style="width:12px;height:12px;color:#15803D;"></i> ' + acc.libelle_accessoire + '</span> ';
-            });
-            $('#prev_acc_list').html(accHtml);
-          } else {
-            $('#prev_acc_list').html('<span class="badge" style="background:#F1F5F9; color:#64748B; padding:4px 8px; border-radius:6px; font-weight:600;">Aucun kit/accessoire souscrit</span>');
-          }
-
-          // Vérification si déjà inscrit pour cette session en cours (en mode ajout)
-          var isEditMode = <?= !empty($item['id_inscription']) ? 'true' : 'false' ?>;
-          if (d.is_already_registered_this_year && !isEditMode) {
-            $('#already_registered_warning_text').html(
-              'L\'étudiant <strong>' + (d.nom_complet || '') + '</strong> est déjà réinscrit pour la session active (<strong>' + (d.already_registered_annee || 'active') + '</strong>) dans la classe <strong>' + (d.already_registered_classe || '-') + '</strong> (Réf Inscription : <code>' + (d.already_registered_code || '-') + '</code>).<br>Une double réinscription pour cette même année n\'est pas autorisée.'
-            );
-            $('#already_registered_warning').stop(true, true).slideDown(250);
-            $('#btn_submit_inscription').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
-          } else {
-            $('#already_registered_warning').slideUp(200);
-            updateSubmitButtonQuitusState();
-          }
-
-          $('#student-profile-preview-banner').stop(true, true).slideDown(250);
-
-          // Si une classe est déjà choisie, charger immédiatement ses tarifs
-          var selClass = $('#sel_classe_inscription').val();
-          if (selClass) {
-            fetchTuitionForClass(selClass);
-          }
-
-          if (window.lucide) lucide.createIcons();
-        } else {
-          $('#already_registered_warning').slideUp(200);
-          $('#student-profile-preview-banner').slideUp(200);
-          $('#quitus-financial-status-box').slideUp(200);
-        }
-      },
-      error: function(err) {
-        console.error('Erreur chargement profil étudiant:', err);
-        $('#student-profile-preview-banner').slideUp(200);
-      }
-    });
-  }
-
-  var isTuitionValid = true;
-
-  // Contrôle de l'état du bouton selon le Quitus, la scolarité et la dérogation
-  function updateSubmitButtonQuitusState() {
-    if (!isTuitionValid) {
-      $('#btn_submit_inscription').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
-      $('#submit_block_notice').html('<i data-lucide="alert-octagon" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;"></i> Aucun tarif de scolarité configuré pour cette classe').show();
-      if (window.lucide) lucide.createIcons();
-      return;
-    }
-    if (!currentStudentData) return;
-    var isEditMode = <?= !empty($item['id_inscription']) ? 'true' : 'false' ?>;
-    if (currentStudentData.is_already_registered_this_year && !isEditMode) {
-      $('#btn_submit_inscription').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
-      return;
-    }
-
-    var solde = Number(currentStudentData.prev_solde || 0);
-    if (solde > 0) {
-      var isDerogationChecked = $('#chk_derogation_arriere').is(':checked');
-      if (isDerogationChecked) {
-        $('#btn_submit_inscription').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
-        $('#submit_block_notice').hide();
-      } else {
-        $('#btn_submit_inscription').prop('disabled', true).css({'opacity': '0.5', 'cursor': 'not-allowed'});
-        $('#submit_block_notice').html('<i data-lucide="alert-circle" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;"></i> Régularisation caisse requise ou cochez la dérogation').show();
-        if (window.lucide) lucide.createIcons();
-      }
-    } else {
-      $('#btn_submit_inscription').prop('disabled', false).css({'opacity': '1', 'cursor': 'pointer'});
-      $('#submit_block_notice').hide();
-    }
-  }
-
-  $('#chk_derogation_arriere').on('change', function() {
-    if ($(this).is(':checked')) {
-      $('#derogation_motif_container').slideDown(200);
-    } else {
-      $('#derogation_motif_container').slideUp(200);
-    }
-    updateSubmitButtonQuitusState();
-  });
-
-
-
-  // 2. Gestion de l'option Redoublant / Passant (Smart Class Progression)
-  function handleRedoublantState() {
-    var isRedoublant = $('input[name="is_redoublant"]:checked').val() === '1';
-
-    if (isRedoublant) {
-      $('#prev_stu_badge_redoublant').show();
-      $('#label_classe_select').text("Classe d'affectation (Classe Redoublée)");
-
-      // Si l'étudiant a une classe précédente enregistrée, la pré-sélectionner
-      if (currentStudentData && currentStudentData.derniere_classe_code) {
-        $('#sel_classe_inscription').val(currentStudentData.derniere_classe_code).trigger('change');
-        $('#smart_class_suggestion_text').html('Classe redoublée sélectionnée : <strong>' + (currentStudentData.derniere_classe || '-') + '</strong>');
-        $('#smart_class_suggestion_hint').show();
-      }
-    } else {
-      $('#prev_stu_badge_redoublant').hide();
-      $('#label_classe_select').text("Classe d'affectation (Nouvelle Classe)");
-
-      // Si le système a détecté une classe N+1 suggérée, la pré-sélectionner en auto
-      if (currentStudentData && currentStudentData.suggested_next_class_code) {
-        $('#sel_classe_inscription').val(currentStudentData.suggested_next_class_code).trigger('change');
-        $('#smart_class_suggestion_text').html('Classe suggérée : <strong>' + (currentStudentData.suggested_next_class_libelle || '-') + '</strong> (Niveau supérieur)');
-        $('#smart_class_suggestion_hint').show();
-      } else if (currentStudentData && currentStudentData.has_history) {
-        $('#smart_class_suggestion_text').html('Veuillez sélectionner la classe supérieure de la filière <strong>' + (currentStudentData.derniere_filiere || '-') + '</strong>.');
-        $('#smart_class_suggestion_hint').show();
-      } else {
-        $('#smart_class_suggestion_hint').hide();
-      }
-    }
-    if (window.lucide) lucide.createIcons();
-  }
-
-  $('input[name="is_redoublant"]').on('change', function() {
-    handleRedoublantState();
-  });
-
-  // 3. Auto-suggestion et affichage des détails tarifaires de la classe sélectionnée
-  function fetchTuitionForClass(classeCode) {
-    if (!classeCode) {
-      isTuitionValid = true;
-      $('#no_tuition_warning').slideUp(200);
-      $('#prev_class_tuition_section').slideUp(200);
-      updateSubmitButtonQuitusState();
-      return;
-    }
-    var affectationEtat = $('input[name="affectation_etat"]:checked').val() || 'non_affecte';
-
-    $.ajax({
-      url: '<?= RACINE ?>inscription/getTuitionByClass',
-      type: 'GET',
-      data: { 
-        classe_code: classeCode,
-        affectation_etat: affectationEtat,
-        annee_code: $('#sel_annee_inscription').val()
-      },
-      dataType: 'json',
-      success: function(res) {
-        if (res.status === 1 && res.data) {
-          isTuitionValid = true;
-          $('#no_tuition_warning').slideUp(200);
-          var d = res.data;
-          var totalScolarite = Number(d.montant_scolarite || 0);
-
-          // Remplissage automatique du champ montant de scolarité
-          $('#inp_montant_scolarite').val(totalScolarite);
-
-          var regimeText = d.affectation_etat === 'affecte' ? ' (Affecté État)' : ' (Non Affecté / Privé)';
-          var filiereNiveauText = (d.libelle_filiere ? 'Filière : ' + d.libelle_filiere + ' • ' : '') + (d.libelle_niveau ? 'Niveau : ' + d.libelle_niveau : '');
-
-          // Mise à jour de la section Modalités & Tarifs de la Classe dans le Preview Banner
-          $('#prev_modalite_classe_title').text(d.libelle_classe + regimeText);
-          $('#prev_modalite_filiere_niveau').text(filiereNiveauText);
-          $('#prev_modalite_total_scolarite').text(totalScolarite.toLocaleString('fr-FR') + ' FCFA');
-
-          // Rendu dynamique de TOUTES les tranches
-          var tranches = d.tranches || [];
-          var tbodyHtml = '';
-          var sumTranches = 0;
-
-          if (tranches.length > 0) {
-            $('#prev_tranches_count_badge').text(tranches.length + ' tranche(s) configurée(s)').show();
-
-            tranches.forEach(function(tr, idx) {
-              var mt = Number(tr.montant_tranche || tr.montant_tranche_num || 0);
-              sumTranches += mt;
-              var isFirst = (idx === 0);
-              var pct = totalScolarite > 0 ? Math.round((mt / totalScolarite) * 100) : 0;
-              var dateLimite = tr.date_limite_formatee || (tr.date_limite ? tr.date_limite : 'Non définie');
-
-              tbodyHtml += '<tr style="border-bottom: 1px solid #E2E8F0; background: ' + (isFirst ? '#F8FAFC' : '#FFFFFF') + ';">';
-              tbodyHtml += '  <td style="padding: 10px 14px; font-weight: 800; color: #64748B;">' + (idx + 1) + '</td>';
-              tbodyHtml += '  <td style="padding: 10px 14px;">';
-              tbodyHtml += '    <div style="font-weight: 700; color: #0F172A; font-size: 13px;">' + (tr.libelle_tranche || ('Tranche ' + (idx + 1))) + '</div>';
-              if (isFirst) {
-                tbodyHtml += '    <span style="background:#EFF6FF; color:#1D4ED8; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; border:1px solid #BFDBFE;">Exigible à l\'inscription</span>';
-              }
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 10px 14px; text-align: center;">';
-              tbodyHtml += '    <span style="background:#F1F5F9; color:#334155; font-size:11px; font-weight:700; padding:2px 6px; border-radius:4px;">' + pct + '%</span>';
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 10px 14px; text-align: center; color: #475569; font-size: 12px; font-weight: 600;">';
-              tbodyHtml += '    <i data-lucide="calendar" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right:4px; color:#64748B;"></i>' + dateLimite;
-              tbodyHtml += '  </td>';
-              tbodyHtml += '  <td style="padding: 10px 14px; text-align: right; font-weight: 800; color: #166534; font-size: 13.5px;">';
-              tbodyHtml += '    ' + mt.toLocaleString('fr-FR') + ' FCFA';
-              tbodyHtml += '  </td>';
-              tbodyHtml += '</tr>';
-            });
-          } else {
-            $('#prev_tranches_count_badge').text('Paiement Unique');
-            sumTranches = totalScolarite;
-            tbodyHtml += '<tr>';
-            tbodyHtml += '  <td colspan="5" style="padding: 14px; text-align: center; color: #64748B; font-style: italic;">';
-            tbodyHtml += '    Aucune tranche intermédiaire configurée. Règlement unique de la scolarité totale : <strong>' + totalScolarite.toLocaleString('fr-FR') + ' FCFA</strong>';
-            tbodyHtml += '  </td>';
-            tbodyHtml += '</tr>';
-          }
-
-          $('#prev_modalite_tranches_table_body').html(tbodyHtml);
-          $('#prev_modalite_tranches_total_sum').text(sumTranches.toLocaleString('fr-FR') + ' FCFA');
-
-          $('#prev_class_tuition_section').stop(true, true).slideDown(250);
-          updateSubmitButtonQuitusState();
-          if (window.lucide) lucide.createIcons();
-        } else {
-          isTuitionValid = false;
-          $('#inp_montant_scolarite').val('0');
-          var errMsg = res.message || "Aucun tarif de scolarité actif n'est configuré pour cette classe sous le régime sélectionné.";
-          $('#no_tuition_warning_text').html(errMsg);
-          $('#no_tuition_warning').stop(true, true).slideDown(250);
-          $('#prev_class_tuition_section').slideUp(200);
-          updateSubmitButtonQuitusState();
-          if (window.lucide) lucide.createIcons();
-        }
-      },
-      error: function(err) {
-        console.error('Erreur chargement tarif classe:', err);
-        isTuitionValid = false;
-        $('#inp_montant_scolarite').val('0');
-        $('#no_tuition_warning_text').html("Erreur lors de la vérification du tarif de scolarité pour cette classe.");
-        $('#no_tuition_warning').stop(true, true).slideDown(250);
-        $('#prev_class_tuition_section').slideUp(200);
-        updateSubmitButtonQuitusState();
-        if (window.lucide) lucide.createIcons();
-      }
-    });
-  }
-
-  function filterInscriptionClassesByAnnee() {
-    var selectedAnnee = $('#sel_annee_inscription').val();
-    var $classeSelect = $('#sel_classe_inscription');
-    var currentVal = $classeSelect.val();
-    var currentStillValid = false;
-
-    $classeSelect.find('option').each(function() {
-      var optAnnee = $(this).data('annee');
-      if (!$(this).val()) return;
-
-      if (!selectedAnnee || !optAnnee || optAnnee === selectedAnnee) {
-        $(this).prop('disabled', false).show();
-        if ($(this).val() === currentVal) {
-          currentStillValid = true;
-        }
-      } else {
-        $(this).prop('disabled', true).hide();
-      }
-    });
-
-    if (!currentStillValid && currentVal) {
-      $classeSelect.val('').trigger('change');
-    } else {
-      $classeSelect.trigger('change.select2');
-    }
-  }
-
-  $('#sel_annee_inscription').on('change select2:select', function() {
-    filterInscriptionClassesByAnnee();
-    var stu = $('#sel_etudiant_inscription').val();
-    if (stu) {
-      fetchStudentProfile(stu);
-    }
-    var currentClass = $('#sel_classe_inscription').val();
-    if (currentClass) {
-      fetchTuitionForClass(currentClass);
-    }
-  });
-
-  // Événements de sélection
-  $('#sel_etudiant_inscription').on('change select2:select', function() {
-    var val = $(this).val();
-    fetchStudentProfile(val);
-  });
-
-  $('#sel_classe_inscription').on('change select2:select', function() {
-    var val = $(this).val();
-    fetchTuitionForClass(val);
-  });
-
-  $('input[name="affectation_etat"]').on('change', function() {
-    $('input[name="affectation_etat"]').each(function() {
-      var isChecked = $(this).is(':checked');
-      $(this).closest('label').css({
-        'border-color': isChecked ? '#1E3A5F' : '#CBD5E1',
-        'background': isChecked ? '#EFF6FF' : '#FFFFFF',
-        'color': isChecked ? '#1E3A5F' : '#334155'
-      });
-    });
-    var currentClass = $('#sel_classe_inscription').val();
-    if (currentClass) {
-      fetchTuitionForClass(currentClass);
-    }
-  });
-
-  filterInscriptionClassesByAnnee();
-
-  // Chargement initial automatique via paramètre URL ou valeur pré-sélectionnée
-  var urlParams = new URLSearchParams(window.location.search);
-  var urlEtudiantCode = urlParams.get('etudiant_code');
-  if (urlEtudiantCode && !$('#sel_etudiant_inscription').val()) {
-    $('#sel_etudiant_inscription').val(urlEtudiantCode).trigger('change');
-  }
-
-  var initStu = $('#sel_etudiant_inscription').val() || urlEtudiantCode;
-  if (initStu) {
-    fetchStudentProfile(initStu);
-  }
-
-  var initClasse = $('#sel_classe_inscription').val();
-  if (initClasse) {
-    fetchTuitionForClass(initClasse);
-  }
-
-  // Soumission unique et sécurisée en AJAX (Évite toute double soumission)
-  // Soumission unique et sécurisée en AJAX avec émission de la Fiche Navette
-  $('#form_inscription_main').on('submit', function(e) {
-    e.preventDefault();
-    var $form = $(this);
-    var $submitBtn = $('#btn_submit_inscription');
-
-    if ($submitBtn.prop('disabled') || $submitBtn.hasClass('btn-is-loading')) {
-      return false;
-    }
-
-    loading($submitBtn, true, 'Validation en cours...');
-
-    $.ajax({
-      url: $form.attr('action'),
-      type: 'POST',
-      data: $form.serialize(),
-      dataType: 'json',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      success: function(res) {
-        loading($submitBtn, false, 'Valider la Réinscription & Émettre Fiche Navette');
-        if (res.status === 1) {
-          showToast(res.message || 'Réinscription enregistrée avec succès !', 'success');
-
-          // Remplissage dynamique et affichage de la Fiche Navette pour le Bureau des Versements
-          if (res.voucher_data) {
-            var v = res.voucher_data;
-            $('#v_code_inscription').text(v.code_inscription || 'INS-XXXX');
-            $('#v_matricule').text(v.matricule_etudiant || '-');
-            $('#v_nom_complet').text(v.nom_complet || '-');
-            $('#v_telephone').text(v.telephone_etudiant || '-');
-            $('#v_classe').text(v.classe_libelle || '-');
-            $('#v_regime').text(v.regime || '-');
-            $('#v_annee_libelle').text(v.annee_libelle || 'Session active');
-            $('#v_scolarite_totale').text(Number(v.scolarite_totale || 0).toLocaleString('fr-FR') + ' FCFA');
-            $('#v_tranche1_montant').text(Number(v.tranche1_montant || 0).toLocaleString('fr-FR') + ' FCFA');
-            $('#v_tranche1_libelle').text(v.tranche1_libelle || 'Tranche 1 / Droit de réinscription');
-            $('#v_agent').text(v.agent_inscription || 'Agent Scolarité');
-            $('#v_date_inscription').text('Délivré le ' + (v.date_inscription || '-'));
-
-            if (Number(v.arrieres_n1 || 0) > 0) {
-              $('#v_arrieres_montant').text(Number(v.arrieres_n1).toLocaleString('fr-FR') + ' FCFA (Moratoire)');
-              $('#v_arrieres_box').show();
-            } else {
-              $('#v_arrieres_box').hide();
-            }
-
-            // Mettre à jour le bouton de passage direct au Bureau des Versements
-            $('#btn-goto-caisse').attr('href', '<?= RACINE ?>paiement/formulaire?inscription_code=' + encodeURIComponent(v.code_inscription));
-
-            // Ouvrir le modal  de la Fiche Navette
-            showFicheNavetteModal();
-          } else {
-            setTimeout(function() {
-              window.location.href = '<?= RACINE ?>reinscription/list';
-            }, 1200);
-          }
-        } else {
-          showToast(res.message || 'Une erreur est survenue lors de l\'enregistrement', 'error');
-        }
-      },
-      error: function(xhr) {
-        loading($submitBtn, false, 'Valider la Réinscription & Émettre Fiche Navette');
-        var msg = 'Erreur lors de la communication avec le serveur.';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-          msg = xhr.responseJSON.message;
-        }
-        showToast(msg, 'error');
-      }
-    });
-  });
-
-  // Fonctions de contrôle du modal Fiche Navette
-  function showFicheNavetteModal() {
-    $('#modal_fiche_navette').css('display', 'flex').hide().fadeIn(200);
-    $('body').css('overflow', 'hidden');
-    if (window.lucide) lucide.createIcons();
-  }
-
-  function hideFicheNavetteModal() {
-    $('#modal_fiche_navette').fadeOut(150, function() {
-      $(this).css('display', 'none');
-      $('body').css('overflow', '');
-    });
-  }
-
-  // Fermeture par le bouton de fermeture X
-  $(document).on('click', '.btn-close-fiche-navette', function(e) {
-    e.preventDefault();
-    hideFicheNavetteModal();
-  });
-
-  // Fermeture par clic sur l'arrière-plan semi-transparent
-  $('#modal_fiche_navette').on('click', function(e) {
-    if (e.target === this) {
-      hideFicheNavetteModal();
-    }
-  });
-
-  // Fermeture par la touche Échap
-  $(document).on('keydown', function(e) {
-    if (e.key === 'Escape' && $('#modal_fiche_navette').is(':visible')) {
-      hideFicheNavetteModal();
-    }
-  });
-
-  // Impression de la Fiche Navette
-  $('#btn-print-voucher').on('click', function() {
-    window.print();
-  });
-
-  // Fonctions de contrôle et d'impression de la Fiche de Situation Financière
-  window.openFinancialStatementModal = function() {
-    if (!currentStudentData) {
-      if (typeof showToast === 'function') {
-        showToast("Veuillez d'abord sélectionner un étudiant.", "warning");
-      } else {
-        alert("Veuillez d'abord sélectionner un étudiant.");
-      }
-      return;
-    }
-    var d = currentStudentData;
-
-    $('#fin_doc_date').text(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }));
-    $('#fin_session_libelle').text(d.derniere_annee || d.already_registered_annee || 'Session Active');
-    $('#fin_stu_nom').text(d.nom_complet || '-');
-    $('#fin_stu_matricule').text(d.matricule || '-');
-    $('#fin_stu_nationalite').text(d.nationalite || 'Ivoirienne');
-    $('#fin_stu_regime_badge').text(d.prev_regime || 'Non Défini');
-    $('#fin_stu_classe').text(d.derniere_classe || d.already_registered_classe || 'Classe non assignée');
-    $('#fin_stu_contact').text(d.telephone || '-');
-    
-    var parentVal = (d.parent_nom || '').trim();
-    if (parentVal && parentVal.toLowerCase().indexOf('non renseigné') === -1 && parentVal.toLowerCase().indexOf('non meublé') === -1 && parentVal !== '-') {
-      $('#fin_stu_parent').text(parentVal);
-      $('#fin_stu_parent_box').show();
-    } else {
-      $('#fin_stu_parent_box').hide();
-    }
-
-    var initials = (d.nom_complet || 'ET').split(' ').map(function(n) { return n[0]; }).join('').substr(0,2).toUpperCase();
-    if (d.photo_url) {
-      $('#fin_stu_photo_img').off('error').on('error', function() {
-        $(this).hide();
-        $('#fin_stu_avatar').text(initials || 'ET').show();
-      }).attr('src', d.photo_url).show();
-      $('#fin_stu_avatar').hide();
-    } else {
-      $('#fin_stu_photo_img').hide();
-      $('#fin_stu_avatar').text(initials || 'ET').show();
-    }
-
-    var scolarite = Number(d.prev_scolarite || 0);
-    var paye = Number(d.prev_paye || 0);
-    var solde = Number(d.prev_solde || 0);
-
-    $('#fin_scolarite_totale').text(scolarite.toLocaleString('fr-FR') + ' FCFA');
-    $('#fin_total_paye').text(paye.toLocaleString('fr-FR') + ' FCFA');
-
-    if (solde <= 0) {
-      $('#fin_solde_restant').css('color', '#15803D').text('Compte Soldé (0 FCFA)');
-      $('#fin_solde_box_card').css({ 'background': '#F0FDF4', 'border-color': '#86EFAC' });
-      $('#fin_arrieres_alert_box').hide();
-    } else {
-      $('#fin_solde_restant').css('color', '#DC2626').text(solde.toLocaleString('fr-FR') + ' FCFA');
-      $('#fin_solde_box_card').css({ 'background': '#FEF2F2', 'border-color': '#FECACA' });
-      $('#fin_arrieres_montant').text(solde.toLocaleString('fr-FR') + ' FCFA');
-      $('#fin_arrieres_alert_box').show();
-    }
-
-    // Remplissage du tableau des paiements
-    var payments = d.history_payments || [];
-    $('#fin_paiements_count').text(payments.length + ' règlement(s)');
-    if (payments.length > 0) {
-      var rowsHtml = '';
-      payments.forEach(function(p) {
-        var dateFmt = p.date_paiement ? new Date(p.date_paiement).toLocaleDateString('fr-FR') : '-';
-        var mntFmt = Number(p.montant_paiement || 0).toLocaleString('fr-FR') + ' FCFA';
-        rowsHtml += '<tr style="border-bottom: 1px solid #E2E8F0;">' +
-          '<td style="padding: 8px 10px; font-weight: 700; color: #1E3A5F; font-family: monospace;">' + (p.code_paiement || '-') + '</td>' +
-          '<td style="padding: 8px 10px;">' + dateFmt + '</td>' +
-          '<td style="padding: 8px 10px; text-transform: capitalize;">' + (p.mode_paiement || 'Espèces') + '</td>' +
-          '<td style="padding: 8px 10px; color: #64748B;">' + (p.reference_paiement || '-') + '</td>' +
-          '<td style="padding: 8px 10px; text-align: right; font-weight: 800; color: #047857;">' + mntFmt + '</td>' +
-        '</tr>';
-      });
-      $('#fin_payments_table_body').html(rowsHtml);
-    } else {
-      $('#fin_payments_table_body').html('<tr><td colspan="5" style="padding: 12px; text-align: center; color: #64748B; font-style: italic;">Aucun paiement enregistré pour cet étudiant.</td></tr>');
-    }
-
-    $('#financial-statement-modal').css('display', 'flex').hide().fadeIn(200);
-    $('body').css('overflow', 'hidden');
-    if (window.lucide) lucide.createIcons();
-  };
-
-  window.printFinancialStatement = function() {
-    $('body').addClass('printing-financial-statement');
-    window.print();
-    setTimeout(function() {
-      $('body').removeClass('printing-financial-statement');
-    }, 1000);
-  };
-
-  $(document).on('click', '#btn-print-financial-statement, #btn-quick-print-finance', function(e) {
-    e.preventDefault();
-    openFinancialStatementModal();
-  });
-
-  $('#financial-statement-modal').on('click', function(e) {
-    if (e.target === this) {
-      $(this).fadeOut(150, function() {
-        $('body').css('overflow', '');
-      });
-    }
-  });
-});
+<script type="application/json" id="inscriptions-edit-config">
+<?= json_encode([
+    'isEditMode' => !empty($item['id_inscription'])
+]) ?>
 </script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
-
+<?php
+ViewContext::setScripts(['public/assets/js/modules/inscriptions.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

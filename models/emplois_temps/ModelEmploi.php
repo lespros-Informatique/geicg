@@ -2,46 +2,30 @@
 
 class ModelEmploi extends BaseModel
 {
-    protected string $table = 'emplois_temps';
+    protected string $table = TABLES::EMPLOIS_TEMPS;
     protected string $primaryKey = 'id_emploi';
     protected ?string $statusField = 'statut_emploi';
     protected ?string $createdAtField = 'created_at_emploi';
 
     public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
-        $sql = "
-            SELECT edt.*, 
-                   cl.libelle_classe, 
-                   n.libelle_niveau,
-                   m.libelle_matiere, 
-                   s.libelle_salle, 
-                   CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS nom_prof
-            FROM emplois_temps edt
-            LEFT JOIN classes cl ON cl.code_classe = edt.classe_code
-            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN matieres m ON m.code_matiere = edt.matiere_code
-            LEFT JOIN salles s ON s.code_salle = edt.salle_code
-            LEFT JOIN enseignants e ON e.code_enseignant = edt.enseignant_code
-            LEFT JOIN users u ON u.code_user = edt.enseignant_code
-        ";
-        $conditions = [];
-        $params = [];
-        if (!empty($anneeCode)) {
-            $conditions[] = "edt.annee_code = ?";
-            $params[] = $anneeCode;
+        if (empty($anneeCode)) {
+            return [];
         }
+
+        $sql = "SELECT * FROM " . VIEWS::EMPLOIS_TEMPS_COMPLETS . "";
+        $conditions = ["annee_code = ?"];
+        $params = [$anneeCode];
         if (!empty($niveauCode)) {
-            $conditions[] = "cl.niveau_code = ?";
+            $conditions[] = "niveau_code = ?";
             $params[] = $niveauCode;
         }
         if (!empty($classeCode)) {
-            $conditions[] = "edt.classe_code = ?";
+            $conditions[] = "classe_code = ?";
             $params[] = $classeCode;
         }
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(" AND ", $conditions);
-        }
-        $sql .= " ORDER BY edt.jour ASC, edt.heure_debut ASC ";
+        $sql .= " WHERE " . implode(" AND ", $conditions);
+        $sql .= " ORDER BY jour ASC, heure_debut ASC ";
         try {
             $stmt = $this->getCon()->prepare($sql);
             $stmt->execute($params);
@@ -57,6 +41,10 @@ class ModelEmploi extends BaseModel
      */
     public function getClassesSummary(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
     {
+        if (empty($anneeCode)) {
+            return [];
+        }
+
         $sql = "
             SELECT 
                 cl.code_classe,
@@ -74,13 +62,9 @@ class ModelEmploi extends BaseModel
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
         ";
-        $conditions = [];
-        $params = [];
+        $conditions = ["edt.annee_code = ?"];
+        $params = [$anneeCode];
 
-        if (!empty($anneeCode)) {
-            $conditions[] = "edt.annee_code = ?";
-            $params[] = $anneeCode;
-        }
         if (!empty($niveauCode)) {
             $conditions[] = "cl.niveau_code = ?";
             $params[] = $niveauCode;
@@ -90,10 +74,7 @@ class ModelEmploi extends BaseModel
             $params[] = $classeCode;
         }
 
-        if (!empty($conditions)) {
-            $sql .= " WHERE " . implode(" AND ", $conditions);
-        }
-
+        $sql .= " WHERE " . implode(" AND ", $conditions);
         $sql .= " GROUP BY cl.code_classe, cl.libelle_classe, n.libelle_niveau ORDER BY cl.libelle_classe ASC ";
 
         try {
@@ -107,39 +88,109 @@ class ModelEmploi extends BaseModel
     }
 
     /**
-     * Recherche l'enseignant affecté à une classe et matière
+     * Résumé des emplois du temps restreint à un enseignant spécifique
+     */
+    public function getClassesSummaryForTeacher(array $teacherCodes, ?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
+    {
+        if (empty($teacherCodes) || empty($anneeCode)) {
+            return [];
+        }
+        $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+        $sql = "
+            SELECT 
+                cl.code_classe,
+                cl.libelle_classe,
+                n.libelle_niveau,
+                COUNT(edt.id_emploi) AS nb_creneaux,
+                COUNT(DISTINCT edt.jour) AS nb_jours,
+                COUNT(DISTINCT edt.matiere_code) AS nb_matieres,
+                1 AS nb_profs,
+                GROUP_CONCAT(DISTINCT m.libelle_matiere ORDER BY m.libelle_matiere SEPARATOR ', ') AS matieres_noms,
+                MAX(edt.created_at_emploi) AS last_update,
+                SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600 AS total_heures
+            FROM " . TABLES::EMPLOIS_TEMPS . " edt
+            INNER JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            WHERE edt.enseignant_code IN ($inCodes)
+              AND edt.annee_code = ?
+        ";
+        $params = array_merge($teacherCodes, [$anneeCode]);
+
+        if (!empty($niveauCode)) {
+            $sql .= " AND cl.niveau_code = ?";
+            $params[] = $niveauCode;
+        }
+        if (!empty($classeCode)) {
+            $sql .= " AND edt.classe_code = ?";
+            $params[] = $classeCode;
+        }
+
+        $sql .= " GROUP BY cl.code_classe, cl.libelle_classe, n.libelle_niveau ORDER BY cl.libelle_classe ASC ";
+
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEmploi getClassesSummaryForTeacher error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Liste des classes associées à un enseignant pour l'année sélectionnée
+     */
+    public function getClassesForTeacher(array $teacherCodes, ?string $anneeCode = null): array
+    {
+        if (empty($teacherCodes) || empty($anneeCode)) {
+            return [];
+        }
+        $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+        $sql = "
+            SELECT DISTINCT cl.code_classe, cl.libelle_classe, cl.niveau_code
+            FROM " . TABLES::CLASSES . " cl
+            INNER JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON edt.classe_code = cl.code_classe
+            WHERE edt.enseignant_code IN ($inCodes)
+              AND edt.annee_code = ?
+        ";
+        $params = array_merge($teacherCodes, [$anneeCode]);
+        $sql .= " ORDER BY cl.libelle_classe ASC";
+        try {
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEmploi getClassesForTeacher error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Recherche l'enseignant affecté à une classe et matière depuis les créneaux déjà existants
      */
     public function getAssignedTeacher(string $classeCode, string $matiereCode): ?array
     {
         try {
             $db = $this->getCon();
-            // 1. Recherche précise par classe_code + matiere_code
             $stmt = $db->prepare("
-                SELECT em.*, 
-                       u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
-                       m.libelle_matiere, cl.libelle_classe
-                FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
-                JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = em.classe_code
-                WHERE em.classe_code = ? AND em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
+                SELECT edt.enseignant_code,
+                       CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom
+                FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+                WHERE edt.classe_code = ? AND edt.matiere_code = ? AND edt.enseignant_code IS NOT NULL AND edt.enseignant_code != ''
                 LIMIT 1
             ");
             $stmt->execute([$classeCode, $matiereCode]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // 2. Recherche de secours par matière
             if (!$row) {
                 $stmtGlobal = $db->prepare("
-                    SELECT em.*, 
-                           u.nom_user AS nom_enseignant, u.prenom_user AS prenom_enseignant, e.code_enseignant, e.grade_enseignant,
-                           m.libelle_matiere
-                    FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-                    JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
-                    JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
-                    LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-                    WHERE em.matiere_code = ? AND em.statut_enseignant_matiere = 'actif'
+                    SELECT edt.enseignant_code,
+                           CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom
+                    FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                    LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+                    WHERE edt.matiere_code = ? AND edt.enseignant_code IS NOT NULL AND edt.enseignant_code != ''
                     LIMIT 1
                 ");
                 $stmtGlobal->execute([$matiereCode]);
@@ -180,18 +231,9 @@ class ModelEmploi extends BaseModel
             $db = $this->getCon();
 
             $baseSql = "
-                SELECT edt.*, 
-                       cl.libelle_classe, 
-                       m.libelle_matiere, 
-                       s.libelle_salle, 
-                       CONCAT(u.nom_user, ' ', COALESCE(u.prenom_user, '')) AS nom_prof
-                FROM " . TABLES::EMPLOIS_TEMPS . " edt
-                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
-                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
-                LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
-                LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
-                LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
-                WHERE edt.statut_emploi = 'actif'
+                SELECT edt.*
+                FROM " . VIEWS::EMPLOIS_TEMPS_COMPLETS . " edt
+                WHERE edt.statut_emploi = '" . STATUTS::ACTIF . "'
                   AND LOWER(edt.jour) = ?
                   AND (edt.heure_debut < ? AND edt.heure_fin > ?)
             ";
@@ -318,7 +360,7 @@ class ModelEmploi extends BaseModel
                 LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
                 LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
-                WHERE edt.enseignant_code = ? AND (edt.statut_emploi = 'actif' OR edt.statut_emploi IS NULL)
+                WHERE edt.enseignant_code = ? AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
                 ORDER BY edt.jour ASC, edt.heure_debut ASC
             ");
             $stmt->execute([$ensCode]);
@@ -344,9 +386,9 @@ class ModelEmploi extends BaseModel
     }
 
     /**
-     * Matrice des créneaux pour une classe donnée avec informations de la classe
+     * Matrice des créneaux pour une classe donnée avec informations de la classe (filtrable par enseignant)
      */
-    public function getClassScheduleMatrix(string $classeCode): array
+    public function getClassScheduleMatrix(string $classeCode, ?array $teacherCodes = null): array
     {
         try {
             $db = $this->getCon();
@@ -359,7 +401,7 @@ class ModelEmploi extends BaseModel
             $stmtCls->execute([$classeCode]);
             $classeInfo = $stmtCls->fetch(PDO::FETCH_ASSOC) ?: null;
 
-            $stmt = $db->prepare("
+            $sqlSlots = "
                 SELECT edt.*, 
                        m.libelle_matiere, 
                        s.libelle_salle, 
@@ -370,9 +412,19 @@ class ModelEmploi extends BaseModel
                 LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
                 WHERE edt.classe_code = ?
-                ORDER BY edt.jour ASC, edt.heure_debut ASC
-            ");
-            $stmt->execute([$classeCode]);
+            ";
+            $params = [$classeCode];
+
+            if (!empty($teacherCodes)) {
+                $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));
+                $sqlSlots .= " AND edt.enseignant_code IN ($inCodes)";
+                $params = array_merge($params, $teacherCodes);
+            }
+
+            $sqlSlots .= " ORDER BY edt.jour ASC, edt.heure_debut ASC";
+
+            $stmt = $db->prepare($sqlSlots);
+            $stmt->execute($params);
             $slots = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             return [

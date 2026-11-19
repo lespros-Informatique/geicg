@@ -10,14 +10,14 @@ class SalleController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SALLES');
+        $this->requirePermission(PERMISSIONS::VIEW_SALLES);
         $this->loadView('../views/salles/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SALLES');
+        $this->requirePermission(PERMISSIONS::VIEW_SALLES);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -35,7 +35,7 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SALLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SALLES);
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_salle'])) {
@@ -46,7 +46,7 @@ class SalleController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_salle'])) {
-            $data['code_salle'] = $this->validator->generateCode('salles', 'code_salle', 'SAL-', 8);
+            $data['code_salle'] = $this->validator->generateCode(TABLES::SALLES, 'code_salle', 'SAL-', 8);
         }
         $data['statut_salle'] = $data['statut_salle'] ?? 'actif';
         $data['created_at_salle'] = date('Y-m-d H:i:s');
@@ -59,6 +59,14 @@ class SalleController extends BaseController
         }
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'salles',
+                $data['code_salle'],
+                "Création de la salle '{$libelle}' ({$data['code_salle']})",
+                $filteredData,
+                $etabCode
+            );
             $msg = !empty($libelle) ? "La salle « {$libelle} » a été créée avec succès !" : "Salle de classe créée avec succès !";
             $this->success($msg);
         } else {
@@ -73,7 +81,7 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SALLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SALLES);
         $id = (int)$this->post('id_salle');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -88,6 +96,13 @@ class SalleController extends BaseController
         }
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'salles',
+                (string)$id,
+                "Modification de la salle '{$libelle}'",
+                $filteredData
+            );
             $msg = !empty($libelle) ? "La salle « {$libelle} » a été modifiée avec succès !" : "Salle de classe modifiée avec succès !";
             $this->success($msg);
         } else {
@@ -102,10 +117,17 @@ class SalleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_SALLES');
+        $this->requirePermission(PERMISSIONS::MANAGE_SALLES);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($sal = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'salles',
+                    $sal['code_salle'] ?? (string)$id,
+                    "Basculement de statut de la salle '" . ($sal['libelle_salle'] ?? $id) . "'",
+                    ['id_salle' => $id, 'code_salle' => $sal['code_salle'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -118,11 +140,11 @@ class SalleController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_SALLES');
+        $this->requirePermission(PERMISSIONS::VIEW_SALLES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'salle/list'); exit(); }
+            if (!$item) { redirect('salle/list'); }
 
             $salleCode = $item['code_salle'];
             $planning = $this->model->getPlanningForSalle($salleCode);
@@ -141,14 +163,12 @@ class SalleController extends BaseController
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'salle/list');
-        exit();
+        redirect('salle/list');
     }
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'salle/list');
-        exit();
+        redirect('salle/list');
     }
 
     /**
@@ -157,7 +177,7 @@ class SalleController extends BaseController
     public function imprimerPdf()
     {
         $this->requireAuth();
-        $this->requirePermission(['PRINT_SALLES', 'VIEW_SALLES', 'PRINT_OFFRE_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::PRINT_SALLES, PERMISSIONS::VIEW_SALLES, PERMISSIONS::PRINT_OFFRE_ACADEMIQUE]);
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
@@ -178,6 +198,15 @@ class SalleController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('repertoire_salles.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'salles',
+            'TOUT',
+            "Impression du répertoire des salles de cours (Total: " . count($salles) . ")",
+            ['total' => count($salles)]
+        );
+
         $filename = 'Repertoire_Salles_' . date('Ymd_His') . '.pdf';
         PdfService::generate($html, $filename, [
             'orientation' => 'P',

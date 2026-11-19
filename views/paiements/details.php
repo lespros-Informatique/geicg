@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
 
-$item = isset($item) ? $item : [];
 $encryptedId = $encryptedId ?? '';
 $montantOp = (float)($item['montant_paye'] ?? ($item['montant_paiement'] ?? 0));
 $scolarite = (float)($scolarite ?? ($item['montant_scolarite_inscription'] ?? 0));
@@ -98,13 +97,13 @@ if (!empty($rawPhoto)) {
     $cleanPhotoPath = ltrim($rawPhoto, '/');
     if (strpos($cleanPhotoPath, 'public/') === 0) {
         if (file_exists(__DIR__ . '/../../' . $cleanPhotoPath)) {
-            $studentPhotoUrl = RACINE . $cleanPhotoPath;
+            $studentPhotoUrl = url($cleanPhotoPath);
         }
     } else {
         if (file_exists(__DIR__ . '/../../public/' . $cleanPhotoPath)) {
-            $studentPhotoUrl = RACINE . 'public/' . $cleanPhotoPath;
+            $studentPhotoUrl = url('public/' . $cleanPhotoPath);
         } elseif (file_exists(__DIR__ . '/../../' . $cleanPhotoPath)) {
-            $studentPhotoUrl = RACINE . $cleanPhotoPath;
+            $studentPhotoUrl = url($cleanPhotoPath);
         }
     }
 }
@@ -114,15 +113,12 @@ if (empty($studentPhotoUrl) && !empty($item['nom_etudiant'])) {
     $anneeFolder = !empty($anneeLibelle) ? $anneeLibelle : '';
     $potentialPath = 'public/uploads/photos_inscriptions/' . $anneeFolder . '/' . $slugNom . '.png';
     if (file_exists(__DIR__ . '/../../' . $potentialPath)) {
-        $studentPhotoUrl = RACINE . $potentialPath;
+        $studentPhotoUrl = url($potentialPath);
     }
 }
 
 if (empty($studentPhotoUrl)) {
-    $placeholderRel = 'assets/images/placeholders/etudiant.png';
-    if (file_exists(__DIR__ . '/../../public/' . $placeholderRel)) {
-        $studentPhotoUrl = RACINE . 'assets/images/placeholders/etudiant.png';
-    }
+    $studentPhotoUrl = placeholderUrl('etudiant');
 }
 
 // Générateur vectoriel SVG Code 128 (Subset B) natif, net et conforme pour impression et lecture scanner
@@ -144,176 +140,6 @@ if (!function_exists('generatePicqerBarcodeHtml')) {
 // Logo (dynamique depuis la base ou fallback logo_eicg.jpg)
 $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
 ?>
-<style>
-@media print {
-  body { background: #FFFFFF !important; color: #000000 !important; font-family: Arial, Helvetica, sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .sidebar, .sidebar *, .nav-header, .page-header-actions, .no-print, header, header *, nav, nav *, .main-nav, .main-nav *, .topbar, .topbar *, .dropdown-panel, .dropdown-panel * { display: none !important; visibility: hidden !important; }
-  .app-layout, .main-content, .content-wrapper { margin: 0 !important; padding: 0 !important; width: 100% !important; box-shadow: none !important; }
-  .receipt-page-container { border: 2px solid #800000 !important; padding: 12px !important; margin: 0 !important; box-shadow: none !important; width: 100% !important; box-sizing: border-box !important; }
-  .institution-logo-img { max-width: 145px !important; max-height: 70px !important; display: block !important; }
-}
-
-.receipt-outer-frame {
-  border: 2px solid #800000;
-  padding: 16px;
-  background: #FFFFFF;
-  font-family: Arial, Helvetica, sans-serif;
-  color: #000000;
-  max-width: 860px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-.receipt-header-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.institution-logo-img {
-  max-width: 145px;
-  max-height: 70px;
-  object-fit: contain;
-  display: block;
-}
-
-.logo-eicg-box {
-  background: #800000;
-  color: #FFFFFF;
-  padding: 10px 14px;
-  border-radius: 4px;
-  text-align: center;
-  font-weight: 900;
-  font-size: 15px;
-  line-height: 1.2;
-}
-
-.institution-title {
-  color: #800000;
-  font-weight: bold;
-  text-decoration: underline;
-  font-size: 16px;
-  text-align: center;
-  margin: 0 0 8px 0;
-}
-
-.institution-subtitle {
-  font-style: italic;
-  font-weight: bold;
-  font-size: 13px;
-  text-align: center;
-  margin: 8px 0 3px 0;
-}
-
-.institution-contacts {
-  font-style: italic;
-  font-size: 12px;
-  text-align: center;
-  margin: 0;
-}
-
-.title-gray-banner {
-  background: #9E9E9E;
-  color: #000000;
-  font-weight: bold;
-  font-size: 18px;
-  text-align: center;
-  padding: 6px;
-  margin: 10px 0 6px 0;
-  letter-spacing: 0.5px;
-}
-
-.annee-academique-title {
-  text-align: center;
-  font-size: 14px;
-  font-weight: bold;
-  margin-bottom: 12px;
-}
-
-.student-photo-box {
-  border: 1px solid #000000;
-  width: 100px;
-  height: 115px;
-  float: right;
-  margin-left: 12px;
-  background: #F8FAFC;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.info-grid-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.gray-inline-badge {
-  background: #D1D5DB;
-  padding: 2px 8px;
-  font-weight: bold;
-  display: inline-block;
-}
-
-.blue-text-words {
-  color: #0000FF;
-  font-weight: bold;
-}
-
-.fin-breakdown-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  margin-bottom: 12px;
-  font-size: 12.5px;
-  border: 1px solid #000000;
-}
-
-.fin-breakdown-table th {
-  background: #D1D5DB;
-  border: 1px solid #000000;
-  padding: 6px 8px;
-  text-align: center;
-  font-weight: bold;
-}
-
-.fin-breakdown-table td {
-  border: 1px solid #000000;
-  padding: 6px 8px;
-}
-
-.fin-total-row {
-  background: #404040;
-  color: #FFFFFF;
-  font-weight: bold;
-}
-
-.fin-total-row td {
-  border: 1px solid #000000;
-  color: #FFFFFF;
-  font-weight: bold;
-}
-
-.yellow-nb-box {
-  background: #FFFF00;
-  border: 1px solid #000000;
-  padding: 6px 10px;
-  margin: 10px 0;
-  font-size: 12px;
-  font-weight: bold;
-  font-style: italic;
-  color: #000000;
-  line-height: 1.4;
-}
-
-.barcode-simulated {
-  font-family: 'Libre Barcode 128', 'Code 128', monospace;
-  font-size: 26px;
-  letter-spacing: 2px;
-  text-align: right;
-}
-</style>
 
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -328,10 +154,10 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Étudiant : <strong><?= htmlspecialchars($nomComplet) ?></strong> &bull; Impression conforme au modèle standard</p>
         </div>
         <div style="display: flex; gap: 12px;">
-          <a href="<?= RACINE ?>paiement/list" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('paiement/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Retour aux paiements
           </a>
-          <a href="<?= RACINE ?>paiement/imprimerPdf/<?= $encryptedId ?>" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
+          <a href="<?= url('paiement/imprimerPdf/' . $encryptedId) ?>" target="_blank" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer le Reçu (PDF)
           </a>
         </div>
@@ -621,12 +447,7 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
   </main>
 </div>
 
-<script>
-$(document).ready(function() { 
-  if (window.lucide) lucide.createIcons(); 
-  <?php if (isset($_GET['print'])): ?>
-    setTimeout(function() { window.print(); }, 400);
-  <?php endif; ?>
-});
-</script>
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php 
+ViewContext::setScripts(['public/assets/js/modules/paiements.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+?>

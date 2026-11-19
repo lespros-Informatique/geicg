@@ -2,7 +2,7 @@
 
 class ModelTranche extends BaseModel
 {
-    protected string $table = 'tranches_scolarite';
+    protected string $table = TABLES::TRANCHES_SCOLARITE;
     protected string $primaryKey = 'id_tranche';
     protected ?string $statusField = 'statut_tranche';
     protected ?string $createdAtField = 'created_at_tranche';
@@ -17,12 +17,14 @@ class ModelTranche extends BaseModel
             $params[] = $anneeCode;
         }
         if (!empty($filiereCode)) {
-            $conditions[] = "(s.filiere_code = ? OR t.filiere_code = ?)";
+            $conditions[] = "(s.filiere_code = ? OR t.filiere_code = ? OR f.slug_filiere = ?)";
+            $params[] = $filiereCode;
             $params[] = $filiereCode;
             $params[] = $filiereCode;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "(s.niveau_code = ? OR t.niveau_code = ?)";
+            $conditions[] = "(s.niveau_code = ? OR t.niveau_code = ? OR n.slug_niveau = ?)";
+            $params[] = $niveauCode;
             $params[] = $niveauCode;
             $params[] = $niveauCode;
         }
@@ -35,16 +37,19 @@ class ModelTranche extends BaseModel
 
         $sql = "
             SELECT t.*, 
+                   s.id_scolarite,
                    s.montant_scolarite, 
                    s.affectation_etat,
                    f.libelle_filiere, 
+                   f.slug_filiere,
                    n.libelle_niveau, 
+                   n.slug_niveau,
                    a.libelle_annee
-            FROM tranches_scolarite t
-            LEFT JOIN scolarites s ON t.scolarite_code = s.code_scolarite
-            LEFT JOIN filieres f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
-            LEFT JOIN niveaux n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
-            LEFT JOIN annees a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
+            FROM " . TABLES::TRANCHES_SCOLARITE . " t
+            LEFT JOIN " . TABLES::SCOLARITES . " s ON t.scolarite_code = s.code_scolarite
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = COALESCE(t.filiere_code, s.filiere_code)
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = COALESCE(t.niveau_code, s.niveau_code)
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = COALESCE(t.annee_code, s.annee_code)
             {$where}
             ORDER BY f.libelle_filiere ASC, n.libelle_niveau ASC, t.date_limite ASC, t.id_tranche ASC
         ";
@@ -57,16 +62,19 @@ class ModelTranche extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT t.*, 
+                   s.id_scolarite,
                    s.montant_scolarite, 
                    s.affectation_etat,
                    f.libelle_filiere, 
+                   f.slug_filiere,
                    n.libelle_niveau, 
+                   n.slug_niveau,
                    a.libelle_annee
-            FROM tranches_scolarite t
-            LEFT JOIN scolarites s ON t.scolarite_code = s.code_scolarite
-            LEFT JOIN filieres f ON (s.filiere_code = f.code_filiere OR t.filiere_code = f.code_filiere)
-            LEFT JOIN niveaux n ON (s.niveau_code = n.code_niveau OR t.niveau_code = n.code_niveau)
-            LEFT JOIN annees a ON (s.annee_code = a.code_annee OR t.annee_code = a.code_annee)
+            FROM " . TABLES::TRANCHES_SCOLARITE . " t
+            LEFT JOIN " . TABLES::SCOLARITES . " s ON t.scolarite_code = s.code_scolarite
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = COALESCE(t.filiere_code, s.filiere_code)
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = COALESCE(t.niveau_code, s.niveau_code)
+            LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = COALESCE(t.annee_code, s.annee_code)
             WHERE t.id_tranche = ? OR t.code_tranche = ?
             LIMIT 1
         ");
@@ -98,7 +106,7 @@ class ModelTranche extends BaseModel
         }
 
         $db = $this->getCon();
-        $sql = "SELECT SUM(montant_tranche) FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE scolarite_code = ? AND statut_tranche = 'actif'";
+        $sql = "SELECT SUM(montant_tranche) FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE scolarite_code = ? AND statut_tranche = '" . STATUTS::ACTIF . "'";
         $params = [$scolariteCode];
 
         if ($excludeId !== null) {

@@ -10,7 +10,7 @@ class PieceFournirCycleController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $cycles = (new ModelCycle())->getAll();
         $niveaux = (new ModelNiveau())->getActifs();
         
@@ -30,7 +30,7 @@ class PieceFournirCycleController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
         $niveauCode = isset($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $items = $this->model->getAll($cycleCode, $niveauCode);
@@ -49,7 +49,7 @@ class PieceFournirCycleController extends BaseController
     public function apiStats()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $cycleCode = isset($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
         $niveauCode = isset($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $summary = $this->model->getSummaryCounts($cycleCode, $niveauCode);
@@ -59,7 +59,7 @@ class PieceFournirCycleController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $cycles = (new ModelCycle())->getAll();
         $niveaux = (new ModelNiveau())->getActifs();
         $pieces = (new ModelPieceFournir())->getActifs();
@@ -74,7 +74,7 @@ class PieceFournirCycleController extends BaseController
     public function edition($idParam)
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $id = $this->validator->decrypter($idParam);
         if (!$id || !is_numeric($id)) {
             $id = is_numeric($idParam) ? (int)$idParam : 0;
@@ -102,7 +102,7 @@ class PieceFournirCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $userCode = Auth::code() ?? '';
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
@@ -142,7 +142,7 @@ class PieceFournirCycleController extends BaseController
                 $seenInRequest[] = $pieceCode;
                 $nbEx = max(1, (int)($item['nombre_exemplaires'] ?? 1));
                 $nature = in_array($item['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique', 'aucun']) ? $item['nature_document'] : 'photocopie_simple';
-                $code = $this->validator->generateCode('piece_fournir_cycle', 'code_piece_cycle', 'PFC-', 8);
+                $code = $this->validator->generateCode(TABLES::PIECES_FOURNIR_CYCLES, 'code_piece_cycle', 'PFC-', 8);
 
                 $saveData = [
                     'code_piece_cycle' => $code,
@@ -168,8 +168,7 @@ class PieceFournirCycleController extends BaseController
                 } else {
                     Session::set('flash_success', "$insertedCount pièce(s) assignée(s) au dossier du cycle avec succès !");
                 }
-                header('Location: ' . RACINE . 'piece_fournir_cycle/list');
-                exit();
+                redirect('piece_fournir_cycle/list');
             } else {
                 if ($duplicateCount > 0) {
                     $this->error("Toutes les pièces sélectionnées existent déjà dans le dossier de ce cycle pour ce niveau.");
@@ -194,7 +193,7 @@ class PieceFournirCycleController extends BaseController
 
         $nbEx = max(1, (int)($data['nombre_exemplaires'] ?? 1));
         $nature = in_array($data['nature_document'] ?? '', ['photocopie_simple', 'photocopie_legalisee', 'original', 'numerique', 'aucun']) ? $data['nature_document'] : 'photocopie_simple';
-        $code = $this->validator->generateCode('piece_fournir_cycle', 'code_piece_cycle', 'PFC-', 8);
+        $code = $this->validator->generateCode(TABLES::PIECES_FOURNIR_CYCLES, 'code_piece_cycle', 'PFC-', 8);
 
         $saveData = [
             'code_piece_cycle' => $code,
@@ -210,8 +209,7 @@ class PieceFournirCycleController extends BaseController
 
         if ($this->model->create($saveData)) {
             Session::set('flash_success', "Pièce assignée au dossier du cycle avec succès !");
-            header('Location: ' . RACINE . 'piece_fournir_cycle/list');
-            exit();
+            redirect('piece_fournir_cycle/list');
         } else {
             $this->error("Erreur lors de l'enregistrement de la pièce.");
         }
@@ -221,7 +219,7 @@ class PieceFournirCycleController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $data = $_POST;
         unset($data['csrf_token']);
 
@@ -258,8 +256,7 @@ class PieceFournirCycleController extends BaseController
 
         if ($this->model->update($updateData, $id)) {
             Session::set('flash_success', "Pièce du cycle mise à jour avec succès !");
-            header('Location: ' . RACINE . 'piece_fournir_cycle/list');
-            exit();
+            redirect('piece_fournir_cycle/list');
         } else {
             $this->error("Erreur lors de la mise à jour.");
         }
@@ -268,7 +265,7 @@ class PieceFournirCycleController extends BaseController
     public function changer()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $id = $_POST['id'] ?? null;
         $statut = $_POST['statut'] ?? null;
 
@@ -293,7 +290,7 @@ class PieceFournirCycleController extends BaseController
     public function supprimer($idParam)
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'CONFIG_ACADEMIQUE']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE]);
         $id = $this->validator->decrypter($idParam);
         if (!$id || !is_numeric($id)) {
             $id = is_numeric($idParam) ? (int)$idParam : 0;
@@ -301,8 +298,7 @@ class PieceFournirCycleController extends BaseController
 
         if ($this->model->delete((int)$id)) {
             Session::set('flash_success', "Pièce retirée du dossier de ce cycle.");
-            header('Location: ' . RACINE . 'piece_fournir_cycle/list');
-            exit();
+            redirect('piece_fournir_cycle/list');
         } else {
             $this->error("Impossible de retirer cette pièce.");
         }
@@ -311,7 +307,7 @@ class PieceFournirCycleController extends BaseController
     public function getByCycleApi()
     {
         $this->requireAuth();
-        $this->requirePermission(['MANAGE_PIECES', 'VIEW_PIECES', 'CONFIG_ACADEMIQUE', 'MANAGE_INSCRIPTIONS']);
+        $this->requirePermission([PERMISSIONS::MANAGE_PIECES, PERMISSIONS::VIEW_PIECES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         $cycleCode = trim($_GET['cycle_code'] ?? ($_POST['cycle_code'] ?? ''));
         $niveauCode = trim($_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''));
         $niveauParam = !empty($niveauCode) ? $niveauCode : null;

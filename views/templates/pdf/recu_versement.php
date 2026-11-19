@@ -1,4 +1,16 @@
 <?php
+// 1. Initialisation défensive de la configuration (Règle 9)
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } elseif (file_exists(__DIR__ . '/../../../models/configurations/ModelConfiguration.php')) {
+        require_once __DIR__ . '/../../../models/configurations/ModelConfiguration.php';
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+
 // Helper code-barres officiel Picqer & fallback natif mPDF
 if (!function_exists('generatePicqerBarcodeHtml')) {
     function generatePicqerBarcodeHtml($code, $height = 26, $widthFactor = 1.0) {
@@ -119,8 +131,8 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       font-size: 10.5px;
     }
     .photo-box {
-      width: 80px;
-      height: 90px;
+      width: 110px;
+      height: 110px;
       border: 1px solid #000000;
       object-fit: cover;
       display: inline-block;
@@ -243,23 +255,12 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE INSTITUTION -->
-  <table class="header-table">
-    <tr>
-      <td style="width: 15%; vertical-align: middle;">
-        <?php if (!empty($logo_src)): ?>
-          <img src="<?= $logo_src ?>" style="max-height: 48px; max-width: 110px;">
-        <?php else: ?>
-          <div class="logo-box">GROUPE<br>EICG</div>
-        <?php endif; ?>
-      </td>
-      <td style="width: 85%; text-align: center;">
-        <div class="inst-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="inst-subtitle">Agréé par l'Etat et le FDFP</div>
-        <div class="inst-contacts">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99</div>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG (MODE COMPACT) -->
+  <?php 
+    $headerMode = 'compact';
+    $showHeaderDivider = false;
+    include __DIR__ . '/components/header_institution.php'; 
+  ?>
 
   <!-- BANNIÈRE 1 : REÇU DE VERSEMENT -->
   <div class="banner-title">REÇU DE VERSEMENT</div>
@@ -294,11 +295,11 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <div style="display: inline-block; width: 80px; text-align: right;">
+        <div style="display: inline-block; width: 110px; text-align: right;">
           <?php if (!empty($photo_etudiant)): ?>
-            <img src="<?= $photo_etudiant ?>" width="80" height="90" class="photo-box" style="width: 80px; height: 90px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
+            <img src="<?= $photo_etudiant ?>" width="110" height="110" class="photo-box" style="width: 110px; height: 110px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
           <?php else: ?>
-            <div class="photo-box" style="width: 80px; height: 90px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 90px; color: #94A3B8; font-size: 9px; display: inline-block;">PHOTO</div>
+            <div class="photo-box" style="width: 110px; height: 110px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 110px; color: #94A3B8; font-size: 9px; display: inline-block;">PHOTO</div>
           <?php endif; ?>
         </div>
       </td>
@@ -443,11 +444,11 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <div style="display: inline-block; width: 80px; text-align: right;">
+        <div style="display: inline-block; width: 110px; text-align: right;">
           <?php if (!empty($photo_etudiant)): ?>
-            <img src="<?= $photo_etudiant ?>" width="80" height="80" class="photo-box" style="width: 80px; height: 80px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
+            <img src="<?= $photo_etudiant ?>" width="110" height="110" class="photo-box" style="width: 110px; height: 110px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
           <?php else: ?>
-            <div class="photo-box" style="width: 80px; height: 80px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 80px; color: #94A3B8; font-size: 8.5px; display: inline-block;">PHOTO</div>
+            <div class="photo-box" style="width: 110px; height: 110px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 110px; color: #94A3B8; font-size: 8.5px; display: inline-block;">PHOTO</div>
           <?php endif; ?>
         </div>
       </td>

@@ -10,14 +10,14 @@ class AnneeController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ANNEES');
+        $this->requirePermission(PERMISSIONS::VIEW_ANNEES);
         $this->loadView('../views/annees/list.php');
     }
 
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ANNEES');
+        $this->requirePermission(PERMISSIONS::VIEW_ANNEES);
         $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
@@ -61,7 +61,7 @@ class AnneeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ANNEES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ANNEES);
         $data = $_POST;
         unset($data['csrf_token']);
         if (!empty($data['libelle_annee'])) {
@@ -79,7 +79,7 @@ class AnneeController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
         if (empty($data['code_annee'])) {
-            $data['code_annee'] = $this->validator->generateCode('annees', 'code_annee', 'ANN-', 8);
+            $data['code_annee'] = $this->validator->generateCode(TABLES::ANNEES, 'code_annee', 'ANN-', 8);
         }
         
         // Toute nouvelle année académique est créée avec le statut 'planifie' par défaut (En préparation)
@@ -92,6 +92,14 @@ class AnneeController extends BaseController
         $filteredData = $this->model->filterData($data);
         $libelle = $data['libelle_annee'] ?? '';
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'annees',
+                $data['code_annee'],
+                "Création de l'année académique '{$libelle}' ({$data['code_annee']})",
+                $filteredData,
+                $etabCode
+            );
             $this->success("L'année académique « {$libelle} » a été créée avec succès (statut initial : en préparation).");
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de la création de l\'année académique');
@@ -102,7 +110,7 @@ class AnneeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ANNEES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ANNEES);
         $id = (int)$this->post('id_annee');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         
@@ -158,6 +166,13 @@ class AnneeController extends BaseController
         $libelle = $data['libelle_annee'] ?? ($currentItem['libelle_annee'] ?? '');
 
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'annees',
+                $currentItem['code_annee'] ?? (string)$id,
+                "Modification de l'année académique '{$libelle}' (" . ($currentItem['code_annee'] ?? $id) . ")",
+                $filteredData
+            );
             if ($newStatus === 'actif') {
                 $this->model->setActiveYear($id);
                 $updatedRow = $this->model->getById($id);
@@ -176,7 +191,7 @@ class AnneeController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ANNEES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ANNEES);
         $id = (int)$this->post('id');
         $item = $id ? $this->model->getById($id) : null;
         if ($item) {
@@ -203,7 +218,17 @@ class AnneeController extends BaseController
                 if ($activeYear) {
                     Session::set('annee_active_code', $activeYear['code_annee']);
                     Session::set('annee_active_libelle', $activeYear['libelle_annee']);
+                } else {
+                    Session::set('annee_active_code', '');
+                    Session::set('annee_active_libelle', 'Aucune');
                 }
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'annees',
+                    $item['code_annee'] ?? (string)$id,
+                    "Changement de statut / activation de l'année académique '{$item['libelle_annee']}'",
+                    ['id_annee' => $id, 'code_annee' => $item['code_annee'] ?? null, 'nouveau_statut' => ($currentStatus === 'actif' ? 'cloture' : 'actif')]
+                );
                 $this->success('Statut mis à jour avec succès (Une seule année active à la fois) !', [
                     'reload' => true,
                     'activeYear' => $activeYear
@@ -219,7 +244,7 @@ class AnneeController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ANNEES');
+        $this->requirePermission(PERMISSIONS::VIEW_ANNEES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
@@ -249,14 +274,12 @@ class AnneeController extends BaseController
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'annee/list');
-        exit();
+        redirect('annee/list');
     }
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'annee/list');
-        exit();
+        redirect('annee/list');
     }
 
     /**
@@ -275,6 +298,15 @@ class AnneeController extends BaseController
         $annee = $this->model->getAnneeByCodeOrId($code);
 
         if ($annee) {
+            // Vérification stricte des droits d'accès à l'historique si l'année n'est pas active
+            if (!$this->model->canUserAccessAnnee($annee['code_annee'])) {
+                $this->json([
+                    'status' => 0,
+                    'message' => "Accès refusé : vous n'avez pas l'autorisation de consulter l'historique de cette année académique."
+                ]);
+                return;
+            }
+
             Session::set('annee_active_code', $annee['code_annee']);
             Session::set('annee_active_libelle', $annee['libelle_annee']);
             

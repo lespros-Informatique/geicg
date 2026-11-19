@@ -5,7 +5,7 @@ if (!headers_sent()) {
 require_once __DIR__ . '/../../public/inc/header.php';
 $message = $message ?? "Vous ne disposez pas des privilèges suffisants pour accéder à ce module ou exécuter cette action.";
 $permissionCode = $permissionCode ?? '';
-$auth = $_SESSION[USERS_AUTH] ?? [];
+$auth = Auth::user() ?: [];
 ?>
 <div class="app-layout">
   <?php if (isset($auth['id_user'])): ?>
@@ -57,7 +57,7 @@ $auth = $_SESSION[USERS_AUTH] ?? [];
             <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Page précédente
           </button>
           
-          <a href="<?= RACINE ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 11px 22px; border-radius: 8px;">
+          <a href="<?= url() ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 11px 22px; border-radius: 8px;">
             <i data-lucide="home" style="width: 18px; height: 18px;"></i> Tableau de bord
           </a>
         </div>
@@ -70,5 +70,4 @@ $auth = $_SESSION[USERS_AUTH] ?? [];
     </div>
   </main>
 </div>
-<script>$(document).ready(function() { if (window.lucide) lucide.createIcons(); });</script>
 <?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>

@@ -2,7 +2,7 @@
 
 class ModelCaisseAnnexe extends BaseModel
 {
-    protected string $table = 'paiements';
+    protected string $table = TABLES::PAIEMENTS;
     protected string $primaryKey = 'id_paiement';
     protected ?string $statusField = 'statut_paiement';
     protected ?string $createdAtField = 'date_paiement';
@@ -19,27 +19,27 @@ class ModelCaisseAnnexe extends BaseModel
         ?string $dateDebut = null,
         ?string $dateFin = null
     ): array {
-        $where = "WHERE (p.categorie_paiement = 'FRAIS_ANNEXES' OR p.tranche_code = 'FRAIS_ANNEXES' OR LOWER(p.type_paiement) LIKE '%annexe%') AND p.statut_paiement != 'annule'";
+        $where = "WHERE (p.categorie_paiement = 'FRAIS_ANNEXES' OR p.tranche_code = 'FRAIS_ANNEXES' OR LOWER(p.type_paiement) LIKE '%annexe%') AND p.statut_paiement != '" . STATUTS::ANNULE . "'";
         $params = [];
 
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $where .= " AND (p.annee_code = ? OR ins.annee_code = ?)";
+            $where .= " AND (p.annee_code = ? OR p.inscription_annee_code = ?)";
             $params[] = $anneeCode;
             $params[] = $anneeCode;
         }
 
         if (!empty($niveauCode) && $niveauCode !== 'ALL') {
-            $where .= " AND cl.niveau_code = ?";
+            $where .= " AND p.niveau_code = ?";
             $params[] = $niveauCode;
         }
 
         if (!empty($classeCode) && $classeCode !== 'ALL') {
-            $where .= " AND ins.classe_code = ?";
+            $where .= " AND p.classe_code = ?";
             $params[] = $classeCode;
         }
 
         if (!empty($typeFiliere) && $typeFiliere !== 'ALL') {
-            $where .= " AND f.type_filiere = ?";
+            $where .= " AND p.type_filiere = ?";
             $params[] = $typeFiliere;
         }
 
@@ -59,36 +59,8 @@ class ModelCaisseAnnexe extends BaseModel
         }
 
         $sql = "
-            SELECT 
-                p.*,
-                e.nom_etudiant, 
-                e.prenom_etudiant, 
-                e.matricule_etudiant,
-                e.telephone_etudiant,
-                e.email_etudiant,
-                e.photo_etudiant,
-                ins.photo_inscription,
-                ins.affectation_etat,
-                TRIM(CONCAT(COALESCE(e.nom_etudiant, ''), ' ', COALESCE(e.prenom_etudiant, ''))) as etudiant_nom,
-                cl.libelle_classe, 
-                cl.code_classe,
-                cl.niveau_code,
-                f.libelle_filiere,
-                f.code_filiere,
-                f.type_filiere,
-                n.libelle_niveau,
-                a.libelle_annee,
-                u.nom_user as nom_caissier, 
-                u.prenom_user as prenom_caissier,
-                u.code_user as caissier_code
-            FROM paiements p
-            LEFT JOIN inscriptions ins ON ins.code_inscription = p.inscription_code
-            LEFT JOIN etudiants e ON e.code_etudiant = ins.etudiant_code
-            LEFT JOIN classes cl ON cl.code_classe = ins.classe_code
-            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
-            LEFT JOIN niveaux n ON n.code_niveau = cl.niveau_code
-            LEFT JOIN annees a ON (a.code_annee = p.annee_code OR a.code_annee = ins.annee_code)
-            LEFT JOIN users u ON u.code_user = p.user_code
+            SELECT p.*
+            FROM " . VIEWS::PAIEMENTS_COMPLETS . " p
             {$where}
             ORDER BY p.date_paiement DESC, p.id_paiement DESC
         ";
@@ -156,7 +128,7 @@ class ModelCaisseAnnexe extends BaseModel
         }
 
         // 2. Évaluation dynamique du Budget Exigible (Frais Annexes Attendus) par rapport aux inscrits réels
-        $whereInscr = "WHERE i.statut_inscription != 'annule'";
+        $whereInscr = "WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'";
         $paramsInscr = [];
 
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
@@ -183,9 +155,9 @@ class ModelCaisseAnnexe extends BaseModel
                 cl.code_classe,
                 cl.niveau_code,
                 f.type_filiere
-            FROM inscriptions i
-            LEFT JOIN classes cl ON cl.code_classe = i.classe_code
-            LEFT JOIN filieres f ON f.code_filiere = cl.filiere_code
+            FROM " . TABLES::INSCRIPTIONS . " i
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             {$whereInscr}
         ";
         $stmtInscr = $db->prepare($sqlInscr);
@@ -195,7 +167,7 @@ class ModelCaisseAnnexe extends BaseModel
         $totalInscrits = count($inscriptions);
 
         // Récupérer la grille complète des tarifs frais annexes pour l'évaluation dynamique
-        $sqlFA = "SELECT * FROM frais_annexes WHERE statut_frais_annexe = 'actif'";
+        $sqlFA = "SELECT * FROM " . TABLES::FRAIS_ANNEXES . " WHERE statut_frais_annexe = '" . STATUTS::ACTIF . "'";
         $paramsFA = [];
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
             $sqlFA .= " AND annee_code = ?";
@@ -210,9 +182,9 @@ class ModelCaisseAnnexe extends BaseModel
             SELECT 
                 inscription_code, 
                 SUM(montant_paiement) as total_paye_fa
-            FROM paiements
+            FROM " . TABLES::PAIEMENTS . "
             WHERE (categorie_paiement = 'FRAIS_ANNEXES' OR tranche_code = 'FRAIS_ANNEXES' OR LOWER(type_paiement) LIKE '%annexe%')
-              AND statut_paiement != 'annule'
+              AND statut_paiement != '" . STATUTS::ANNULE . "'
             GROUP BY inscription_code
         ";
         $groupedPay = $db->query($sqlGroupedPay)->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
@@ -261,7 +233,7 @@ class ModelCaisseAnnexe extends BaseModel
         // Libellé de l'exercice
         $anneeExerciceLibelle = 'Session Active';
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $stmtLib = $db->prepare("SELECT libelle_annee FROM annees WHERE code_annee = ? LIMIT 1");
+            $stmtLib = $db->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtLib->execute([$anneeCode]);
             $anneeExerciceLibelle = $stmtLib->fetchColumn() ?: $anneeCode;
         }
@@ -289,17 +261,17 @@ class ModelCaisseAnnexe extends BaseModel
 
     public function getNiveauxActifs(): array
     {
-        return $this->getCon()->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = 'actif' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->getCon()->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function getClassesActives(): array
     {
-        return $this->getCon()->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE statut_classe = 'actif' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->getCon()->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function getFilieresActives(): array
     {
-        return $this->getCon()->query("SELECT code_filiere, libelle_filiere, type_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = 'actif' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->getCon()->query("SELECT code_filiere, libelle_filiere, type_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function getInscriptionsForYear(string $anneeCode): array
@@ -322,7 +294,7 @@ class ModelCaisseAnnexe extends BaseModel
             JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
             LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
             LEFT JOIN " . TABLES::FILIERES . " f ON c.filiere_code = f.code_filiere
-            WHERE i.statut_inscription != 'annule'
+            WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
               AND i.annee_code = ?
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
@@ -330,9 +302,67 @@ class ModelCaisseAnnexe extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    public function annulerEncaissement(int $id, string $codePaiement, string $motif, string $userCode, string $userName): array
+    {
+        $db = $this->getCon();
+        $paiement = null;
+        if ($id > 0) {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::PAIEMENTS . " WHERE id_paiement = ? LIMIT 1");
+            $stmt->execute([$id]);
+            $paiement = $stmt->fetch(PDO::FETCH_ASSOC);
+        } elseif (!empty($codePaiement)) {
+            $stmt = $db->prepare("SELECT * FROM " . TABLES::PAIEMENTS . " WHERE code_paiement = ? LIMIT 1");
+            $stmt->execute([$codePaiement]);
+            $paiement = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$paiement) {
+            return ['success' => false, 'message' => "Encaissement introuvable."];
+        }
+
+        if ($paiement['statut_paiement'] === STATUTS::ANNULE) {
+            return ['success' => false, 'message' => "Ce versement est déjà annulé."];
+        }
+
+        $cancellationNote = " [ANNULATION CAISSE ANNEXE le " . date('d/m/Y H:i') . " par " . (!empty($userName) ? $userName : $userCode) . (!empty($motif) ? " - Motif: " . $motif : "") . "]";
+        $newObservations = trim(($paiement['observations'] ?? '') . $cancellationNote);
+
+        $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = '" . STATUTS::ANNULE . "', observations = ? WHERE id_paiement = ?");
+        $res = $stmtUp->execute([$newObservations, $paiement['id_paiement']]);
+
+        if ($res) {
+            return [
+                'success' => true,
+                'message' => "L'encaissement #" . ($paiement['code_paiement'] ?? '') . " a été annulé avec succès.",
+                'data' => [
+                    'id_paiement' => $paiement['id_paiement'],
+                    'code_paiement' => $paiement['code_paiement']
+                ]
+            ];
+        }
+
+        return ['success' => false, 'message' => "Erreur lors de l'annulation de l'encaissement."];
+    }
+
     public function getAnneeByCode(string $code): ?array
     {
         $stmt = $this->getCon()->prepare("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function getNiveauByCode(string $code): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ? LIMIT 1");
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function getClasseByCode(string $code): ?array
+    {
+        $stmt = $this->getCon()->prepare("SELECT code_classe, libelle_classe FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
         $stmt->execute([$code]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -355,6 +385,7 @@ class ModelCaisseAnnexe extends BaseModel
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
             LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
             WHERE i.code_inscription = ?
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             LIMIT 1
         ");
         $stmt->execute([$codeInscription]);
@@ -368,7 +399,7 @@ class ModelCaisseAnnexe extends BaseModel
             SELECT * FROM " . TABLES::PAIEMENTS . "
             WHERE inscription_code = ?
               AND (categorie_paiement = 'FRAIS_ANNEXES' OR tranche_code = 'FRAIS_ANNEXES' OR LOWER(type_paiement) LIKE '%annexe%')
-              AND statut_paiement != 'annule'
+              AND statut_paiement != '" . STATUTS::ANNULE . "'
             ORDER BY date_paiement ASC
         ");
         $stmt->execute([$codeInscription]);
@@ -390,7 +421,7 @@ class ModelCaisseAnnexe extends BaseModel
 
     public function getInscriptionByCode(string $codeInscription): ?array
     {
-        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? AND statut_inscription != '" . STATUTS::ANNULE . "' LIMIT 1");
         $stmt->execute([$codeInscription]);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res ?: null;
@@ -399,6 +430,17 @@ class ModelCaisseAnnexe extends BaseModel
     public function recordPayment(array $data): int|string
     {
         $filtered = $this->filterData($data);
-        return $this->create($filtered);
+        if ($this->create($filtered)) {
+            $lastId = (int)$this->getCon()->lastInsertId();
+            if ($lastId > 0) {
+                return $lastId;
+            }
+            if (!empty($data['code_paiement'])) {
+                $stmt = $this->getCon()->prepare("SELECT id_paiement FROM " . TABLES::PAIEMENTS . " WHERE code_paiement = ? LIMIT 1");
+                $stmt->execute([$data['code_paiement']]);
+                return (int)($stmt->fetchColumn() ?: 0);
+            }
+        }
+        return 0;
     }
 }

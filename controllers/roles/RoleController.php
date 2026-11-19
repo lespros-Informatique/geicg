@@ -70,7 +70,20 @@ class RoleController extends BaseController
             'statut_role' => 'actif'
         ];
         if ($this->model->createRole($rolePayload, $permissions)) {
-            $this->success('Rôle créé avec succès !', RACINE . 'role/list');
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'roles',
+                $codeRole,
+                "Création du rôle d'accès '{$libelle}' ({$codeRole}) avec " . count($permissions) . " permission(s)",
+                [
+                    'code_role' => $codeRole,
+                    'libelle_role' => $libelle,
+                    'module' => $module,
+                    'groupe' => $groupe,
+                    'permissions' => $permissions
+                ]
+            );
+            $this->success('Rôle créé avec succès !', url('role/list'));
         } else {
             $this->error('Erreur lors de la création du rôle.');
         }
@@ -82,10 +95,10 @@ class RoleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $id = (int)$this->post('id');
-        if (!$id) { $this->error('Identifiant invalide', RACINE . 'role/list'); return; }
+        if (!$id) { $this->error('Identifiant invalide', url('role/list')); return; }
 
         $role = $this->model->getById($id);
-        if (!$role) { $this->error('Rôle introuvable', RACINE . 'role/list'); return; }
+        if (!$role) { $this->error('Rôle introuvable', url('role/list')); return; }
 
         $data = $_POST;
         unset($data['csrf_token']);
@@ -110,7 +123,20 @@ class RoleController extends BaseController
             'statut_role' => $statut
         ];
         if ($this->model->updateRole($id, $rolePayload, $permissions)) {
-            $this->success('Rôle et permissions mis à jour avec succès !', RACINE . 'role/list');
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'roles',
+                $role['code_role'] ?? (string)$id,
+                "Mise à jour du rôle '{$libelle}' (" . ($role['code_role'] ?? $id) . ") avec " . count($permissions) . " permission(s)",
+                [
+                    'id_role' => $id,
+                    'code_role' => $role['code_role'] ?? null,
+                    'libelle_role' => $libelle,
+                    'statut' => $statut,
+                    'permissions' => $permissions
+                ]
+            );
+            $this->success('Rôle et permissions mis à jour avec succès !', url('role/list'));
         } else {
             $this->error('Erreur lors de la modification du rôle.');
         }
@@ -122,8 +148,15 @@ class RoleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_ROLES);
         $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        if ($id && ($role = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'roles',
+                    $role['code_role'] ?? (string)$id,
+                    "Basculement de statut (actif/inactif) du rôle '" . ($role['libelle_role'] ?? $id) . "'",
+                    ['id_role' => $id, 'code_role' => $role['code_role'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -140,14 +173,14 @@ class RoleController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $role = $this->model->getById($id);
-            if (!$role) { header('Location: ' . RACINE . 'role/list'); exit(); }
+            if (!$role) { redirect('role/list'); }
 
             $permissions = $this->model->getPermissions($role['code_role']);
             $users = $this->model->getUsersByRole($role['code_role']);
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'role/list'); exit();
+            redirect('role/list');
         }
         $this->loadView('../views/roles/details.php', [
             'role' => $role,
@@ -164,7 +197,7 @@ class RoleController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $role = $this->model->getById($id);
-            if (!$role) { header('Location: ' . RACINE . 'role/list'); exit(); }
+            if (!$role) { redirect('role/list'); }
 
             $allPermissions = (new ModelPermission())->getGrouped();
             $assignedPerms = $this->model->getPermissions($role['code_role']);
@@ -172,7 +205,7 @@ class RoleController extends BaseController
 
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'role/list'); exit();
+            redirect('role/list');
         }
         $this->loadView('../views/roles/edit.php', [
             'role' => $role,

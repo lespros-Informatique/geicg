@@ -10,13 +10,12 @@ class AbsenceController extends BaseController
     public function list()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ABSENCES');
+        $this->requirePermission(PERMISSIONS::VIEW_ABSENCES);
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
         
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($selectedAnneeCode !== null) {
             foreach ($annees as $a) {
                 if ($a['code_annee'] === $selectedAnneeCode) {
                     Session::set('annee_active_code', $a['code_annee']);
@@ -24,9 +23,9 @@ class AbsenceController extends BaseController
                     break;
                 }
             }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
         }
+
+        $classes = !empty($selectedAnneeCode) ? (new ModelClasse())->getAll() : [];
 
         $this->loadView('../views/absences/list.php', [
             'annees' => $annees,
@@ -39,8 +38,13 @@ class AbsenceController extends BaseController
     public function apiList()
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ABSENCES');
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $this->requirePermission(PERMISSIONS::VIEW_ABSENCES);
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
+
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
@@ -60,9 +64,13 @@ class AbsenceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ABSENCES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_POST['annee_code'] ?? null);
+        if (empty($anneeCode) || !$this->academicGuard()->canUserWriteYear($anneeCode)) {
+            $this->error("Opération refusée : vous n'avez pas l'autorisation d'enregistrer des absences sur cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
         $data = $_POST;
         unset($data['csrf_token']);
@@ -84,7 +92,7 @@ class AbsenceController extends BaseController
         ]);
 
         if (empty($data['code_absence'])) {
-            $data['code_absence'] = $this->validator->generateCode('absences', 'code_absence', 'ABS-', 8);
+            $data['code_absence'] = $this->validator->generateCode(TABLES::ABSENCES, 'code_absence', 'ABS-', 8);
         }
         if (isset($data['motif_absence']) && !isset($data['motif'])) {
             $data['motif'] = $data['motif_absence'];
@@ -97,6 +105,14 @@ class AbsenceController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'absences',
+                $data['code_absence'],
+                "Enregistrement d'une absence pour {$inscCode} le " . ($data['date_absence'] ?? date('d/m/Y')),
+                $filteredData,
+                $etabCode
+            );
             $this->success('Absence enregistrée avec succès!');
         } else {
             $this->error($this->model->getLastError() ?: 'Erreur lors de l\'enregistrement de l\'absence');
@@ -107,7 +123,7 @@ class AbsenceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ABSENCES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
         $id = (int)$this->post('id_absence');
         if (!$id) { $this->error('Identifiant invalide'); return; }
         $data = $_POST;
@@ -131,6 +147,13 @@ class AbsenceController extends BaseController
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'absences',
+                (string)$id,
+                "Modification de l'absence #{$id}",
+                $filteredData
+            );
             $this->success('Item modifié avec succès!');
         } else {
             $this->error('Erreur lors de la modification');
@@ -140,14 +163,14 @@ class AbsenceController extends BaseController
     public function details($details)
     {
         $this->requireAuth();
-        $this->requirePermission('VIEW_ABSENCES');
+        $this->requirePermission(PERMISSIONS::VIEW_ABSENCES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getByIdWithDetails($id);
-            if (!$item) { header('Location: ' . RACINE . 'absence/list'); exit(); }
+            if (!$item) { redirect('absence/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'absence/list'); exit();
+            redirect('absence/list');
         }
         $this->loadView('../views/absences/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
     }
@@ -155,14 +178,14 @@ class AbsenceController extends BaseController
     public function edition($details)
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ABSENCES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getByIdWithDetails($id);
-            if (!$item) { header('Location: ' . RACINE . 'absence/list'); exit(); }
+            if (!$item) { redirect('absence/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'absence/list'); exit();
+            redirect('absence/list');
         }
         $deps = $this->model->getFormDataDependencies();
         $this->loadView('../views/absences/edit.php', array_merge([
@@ -174,7 +197,7 @@ class AbsenceController extends BaseController
     public function formulaire()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ABSENCES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
         $deps = $this->model->getFormDataDependencies();
         $this->loadView('../views/absences/edit.php', array_merge([
             'item' => []
@@ -185,7 +208,7 @@ class AbsenceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ABSENCES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
         $id = (int)$this->post('id');
         $statut = $this->post('statut') ?: $this->post('status');
         if ($id && ($cur = $this->model->getById($id))) {
@@ -197,6 +220,13 @@ class AbsenceController extends BaseController
             }
             $success = $this->model->updateStatus($id, $newStat, 'justifiee');
             if ($success) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'absences',
+                    (string)$id,
+                    "Changement du statut de justification de l'absence #{$id} : {$newStat}",
+                    ['id_absence' => $id, 'justifiee' => $newStat]
+                );
                 $this->success('Statut de justification mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -209,8 +239,12 @@ class AbsenceController extends BaseController
     public function saisieClasse()
     {
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ABSENCES');
-        $anneeCode = $this->getActiveAnneeCode();
+        $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
+            return;
+        }
         $classes = (new ModelClasse())->getAll();
         $matieres = (new ModelMatiere())->getAll();
         
@@ -243,12 +277,21 @@ class AbsenceController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission('MANAGE_ABSENCES');
+        $this->requirePermission(PERMISSIONS::MANAGE_ABSENCES);
 
-        $csrf = $this->post('csrf_token');
+        $csrf = $this->post('csrf_token') ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
         if (!Validator::validateCsrfToken($csrf)) {
-            $this->error('Jeton CSRF invalide ou session expirée. Veuillez recharger la page.');
-            return;
+            Auth::logout();
+            if ($this->isAjax()) {
+                $this->json([
+                    'status' => 0,
+                    'session_expired' => true,
+                    'redirect' => url('user/connexion', ['expired' => 1]),
+                    'message' => 'Session expirée. Veuillez vous reconnecter.'
+                ], 401);
+                return;
+            }
+            redirect('user/connexion', ['expired' => 1]);
         }
 
         $classeCode = $this->post('classe_code');
@@ -258,7 +301,11 @@ class AbsenceController extends BaseController
         $absencesData = $_POST['absences'] ?? [];
 
         $userCode = Auth::code();
-        $anneeCode = $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($this->post('annee_code'));
+        if (empty($anneeCode) || !$this->academicGuard()->canUserWriteYear($anneeCode)) {
+            $this->error("Opération refusée : vous n'avez pas l'autorisation d'enregistrer des absences sur cette année académique.");
+            return;
+        }
         $etabCode = $this->getActiveEtablissementCode();
 
         $this->validateForeignKeys([
@@ -276,6 +323,21 @@ class AbsenceController extends BaseController
                 $dureeHeures,
                 $absencesData,
                 $anneeCode,
+                $etabCode
+            );
+            $nbAbs = is_array($absencesData) ? count($absencesData) : 0;
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'absences',
+                $classeCode,
+                "Saisie groupée des absences pour la classe {$classeCode} au {$dateAbsence} ({$nbAbs} lignes traitées)",
+                [
+                    'classe_code' => $classeCode,
+                    'date_absence' => $dateAbsence,
+                    'matiere_code' => $matiereCode,
+                    'duree_heures' => $dureeHeures,
+                    'nb_lignes' => $nbAbs
+                ],
                 $etabCode
             );
             $this->success('Registre des absences de la classe mis à jour avec succès !', ['reload' => true]);

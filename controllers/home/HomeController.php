@@ -14,16 +14,34 @@ class HomeController extends BaseController
             $auth = Auth::user() ?? [];
             $roleCode = Auth::role() ?? '';
             $userCode = Auth::code() ?? '';
-            $anneeCode = Session::get('annee_active_code');
 
-            $anneeModel = new ModelAnnee();
-            $annees = $anneeModel->getAll();
+            $annees = $this->getAccessibleAnnees();
+            $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
 
-            $stats = $model->getStats($anneeCode, $userCode, $roleCode);
-            $recentInscriptions = $model->getRecentInscriptions(5, $stats['annee_code']);
-            $recentPaiements = $model->getRecentPaiements(5, $stats['annee_code']);
-            $recentDepenses = $model->getRecentDepenses(5, $stats['annee_code']);
-            $teacherCourses = $model->getTeacherCourses($userCode, 6);
+            if ($anneeCode === null) {
+                $stats = [
+                    'annee_code' => '',
+                    'total_etudiants' => 0,
+                    'total_enseignants' => 0,
+                    'total_classes' => 0,
+                    'total_filieres' => 0,
+                    'total_recettes' => 0,
+                    'total_depenses' => 0,
+                    'solde_caisse' => 0,
+                    'inscriptions_validees' => 0,
+                    'inscriptions_en_attente' => 0
+                ];
+                $recentInscriptions = [];
+                $recentPaiements = [];
+                $recentDepenses = [];
+                $teacherCourses = $model->getTeacherCourses($userCode, 6);
+            } else {
+                $stats = $model->getStats($anneeCode, $userCode, $roleCode);
+                $recentInscriptions = $model->getRecentInscriptions(5, $stats['annee_code'] ?? $anneeCode);
+                $recentPaiements = $model->getRecentPaiements(5, $stats['annee_code'] ?? $anneeCode);
+                $recentDepenses = $model->getRecentDepenses(5, $stats['annee_code'] ?? $anneeCode);
+                $teacherCourses = $model->getTeacherCourses($userCode, 6);
+            }
 
             $this->loadView('../views/home/index.php', [
                 'stats' => $stats,
@@ -45,10 +63,28 @@ class HomeController extends BaseController
     {
         $this->requireAuth();
         $model = $this->resolveModel();
-        $auth = Auth::user() ?? [];
         $roleCode = Auth::role() ?? '';
         $userCode = Auth::code() ?? '';
-        $anneeCode = Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+
+        if ($anneeCode === null) {
+            $this->json([
+                'status' => 1,
+                'stats' => [
+                    'annee_code' => '',
+                    'total_etudiants' => 0,
+                    'total_enseignants' => 0,
+                    'total_classes' => 0,
+                    'total_filieres' => 0,
+                    'total_recettes' => 0,
+                    'total_depenses' => 0,
+                    'solde_caisse' => 0,
+                    'inscriptions_validees' => 0,
+                    'inscriptions_en_attente' => 0
+                ]
+            ]);
+            return;
+        }
 
         $stats = $model->getStats($anneeCode, $userCode, $roleCode);
 

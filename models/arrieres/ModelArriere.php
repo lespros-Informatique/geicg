@@ -2,7 +2,7 @@
 
 class ModelArriere extends BaseModel
 {
-    protected string $table = 'arrieres';
+    protected string $table = TABLES::ARRIERES;
     protected string $primaryKey = 'id_arriere';
 
     /**
@@ -13,7 +13,7 @@ class ModelArriere extends BaseModel
         $db = $this->getCon();
         $anneeActiveCode = $anneeActiveCode ?: Session::get('annee_active_code', '');
 
-        $where = "WHERE i_orig.statut_inscription != 'annule'";
+        $where = "WHERE i_orig.statut_inscription != '" . STATUTS::ANNULE . "'";
         $params = [];
 
         if (!empty($anneeActiveCode)) {
@@ -55,19 +55,17 @@ class ModelArriere extends BaseModel
                         (i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye, 0))
                     ) ORDER BY i_orig.id_inscription ASC SEPARATOR '|||'
                 ) as details_arrieres
-            FROM inscriptions i_orig
-            INNER JOIN etudiants e ON e.code_etudiant = i_orig.etudiant_code
-            LEFT JOIN classes c_orig ON c_orig.code_classe = i_orig.classe_code
-            LEFT JOIN annees ann_orig ON ann_orig.code_annee = i_orig.annee_code
-            LEFT JOIN inscriptions i_act ON i_act.etudiant_code = e.code_etudiant AND i_act.id_inscription = (
-                SELECT MAX(id_inscription) FROM inscriptions WHERE etudiant_code = e.code_etudiant
+            FROM " . TABLES::INSCRIPTIONS . " i_orig
+            INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i_orig.etudiant_code
+            LEFT JOIN " . TABLES::CLASSES . " c_orig ON c_orig.code_classe = i_orig.classe_code
+            LEFT JOIN " . TABLES::ANNEES . " ann_orig ON ann_orig.code_annee = i_orig.annee_code
+            LEFT JOIN " . TABLES::INSCRIPTIONS . " i_act ON i_act.etudiant_code = e.code_etudiant AND i_act.id_inscription = (
+                SELECT MAX(id_inscription) FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = e.code_etudiant AND statut_inscription != '" . STATUTS::ANNULE . "'
             )
-            LEFT JOIN classes c_act ON c_act.code_classe = i_act.classe_code
+            LEFT JOIN " . TABLES::CLASSES . " c_act ON c_act.code_classe = i_act.classe_code
             LEFT JOIN (
-                SELECT inscription_code, SUM(montant_paiement) as total_paye
-                FROM paiements
-                WHERE statut_paiement = 'confirme'
-                GROUP BY inscription_code
+                SELECT inscription_code, total_paye_confirme_scolarite AS total_paye
+                FROM " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . "
             ) p_sub ON p_sub.inscription_code = i_orig.code_inscription
             {$where}
             GROUP BY e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.photo_etudiant, e.telephone_etudiant, c_act.libelle_classe
@@ -123,17 +121,12 @@ class ModelArriere extends BaseModel
             SELECT 
                 COUNT(DISTINCT i_orig.etudiant_code) as nb_etudiants_debiteurs,
                 SUM(i_orig.montant_scolarite_inscription) as total_initial_du,
-                SUM(COALESCE(p_sub.total_paye, 0)) as total_recouvre,
-                SUM(i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye, 0)) as total_solde_arriere
-            FROM inscriptions i_orig
-            LEFT JOIN (
-                SELECT inscription_code, SUM(montant_paiement) as total_paye
-                FROM paiements
-                WHERE statut_paiement = 'confirme'
-                GROUP BY inscription_code
-            ) p_sub ON p_sub.inscription_code = i_orig.code_inscription
+                SUM(COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_recouvre,
+                SUM(i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_solde_arriere
+            FROM " . TABLES::INSCRIPTIONS . " i_orig
+            LEFT JOIN " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . " p_sub ON p_sub.inscription_code = i_orig.code_inscription
             WHERE i_orig.annee_code != ?
-              AND i_orig.statut_inscription != 'annule'
+              AND i_orig.statut_inscription != '" . STATUTS::ANNULE . "'
             HAVING total_solde_arriere > 0
         ";
 
@@ -191,15 +184,23 @@ class ModelArriere extends BaseModel
                 ann.libelle_annee,
                 c.libelle_classe,
                 i.montant_scolarite_inscription,
-                COALESCE(SUM(CASE WHEN p.statut_paiement = 'confirme' THEN p.montant_paiement ELSE 0 END), 0) as total_paye,
-                (i.montant_scolarite_inscription - COALESCE(SUM(CASE WHEN p.statut_paiement = 'confirme' THEN p.montant_paiement ELSE 0 END), 0)) as solde_restant
-            FROM inscriptions i
-            LEFT JOIN annees ann ON ann.code_annee = i.annee_code
-            LEFT JOIN classes c ON c.code_classe = i.classe_code
-            LEFT JOIN paiements p ON p.inscription_code = i.code_inscription
+                COALESCE(SUM(CASE WHEN p.statut_paiement = 'confirme' 
+                  AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
+                  AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
+                THEN p.montant_paiement ELSE 0 END), 0) as total_paye,
+                (i.montant_scolarite_inscription - COALESCE(SUM(CASE WHEN p.statut_paiement = 'confirme' 
+                  AND (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')
+                  AND (p.type_paiement IS NULL OR p.type_paiement NOT LIKE '%Frais Annexe%')
+                THEN p.montant_paiement ELSE 0 END), 0)) as solde_restant
+            FROM " . TABLES::INSCRIPTIONS . " i
+            LEFT JOIN " . TABLES::ANNEES . " ann ON ann.code_annee = i.annee_code
+            LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::PAIEMENTS . " p ON p.inscription_code = i.code_inscription
             WHERE i.etudiant_code = ?
               AND i.annee_code != ?
-              AND i.statut_inscription != 'annule'
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             GROUP BY i.code_inscription, i.annee_code, ann.libelle_annee, c.libelle_classe, i.montant_scolarite_inscription
             HAVING solde_restant > 0
             ORDER BY i.id_inscription ASC
@@ -217,7 +218,7 @@ class ModelArriere extends BaseModel
 
     public function getInscriptionByCode(string $inscriptionCode): ?array
     {
-        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? LIMIT 1");
+        $stmt = $this->getCon()->prepare("SELECT * FROM " . TABLES::INSCRIPTIONS . " WHERE code_inscription = ? AND statut_inscription != '" . STATUTS::ANNULE . "' LIMIT 1");
         $stmt->execute([$inscriptionCode]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -225,7 +226,15 @@ class ModelArriere extends BaseModel
 
     public function getTotalPayeByInscription(string $inscriptionCode): float
     {
-        $stmt = $this->getCon()->prepare("SELECT COALESCE(SUM(montant_paiement), 0) as paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement = 'confirme'");
+        $stmt = $this->getCon()->prepare("
+            SELECT COALESCE(SUM(montant_paiement), 0) as paye 
+            FROM " . TABLES::PAIEMENTS . " 
+            WHERE inscription_code = ? 
+              AND statut_paiement = 'confirme'
+              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+              AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
+        ");
         $stmt->execute([$inscriptionCode]);
         return (float)($stmt->fetchColumn() ?: 0);
     }
@@ -242,8 +251,8 @@ class ModelArriere extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             INSERT INTO " . TABLES::PAIEMENTS . " 
-            (code_paiement, montant_paiement, statut_paiement, reference_paiement, observations, type_paiement, mode_paiement, user_code, annee_code, etablissement_code, inscription_code, tranche_code, session_caisse_code)
-            VALUES (?, ?, 'confirme', ?, ?, 'Règlement Arriéré Scolarité', ?, ?, ?, ?, ?, NULL, ?)
+            (code_paiement, montant_paiement, statut_paiement, reference_paiement, observations, type_paiement, categorie_paiement, mode_paiement, user_code, annee_code, etablissement_code, inscription_code, tranche_code, session_caisse_code)
+            VALUES (?, ?, 'confirme', ?, ?, 'Règlement Arriéré Scolarité', 'ARRIERE', ?, ?, ?, ?, ?, NULL, ?)
         ");
         return $stmt->execute([
             $data['code_paiement'],

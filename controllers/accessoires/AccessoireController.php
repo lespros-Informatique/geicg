@@ -11,29 +11,125 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
-        $annees = $this->getAccessibleAnnees();
-        
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
-                }
-            }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
-        }
-
-        $stats = $this->model->getStats($selectedAnneeCode);
         $niveaux = (new ModelNiveau())->getActifs();
+        $accessoires = $this->model->getAll();
 
         $this->loadView('../views/accessoires/list.php', [
-            'stats' => $stats,
-            'annees' => $annees,
             'niveaux' => $niveaux,
-            'selectedAnneeCode' => $selectedAnneeCode
+            'accessoires' => $accessoires
+        ]);
+    }
+
+    public function cibles()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $annees = $this->getAccessibleAnnees();
+        $selectedAnneeCode = $this->getActiveAnneeCode();
+        $cycles = array_values(array_filter((new ModelCycle())->getAll(), fn($c) => ($c['statut_cycle'] ?? 'actif') === 'actif'));
+        $niveaux = (new ModelNiveau())->getActifs();
+        $filieres = array_values(array_filter((new ModelFiliere())->getAll(), fn($f) => ($f['statut_filiere'] ?? 'actif') === 'actif'));
+        $filiereCyclesMap = $this->model->getFiliereCyclesMap();
+        $accessoires = $this->model->getAll();
+
+        $this->loadView('../views/accessoires/cibles.php', [
+            'annees' => $annees,
+            'selectedAnneeCode' => $selectedAnneeCode,
+            'cycles' => $cycles,
+            'niveaux' => $niveaux,
+            'filieres' => $filieres,
+            'filiereCyclesMap' => $filiereCyclesMap,
+            'accessoires' => $accessoires
+        ]);
+    }
+
+    public function imprimerCataloguePdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $rows = $this->model->getActifs();
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+
+        $data = [
+            'etablissement' => $etablissement,
+            'editeur_nom' => $editeurNom,
+            'rows' => $rows
+        ];
+
+        $html = PdfService::renderTemplate('catalogue_accessoires.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Catalogue_Kits_Actifs_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Catalogue des Kits Actifs - ' . ($etablissement['nom_etablissement'] ?? ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
+    public function imprimerCiblesPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : null;
+        $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
+        $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+
+        $allRows = $this->model->getCiblesList(null, $niveauCode, $filiereCode, $cycleCode, $anneeCode);
+        $rows = array_values(array_filter($allRows, function ($r) {
+            return ($r['statut_accessoire_niveau_filiere'] ?? 'actif') === 'actif' && ($r['statut_accessoire'] ?? 'actif') === 'actif';
+        }));
+
+        $anneeLibelle = 'Toutes les années';
+        if ($anneeCode && $anneeCode !== 'ALL') {
+            $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+            if ($anneeObj && !empty($anneeObj['libelle_annee'])) {
+                $anneeLibelle = $anneeObj['libelle_annee'];
+            }
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+
+        $data = [
+            'etablissement' => $etablissement,
+            'editeur_nom' => $editeurNom,
+            'annee_libelle' => $anneeLibelle,
+            'rows' => $rows
+        ];
+
+        $html = PdfService::renderTemplate('cibles_accessoires.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Kits_Filiere_Niveau_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Kits par Filière & Niveau - ' . ($etablissement['nom_etablissement'] ?? ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
         ]);
     }
 
@@ -43,22 +139,30 @@ class AccessoireController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
 
         $annees = $this->getAccessibleAnnees();
-        
-        if (isset($_GET['annee_code']) && !empty($_GET['annee_code'])) {
-            $selectedAnneeCode = trim($_GET['annee_code']);
-            foreach ($annees as $a) {
-                if ($a['code_annee'] === $selectedAnneeCode) {
-                    Session::set('annee_active_code', $a['code_annee']);
-                    Session::set('annee_active_libelle', $a['libelle_annee']);
-                    break;
-                }
-            }
-        } else {
-            $selectedAnneeCode = Session::get('annee_active_code');
-        }
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $classes = (new ModelClasse())->getAll();
+        $etudiants = (new ModelEtudiant())->getAll();
+        $accessoires = $this->model->getAll();
 
-        $classeModel = new ModelClasse();
-        $classes = $classeModel->getAll();
+        if ($selectedAnneeCode === null) {
+            $this->loadView('../views/accessoires/registre.php', [
+                'stats' => [
+                    'total' => 0,
+                    'en_attente' => 0,
+                    'retires' => 0,
+                    'retire' => 0,
+                    'taux_retrait' => 0,
+                    'taux' => 0,
+                    'total_types' => count($accessoires)
+                ],
+                'annees' => $annees,
+                'classes' => $classes,
+                'etudiants' => $etudiants,
+                'accessoires' => $accessoires,
+                'selectedAnneeCode' => ''
+            ]);
+            return;
+        }
 
         $stats = $this->model->getStats($selectedAnneeCode);
 
@@ -66,7 +170,165 @@ class AccessoireController extends BaseController
             'stats' => $stats,
             'annees' => $annees,
             'classes' => $classes,
+            'etudiants' => $etudiants,
+            'accessoires' => $accessoires,
             'selectedAnneeCode' => $selectedAnneeCode
+        ]);
+    }
+
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $filter = trim($_GET['filter'] ?? 'all');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
+
+        $items = $this->model->getDistributions($filter, $anneeCode, $classeCode);
+        $stats = $this->model->getStats($anneeCode);
+
+        // Labels pour filtres
+        $anneeLibelle = '';
+        if (!empty($anneeCode)) {
+            $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+            $anneeLibelle = $anneeObj['libelle_annee'] ?? $anneeCode;
+        }
+
+        $classeLibelle = 'Toutes les classes';
+        if (!empty($classeCode)) {
+            $clObj = (new ModelClasse())->getByCode($classeCode);
+            $classeLibelle = $clObj['libelle_classe'] ?? ($clObj['nom_classe'] ?? $classeCode);
+        }
+
+        $statutLabel = 'Tous les statuts';
+        if ($filter === 'en_attente') {
+            $statutLabel = 'Avec des kits en attente';
+        } elseif ($filter === 'retire') {
+            $statutLabel = 'Kits entièrement remis';
+        }
+
+        $currentUser = Auth::user();
+        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+        if (empty($editeurNom)) {
+            $editeurNom = 'Service Logistique & Scolarité';
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $anneeLibelle,
+            'classe_libelle' => $classeLibelle,
+            'statut_label' => $statutLabel,
+            'editeur_nom' => $editeurNom,
+            'rows' => $items,
+            'stats' => $stats
+        ];
+
+        $html = PdfService::renderTemplate('liste_registre_accessoires.php', $data);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $filename = 'Registre_Retrait_Kits_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Registre Retrait Kits - ' . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8
+        ]);
+    }
+
+    public function imprimerBonPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $inscriptionCode = trim($_GET['inscription_code'] ?? ($_POST['inscription_code'] ?? ''));
+        $codePaiementParam = trim($_GET['code_paiement'] ?? ($_GET['code'] ?? ''));
+        if (empty($inscriptionCode) && !empty($codePaiementParam)) {
+            $stmtFind = (new Database())->getCon()->prepare("SELECT inscription_code FROM " . TABLES::PAIEMENTS . " WHERE code_paiement = ? LIMIT 1");
+            $stmtFind->execute([$codePaiementParam]);
+            $inscriptionCode = $stmtFind->fetchColumn() ?: '';
+        }
+
+        if (empty($inscriptionCode)) {
+            $this->error('Inscription introuvable.');
+            return;
+        }
+
+        $data = $this->model->getBonRemiseData($inscriptionCode);
+        if (empty($data) || empty($data['student'])) {
+            $this->error('Données de remise introuvables pour cet étudiant.');
+            return;
+        }
+
+        $student = $data['student'];
+        $finances = $data['finances'] ?? [];
+        $codePaiement = !empty($codePaiementParam) ? $codePaiementParam : ($finances['code_paiement'] ?? '-');
+        $etablissement = $this->getEtablissementConfig();
+        $currentUser = Auth::user();
+        $agentName = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
+
+        $montantOperation = (float)($finances['montant_paye_tenue'] ?? 0);
+        if ($montantOperation <= 0) {
+            $montantOperation = (float)($finances['montant_payer_tenue'] ?? 0);
+        }
+        $montantLettres = PdfService::numberToWordsFrench($montantOperation);
+
+        $viewData = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $student['libelle_annee'] ?? '',
+            'code_paiement' => $codePaiement,
+            'date_operation' => $finances['date_operation'] ?? date('d/m/Y'),
+            'statut_affectation' => (!empty($student['affectation_etat']) && $student['affectation_etat'] === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
+            'matricule_etudiant' => $student['matricule_etudiant'] ?? '-',
+            'telephone_etudiant' => $student['telephone_etudiant'] ?? '-',
+            'nom_prenom_etudiant' => trim(($student['nom_etudiant'] ?? '') . ' ' . ($student['prenom_etudiant'] ?? '')),
+            'filiere_niveau' => $student['libelle_classe'] ?? '-',
+            'montant_operation' => $montantOperation,
+            'montant_operation_lettres' => $montantLettres,
+            'photo_etudiant' => $student['photo_etudiant'] ?? '',
+            'montant_payer_tenue' => $finances['montant_payer_tenue'] ?? 0,
+            'montant_paye_tenue' => $finances['montant_paye_tenue'] ?? 0,
+            'reste_payer_tenue' => $finances['reste_payer_tenue'] ?? 'Soldé',
+            'items_kits' => $data['kits'] ?? [],
+            'kits_remis' => $data['kits_remis'] ?? [],
+            'kits_en_attente' => $data['kits_en_attente'] ?? [],
+            'scolarite_recap' => $finances['scolarite_recap'] ?? [],
+            'gestionnaire_nom' => $agentName ?: ($etablissement['nom_responsable_scolarite'] ?? 'Le Responsable de la Scolarité'),
+            'caissier_nom' => $etablissement['nom_responsable_finance'] ?? ($etablissement['nom_directeur_general'] ?? 'Le Service Financier'),
+            'date_impression' => date('d/m/Y')
+        ];
+
+        $html = PdfService::renderTemplate('recu_tenue.php', $viewData);
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $matriculeClean = !empty($student['matricule_etudiant']) && $student['matricule_etudiant'] !== '-' 
+            ? preg_replace('/[^A-Za-z0-9_-]/', '_', $student['matricule_etudiant']) 
+            : $student['code_etudiant'];
+        $filename = 'Recu_Tenue_' . $matriculeClean . '_' . date('Ymd_His') . '.pdf';
+
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Reçu de Paiement des Frais de Tenue - ' . ($student['matricule_etudiant'] ?? ''),
+            'margin_left' => 6,
+            'margin_right' => 6,
+            'margin_top' => 6,
+            'margin_bottom' => 6
         ]);
     }
 
@@ -74,8 +336,7 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES]);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
-        $items = $this->model->getAll($anneeCode);
+        $items = $this->model->getAll();
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_accessoire'];
@@ -101,6 +362,16 @@ class AccessoireController extends BaseController
             if (!$this->checkUnique(TABLES::ACCESSOIRES, 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire')) return;
         }
 
+        $niveauCodes = [];
+        if (isset($data['niveau_codes']) && is_array($data['niveau_codes'])) {
+            $niveauCodes = array_values(array_filter(array_map('trim', $data['niveau_codes'])));
+        } elseif (!empty($data['niveau_code'])) {
+            $niveauCodes = is_array($data['niveau_code'])
+                ? array_values(array_filter(array_map('trim', $data['niveau_code'])))
+                : [trim((string)$data['niveau_code'])];
+        }
+        unset($data['niveau_codes']);
+
         $userCode = Auth::code();
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
@@ -112,14 +383,16 @@ class AccessoireController extends BaseController
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
         $data['annee_code'] = $anneeCode;
+        $data['niveau_code'] = (count($niveauCodes) === 1) ? $niveauCodes[0] : null;
 
         $libelle = trim($data['libelle_accessoire'] ?? '');
-        if (isset($data['niveau_code']) && empty(trim($data['niveau_code']))) {
-            $data['niveau_code'] = null;
-        }
+        $typeFiliereCible = trim($data['type_filiere_cible'] ?? 'TOUT');
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->create($filteredData)) {
+            if (isset($_POST['type_filiere_cible']) || isset($_POST['niveau_codes']) || isset($_POST['niveau_code'])) {
+                $this->model->syncCibles($data['code_accessoire'], $typeFiliereCible, $niveauCodes, $etabCode, $userCode);
+            }
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été créé avec succès !" : "Accessoire créé avec succès !";
             $this->success($msg);
         } else {
@@ -143,13 +416,29 @@ class AccessoireController extends BaseController
             if (!$this->checkUnique(TABLES::ACCESSOIRES, 'libelle_accessoire', $data['libelle_accessoire'], 'Libelle de l accessoire', 'id_accessoire', $id)) return;
         }
 
-        $libelle = trim($data['libelle_accessoire'] ?? '');
-        if (isset($data['niveau_code']) && empty(trim($data['niveau_code']))) {
-            $data['niveau_code'] = null;
+        $niveauCodes = [];
+        if (isset($data['niveau_codes']) && is_array($data['niveau_codes'])) {
+            $niveauCodes = array_values(array_filter(array_map('trim', $data['niveau_codes'])));
+        } elseif (!empty($data['niveau_code'])) {
+            $niveauCodes = is_array($data['niveau_code'])
+                ? array_values(array_filter(array_map('trim', $data['niveau_code'])))
+                : [trim((string)$data['niveau_code'])];
         }
+        unset($data['niveau_codes']);
+
+        $libelle = trim($data['libelle_accessoire'] ?? '');
+        $typeFiliereCible = trim($data['type_filiere_cible'] ?? 'TOUT');
+
+        $existing = $this->model->getById($id);
+        $codeAccessoire = $existing['code_accessoire'] ?? '';
+        $etabCode = $existing['etablissement_code'] ?? $this->getActiveEtablissementCode();
+        $userCode = Auth::code();
 
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
+            if (!empty($codeAccessoire) && (isset($_POST['type_filiere_cible']) || isset($_POST['niveau_codes']) || isset($_POST['niveau_code']))) {
+                $this->model->syncCibles($codeAccessoire, $typeFiliereCible, $niveauCodes, $etabCode, $userCode);
+            }
             $msg = !empty($libelle) ? "L'accessoire « {$libelle} » a été modifié avec succès !" : "Accessoire modifié avec succès !";
             $this->success($msg);
         } else {
@@ -160,13 +449,184 @@ class AccessoireController extends BaseController
         }
     }
 
+    public function delete()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::MANAGE_ACCESSOIRES);
+        $id = (int)($this->post('id_accessoire') ?: $this->post('id'));
+        if (!$id) {
+            $this->error('Identifiant invalide.');
+            return;
+        }
+        if ($this->model->deleteAccessoire($id)) {
+            $this->success('Accessoire supprimé du répertoire avec succès !');
+        } else {
+            $this->error('Erreur lors de la suppression de l\'accessoire.');
+        }
+    }
+
+    public function apiCiblesList()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $typeFiliere = !empty($_GET['type_filiere']) ? trim($_GET['type_filiere']) : null;
+        $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
+        $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
+        $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
+        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : null;
+        $items = $this->model->getCiblesList($typeFiliere, $niveauCode, $filiereCode, $cycleCode, $anneeCode);
+        $this->json(['data' => $items]);
+    }
+
+    public function apiPivotByCycle()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : '';
+        $data = $this->model->getPivotDataByCycle($cycleCode);
+        $this->json([
+            'status' => 1,
+            'filieres' => $data['filieres'],
+            'niveaux' => $data['niveaux'],
+            'pivots' => $data['pivots']
+        ]);
+    }
+
+    public function saveCible()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+
+        $idCible = (int)($_POST['id_accessoire_niveau_filiere'] ?? 0);
+        $typeFiliere = trim($_POST['type_filiere_cible'] ?? 'TOUT');
+        $cycleCode = !empty($_POST['cycle_code']) ? trim($_POST['cycle_code']) : null;
+
+        $accessoireCodes = [];
+        if (!empty($_POST['accessoire_codes']) && is_array($_POST['accessoire_codes'])) {
+            $accessoireCodes = array_values(array_filter(array_map('trim', $_POST['accessoire_codes'])));
+        } elseif (!empty($_POST['accessoire_code'])) {
+            $accessoireCodes = [trim((string)$_POST['accessoire_code'])];
+        }
+
+        if (empty($accessoireCodes)) {
+            $this->error('Veuillez sélectionner au moins un kit ou accessoire.');
+            return;
+        }
+
+        $filiereCodes = [];
+        if (!empty($_POST['filiere_codes']) && is_array($_POST['filiere_codes'])) {
+            $filiereCodes = array_values(array_filter(array_map('trim', $_POST['filiere_codes'])));
+        } elseif (!empty($_POST['filiere_code'])) {
+            $filiereCodes = [trim((string)$_POST['filiere_code'])];
+        }
+
+        $niveauCodes = [];
+        if (!empty($_POST['niveau_codes']) && is_array($_POST['niveau_codes'])) {
+            $niveauCodes = array_values(array_filter(array_map('trim', $_POST['niveau_codes'])));
+        } elseif (!empty($_POST['niveau_code'])) {
+            $niveauCodes = [trim((string)$_POST['niveau_code'])];
+        }
+
+        $etabCode = $this->getActiveEtablissementCode();
+        $userCode = Auth::code();
+        $anneeCode = !empty($_POST['annee_code']) ? trim($_POST['annee_code']) : $this->getActiveAnneeCode();
+
+        $inserted = $this->model->saveCiblesBatch(
+            $accessoireCodes,
+            $typeFiliere,
+            $filiereCodes,
+            $niveauCodes,
+            $etabCode,
+            $userCode,
+            $idCible > 0 ? $idCible : null,
+            $cycleCode,
+            $anneeCode
+        );
+
+        $this->success($idCible > 0 ? 'Configuration modifiée avec succès !' : "Configuration enregistrée avec succès ({$inserted} liaison(s)) !");
+    }
+
+    public function reconduireCibles()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+
+        $sourceAnneeCode = trim($_POST['source_annee_code'] ?? '');
+        $targetAnneeCode = trim($_POST['target_annee_code'] ?? $this->getActiveAnneeCode());
+
+        if (empty($sourceAnneeCode) || empty($targetAnneeCode)) {
+            $this->error('Veuillez sélectionner l\'année source et l\'année cible.');
+            return;
+        }
+        if ($sourceAnneeCode === $targetAnneeCode) {
+            $this->error('L\'année source et l\'année cible doivent être différentes.');
+            return;
+        }
+
+        $copied = $this->model->reconduireCibles(
+            $sourceAnneeCode,
+            $targetAnneeCode,
+            $this->getActiveEtablissementCode(),
+            Auth::code()
+        );
+
+        if ($copied > 0) {
+            $this->success("{$copied} configuration(s) de kits reconduite(s) avec succès !");
+        } else {
+            $this->success("Aucune nouvelle configuration à reconduire (toutes les configurations existent déjà pour l'année cible ou l'année source ne contient aucune configuration active).");
+        }
+    }
+
+    public function deleteCible()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+
+        $id = (int)($this->post('id_accessoire_niveau_filiere') ?: $this->post('id'));
+        if (!$id) {
+            $this->error('Identifiant de liaison invalide.');
+            return;
+        }
+        if ($this->model->deleteCible($id)) {
+            $this->success('Liaison supprimée avec succès !');
+        } else {
+            $this->error('Erreur lors de la suppression.');
+        }
+    }
+
+    public function changerCible()
+    {
+        $this->requirePost(false);
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE]);
+
+        $id = (int)($this->post('id_accessoire_niveau_filiere') ?: $this->post('id'));
+        if (!$id) {
+            $this->error('Identifiant de configuration invalide.');
+            return;
+        }
+        if ($this->model->toggleCibleStatus($id)) {
+            $this->success('Statut de la configuration mis à jour avec succès !');
+        } else {
+            $this->error('Erreur lors de la mise à jour du statut.');
+        }
+    }
+
     public function apiDistributions()
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
 
         $filter = trim($_GET['filter'] ?? 'all');
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json(['data' => []]);
+            return;
+        }
         $classeCode = $_GET['classe_code'] ?? null;
 
         try {
@@ -417,24 +877,21 @@ class AccessoireController extends BaseController
         try {
             $id = $this->validator->decrypter($details);
             $item = $this->model->getById($id);
-            if (!$item) { header('Location: ' . RACINE . 'accessoire/list'); exit(); }
+            if (!$item) { redirect('accessoire/list'); }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
-            header('Location: ' . RACINE . 'accessoire/list'); exit();
+            redirect('accessoire/list');
         }
-        header('Location: ' . RACINE . 'accessoire/list');
-        exit();
+        redirect('accessoire/list');
     }
 
     public function edition($details)
     {
-        header('Location: ' . RACINE . 'accessoire/list');
-        exit();
+        redirect('accessoire/list');
     }
 
     public function formulaire()
     {
-        header('Location: ' . RACINE . 'accessoire/list');
-        exit();
+        redirect('accessoire/list');
     }
 }

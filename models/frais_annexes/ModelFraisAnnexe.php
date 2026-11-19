@@ -2,7 +2,7 @@
 
 class ModelFraisAnnexe extends BaseModel
 {
-    protected string $table = 'frais_annexes';
+    protected string $table = TABLES::FRAIS_ANNEXES;
     protected string $primaryKey = 'id_frais_annexe';
     protected ?string $statusField = 'statut_frais_annexe';
     protected ?string $createdAtField = 'created_at_frais_annexe';
@@ -10,10 +10,10 @@ class ModelFraisAnnexe extends BaseModel
     public function getAll(?string $anneeCode = null, ?string $typeFiliere = null, ?string $niveauCode = null, ?string $categorie = null): array
     {
         $sql = "
-            SELECT fa.*, a.libelle_annee, n.libelle_niveau
-            FROM frais_annexes fa
-            LEFT JOIN annees a ON fa.annee_code = a.code_annee
-            LEFT JOIN niveaux n ON fa.niveau_code = n.code_niveau
+            SELECT fa.*, a.libelle_annee, n.libelle_niveau, n.slug_niveau
+            FROM " . TABLES::FRAIS_ANNEXES . " fa
+            LEFT JOIN " . TABLES::ANNEES . " a ON fa.annee_code = a.code_annee
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON fa.niveau_code = n.code_niveau
         ";
         $conditions = [];
         $params = [];
@@ -26,7 +26,8 @@ class ModelFraisAnnexe extends BaseModel
             $params[] = $typeFiliere;
         }
         if (!empty($niveauCode)) {
-            $conditions[] = "(fa.niveau_code = ? OR fa.niveau_code IS NULL OR fa.niveau_code = '')";
+            $conditions[] = "(fa.niveau_code = ? OR n.slug_niveau = ? OR fa.niveau_code IS NULL OR fa.niveau_code = '' OR fa.niveau_code = 'TOUT')";
+            $params[] = $niveauCode;
             $params[] = $niveauCode;
         }
         if (!empty($categorie)) {
@@ -46,10 +47,10 @@ class ModelFraisAnnexe extends BaseModel
     public function getById($id): array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT fa.*, a.libelle_annee, n.libelle_niveau
-            FROM frais_annexes fa
-            LEFT JOIN annees a ON fa.annee_code = a.code_annee
-            LEFT JOIN niveaux n ON fa.niveau_code = n.code_niveau
+            SELECT fa.*, a.libelle_annee, n.libelle_niveau, n.slug_niveau
+            FROM " . TABLES::FRAIS_ANNEXES . " fa
+            LEFT JOIN " . TABLES::ANNEES . " a ON fa.annee_code = a.code_annee
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON fa.niveau_code = n.code_niveau
             WHERE fa.id_frais_annexe = ? OR fa.code_frais_annexe = ?
             LIMIT 1
         ");
@@ -58,12 +59,19 @@ class ModelFraisAnnexe extends BaseModel
         return $row ?: [];
     }
 
+    private static array $montantCache = [];
+
     public function getMontantByTypeFiliere(string $typeFiliere, string $anneeCode, ?string $niveauCode = null, ?string $categorie = null): float
     {
+        $cacheKey = "{$typeFiliere}|{$anneeCode}|" . ($niveauCode ?? '') . "|" . ($categorie ?? '');
+        if (array_key_exists($cacheKey, self::$montantCache)) {
+            return self::$montantCache[$cacheKey];
+        }
+
         $sql = "
             SELECT montant_frais_annexe 
-            FROM frais_annexes 
-            WHERE statut_frais_annexe = 'actif'
+            FROM " . TABLES::FRAIS_ANNEXES . " 
+            WHERE statut_frais_annexe = '" . STATUTS::ACTIF . "'
               AND (type_filiere = ? OR type_filiere = 'TOUT')
               AND annee_code = ?
         ";
@@ -93,15 +101,17 @@ class ModelFraisAnnexe extends BaseModel
         $stmt = $this->getCon()->prepare($sql);
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ? (float)$row['montant_frais_annexe'] : 0.0;
+        $montant = $row ? (float)$row['montant_frais_annexe'] : 0.0;
+        self::$montantCache[$cacheKey] = $montant;
+        return $montant;
     }
 
     public function getFraisAnnexeDetails(string $typeFiliere, string $anneeCode, ?string $niveauCode = null, ?string $categorie = null): ?array
     {
         $sql = "
             SELECT * 
-            FROM frais_annexes 
-            WHERE statut_frais_annexe = 'actif'
+            FROM " . TABLES::FRAIS_ANNEXES . " 
+            WHERE statut_frais_annexe = '" . STATUTS::ACTIF . "'
               AND (type_filiere = ? OR type_filiere = 'TOUT')
               AND annee_code = ?
         ";
@@ -137,7 +147,7 @@ class ModelFraisAnnexe extends BaseModel
     public function checkDuplicate(string $anneeCode, string $typeFiliere, ?string $niveauCode, ?string $categorie = null, ?int $excludeId = null): ?array
     {
         // Contrôle d'unicité sur la combinaison (type_filiere x niveau_code x categorie_frais_annexe x annee_code)
-        $sql = "SELECT * FROM frais_annexes WHERE annee_code = ? AND type_filiere = ?";
+        $sql = "SELECT * FROM " . TABLES::FRAIS_ANNEXES . " WHERE annee_code = ? AND type_filiere = ?";
         $params = [$anneeCode, $typeFiliere];
         if (empty($niveauCode) || $niveauCode === 'TOUT') {
             $sql .= " AND (niveau_code IS NULL OR niveau_code = '' OR niveau_code = 'TOUT')";
@@ -165,5 +175,66 @@ class ModelFraisAnnexe extends BaseModel
         $stmt->execute([$code]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
+    }
+
+    public function reconduireFraisAnnee(string $anneeSourceCode, string $anneeCibleCode, ?string $etabCode = null, ?string $userCode = null): array
+    {
+        $db = $this->getCon();
+        $validator = new Validator();
+
+        // 1. Récupérer tous les tarifs actifs de l'année source
+        $stmt = $db->prepare("SELECT * FROM " . TABLES::FRAIS_ANNEXES . " WHERE annee_code = ? AND statut_frais_annexe = '" . STATUTS::ACTIF . "'");
+        $stmt->execute([$anneeSourceCode]);
+        $fraisSource = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($fraisSource)) {
+            return [
+                'success' => false,
+                'message' => "Aucun tarif de frais annexes actif trouvé pour l'année source sélectionnée.",
+                'count' => 0
+            ];
+        }
+
+        $createdCount = 0;
+        $skippedCount = 0;
+
+        $stmtInsert = $db->prepare("
+            INSERT INTO " . TABLES::FRAIS_ANNEXES . " 
+            (code_frais_annexe, libelle_frais_annexe, montant_frais_annexe, type_filiere, niveau_code, categorie_frais_annexe, annee_code, etablissement_code, statut_frais_annexe, created_at_frais_annexe, user_code)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
+        ");
+
+        foreach ($fraisSource as $fa) {
+            // Vérifier si le tarif existe déjà dans l'année de destination
+            $duplicate = $this->checkDuplicate($anneeCibleCode, $fa['type_filiere'], $fa['niveau_code'], $fa['categorie_frais_annexe']);
+            if ($duplicate) {
+                $skippedCount++;
+                continue;
+            }
+
+            // Générer un nouveau code unique
+            $newCode = $validator->generateCode(TABLES::FRAIS_ANNEXES, 'code_frais_annexe', 'FRAIS-ANN-', 8);
+
+            $stmtInsert->execute([
+                $newCode,
+                $fa['libelle_frais_annexe'],
+                $fa['montant_frais_annexe'],
+                $fa['type_filiere'],
+                $fa['niveau_code'],
+                $fa['categorie_frais_annexe'],
+                $anneeCibleCode,
+                $etabCode ?: $fa['etablissement_code'],
+                $userCode ?: $fa['user_code']
+            ]);
+
+            $createdCount++;
+        }
+
+        return [
+            'success' => true,
+            'count' => $createdCount,
+            'skipped' => $skippedCount,
+            'message' => "Reconduction terminée : {$createdCount} tarif(s) de frais annexes reconduit(s), {$skippedCount} ignoré(s) (déjà existants)."
+        ];
     }
 }

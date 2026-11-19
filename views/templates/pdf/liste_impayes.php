@@ -141,27 +141,8 @@
 
 <div class="page-wrapper">
 
-  <!-- EN-TÊTE ÉTABLISSEMENT -->
-  <?php 
-    $logoFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-    $logoSrc = file_exists($logoFile) ? 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoFile)) : '';
-  ?>
-  <table class="header-table">
-    <tr>
-      <td class="header-logo-cell">
-        <?php if (!empty($logoSrc)): ?>
-          <img src="<?= $logoSrc ?>" class="header-logo-img">
-        <?php else: ?>
-          <div style="font-weight:bold; color:#800000; font-size:12pt;">GROUPE EICG</div>
-        <?php endif; ?>
-      </td>
-      <td class="header-text-cell">
-        <div class="header-title">GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION</div>
-        <div class="header-subtitle">Agréé par l'Etat et le FDFP</div>
-        <div style="font-size: 7.5pt; font-style: italic; margin-top: 2px;">Contacts : 27 31 62 40 57 / 07 79 37 37 38 / 05 04 59 39 99 — Site web : www.groupe-eicg.net</div>
-      </td>
-    </tr>
-  </table>
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <?php include __DIR__ . '/components/header_institution.php'; ?>
 
   <!-- BANNIÈRE TITRE -->
   <div class="banner-title-box">RÉCAPITULATIF DES IMPAYÉS & RETARDS DE VERSEMENT</div>

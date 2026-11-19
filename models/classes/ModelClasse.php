@@ -2,7 +2,7 @@
 
 class ModelClasse extends BaseModel
 {
-    protected string $table = 'classes';
+    protected string $table = TABLES::CLASSES;
     protected string $primaryKey = 'id_classe';
     protected ?string $statusField = 'statut_classe';
     protected ?string $createdAtField = 'created_at_classe';
@@ -29,15 +29,15 @@ class ModelClasse extends BaseModel
                                 c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                                 f.libelle_filiere, f.type_filiere, n.libelle_niveau,
                                 s.montant_scolarite, s.code_scolarite, s.affectation_etat
-                FROM classes c
-                INNER JOIN scolarites s ON s.filiere_code = c.filiere_code
+                FROM " . TABLES::CLASSES . " c
+                INNER JOIN " . TABLES::SCOLARITES . " s ON s.filiere_code = c.filiere_code
                                        AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
-                                       AND s.statut_scolarite = 'actif'
+                                       AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
                                        AND s.annee_code = ?
                                        AND s.affectation_etat = ?
-                LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-                LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-                WHERE c.statut_classe = 'actif' AND c.annee_code = ?
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+                WHERE c.statut_classe = '" . STATUTS::ACTIF . "' AND c.annee_code = ?
                 GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                          c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                          f.libelle_filiere, f.type_filiere, n.libelle_niveau,
@@ -55,14 +55,14 @@ class ModelClasse extends BaseModel
                             c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                             f.libelle_filiere, f.type_filiere, n.libelle_niveau,
                             s.montant_scolarite, s.code_scolarite, s.affectation_etat
-            FROM classes c
-            INNER JOIN scolarites s ON s.filiere_code = c.filiere_code
+            FROM " . TABLES::CLASSES . " c
+            INNER JOIN " . TABLES::SCOLARITES . " s ON s.filiere_code = c.filiere_code
                                    AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
-                                   AND s.statut_scolarite = 'actif'
+                                   AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
                                    AND s.annee_code = ?
-            LEFT JOIN filieres f ON f.code_filiere = c.filiere_code
-            LEFT JOIN niveaux n ON n.code_niveau = c.niveau_code
-            WHERE c.statut_classe = 'actif' AND c.annee_code = ?
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+            WHERE c.statut_classe = '" . STATUTS::ACTIF . "' AND c.annee_code = ?
             GROUP BY c.id_classe, c.code_classe, c.libelle_classe, c.capacite_max_classe,
                      c.filiere_code, c.niveau_code, c.annee_code, c.etablissement_code,
                      f.libelle_filiere, f.type_filiere, n.libelle_niveau,
@@ -76,6 +76,45 @@ class ModelClasse extends BaseModel
     }
 
     /**
+     * Retourne les compteurs de diagnostic pour distinguer :
+     * - l'absence de classes créées pour l'année académique (total_classes_annee === 0)
+     * - l'absence de scolarité enregistrée pour l'année ou le régime (total_scolarites_annee / total_scolarites_regime === 0)
+     */
+    public function getDiagnosticsAnneeScolarite(string $anneeCode, ?string $affectationEtat = null): array
+    {
+        if (empty($anneeCode)) {
+            return [
+                'total_classes_annee' => 0,
+                'total_scolarites_annee' => 0,
+                'total_scolarites_regime' => 0,
+            ];
+        }
+
+        $db = $this->getCon();
+
+        $stmtCls = $db->prepare("SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ?");
+        $stmtCls->execute([$anneeCode]);
+        $totalClassesAnnee = (int)$stmtCls->fetchColumn();
+
+        $stmtScolAnnee = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND annee_code = ?");
+        $stmtScolAnnee->execute([$anneeCode]);
+        $totalScolaritesAnnee = (int)$stmtScolAnnee->fetchColumn();
+
+        $totalScolaritesRegime = $totalScolaritesAnnee;
+        if (!empty($affectationEtat)) {
+            $stmtScolRegime = $db->prepare("SELECT COUNT(*) FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "' AND annee_code = ? AND affectation_etat = ?");
+            $stmtScolRegime->execute([$anneeCode, $affectationEtat]);
+            $totalScolaritesRegime = (int)$stmtScolRegime->fetchColumn();
+        }
+
+        return [
+            'total_classes_annee' => $totalClassesAnnee,
+            'total_scolarites_annee' => $totalScolaritesAnnee,
+            'total_scolarites_regime' => $totalScolaritesRegime,
+        ];
+    }
+
+    /**
      * Reconduit toutes les classes actives d'une année source vers une année de destination.
      */
     public function reconduireClassesAnnee(string $anneeSourceCode, string $anneeCibleCode, ?string $etabCode = null, ?string $userCode = null): array
@@ -84,7 +123,7 @@ class ModelClasse extends BaseModel
         $validator = new Validator();
 
         // 1. Récupérer toutes les classes actives de l'année source
-        $stmt = $db->prepare("SELECT * FROM classes WHERE annee_code = ? AND statut_classe = 'actif'");
+        $stmt = $db->prepare("SELECT * FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND statut_classe = '" . STATUTS::ACTIF . "'");
         $stmt->execute([$anneeSourceCode]);
         $classesSource = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -99,9 +138,15 @@ class ModelClasse extends BaseModel
         $createdCount = 0;
         $skippedCount = 0;
 
+        $stmtCheck = $db->prepare("SELECT id_classe FROM " . TABLES::CLASSES . " WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
+        $stmtInsert = $db->prepare("
+            INSERT INTO " . TABLES::CLASSES . " 
+            (code_classe, libelle_classe, capacite_max_classe, cycle_code, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
+        ");
+
         foreach ($classesSource as $cls) {
             // Vérifier si la classe existe déjà dans l'année de destination
-            $stmtCheck = $db->prepare("SELECT id_classe FROM classes WHERE libelle_classe = ? AND annee_code = ? LIMIT 1");
             $stmtCheck->execute([$cls['libelle_classe'], $anneeCibleCode]);
             if ($stmtCheck->fetch()) {
                 $skippedCount++;
@@ -109,13 +154,7 @@ class ModelClasse extends BaseModel
             }
 
             // Générer un nouveau code unique
-            $newCode = $validator->generateCode('classes', 'code_classe', 'CLA-', 8);
-            
-            $stmtInsert = $db->prepare("
-                INSERT INTO classes 
-                (code_classe, libelle_classe, capacite_max_classe, cycle_code, filiere_code, etablissement_code, niveau_code, annee_code, statut_classe, created_at_classe, user_code)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', NOW(), ?)
-            ");
+            $newCode = $validator->generateCode(TABLES::CLASSES, 'code_classe', 'CLA-', 8);
             
             $inserted = $stmtInsert->execute([
                 $newCode,
@@ -176,7 +215,7 @@ class ModelClasse extends BaseModel
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = fc.filiere_code
             LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = fc.cycle_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = fc.niveau_code
-            WHERE fc.statut_filiere_cycle = 'actif'
+            WHERE fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "'
             ORDER BY c.libelle_cycle ASC, f.libelle_filiere ASC, n.libelle_niveau ASC
         ";
         return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -230,7 +269,7 @@ class ModelClasse extends BaseModel
             SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription, ins.affectation_etat
             FROM " . TABLES::ETUDIANTS . " e
             INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.etudiant_code = e.code_etudiant
-            WHERE ins.classe_code = ? AND (ins.statut_inscription != 'annule' OR ins.statut_inscription IS NULL)
+            WHERE ins.classe_code = ? AND (ins.statut_inscription != '" . STATUTS::ANNULE . "' OR ins.statut_inscription IS NULL)
             ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
         ");
         $stmt->execute([$classeCode]);
@@ -240,15 +279,20 @@ class ModelClasse extends BaseModel
     public function getMatieresForClasse(string $classeCode): array
     {
         $stmt = $this->getCon()->prepare("
-            SELECT em.*, m.libelle_matiere, m.code_matiere,
+            SELECT DISTINCT
+                   edt.matiere_code,
+                   m.libelle_matiere,
+                   edt.classe_code,
                    u.nom_user as nom_prof,
                    u.prenom_user as prenom_prof,
-                   e.grade_enseignant
-            FROM " . TABLES::ENSEIGNANT_MATIERE . " em
-            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = em.matiere_code
-            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = em.enseignant_code
-            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = em.enseignant_code
-            WHERE em.classe_code = ?
+                   e.grade_enseignant,
+                   ROUND(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 1) AS volume_horaire
+            FROM " . TABLES::EMPLOIS_TEMPS . " edt
+            LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
+            LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+            WHERE edt.classe_code = ?
+            GROUP BY edt.matiere_code, m.libelle_matiere, edt.classe_code, u.nom_user, u.prenom_user, e.grade_enseignant
             ORDER BY m.libelle_matiere ASC
         ");
         $stmt->execute([$classeCode]);
