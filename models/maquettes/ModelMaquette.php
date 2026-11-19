@@ -9,6 +9,58 @@ class ModelMaquette extends BaseModel
     protected ?string $updatedAtField = 'updated_at_maquette';
 
     /**
+     * Récupère les filières actives regroupées par code_niveau (via filiere_cycles et classes)
+     */
+    public function getFilieresByNiveauMap(): array
+    {
+        $db = $this->getCon();
+        $sql = "
+            SELECT DISTINCT
+                src.niveau_code,
+                f.code_filiere,
+                f.libelle_filiere,
+                f.slug_filiere
+            FROM (
+                SELECT fc.niveau_code, fc.filiere_code
+                FROM " . TABLES::FILIERE_CYCLES . " fc
+                WHERE (fc.statut_filiere_cycle = '" . STATUTS::ACTIF . "' OR fc.statut_filiere_cycle IS NULL)
+                  AND fc.niveau_code IS NOT NULL AND fc.niveau_code != ''
+                  AND fc.filiere_code IS NOT NULL AND fc.filiere_code != ''
+                UNION
+                SELECT cl.niveau_code, cl.filiere_code
+                FROM " . TABLES::CLASSES . " cl
+                WHERE (cl.statut_classe = '" . STATUTS::ACTIF . "' OR cl.statut_classe IS NULL)
+                  AND cl.niveau_code IS NOT NULL AND cl.niveau_code != ''
+                  AND cl.filiere_code IS NOT NULL AND cl.filiere_code != ''
+            ) src
+            INNER JOIN " . TABLES::FILIERES . " f ON f.code_filiere = src.filiere_code
+            WHERE (f.statut_filiere = '" . STATUTS::ACTIF . "' OR f.statut_filiere IS NULL)
+            ORDER BY f.libelle_filiere ASC
+        ";
+
+        try {
+            $stmt = $db->query($sql);
+            $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            $map = [];
+            foreach ($rows as $row) {
+                $niv = $row['niveau_code'];
+                if (!isset($map[$niv])) {
+                    $map[$niv] = [];
+                }
+                $map[$niv][] = [
+                    'code_filiere'    => $row['code_filiere'],
+                    'libelle_filiere' => $row['libelle_filiere'],
+                    'slug_filiere'    => $row['slug_filiere'] ?? ''
+                ];
+            }
+            return $map;
+        } catch (Exception $e) {
+            error_log("ModelMaquette::getFilieresByNiveauMap error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Récupère la liste des matières configurées dans la maquette pour une filière, un niveau et une année
      */
     public function getMaquetteForFiliereNiveau(string $filiereCode, string $niveauCode, ?string $anneeCode = null): array

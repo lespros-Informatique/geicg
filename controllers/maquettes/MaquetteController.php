@@ -21,6 +21,7 @@ class MaquetteController extends BaseController
                 'filieres' => [],
                 'niveaux' => [],
                 'matieres' => [],
+                'filieresByNiveau' => [],
                 'categories' => CATEGORIES_MATIERES::ALL,
                 'activeAnnee' => '',
                 'scripts' => ['public/assets/js/modules/maquettes.js']
@@ -31,12 +32,14 @@ class MaquetteController extends BaseController
         $filieres = (new ModelFiliere())->getByStatus(STATUTS::ACTIF);
         $niveaux = (new ModelNiveau())->getActifs();
         $matieres = (new ModelMatiere())->getByStatus(STATUTS::ACTIF);
+        $filieresByNiveau = $this->model->getFilieresByNiveauMap();
 
         $this->loadView('../views/maquettes/list.php', [
             'annees' => $annees,
             'filieres' => $filieres,
             'niveaux' => $niveaux,
             'matieres' => $matieres,
+            'filieresByNiveau' => $filieresByNiveau,
             'categories' => CATEGORIES_MATIERES::ALL,
             'activeAnnee' => $activeAnnee,
             'scripts' => ['public/assets/js/modules/maquettes.js']

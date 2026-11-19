@@ -20,8 +20,63 @@
     var csrfToken = config.csrfToken || '';
     return {
       racine: racine.endsWith('/') ? racine : racine + '/',
-      csrfToken: csrfToken
+      csrfToken: csrfToken,
+      filieresByNiveau: config.filieresByNiveau || {},
+      allFilieres: Array.isArray(config.allFilieres) ? config.allFilieres : []
     };
+  }
+
+  // Remplit et active/désactive le sélecteur Filière du modal en fonction du Niveau d'Études choisi
+  function populateModalFilieres(niveauCode, selectedFiliereCode) {
+    var $filiere = $('#maq_filiere');
+    if (!$filiere.length) return;
+
+    var niv = (niveauCode || '').trim();
+    var targetFil = (selectedFiliereCode || '').trim();
+    var cfg = getConfig();
+
+    $filiere.empty();
+
+    if (!niv) {
+      $filiere.append(new Option('-- Sélectionnez d\'abord un niveau --', ''));
+      $filiere.prop('disabled', true).val('').trigger('change');
+      return;
+    }
+
+    var list = Array.isArray(cfg.filieresByNiveau[niv]) ? cfg.filieresByNiveau[niv].slice() : [];
+
+    // En mode édition, garantir la présence de la filière existante même si la liaison a changé depuis
+    if (targetFil) {
+      var existsInList = list.some(function(item) { return item.code_filiere === targetFil; });
+      if (!existsInList) {
+        var found = cfg.allFilieres.find(function(item) { return item.code_filiere === targetFil; });
+        if (found) {
+          list.push(found);
+        } else {
+          list.push({ code_filiere: targetFil, libelle_filiere: targetFil, slug_filiere: '' });
+        }
+      }
+    }
+
+    if (!list.length) {
+      $filiere.append(new Option('-- Aucune filière associée à ce niveau --', ''));
+      $filiere.prop('disabled', true).val('').trigger('change');
+      return;
+    }
+
+    $filiere.append(new Option('-- Choisir une filière --', ''));
+    list.forEach(function(item) {
+      var label = item.libelle_filiere || item.code_filiere;
+      $filiere.append(new Option(label, item.code_filiere));
+    });
+
+    $filiere.prop('disabled', false);
+    if (targetFil && list.some(function(item) { return item.code_filiere === targetFil; })) {
+      $filiere.val(targetFil);
+    } else {
+      $filiere.val('');
+    }
+    $filiere.trigger('change');
   }
 
   // Fonctions d'ouverture / fermeture des modales accessibles globalement
@@ -29,15 +84,24 @@
     var form = document.getElementById('form-maquette');
     if (form) form.reset();
     $('#maq_id').val('');
+    $('#maq_matiere').val('').trigger('change.select2');
+    $('#maq_categorie').val('GENERALE');
+    $('#maq_coef').val('1.0');
     $('#modal-maquette-title').html('<i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Ajouter Matière à la Maquette');
 
-    // Pré-sélectionner selon les filtres actifs
+    // Pré-sélectionner l'année et, si un niveau est filtré, activer les filières liées
     var currentAnnee = $('#filter-annee').val();
     var currentFiliere = $('#filter-filiere').val();
     var currentNiveau = $('#filter-niveau').val();
-    if (currentAnnee) $('#maq_annee').val(currentAnnee).trigger('change');
-    if (currentFiliere) $('#maq_filiere').val(currentFiliere).trigger('change');
-    if (currentNiveau) $('#maq_niveau').val(currentNiveau).trigger('change');
+
+    if (currentAnnee) $('#maq_annee').val(currentAnnee).trigger('change.select2');
+    if (currentNiveau) {
+      $('#maq_niveau').val(currentNiveau).trigger('change.select2');
+      populateModalFilieres(currentNiveau, currentFiliere);
+    } else {
+      $('#maq_niveau').val('').trigger('change.select2');
+      populateModalFilieres('', '');
+    }
 
     $('#modal-maquette').css('display', 'flex');
 
@@ -63,10 +127,10 @@
 
   window.openEditMaquetteModal = function(id, annee, filiere, niveau, matiere, categorie, coef) {
     $('#maq_id').val(id);
-    if (annee) $('#maq_annee').val(annee).trigger('change');
-    if (filiere) $('#maq_filiere').val(filiere).trigger('change');
-    if (niveau) $('#maq_niveau').val(niveau).trigger('change');
-    if (matiere) $('#maq_matiere').val(matiere).trigger('change');
+    if (annee) $('#maq_annee').val(annee).trigger('change.select2');
+    $('#maq_niveau').val(niveau || '').trigger('change.select2');
+    populateModalFilieres(niveau || '', filiere || '');
+    if (matiere) $('#maq_matiere').val(matiere).trigger('change.select2');
     $('#maq_categorie').val(categorie || 'GENERALE');
     $('#maq_coef').val(coef || '1.0');
 
@@ -77,6 +141,11 @@
       try { lucide.createIcons(); } catch(e) {}
     }
   };
+
+  // Liaison dynamique Niveau d'Études -> Filière dans le modal
+  $(document).on('change', '#maq_niveau', function() {
+    populateModalFilieres($(this).val(), '');
+  });
 
   // Event Listeners globaux (attachés immédiatement sur document)
   $(document).on('click', '.btn-add-maquette', function(e) {

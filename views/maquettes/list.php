@@ -1,60 +1,6 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php'; 
 ?>
-<script>
-  window.openModalMaquette = function() {
-    var form = document.getElementById('form-maquette');
-    if (form) form.reset();
-    var idInput = document.getElementById('maq_id');
-    if (idInput) idInput.value = '';
-    var title = document.getElementById('modal-maquette-title');
-    if (title) title.innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;"></i> Ajouter Matière à la Maquette';
-
-    var fAnnee = document.getElementById('filter-annee');
-    var fFiliere = document.getElementById('filter-filiere');
-    var fNiveau = document.getElementById('filter-niveau');
-    var mAnnee = document.getElementById('maq_annee');
-    var mFiliere = document.getElementById('maq_filiere');
-    var mNiveau = document.getElementById('maq_niveau');
-
-    if (fAnnee && fAnnee.value && mAnnee) {
-      mAnnee.value = fAnnee.value;
-      if (window.jQuery && $(mAnnee).data('select2')) $(mAnnee).trigger('change');
-    }
-    if (fFiliere && fFiliere.value && mFiliere) {
-      mFiliere.value = fFiliere.value;
-      if (window.jQuery && $(mFiliere).data('select2')) $(mFiliere).trigger('change');
-    }
-    if (fNiveau && fNiveau.value && mNiveau) {
-      mNiveau.value = fNiveau.value;
-      if (window.jQuery && $(mNiveau).data('select2')) $(mNiveau).trigger('change');
-    }
-
-    var modal = document.getElementById('modal-maquette');
-    if (modal) modal.style.display = 'flex';
-    if (window.lucide) {
-      try { lucide.createIcons(); } catch(e) {}
-    }
-  };
-
-  window.closeModalMaquette = function() {
-    var modal = document.getElementById('modal-maquette');
-    if (modal) modal.style.display = 'none';
-  };
-
-  window.openModalDuplicateMaquette = function() {
-    var modal = document.getElementById('modal-dupliquer-maquette');
-    if (modal) modal.style.display = 'flex';
-    if (window.lucide) {
-      try { lucide.createIcons(); } catch(e) {}
-    }
-  };
-
-  window.closeModalDuplicateMaquette = function() {
-    var modal = document.getElementById('modal-dupliquer-maquette');
-    if (modal) modal.style.display = 'none';
-  };
-</script>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
@@ -67,14 +13,14 @@ require_once __DIR__ . '/../../public/inc/header.php';
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="book-marked" style="color: #1E3A5F; width: 26px; height: 26px;"></i> Maquettes Pédagogiques & Coefficients
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration des matières par Filière et Niveau d'études (Matières Générales & Matières Professionnelles)</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Configuration  Matières Générales & Matières Professionnelles</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <a id="btn-print-maquette" href="<?= url() ?>maquette/imprimerPdf<?= !empty($activeAnnee) ? '?annee_code=' . urlencode($activeAnnee) : '' ?>" target="_blank" class="btn btn-outline-secondary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #64748B; color: #334155; background: #FFFFFF; text-decoration: none; cursor: pointer;">
-            <i data-lucide="printer" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Imprimer (PDF)
+            <i data-lucide="printer" style="width: 16px; height: 16px; color: #1E3A5F;"></i> Imprimer 
           </a>
           <button type="button" class="btn btn-outline-primary btn-duplicate-maquette" onclick="openModalDuplicateMaquette()" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; cursor: pointer;">
-            <i data-lucide="copy" style="width: 16px; height: 16px;"></i> Reconduire d'une année à l'autre
+            <i data-lucide="copy" style="width: 16px; height: 16px;"></i> Reconduire
           </button>
           <button type="button" class="btn btn-primary btn-add-maquette" onclick="openModalMaquette()" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
             <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Ajouter une Matière à la Maquette
@@ -190,11 +136,8 @@ require_once __DIR__ . '/../../public/inc/header.php';
 
       <div style="margin-bottom: 14px;">
         <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:5px;">Filière *</label>
-        <select name="filiere_code" id="maq_filiere" class="form-control select2" required style="width:100%;">
-          <option value="">-- Choisir une filière --</option>
-          <?php foreach ($filieres as $f): ?>
-            <option value="<?= htmlspecialchars($f['code_filiere']) ?>"><?= htmlspecialchars($f['libelle_filiere']) ?></option>
-          <?php endforeach; ?>
+        <select name="filiere_code" id="maq_filiere" class="form-control select2" required disabled style="width:100%;">
+          <option value="">-- Sélectionnez d'abord un niveau --</option>
         </select>
       </div>
 
@@ -293,14 +236,16 @@ require_once __DIR__ . '/../../public/inc/header.php';
 <script type="application/json" id="maquette-list-config">
 <?= json_encode([
     'racine' => RACINE,
-    'csrfToken' => Validator::generateCsrfToken()
-]) ?>
-</script>
-<script>
-  window.MAQUETTE_CONFIG = {
-    racine: '<?= RACINE ?>',
-    csrfToken: '<?= Validator::generateCsrfToken() ?>'
-  };
+    'csrfToken' => Validator::generateCsrfToken(),
+    'filieresByNiveau' => $filieresByNiveau ?? [],
+    'allFilieres' => array_map(function ($f) {
+        return [
+            'code_filiere'    => $f['code_filiere'] ?? '',
+            'libelle_filiere' => $f['libelle_filiere'] ?? '',
+            'slug_filiere'    => $f['slug_filiere'] ?? ''
+        ];
+    }, $filieres ?? [])
+], JSON_UNESCAPED_UNICODE) ?>
 </script>
 <?php
 ViewContext::setScripts(['public/assets/js/modules/maquettes.js']);
