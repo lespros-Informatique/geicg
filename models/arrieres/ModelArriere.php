@@ -272,13 +272,17 @@ class ModelArriere extends BaseModel
     {
         $stmt = $this->getCon()->prepare("
             SELECT p.*, i.montant_scolarite_inscription, i.annee_code as annee_origine,
-                   e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.statut_affectation_etudiant,
-                   f.libelle_filiere, n.libelle_niveau, u.nom_user, u.prenom_user
+                   COALESCE(ann.libelle_annee, i.annee_code) AS libelle_annee_origine,
+                   e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant,
+                   CASE WHEN i.affectation_etat = 'oui' THEN 'AFFECTE' ELSE 'NON AFFECTE' END AS statut_affectation_etudiant,
+                   cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, u.nom_user, u.prenom_user
             FROM " . TABLES::PAIEMENTS . " p
             INNER JOIN " . TABLES::INSCRIPTIONS . " i ON p.inscription_code = i.code_inscription
             INNER JOIN " . TABLES::ETUDIANTS . " e ON i.etudiant_code = e.code_etudiant
-            LEFT JOIN " . TABLES::FILIERES . " f ON i.filiere_code = f.code_filiere
-            LEFT JOIN " . TABLES::NIVEAUX . " n ON i.niveau_code = n.code_niveau
+            LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+            LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+            LEFT JOIN " . TABLES::ANNEES . " ann ON ann.code_annee = i.annee_code
             LEFT JOIN " . TABLES::USERS . " u ON p.user_code = u.code_user
             WHERE p.code_paiement = ? LIMIT 1
         ");

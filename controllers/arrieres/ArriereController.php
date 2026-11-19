@@ -218,14 +218,15 @@ class ArriereController extends BaseController
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $data = [
+          'etablissement' => $this->getEtablissementConfig(),
           'reference_paiement' => $paiement['code_paiement'],
           'numero_recu' => $paiement['code_paiement'],
-          'date_paiement' => date('d/m/Y H:i:s', strtotime($paiement['created_at'] ?? 'now')),
+          'date_paiement' => !empty($paiement['date_paiement']) ? date('d/m/Y H:i:s', strtotime($paiement['date_paiement'])) : '',
           'matricule_etudiant' => $paiement['matricule_etudiant'],
-          'annee_origine' => $paiement['annee_origine'],
+          'annee_origine' => $paiement['libelle_annee_origine'] ?? $paiement['annee_origine'],
           'nom_prenom_etudiant' => mb_strtoupper(($paiement['nom_etudiant'] ?? '') . ' ' . ($paiement['prenom_etudiant'] ?? '')),
           'filiere_niveau' => trim(($paiement['libelle_filiere'] ?? '') . ' ' . ($paiement['libelle_niveau'] ?? '')),
-          'statut_affectation' => $paiement['statut_affectation_etudiant'] ?? 'AFFECTE',
+          'statut_affectation' => $paiement['statut_affectation_etudiant'] ?? '',
           'total_arriere_du' => $totalDu,
           'cumul_ancien_regle' => $ancienRegle,
           'montant_verse' => (float)$paiement['montant_paiement'],
@@ -233,7 +234,7 @@ class ArriereController extends BaseController
           'montant_lettres' => PdfService::numberToWordsFrench((float)$paiement['montant_paiement']),
           'mode_paiement' => $paiement['mode_paiement'],
           'reference_transaction' => $paiement['reference_paiement'],
-          'caissier_nom' => trim(($paiement['prenom_user'] ?? '') . ' ' . ($paiement['nom_user'] ?? 'Agent Caisse')),
+          'caissier_nom' => trim(($paiement['prenom_user'] ?? '') . ' ' . ($paiement['nom_user'] ?? '')),
           'session_caisse_id' => $paiement['session_caisse_code'] ?? '-'
         ];
 
