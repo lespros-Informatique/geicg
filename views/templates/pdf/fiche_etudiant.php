@@ -110,8 +110,8 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
 
     /* Bannière Principale */
     .banner-title {
-      background: #1E3A5F;
-      color: #FFFFFF;
+      border: 2px solid #373839;
+      border-radius: 5px;
       height: 35px;
       font-size: 20px;
       font-weight: bold;
@@ -170,7 +170,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     }
     .photo-img {
       width: 120px;
-      height: 120px;
+      height: 130px;
       border: 1px solid #2C2C2D;
       display: block;
     }
@@ -182,6 +182,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
       border-radius: 5px;
       padding: 9px 10px;
       margin-bottom: 8px;
+      margin-top: 8px;
     }
     .decision-banner {
       background: <?= $badgeBg ?>;
@@ -250,28 +251,26 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
   <div class="section-title"> IDENTITÉ DE L'ÉTUDIANT(E)</div>
   <table class="data-table">
     <tr>
-      <td style="width: 80%;">
-        <table style="width: 100%;">
+      <td style="width: 80%; vertical-align: top;">
+        <table style="width: 100%; border-collapse: collapse;">
           <tr>
-            <td style="width: 35%;">Matricule : <span class="val-bold" style="color:#1E3A5F; font-size:9.5px;"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
-            <td style="width: 35%;">Code Inscription N-1 : <span class="val-bold"><?= htmlspecialchars($code_inscription ?? '-') ?></span></td>
-            <td style="width: 30%;">Régime : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
+            <td colspan="2">Nom &amp; Prénom(s) : <span class="val-bold" style="color:#1E3A5F;"><?= htmlspecialchars(mb_strtoupper($nom_prenom_etudiant ?? '-')) ?></span></td>
           </tr>
           <tr>
-            <td colspan="3">Nom & Prénom(s) : <span class="val-bold" style="font-size: 10.5px; color:#1E3A5F;"><?= htmlspecialchars(mb_strtoupper($nom_prenom_etudiant ?? '-')) ?></span></td>
+            <td style="width: 50%;">Matricule : <span class="val-bold" style="color:#1E3A5F;"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
+            <td style="width: 50%;">Sexe : <span class="val-bold"><?= htmlspecialchars($sexe_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>Né(e) le : <span class="val-bold"><?= htmlspecialchars($date_naissance ?? '-') ?></span></td>
-            <td colspan="2">À : <span class="val-bold"><?= htmlspecialchars($lieu_naissance ?? '-') ?></span></td>
+            <td>Date de naissance : <span class="val-bold"><?= htmlspecialchars($date_naissance ?? '-') ?></span></td>
+            <td>Lieu de naissance : <span class="val-bold"><?= htmlspecialchars($lieu_naissance ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>Sexe : <span class="val-bold"><?= htmlspecialchars($sexe_etudiant ?? '-') ?></span></td>
             <td>Nationalité : <span class="val-bold"><?= htmlspecialchars($nationalite ?? '-') ?></span></td>
             <td>Téléphone : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
             <td>Email : <span class="val-bold"><?= htmlspecialchars($email_etudiant ?? '-') ?></span></td>
-            <td colspan="2">Domicile / Résidence : <span class="val-bold"><?= htmlspecialchars($adresse_etudiant ?? '-') ?></span></td>
+            <td>Domicile / Résidence : <span class="val-bold"><?= htmlspecialchars($adresse_etudiant ?? '-') ?></span></td>
           </tr>
         </table>
       </td>
@@ -303,7 +302,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
   </table>
 
   <!-- SECTION 2 : RÉCAPITULATIF ANCIENNE CLASSE & DÉCISION DE PASSAGE -->
-  <div class="section-title">2. RÉCAPITULATIF DE L'ANCIENNE CLASSE & DÉCISION DE FIN D'ANNÉE (N-1)</div>
+  <div class="section-title"> RÉCAPITULATIF DE L'ANNÉE ACADÉMIQUE <?= $annee_precedente ?> </div>
   <div class="recap-box">
     <table style="width: 100%;">
       <tr>
