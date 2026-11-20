@@ -27,6 +27,7 @@ class CaisseAnnexeController extends BaseController
                 'annees' => $annees,
                 'niveaux' => [],
                 'classes' => [],
+                'classesByAnnee' => [],
                 'filieres' => [],
                 'selectedAnneeCode' => '',
                 'inscriptions' => [],
@@ -49,7 +50,8 @@ class CaisseAnnexeController extends BaseController
         $dateFin = $_GET['date_fin'] ?? null;
 
         $niveaux = $this->model->getNiveauxActifs();
-        $classes = $this->model->getClassesActives();
+        $classes = $this->model->getClassesActives($activeYear);
+        $classesByAnnee = $this->model->getClassesGroupedByAnnees(array_column($annees, 'code_annee'));
         $filieres = $this->model->getFilieresActives();
 
         // Évaluation dynamique des statistiques financières pour les Frais Annexes
@@ -76,6 +78,7 @@ class CaisseAnnexeController extends BaseController
             'annees' => $annees,
             'niveaux' => $niveaux,
             'classes' => $classes,
+            'classesByAnnee' => $classesByAnnee,
             'filieres' => $filieres,
             'selectedAnneeCode' => $activeYear,
             'inscriptions' => $inscriptions,

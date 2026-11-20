@@ -264,9 +264,61 @@ class ModelCaisseAnnexe extends BaseModel
         return $this->getCon()->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getClassesActives(): array
+    public function getClassesActives(?string $anneeCode = null): array
     {
-        return $this->getCon()->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $sql = "
+            SELECT c.code_classe, c.libelle_classe, c.cycle_code, c.filiere_code, c.niveau_code, c.annee_code,
+                   COALESCE(f.type_filiere, '') AS type_filiere
+            FROM " . TABLES::CLASSES . " c
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+            WHERE c.statut_classe = '" . STATUTS::ACTIF . "'
+        ";
+        $params = [];
+        if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+            $sql .= " AND c.annee_code = ?";
+            $params[] = $anneeCode;
+        }
+        $sql .= " ORDER BY c.libelle_classe ASC";
+
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getClassesGroupedByAnnees(array $anneeCodes): array
+    {
+        $cleanCodes = array_values(array_unique(array_filter(array_map('trim', $anneeCodes))));
+        if (empty($cleanCodes)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($cleanCodes), '?'));
+        $sql = "
+            SELECT c.code_classe, c.libelle_classe, c.niveau_code, c.annee_code,
+                   COALESCE(f.type_filiere, '') AS type_filiere
+            FROM " . TABLES::CLASSES . " c
+            LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+            WHERE c.statut_classe = '" . STATUTS::ACTIF . "'
+              AND c.annee_code IN ({$placeholders})
+            ORDER BY c.libelle_classe ASC
+        ";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($cleanCodes);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $grouped = [];
+        foreach ($rows as $r) {
+            $ann = $r['annee_code'];
+            if (!isset($grouped[$ann])) {
+                $grouped[$ann] = [];
+            }
+            $grouped[$ann][] = [
+                'code_classe'    => $r['code_classe'],
+                'libelle_classe' => $r['libelle_classe'],
+                'niveau_code'    => $r['niveau_code'] ?? '',
+                'type_filiere'   => $r['type_filiere'] ?? ''
+            ];
+        }
+        return $grouped;
     }
 
     public function getFilieresActives(): array

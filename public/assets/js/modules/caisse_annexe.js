@@ -32,6 +32,7 @@
     var racine = moduleConfig.racine || ((typeof RACINE !== 'undefined') ? RACINE : '/geicg/');
     var canCancel = (moduleConfig.canCancel !== undefined) ? moduleConfig.canCancel : false;
     var csrfToken = moduleConfig.csrfToken || '';
+    var classesByAnnee = moduleConfig.classesByAnnee || {};
     var dtLang = (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage) ? GEICG.dataTableLanguage : (racine + 'json/datatables-i18n-fr-FR.json');
 
     if ($.fn.select2) {
@@ -233,8 +234,45 @@
       });
     }
 
+    // Mise à jour dynamique du sélecteur Classe / Groupe selon l'Année, le Niveau et le Type de Filière
+    function refreshClasseFilterOptions() {
+      var $classe = $('#filter-classe');
+      if (!$classe.length) return;
+
+      var selectedAnnee = $('#filter-annee').val() || '';
+      var selectedNiveau = $('#filter-niveau').val() || 'ALL';
+      var selectedType = $('#filter-type-filiere').val() || 'ALL';
+      var prevClasse = $classe.val() || 'ALL';
+
+      var list = Array.isArray(classesByAnnee[selectedAnnee]) ? classesByAnnee[selectedAnnee] : [];
+      var filtered = list.filter(function (c) {
+        if (selectedNiveau && selectedNiveau !== 'ALL' && c.niveau_code !== selectedNiveau) return false;
+        if (selectedType && selectedType !== 'ALL' && c.type_filiere !== selectedType) return false;
+        return true;
+      });
+
+      $classe.empty();
+      $classe.append(new Option('-- Toutes les classes --', 'ALL'));
+      var keepPrev = false;
+      filtered.forEach(function (c) {
+        var opt = new Option(c.libelle_classe || c.code_classe, c.code_classe);
+        opt.setAttribute('data-niveau', c.niveau_code || '');
+        opt.setAttribute('data-type-filiere', c.type_filiere || '');
+        $classe.append(opt);
+        if (c.code_classe === prevClasse) keepPrev = true;
+      });
+
+      $classe.val(keepPrev ? prevClasse : 'ALL').trigger('change.select2');
+    }
+
     // Événements de filtre
-    $('#filter-annee, #filter-type-filiere, #filter-niveau, #filter-classe, #filter-date-debut, #filter-date-fin').on('change input', function () {
+    $('#filter-annee, #filter-type-filiere, #filter-niveau').on('change', function () {
+      refreshClasseFilterOptions();
+      table.ajax.reload();
+      refreshKpis();
+    });
+
+    $('#filter-classe, #filter-date-debut, #filter-date-fin').on('change input', function () {
       table.ajax.reload();
       refreshKpis();
     });

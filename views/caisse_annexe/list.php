@@ -47,8 +47,8 @@ $canCancel = $canCancel ?? false;
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;" class="no-print">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::PRINT_FRAIS_ANNEXES, PERMISSIONS::VIEW_PAIEMENTS]))): ?>
-            <button type="button" onclick="printRegistry()" id="btn-print-caisse-annexe" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease; cursor: pointer;" title="Générer & imprimer le registre officiel de la caisse annexe en PDF">
-              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Registre (PDF)
+            <button type="button" onclick="printRegistry()" id="btn-print-caisse-annexe" class="btn btn-outline-primary" style="font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid #1E3A5F; color: #1E3A5F; background: #FFFFFF; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease; cursor: pointer;" title="Générer & imprimer le registre de la caisse annexe en PDF">
+              <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer le Registre 
             </button>
           <?php endif; ?>
 
@@ -120,7 +120,7 @@ $canCancel = $canCancel ?? false;
           <!-- Filtre Classe -->
           <div class="form-group" style="margin: 0;">
             <label style="font-weight: 700; font-size: 12.5px; color: #1E3A5F; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="users" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Classe / Groupe :
+              <i data-lucide="users" style="width: 15px; height: 15px; color: #1E3A5F;"></i> Classe  :
             </label>
             <select id="filter-classe" class="form-control select2" style="width: 100%;">
               <option value="ALL">-- Toutes les classes --</option>
@@ -193,7 +193,7 @@ $canCancel = $canCancel ?? false;
         <!-- 3. Encaissements Jour -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Jour (Annexes)</div>
+            <div style="font-size: 11px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px;">Encaissements Jour </div>
             <div style="font-size: 18px; font-weight: 900; color: #1E3A5F; margin-top: 3px;">
               <span id="kpi-encaisse-aujourdhui"><?= number_format((float)($stats['encaisse_aujourdhui'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
@@ -209,7 +209,7 @@ $canCancel = $canCancel ?? false;
         <!-- 4. Reste à Recouvrer -->
         <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 18px; border: 1px solid #FCA5A5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Reste à Recouvrer (Annexes)</div>
+            <div style="font-size: 11px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px;">Reste à Recouvrer </div>
             <div style="font-size: 18px; font-weight: 900; color: #B91C1C; margin-top: 3px;">
               <span id="kpi-attente-frais-annexes"><?= number_format((float)($stats['attente_frais_annexes'] ?? 0), 0, ',', ' ') ?></span> <span style="font-size: 10.5px; font-weight: 700;">FCFA</span>
             </div>
@@ -548,8 +548,9 @@ $canCancel = $canCancel ?? false;
     'racine' => RACINE,
     'csrfToken' => Validator::generateCsrfToken(),
     'canCancel' => !empty($canCancel),
-    'canRecord' => !empty($canRecord)
-]) ?>
+    'canRecord' => !empty($canRecord),
+    'classesByAnnee' => $classesByAnnee ?? []
+], JSON_UNESCAPED_UNICODE) ?>
 </script>
 
 <?php 
