@@ -112,14 +112,17 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     .banner-title {
       background: #1E3A5F;
       color: #FFFFFF;
-      font-size: 12px;
+      height: 35px;
+      font-size: 20px;
       font-weight: bold;
       text-align: center;
+      line-height: 40px;
       padding: 6px 8px;
-      margin-top: 5px;
-      margin-bottom: 8px;
+      margin-top: 15px;
+      margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+
     }
     .banner-sub {
       font-size: 9px;
@@ -131,12 +134,10 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
 
     /* Titres de sections */
     .section-title {
-      background: #F1F5F9;
-      color: #1E3A5F;
-      font-size: 10.2px;
+      color: #202020;
+      font-size: 16px;
       font-weight: bold;
       padding: 5px 8px;
-      border-left: 3.5px solid #1E3A5F;
       margin-top: 13px;
       margin-bottom: 6px;
       text-transform: uppercase;
@@ -151,19 +152,14 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     .data-table td {
       padding: 4px 5px;
       vertical-align: top;
-      font-size: 9.5px;
+      font-size: 13px;
     }
     .val-bold {
       font-weight: bold;
       color: #0F172A;
     }
 
-    .photo-frame-table {
-      width: 92px;
-      border: 1.5px solid #1E3A5F;
-      border-collapse: collapse;
-      background: #F8FAFC;
-    }
+  
     .photo-frame-cell {
       width: 90px;
       height: 102px;
@@ -173,8 +169,9 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
       background: #F8FAFC;
     }
     .photo-img {
-      width: 84px;
-      height: 98px;
+      width: 120px;
+      height: 120px;
+      border: 1px solid #2C2C2D;
       display: block;
     }
 
@@ -247,14 +244,10 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
   <!-- BANNIÈRE PRINCIPALE -->
   <div class="banner-title">
     FICHE DE RÉINSCRIPTION & BILAN ACADÉMIQUE
-    <span class="banner-sub">
-      ANCIENNE SESSION (N-1) : <?= htmlspecialchars($annee_precedente ?? '-') ?> &nbsp;|&nbsp; 
-      RÉINSCRIPTION CIBLE : <?= htmlspecialchars($annee_reinscription ?? '-') ?>
-    </span>
   </div>
 
   <!-- SECTION 1 : IDENTITÉ DU CANDIDAT -->
-  <div class="section-title">1. IDENTITÉ DE L'ÉTUDIANT(E)</div>
+  <div class="section-title"> IDENTITÉ DE L'ÉTUDIANT(E)</div>
   <table class="data-table">
     <tr>
       <td style="width: 80%;">
@@ -298,17 +291,10 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
               ? placeholderPath('etudiant')
               : '';
         ?>
-        <table align="right" class="photo-frame-table">
+        <table align="right">
           <tr>
             <td class="photo-frame-cell">
-              <?php if (!empty($resolvedPhoto)): ?>
-                <img src="<?= $resolvedPhoto ?>" width="84" height="98" class="photo-img" alt="Photo Étudiant">
-              <?php elseif (!empty($placeholderPhoto)): ?>
-                <img src="<?= $placeholderPhoto ?>" width="76" height="76" style="width: 76px; height: 76px; opacity: 0.8; display: block; margin: 0 auto;" alt="Photo Étudiant">
-                <div style="font-size: 7.5px; font-weight: bold; color: #64748B; margin-top: 5px; text-transform: uppercase;">PHOTO ÉTUDIANT</div>
-              <?php else: ?>
-                <div style="font-size: 8px; font-weight: bold; color: #94A3B8; text-transform: uppercase;">PHOTO<br>ÉTUDIANT</div>
-              <?php endif; ?>
+                <img src="<?= !empty($resolvedPhoto) ? $resolvedPhoto : $placeholderPhoto ?>" class="photo-img" alt="Photo Étudiant">
             </td>
           </tr>
         </table>
@@ -373,20 +359,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     </tr>
   </table>
 
-  <!-- SECTION 5 : COORDONNÉES DES PARENTS ET DU TUTEUR -->
-  <div class="section-title">5. COORDONNÉES DES PARENTS ET TUTEUR LÉGAL</div>
-  <table class="data-table">
-    <tr>
-      <td style="width: 50%;">Père : <span class="val-bold"><?= htmlspecialchars($nom_pere ?? '-') ?></span> (Tél: <?= htmlspecialchars($contact_pere ?? '-') ?>)</td>
-      <td style="width: 50%;">Mère : <span class="val-bold"><?= htmlspecialchars($nom_mere ?? '-') ?></span> (Tél: <?= htmlspecialchars($contact_mere ?? '-') ?>)</td>
-    </tr>
-    <tr>
-      <td>Tuteur Légal : <span class="val-bold"><?= htmlspecialchars($nom_tuteur ?? '-') ?></span> (Urgence: <span style="color:#B91C1C; font-weight:bold;"><?= htmlspecialchars($contact_tuteur ?? '-') ?></span>)</td>
-      <td>Profession / Habitation : <span class="val-bold"><?= htmlspecialchars($profession_tuteur ?? '-') ?></span> - <?= htmlspecialchars($adresse_tuteur ?? '-') ?></td>
-    </tr>
-  </table>
-
-  <!-- SECTION 6 : VISAS ET SIGNATURES OFFICIELLES -->
+  <!-- VISAS ET SIGNATURES OFFICIELLES -->
   <table class="signature-grid">
     <tr>
       <td>
