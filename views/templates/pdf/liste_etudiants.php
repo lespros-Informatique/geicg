@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -275,7 +284,7 @@
         Ce document est issu du Système de Gestion Intégré GROUPE EICG.
       </td>
       <td style="width: 50%; text-align: right;">
-        Fait à Bouaké, le <?= date('d/m/Y') ?>
+        Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?>
       </td>
     </tr>
   </table>

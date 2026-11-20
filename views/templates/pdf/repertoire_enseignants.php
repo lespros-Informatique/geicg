@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -291,7 +300,7 @@
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          <?= htmlspecialchars($etablissement['texte_pied_page'] ?? 'Document officiel généré par le Système GEICG') ?> &bull; <?= date('d/m/Y H:i:s') ?>
+          <?= htmlspecialchars($etablissement['texte_pied_page'] ?? 'Document officiel') ?> &bull; <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
@@ -476,7 +485,7 @@
         <?php endforeach; ?>
       <?php else: ?>
         <tr>
-          <td colspan="7" class="text-center" style="padding: 15px; color: #64748B;">
+          <td colspan="8" class="text-center" style="padding: 15px; color: #64748B;">
             Aucun enseignant ne correspond aux critères de recherche.
           </td>
         </tr>
@@ -489,13 +498,13 @@
     <tr>
       <td class="signature-box">
         <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'La Direction des Études & Pédagogie') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
         <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?></div>
       </td>
       <td style="width: 4%;"></td>
       <td class="signature-box">
         <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'La Direction Générale') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? 'La Direction Générale') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? '') ?></div>
         <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?></div>
       </td>
     </tr>

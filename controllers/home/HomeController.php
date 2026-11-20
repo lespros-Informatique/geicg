@@ -34,13 +34,13 @@ class HomeController extends BaseController
                 $recentInscriptions = [];
                 $recentPaiements = [];
                 $recentDepenses = [];
-                $teacherCourses = $model->getTeacherCourses($userCode, 6);
+                $teacherCourses = $model->getTeacherCourses($userCode, 6, $anneeCode);
             } else {
                 $stats = $model->getStats($anneeCode, $userCode, $roleCode);
                 $recentInscriptions = $model->getRecentInscriptions(5, $stats['annee_code'] ?? $anneeCode);
                 $recentPaiements = $model->getRecentPaiements(5, $stats['annee_code'] ?? $anneeCode);
                 $recentDepenses = $model->getRecentDepenses(5, $stats['annee_code'] ?? $anneeCode);
-                $teacherCourses = $model->getTeacherCourses($userCode, 6);
+                $teacherCourses = $model->getTeacherCourses($userCode, 6, $stats['annee_code'] ?? $anneeCode);
             }
 
             $this->loadView('../views/home/index.php', [

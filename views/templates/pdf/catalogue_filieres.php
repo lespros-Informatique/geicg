@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -428,7 +437,7 @@
           <?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'La Direction des Études & de la Pédagogie') ?>
         </div>
         <div style="font-size: 8pt; font-weight: bold; color: #334155; margin-bottom: 18px;">
-          <?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?>
+          <?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?>
         </div>
         <div style="font-size: 6.5pt; color: #64748B; font-style: italic;">
           <?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Visa pour conformité académique') ?>
@@ -449,7 +458,7 @@
   </table>
 
   <div style="margin-top: 10px; font-size: 7.5pt; color: #94A3B8; text-align: center;">
-    Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?> &bull; <?= htmlspecialchars($etablissement['texte_pied_page'] ?? 'Document officiel généré par le Système GEICG') ?>
+    Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?> &bull; <?= htmlspecialchars($etablissement['texte_pied_page'] ?? 'Document officiel') ?>
   </div>
 
 </body>

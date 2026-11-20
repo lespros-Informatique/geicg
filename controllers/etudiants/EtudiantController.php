@@ -27,9 +27,11 @@ class EtudiantController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_ETUDIANTS);
-        $anneeCode = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
-        if ($anneeCode === '' || $anneeCode === null) {
-            $anneeCode = $this->getActiveAnneeCode();
+        $rawAnnee = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? null);
+        $anneeCode = $this->resolveTargetAcademicYear($rawAnnee);
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
         }
 
         $filters = [
@@ -435,9 +437,11 @@ class EtudiantController extends BaseController
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? '');
-        if ($anneeCode === '' || $anneeCode === null || $anneeCode === 'ALL') {
-            $anneeCode = $this->getActiveAnneeCode();
+        $rawAnnee = $_GET['annee_code'] ?? ($_POST['annee_code'] ?? null);
+        $anneeCode = $this->resolveTargetAcademicYear($rawAnnee);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès non autorisé ou année académique introuvable.");
+            return;
         }
 
         $filters = [

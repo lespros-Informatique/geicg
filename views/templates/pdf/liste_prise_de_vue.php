@@ -11,17 +11,20 @@ if (empty($etablissement) || !is_array($etablissement)) {
 
 $nomEtab = $etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION';
 $numAutorisation = $etablissement['numero_autorisation'] ?? 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP';
-$adresse = $etablissement['adresse_etablissement'] ?? 'Bouaké - Côte d\'Ivoire';
-$contacts = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : ($etablissement['telephone_mobile'] ?? '27 31 62 40 57 / 07 79 37 37 38');
+$adresse = $etablissement['adresse_etablissement'] ?? '';
+$contacts = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : ($etablissement['telephone_mobile'] ?? '');
 $email = $etablissement['email_etablissement'] ?? '';
 $siteWeb = $etablissement['site_web'] ?? 'www.groupe-eicg.net';
-$villeSignature = $etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? 'Bouaké');
+$villeSignature = $etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? ($etablissement['ville_etablissement'] ?? ''));
 $titreDirection = $etablissement['titre_service_scolarite'] ?? ($etablissement['titre_direction_pedagogique'] ?? 'Le Responsable de la Scolarité');
 $nomSignataire = $etablissement['nom_responsable_scolarite'] ?? ($etablissement['nom_directeur_etudes'] ?? '');
 
-$logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-if (!file_exists($logoPath)) {
-    $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.png';
+$logoPath = '';
+if (!empty($etablissement['logo_etablissement'])) {
+    $cleanL = ltrim($etablissement['logo_etablissement'], '/');
+    foreach ([__DIR__ . '/../../../public/' . $cleanL, __DIR__ . '/../../../' . $cleanL] as $candL) {
+        if (file_exists($candL) && is_file($candL)) { $logoPath = $candL; break; }
+    }
 }
 if (!empty($etablissement['logo_etablissement'])) {
     $customLogo = __DIR__ . '/../../../' . ltrim($etablissement['logo_etablissement'], '/');
@@ -340,8 +343,17 @@ $tauxCouverture = (float)($stats['taux'] ?? 0);
             $rowClass = ($index % 2 === 0) ? 'row-even' : 'row-odd';
             $nomComplet = trim(($r['nom_etudiant'] ?? '') . ' ' . ($r['prenom_etudiant'] ?? ''));
             $photoRel = !empty($r['photo_inscription']) ? $r['photo_inscription'] : ($r['photo_etudiant'] ?? '');
-            $photoFullPath = !empty($photoRel) ? (__DIR__ . '/../../../' . ltrim($photoRel, '/')) : '';
-            $hasPhoto = (!empty($photoFullPath) && file_exists($photoFullPath));
+            $photoFullPath = '';
+            if (!empty($photoRel)) {
+                $cleanRel = ltrim($photoRel, '/');
+                foreach ([__DIR__ . '/../../../' . $cleanRel, __DIR__ . '/../../../public/' . $cleanRel] as $candP) {
+                    if (file_exists($candP) && is_file($candP)) {
+                        $photoFullPath = $candP;
+                        break;
+                    }
+                }
+            }
+            $hasPhoto = ($photoFullPath !== '');
             $dateIns = !empty($r['created_at_inscription']) ? date('d/m/Y', strtotime($r['created_at_inscription'])) : '-';
           ?>
           <tr class="<?= $rowClass ?>">

@@ -275,7 +275,22 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
             <td style="width: 50%;">
               N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
             </td>
-            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(!empty($date_operation) ? date('d/m/Y', strtotime($date_operation)) : date('d/m/Y')) ?></td>
+            <?php
+              $dateOpDisplay = date('d/m/Y');
+              if (!empty($date_operation_raw)) {
+                  $tsOp = strtotime((string)$date_operation_raw);
+                  if ($tsOp !== false) $dateOpDisplay = date('d/m/Y', $tsOp);
+              } elseif (!empty($date_operation)) {
+                  $dateOpStr = trim((string)$date_operation);
+                  if (preg_match('/^(\d{2}\/\d{2}\/\d{4})/', $dateOpStr, $mOp)) {
+                      $dateOpDisplay = $mOp[1];
+                  } else {
+                      $tsOp = strtotime($dateOpStr);
+                      if ($tsOp !== false) $dateOpDisplay = date('d/m/Y', $tsOp);
+                  }
+              }
+            ?>
+            <td style="width: 50%; color: #666666;"><?= htmlspecialchars($dateOpDisplay) ?></td>
           </tr>
           <tr>
             <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
@@ -328,10 +343,15 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       <tr>
         <td class="col-label">Droit d'Inscription</td>
         <td class="col-num"><?= isset($droit_op_du_jour) && $droit_op_du_jour > 0 ? number_format($droit_op_du_jour, 0, ',', ' ') . 'CFA' : '' ?></td>
-        <?php if (isset($droit_total_payer) && $droit_total_payer > 0): ?>
-          <td class="col-num"><?= number_format($droit_total_payer, 0, ',', ' ') ?>CFA</td>
-          <td class="col-num"><?= number_format($droit_total_verse ?? 0, 0, ',', ' ') ?>CFA</td>
-          <td class="col-num"><?= number_format($droit_reste_payer ?? 0, 0, ',', ' ') ?>CFA</td>
+        <?php
+          $droitPayerVal = $droit_total_payer ?? ($droit_tot_payer ?? 0);
+          $droitVerseVal = $droit_total_verse ?? ($droit_tot_verse ?? 0);
+          $droitResteVal = $droit_reste_payer ?? max(0, (float)$droitPayerVal - (float)$droitVerseVal);
+        ?>
+        <?php if ((float)$droitPayerVal > 0): ?>
+          <td class="col-num"><?= number_format($droitPayerVal, 0, ',', ' ') ?>CFA</td>
+          <td class="col-num"><?= number_format($droitVerseVal, 0, ',', ' ') ?>CFA</td>
+          <td class="col-num"><?= number_format($droitResteVal, 0, ',', ' ') ?>CFA</td>
         <?php else: ?>
           <td class="col-num cell-black"></td>
           <td class="col-num cell-black"></td>
@@ -418,7 +438,22 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
             <td style="width: 50%;">
               N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
             </td>
-            <td style="width: 50%; color: #666666;"><?= htmlspecialchars(!empty($date_operation) ? date('d/m/Y', strtotime($date_operation)) : date('d/m/Y')) ?></td>
+            <?php
+              $dateOpDisplay = date('d/m/Y');
+              if (!empty($date_operation_raw)) {
+                  $tsOp = strtotime((string)$date_operation_raw);
+                  if ($tsOp !== false) $dateOpDisplay = date('d/m/Y', $tsOp);
+              } elseif (!empty($date_operation)) {
+                  $dateOpStr = trim((string)$date_operation);
+                  if (preg_match('/^(\d{2}\/\d{2}\/\d{4})/', $dateOpStr, $mOp)) {
+                      $dateOpDisplay = $mOp[1];
+                  } else {
+                      $tsOp = strtotime($dateOpStr);
+                      if ($tsOp !== false) $dateOpDisplay = date('d/m/Y', $tsOp);
+                  }
+              }
+            ?>
+            <td style="width: 50%; color: #666666;"><?= htmlspecialchars($dateOpDisplay) ?></td>
           </tr>
           <tr>
             <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>

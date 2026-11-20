@@ -80,7 +80,11 @@ class MaquetteController extends BaseController
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code', '');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès non autorisé ou année académique introuvable.");
+            return;
+        }
         $filiereCode = !empty($_GET['filiere_code']) ? $_GET['filiere_code'] : null;
         $niveauCode = !empty($_GET['niveau_code']) ? $_GET['niveau_code'] : null;
         $categorie = !empty($_GET['categorie']) ? $_GET['categorie'] : null;
@@ -123,12 +127,20 @@ class MaquetteController extends BaseController
             }
         }
 
-        // Résolution du logo
+        // Résolution du logo depuis la configuration établissement
         $logoPath = null;
         if (!empty($etablissement['logo_etablissement'])) {
-            $candidateLogo = dirname(__DIR__, 2) . '/public/assets/images/logo/' . $etablissement['logo_etablissement'];
-            if (file_exists($candidateLogo)) {
-                $logoPath = $candidateLogo;
+            $cleanLogo = ltrim($etablissement['logo_etablissement'], '/');
+            $candidates = [
+                dirname(__DIR__, 2) . '/' . $cleanLogo,
+                dirname(__DIR__, 2) . '/public/' . $cleanLogo,
+                dirname(__DIR__, 2) . '/public/assets/images/logo/' . basename($cleanLogo)
+            ];
+            foreach ($candidates as $candidateLogo) {
+                if (file_exists($candidateLogo) && is_file($candidateLogo)) {
+                    $logoPath = $candidateLogo;
+                    break;
+                }
             }
         }
 
@@ -161,7 +173,7 @@ class MaquetteController extends BaseController
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
             'format' => 'A4',
-            'title' => 'Maquette Pédagogique - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'title' => 'Maquette Pédagogique - ' . ($etablissement['nom_etablissement'] ?? ($etablissement['sigle_etablissement'] ?? '')),
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
@@ -174,7 +186,11 @@ class MaquetteController extends BaseController
         $this->requireAuth();
         $filiereCode = $_GET['filiere_code'] ?? '';
         $niveauCode = $_GET['niveau_code'] ?? '';
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code', '');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['status' => 0, 'data' => []]);
+            return;
+        }
 
         if (empty($filiereCode) || empty($niveauCode)) {
             $this->json(['status' => 0, 'data' => []]);

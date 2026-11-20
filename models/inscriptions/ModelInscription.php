@@ -211,7 +211,11 @@ class ModelInscription extends BaseModel
             $scolarite = (float)($item['montant_scolarite_inscription'] ?? 0);
             $totalPaye = 0;
             foreach ($paiements as $p) {
-                if (($p['statut_paiement'] ?? '') !== STATUTS::ANNULE) {
+                $cat = strtoupper(trim($p['categorie_paiement'] ?? ''));
+                $tr = strtoupper(trim($p['tranche_code'] ?? ''));
+                $typ = (string)($p['type_paiement'] ?? '');
+                $isFA = ($cat === 'FRAIS_ANNEXES' || $tr === 'FRAIS_ANNEXES' || stripos($typ, 'Frais Annexe') !== false);
+                if (($p['statut_paiement'] ?? '') !== STATUTS::ANNULE && !$isFA) {
                     $totalPaye += (float)($p['montant_paiement'] ?? 0);
                 }
             }
@@ -506,10 +510,12 @@ class ModelInscription extends BaseModel
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
             LEFT JOIN " . TABLES::ANNEES . " a ON (a.code_annee = i.annee_code OR a.id_annee = i.annee_code)
             WHERE i.etudiant_code = ?
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
+              AND i.annee_code != ?
             ORDER BY i.id_inscription DESC
             LIMIT 1
         ");
-        $stmtPrev->execute([$etudiant['code_etudiant']]);
+        $stmtPrev->execute([$etudiant['code_etudiant'], $anneeActive]);
         $prevIns = $stmtPrev->fetch(PDO::FETCH_ASSOC);
 
         $prevDue = 0;
@@ -531,6 +537,9 @@ class ModelInscription extends BaseModel
                 SELECT SUM(montant_paiement) as total_paye 
                 FROM " . TABLES::PAIEMENTS . " 
                 WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'
+                  AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+                  AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
+                  AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
             ");
             $stmtP->execute([$prevIns['code_inscription']]);
             $rowP = $stmtP->fetch(PDO::FETCH_ASSOC);
@@ -1020,7 +1029,7 @@ class ModelInscription extends BaseModel
         $prevSolde = 0;
         if ($prevIns) {
             $prevDue = (float)($prevIns['montant_scolarite_inscription'] ?? 0);
-            $stmtP = $db->prepare("SELECT SUM(montant_paiement) as total_paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'");
+            $stmtP = $db->prepare("SELECT SUM(montant_paiement) as total_paye FROM " . TABLES::PAIEMENTS . " WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "' AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES') AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES') AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')");
             $stmtP->execute([$prevIns['code_inscription']]);
             $prevPaye = (float)($stmtP->fetch(PDO::FETCH_ASSOC)['total_paye'] ?? 0);
             $prevSolde = max(0, $prevDue - $prevPaye);
@@ -1244,18 +1253,20 @@ class ModelInscription extends BaseModel
     /**
      * Prépare toutes les données du reçu d'inscription pour PDF/HTML
      */
-    public function getRecuInscriptionData(string $param): ?array
+    public function getRecuInscriptionData(string $param, ?string $activeAnneeCode = null): ?array
     {
         $db = $this->getCon();
         $id = $param;
+        $targetAnnee = $activeAnneeCode ?: (string)Session::get('annee_active_code', '');
 
         $stmtIns = $db->prepare("
             SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
             WHERE (id_inscription = ? OR code_inscription = ? OR code_etudiant = ? OR matricule_etudiant = ? OR id_etudiant = ?)
               AND statut_inscription != '" . STATUTS::ANNULE . "'
+            ORDER BY (annee_code = ?) DESC, id_inscription DESC
             LIMIT 1
         ");
-        $stmtIns->execute([$id, $id, $id, $id, $id]);
+        $stmtIns->execute([$id, $id, $id, $id, $id, $targetAnnee]);
         $ins = $stmtIns->fetch(PDO::FETCH_ASSOC);
 
         if (!$ins) {
@@ -1295,15 +1306,20 @@ class ModelInscription extends BaseModel
             }
         }
 
-        $droitOpJour = $faOpJour + $scolOpJour;
+        // Règle comptable 4 : Dissociation stricte Scolarité vs Frais Annexes
+        $droitOpJour = $scolOpJour;
         $scolariteOpJour = $scolOpJour;
         $fraisAnnexesOpJour = $faOpJour;
 
-        $opDuJourMontant = $faOpJour + $scolOpJour;
-        if ($opDuJourMontant <= 0) {
-            $opDuJourMontant = (float)($lastPaiement['montant_paiement'] ?? 0);
-            $droitOpJour = $opDuJourMontant;
-            $scolariteOpJour = $opDuJourMontant;
+        $opDuJourMontant = $scolOpJour;
+        if ($opDuJourMontant <= 0 && !empty($allPaiements)) {
+            $lastCat = strtoupper(trim($lastPaiement['categorie_paiement'] ?? ''));
+            $lastTr = strtoupper(trim($lastPaiement['tranche_code'] ?? ''));
+            if ($lastCat !== 'FRAIS_ANNEXES' && $lastTr !== 'FRAIS_ANNEXES') {
+                $opDuJourMontant = (float)($lastPaiement['montant_paiement'] ?? 0);
+                $droitOpJour = $opDuJourMontant;
+                $scolariteOpJour = $opDuJourMontant;
+            }
         }
 
         $fraisAnnexesVerse = 0;
@@ -1381,8 +1397,9 @@ class ModelInscription extends BaseModel
         $modelFA = new ModelFraisAnnexe();
         $fraisAnnexesInscription = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $niveauCode, 'inscription');
 
-        $droitTotPayer = $premiereTrancheMontant + $fraisAnnexesInscription;
-        $droitTotVerse = $fraisAnnexesVerse + min($scolariteVerse, $premiereTrancheMontant);
+        // Règle comptable 4 : Ne jamais mélanger Frais Annexes dans Droit d'inscription / Scolarité
+        $droitTotPayer = $premiereTrancheMontant;
+        $droitTotVerse = ($premiereTrancheMontant > 0) ? min($scolariteVerse, $premiereTrancheMontant) : $scolariteVerse;
 
         $fraisAnnexesTotPayer = $fraisAnnexesInscription;
         $fraisAnnexesTotVerse = $fraisAnnexesVerse;
@@ -1391,7 +1408,11 @@ class ModelInscription extends BaseModel
         $scolariteTotal = $scolariteTotPayer;
         $resteAPayer = $scolariteReste;
 
-        $filiereNiveauSlug = (!empty($ins['slug_filiere']) ? $ins['slug_filiere'] : 'GEC') . '_' . (!empty($ins['slug_niveau']) ? $ins['slug_niveau'] : '2A');
+        $slugParts = array_filter([
+            !empty($ins['slug_filiere']) ? $ins['slug_filiere'] : '',
+            !empty($ins['slug_niveau']) ? $ins['slug_niveau'] : ''
+        ]);
+        $filiereNiveauSlug = !empty($slugParts) ? implode('_', $slugParts) : '-';
         if (!empty($ins['libelle_classe'])) {
             $filiereNiveauSlug = str_replace(' ', '_', $ins['libelle_classe']);
         }

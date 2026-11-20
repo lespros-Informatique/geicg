@@ -377,7 +377,7 @@ class InscriptionController extends BaseController
                 $id = $param;
             }
 
-            $recuData = $this->model->getRecuInscriptionData((string)$id);
+            $recuData = $this->model->getRecuInscriptionData((string)$id, $this->getActiveAnneeCode());
             if ($recuData === null || isset($recuData['error'])) {
                 $msg = $recuData['error'] ?? "Impossible de générer le reçu d'inscription : Inscription introuvable.";
                 Session::flash('flash_error', $msg);
@@ -385,6 +385,7 @@ class InscriptionController extends BaseController
             }
             $data = $recuData;
         }
+        $data['etablissement'] = $this->getEtablissementConfig();
 
         $html = PdfService::renderTemplate('recu_inscription.php', $data);
 

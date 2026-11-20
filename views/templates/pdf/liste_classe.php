@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -262,7 +271,7 @@
         Bilan des Présences : &nbsp;&nbsp;&nbsp;&nbsp; Présents : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ] &nbsp;&nbsp;&nbsp;&nbsp; Absents : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ] &nbsp;&nbsp;&nbsp;&nbsp; Retards : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]
       </td>
       <td style="width: 45%; text-align: right;">
-        Fait à Bouaké, le <?= date('d/m/Y') ?>
+        Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?>
       </td>
     </tr>
   </table>

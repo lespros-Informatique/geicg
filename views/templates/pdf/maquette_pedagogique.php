@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>

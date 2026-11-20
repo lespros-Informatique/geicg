@@ -15,11 +15,11 @@ class ModelComposition extends BaseModel
                    GROUP_CONCAT(DISTINCT CONCAT(f.libelle_filiere, ' (', n.libelle_niveau, ')') ORDER BY f.libelle_filiere SEPARATOR ', ') AS filieres_cible_names,
                    GROUP_CONCAT(DISTINCT cl.libelle_classe ORDER BY cl.libelle_classe SEPARATOR ', ') AS classes_cible_names
             FROM " . TABLES::COMPOSITIONS . " comp
-            LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+            LEFT JOIN " . TABLES::SEMESTRES . " s ON (s.code_semestre = comp.semestre_code AND (comp.annee_code IS NULL OR comp.annee_code = '' OR s.annee_code = comp.annee_code))
             LEFT JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cnf.niveau_code
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cnf.filiere_code
-            LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+            LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code AND (comp.annee_code IS NULL OR comp.annee_code = '' OR cl.annee_code = comp.annee_code))
         ";
         $conditions = [];
         $params = [];
@@ -112,9 +112,10 @@ class ModelComposition extends BaseModel
                         WHERE cm.composition_code = cnf.composition_code 
                           AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere) AS nb_matieres
                 FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf
+                INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cnf.composition_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cnf.niveau_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cnf.filiere_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code AND (comp.annee_code IS NULL OR comp.annee_code = '' OR cl.annee_code = comp.annee_code))
                 WHERE cnf.composition_code = ?
                 GROUP BY cnf.code_composition_niveau_filiere
                 ORDER BY n.libelle_niveau ASC, f.libelle_filiere ASC
@@ -137,9 +138,10 @@ class ModelComposition extends BaseModel
             $stmt = $this->getCon()->prepare("
                 SELECT cnf.*, n.libelle_niveau, f.libelle_filiere, cl.code_classe, cl.libelle_classe
                 FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf
+                INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cnf.composition_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cnf.niveau_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cnf.filiere_code
-                LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+                LEFT JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code AND (comp.annee_code IS NULL OR comp.annee_code = '' OR cl.annee_code = comp.annee_code))
                 WHERE cnf.composition_code IN ({$placeholders})
                 GROUP BY cnf.code_composition_niveau_filiere, cl.code_classe
                 ORDER BY n.libelle_niveau ASC, f.libelle_filiere ASC
@@ -216,8 +218,8 @@ class ModelComposition extends BaseModel
 
         try {
             $db = $this->getCon();
-            // 1. Fetch target class (niveau and filiere)
-            $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, niveau_code, filiere_code FROM " . TABLES::CLASSES . " WHERE code_classe = ?");
+            // 1. Fetch target class (niveau, filiere et annee_code)
+            $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, niveau_code, filiere_code, annee_code FROM " . TABLES::CLASSES . " WHERE code_classe = ?");
             $stmtCl->execute([$classeCode]);
             $classeRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
 
@@ -233,13 +235,18 @@ class ModelComposition extends BaseModel
                 JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
                 JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
                 JOIN " . TABLES::MATIERES . " m ON m.code_matiere = cm.matiere_code
-                LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+                LEFT JOIN " . TABLES::SEMESTRES . " s ON (s.code_semestre = comp.semestre_code AND (comp.annee_code IS NULL OR comp.annee_code = '' OR s.annee_code = comp.annee_code))
                 WHERE cnf.niveau_code = ? AND cnf.filiere_code = ? AND cm.matiere_code = ?
             ";
             $params = [
                 $classeRow['libelle_classe'],
                 $classeRow['niveau_code'], $classeRow['filiere_code'], $matiereCode
             ];
+
+            if (!empty($classeRow['annee_code'])) {
+                $sql .= " AND comp.annee_code = ?";
+                $params[] = $classeRow['annee_code'];
+            }
 
             if (!empty($semestreCode)) {
                 $sql .= " AND comp.semestre_code = ?";
@@ -368,12 +375,25 @@ class ModelComposition extends BaseModel
     public function findClasseForTargetNiveauFiliere(string $compositionNiveauFiliereCode): ?string
     {
         $db = $this->getCon();
-        $stmtCible = $db->prepare("SELECT niveau_code, filiere_code FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " WHERE code_composition_niveau_filiere = ?");
+        $stmtCible = $db->prepare("
+            SELECT cnf.niveau_code, cnf.filiere_code, comp.annee_code
+            FROM " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf
+            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = cnf.composition_code
+            WHERE cnf.code_composition_niveau_filiere = ?
+            LIMIT 1
+        ");
         $stmtCible->execute([$compositionNiveauFiliereCode]);
         $targetRow = $stmtCible->fetch(PDO::FETCH_ASSOC);
         if ($targetRow) {
-            $stmtCl = $db->prepare("SELECT code_classe FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND filiere_code = ? LIMIT 1");
-            $stmtCl->execute([$targetRow['niveau_code'], $targetRow['filiere_code']]);
+            $sql = "SELECT code_classe FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND filiere_code = ?";
+            $params = [$targetRow['niveau_code'], $targetRow['filiere_code']];
+            if (!empty($targetRow['annee_code'])) {
+                $sql .= " AND annee_code = ?";
+                $params[] = $targetRow['annee_code'];
+            }
+            $sql .= " LIMIT 1";
+            $stmtCl = $db->prepare($sql);
+            $stmtCl->execute($params);
             $cRow = $stmtCl->fetch(PDO::FETCH_ASSOC);
             return $cRow['code_classe'] ?? null;
         }
@@ -390,7 +410,7 @@ class ModelComposition extends BaseModel
             SELECT comp.*, cm.id_composition_matiere 
             FROM " . TABLES::COMPOSITIONS . " comp
             JOIN " . TABLES::COMPOSITION_NIVEAU_FILIERE . " cnf ON cnf.composition_code = comp.code_composition
-            JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code)
+            JOIN " . TABLES::CLASSES . " cl ON (cl.niveau_code = cnf.niveau_code AND cl.filiere_code = cnf.filiere_code AND cl.annee_code = comp.annee_code)
             JOIN " . TABLES::COMPOSITION_MATIERES . " cm ON (cm.composition_code = comp.code_composition AND cm.composition_niveau_filiere_code = cnf.code_composition_niveau_filiere)
             WHERE cl.code_classe = ? AND cm.matiere_code = ? AND comp.semestre_code = ? AND comp.type_composition = ? 
               AND comp.annee_code = ?

@@ -62,7 +62,7 @@ class ModelEmploi extends BaseModel
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
         ";
-        $conditions = ["edt.annee_code = ?"];
+        $conditions = ["edt.annee_code = ?", "(edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)"];
         $params = [$anneeCode];
 
         if (!empty($niveauCode)) {
@@ -114,6 +114,7 @@ class ModelEmploi extends BaseModel
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
             WHERE edt.enseignant_code IN ($inCodes)
               AND edt.annee_code = ?
+              AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
         ";
         $params = array_merge($teacherCodes, [$anneeCode]);
 
@@ -153,6 +154,7 @@ class ModelEmploi extends BaseModel
             INNER JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON edt.classe_code = cl.code_classe
             WHERE edt.enseignant_code IN ($inCodes)
               AND edt.annee_code = ?
+              AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
         ";
         $params = array_merge($teacherCodes, [$anneeCode]);
         $sql .= " ORDER BY cl.libelle_classe ASC";
@@ -169,31 +171,57 @@ class ModelEmploi extends BaseModel
     /**
      * Recherche l'enseignant affecté à une classe et matière depuis les créneaux déjà existants
      */
-    public function getAssignedTeacher(string $classeCode, string $matiereCode): ?array
+    public function getAssignedTeacher(string $classeCode, string $matiereCode, ?string $anneeCode = null): ?array
     {
         try {
             $db = $this->getCon();
-            $stmt = $db->prepare("
+            $targetAnnee = $anneeCode ?: '';
+            if ($targetAnnee === '' && !empty($classeCode)) {
+                $stmtAn = $db->prepare("SELECT annee_code FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
+                $stmtAn->execute([$classeCode]);
+                $targetAnnee = (string)($stmtAn->fetchColumn() ?: Session::get('annee_active_code', ''));
+            }
+            if ($targetAnnee === '') {
+                $targetAnnee = (string)Session::get('annee_active_code', '');
+            }
+
+            $sql1 = "
                 SELECT edt.enseignant_code,
                        CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom
                 FROM " . TABLES::EMPLOIS_TEMPS . " edt
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
-                WHERE edt.classe_code = ? AND edt.matiere_code = ? AND edt.enseignant_code IS NOT NULL AND edt.enseignant_code != ''
-                LIMIT 1
-            ");
-            $stmt->execute([$classeCode, $matiereCode]);
+                WHERE edt.classe_code = ? AND edt.matiere_code = ?
+                  AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+                  AND edt.enseignant_code IS NOT NULL AND edt.enseignant_code != ''
+            ";
+            $params1 = [$classeCode, $matiereCode];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql1 .= " AND edt.annee_code = ?";
+                $params1[] = $targetAnnee;
+            }
+            $sql1 .= " LIMIT 1";
+            $stmt = $db->prepare($sql1);
+            $stmt->execute($params1);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$row) {
-                $stmtGlobal = $db->prepare("
+                $sql2 = "
                     SELECT edt.enseignant_code,
                            CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, '')) AS enseignant_nom
                     FROM " . TABLES::EMPLOIS_TEMPS . " edt
                     LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
-                    WHERE edt.matiere_code = ? AND edt.enseignant_code IS NOT NULL AND edt.enseignant_code != ''
-                    LIMIT 1
-                ");
-                $stmtGlobal->execute([$matiereCode]);
+                    WHERE edt.matiere_code = ?
+                      AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+                      AND edt.enseignant_code IS NOT NULL AND edt.enseignant_code != ''
+                ";
+                $params2 = [$matiereCode];
+                if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                    $sql2 .= " AND edt.annee_code = ?";
+                    $params2[] = $targetAnnee;
+                }
+                $sql2 .= " LIMIT 1";
+                $stmtGlobal = $db->prepare($sql2);
+                $stmtGlobal->execute($params2);
                 $row = $stmtGlobal->fetch(PDO::FETCH_ASSOC);
             }
 
@@ -207,7 +235,7 @@ class ModelEmploi extends BaseModel
     /**
      * Détecte les conflits de planning (salle, enseignant, classe)
      */
-    public function findScheduleConflicts(string $classeCode, string $salleCode, string $enseignantCode, string $jour, string $heureDebut, string $heureFin, $excludeId = null): array
+    public function findScheduleConflicts(string $classeCode, string $salleCode, string $enseignantCode, string $jour, string $heureDebut, string $heureFin, $excludeId = null, ?string $anneeCode = null): array
     {
         $conflicts = [];
         $jour = strtolower(trim($jour));
@@ -229,6 +257,15 @@ class ModelEmploi extends BaseModel
 
         try {
             $db = $this->getCon();
+            $targetAnnee = $anneeCode ?: '';
+            if ($targetAnnee === '' && !empty($classeCode)) {
+                $stmtAn = $db->prepare("SELECT annee_code FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
+                $stmtAn->execute([$classeCode]);
+                $targetAnnee = (string)($stmtAn->fetchColumn() ?: Session::get('annee_active_code', ''));
+            }
+            if ($targetAnnee === '') {
+                $targetAnnee = (string)Session::get('annee_active_code', '');
+            }
 
             $baseSql = "
                 SELECT edt.*
@@ -237,12 +274,17 @@ class ModelEmploi extends BaseModel
                   AND LOWER(edt.jour) = ?
                   AND (edt.heure_debut < ? AND edt.heure_fin > ?)
             ";
+            $baseParams = [$jour, $heureFin, $heureDebut];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $baseSql .= " AND edt.annee_code = ?";
+                $baseParams[] = $targetAnnee;
+            }
             $excludeSql = $excludeId ? " AND edt.id_emploi != " . (int)$excludeId : "";
 
             // 1. Vérification Conflit Salle
             if (!empty($salleCode)) {
                 $stmtS = $db->prepare($baseSql . " AND edt.salle_code = ?" . $excludeSql);
-                $stmtS->execute([$jour, $heureFin, $heureDebut, $salleCode]);
+                $stmtS->execute(array_merge($baseParams, [$salleCode]));
                 $rowS = $stmtS->fetch(PDO::FETCH_ASSOC);
                 if ($rowS) {
                     $salleNom = $rowS['libelle_salle'] ?: 'Cette salle';
@@ -259,7 +301,7 @@ class ModelEmploi extends BaseModel
             // 2. Vérification Conflit Enseignant
             if (!empty($enseignantCode)) {
                 $stmtE = $db->prepare($baseSql . " AND edt.enseignant_code = ?" . $excludeSql);
-                $stmtE->execute([$jour, $heureFin, $heureDebut, $enseignantCode]);
+                $stmtE->execute(array_merge($baseParams, [$enseignantCode]));
                 $rowE = $stmtE->fetch(PDO::FETCH_ASSOC);
                 if ($rowE) {
                     $profNom = $rowE['nom_prof'] ?: 'Cet enseignant';
@@ -276,7 +318,7 @@ class ModelEmploi extends BaseModel
             // 3. Vérification Conflit Classe
             if (!empty($classeCode)) {
                 $stmtC = $db->prepare($baseSql . " AND edt.classe_code = ?" . $excludeSql);
-                $stmtC->execute([$jour, $heureFin, $heureDebut, $classeCode]);
+                $stmtC->execute(array_merge($baseParams, [$classeCode]));
                 $rowC = $stmtC->fetch(PDO::FETCH_ASSOC);
                 if ($rowC) {
                     $classeNom = $rowC['libelle_classe'] ?: 'Cette classe';
@@ -345,10 +387,11 @@ class ModelEmploi extends BaseModel
     /**
      * Emploi du temps complet d'un enseignant
      */
-    public function getTeacherSchedule(string $ensCode): array
+    public function getTeacherSchedule(string $ensCode, ?string $anneeCode = null): array
     {
         try {
-            $stmt = $this->getCon()->prepare("
+            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+            $sql = "
                 SELECT edt.*, 
                        cl.libelle_classe, 
                        m.libelle_matiere, 
@@ -361,9 +404,15 @@ class ModelEmploi extends BaseModel
                 LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
                 WHERE edt.enseignant_code = ? AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
-                ORDER BY edt.jour ASC, edt.heure_debut ASC
-            ");
-            $stmt->execute([$ensCode]);
+            ";
+            $params = [$ensCode];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql .= " AND edt.annee_code = ?";
+                $params[] = $targetAnnee;
+            }
+            $sql .= " ORDER BY edt.jour ASC, edt.heure_debut ASC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelEmploi getTeacherSchedule error: " . $e->getMessage());
@@ -386,20 +435,22 @@ class ModelEmploi extends BaseModel
     }
 
     /**
-     * Matrice des créneaux pour une classe donnée avec informations de la classe (filtrable par enseignant)
+     * Matrice des créneaux pour une classe donnée avec informations de la classe (filtrable par enseignant et année)
      */
-    public function getClassScheduleMatrix(string $classeCode, ?array $teacherCodes = null): array
+    public function getClassScheduleMatrix(string $classeCode, ?array $teacherCodes = null, ?string $anneeCode = null): array
     {
         try {
             $db = $this->getCon();
             $stmtCls = $db->prepare("
-                SELECT cl.libelle_classe, n.libelle_niveau 
+                SELECT cl.libelle_classe, cl.annee_code, n.libelle_niveau 
                 FROM " . TABLES::CLASSES . " cl 
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code 
                 WHERE cl.code_classe = ? LIMIT 1
             ");
             $stmtCls->execute([$classeCode]);
             $classeInfo = $stmtCls->fetch(PDO::FETCH_ASSOC) ?: null;
+
+            $targetAnnee = $anneeCode ?: ($classeInfo['annee_code'] ?? (string)Session::get('annee_active_code', ''));
 
             $sqlSlots = "
                 SELECT edt.*, 
@@ -412,8 +463,14 @@ class ModelEmploi extends BaseModel
                 LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
                 WHERE edt.classe_code = ?
+                  AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
             ";
             $params = [$classeCode];
+
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sqlSlots .= " AND edt.annee_code = ?";
+                $params[] = $targetAnnee;
+            }
 
             if (!empty($teacherCodes)) {
                 $inCodes = implode(',', array_fill(0, count($teacherCodes), '?'));

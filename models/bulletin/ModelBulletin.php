@@ -242,11 +242,11 @@ class ModelBulletin extends BaseModel
                        coefficient_composition,
                        coefficient_maquette
                 FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
-                WHERE classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+                WHERE classe_code = ? AND semestre_code = ? AND annee_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
                   AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
             ";
             $stmtClass = $db->prepare($sqlClassmates);
-            $stmtClass->execute([$item['classe_code'], $selectedSemestreCode]);
+            $stmtClass->execute([$item['classe_code'], $selectedSemestreCode, $item['annee_code'] ?? '']);
             $classNotes = $stmtClass->fetchAll(PDO::FETCH_ASSOC);
 
             // 1. Agrégation par étudiant & par matière (Pondérée par composition)
@@ -419,7 +419,7 @@ class ModelBulletin extends BaseModel
                    ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moy_sem
             FROM " . TABLES::NOTES . " n
             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-            LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+            LEFT JOIN " . TABLES::SEMESTRES . " s ON (s.code_semestre = comp.semestre_code AND (comp.annee_code IS NULL OR comp.annee_code = '' OR s.annee_code = comp.annee_code))
             WHERE n.inscription_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
               AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
             GROUP BY comp.semestre_code, s.libelle_semestre

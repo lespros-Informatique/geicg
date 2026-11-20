@@ -262,7 +262,22 @@ $libelleFA = !empty($libelle_frais_annexe) ? $libelle_frais_annexe : 'Frais Anne
             <td style="width: 50%;">
               Quittance N° : <span class="val-bold text-amber"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
             </td>
-            <td style="width: 50%; color: #475569;">Date : <span class="val-bold"><?= htmlspecialchars(!empty($date_operation) ? date('d/m/Y H:i', strtotime($date_operation)) : date('d/m/Y H:i')) ?></span></td>
+            <?php
+              $dateFaDisplay = date('d/m/Y H:i');
+              if (!empty($date_operation_raw)) {
+                  $tsFa = strtotime((string)$date_operation_raw);
+                  if ($tsFa !== false) $dateFaDisplay = date('d/m/Y H:i', $tsFa);
+              } elseif (!empty($date_operation)) {
+                  $dateFaStr = trim((string)$date_operation);
+                  if (preg_match('/^(\d{2}\/\d{2}\/\d{4}(?:\s+\d{2}:\d{2})?)/', $dateFaStr, $mFa)) {
+                      $dateFaDisplay = $mFa[1];
+                  } else {
+                      $tsFa = strtotime($dateFaStr);
+                      if ($tsFa !== false) $dateFaDisplay = date('d/m/Y H:i', $tsFa);
+                  }
+              }
+            ?>
+            <td style="width: 50%; color: #475569;">Date : <span class="val-bold"><?= htmlspecialchars($dateFaDisplay) ?></span></td>
           </tr>
           <tr>
             <td>Matricule Étudiant : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
@@ -390,7 +405,22 @@ $libelleFA = !empty($libelle_frais_annexe) ? $libelle_frais_annexe : 'Frais Anne
             <td style="width: 50%;">
               Quittance N° : <span class="val-bold text-amber"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
             </td>
-            <td style="width: 50%; color: #475569;">Date : <span class="val-bold"><?= htmlspecialchars(!empty($date_operation) ? date('d/m/Y H:i', strtotime($date_operation)) : date('d/m/Y H:i')) ?></span></td>
+            <?php
+              $dateFaDisplay = date('d/m/Y H:i');
+              if (!empty($date_operation_raw)) {
+                  $tsFa = strtotime((string)$date_operation_raw);
+                  if ($tsFa !== false) $dateFaDisplay = date('d/m/Y H:i', $tsFa);
+              } elseif (!empty($date_operation)) {
+                  $dateFaStr = trim((string)$date_operation);
+                  if (preg_match('/^(\d{2}\/\d{2}\/\d{4}(?:\s+\d{2}:\d{2})?)/', $dateFaStr, $mFa)) {
+                      $dateFaDisplay = $mFa[1];
+                  } else {
+                      $tsFa = strtotime($dateFaStr);
+                      if ($tsFa !== false) $dateFaDisplay = date('d/m/Y H:i', $tsFa);
+                  }
+              }
+            ?>
+            <td style="width: 50%; color: #475569;">Date : <span class="val-bold"><?= htmlspecialchars($dateFaDisplay) ?></span></td>
           </tr>
           <tr>
             <td>Matricule : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>

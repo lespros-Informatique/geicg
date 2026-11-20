@@ -141,7 +141,11 @@ class CaisseAnnexeController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_FRAIS_ANNEXES]);
 
-        $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['status' => 1, 'stats' => []]);
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $typeFiliere = $_GET['type_filiere'] ?? null;
@@ -361,7 +365,11 @@ class CaisseAnnexeController extends BaseController
         $this->requirePermission([PERMISSIONS::VIEW_CAISSE_ANNEXE, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_RAPPORTS_FINANCIERS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès non autorisé ou année académique introuvable.");
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $typeFiliere = $_GET['type_filiere'] ?? null;

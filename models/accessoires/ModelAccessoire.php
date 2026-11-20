@@ -712,7 +712,7 @@ class ModelAccessoire extends BaseModel
                 i.code_inscription, i.created_at_inscription AS date_inscription, i.statut_inscription,
                 i.montant_scolarite_inscription, i.affectation_etat, i.annee_code,
                 e.code_etudiant, e.matricule_etudiant, e.nom_etudiant, e.prenom_etudiant, e.telephone_etudiant, e.photo_etudiant,
-                cl.libelle_classe, cl.filiere_code,
+                cl.libelle_classe, cl.filiere_code, cl.niveau_code,
                 a.libelle_annee,
                 et.libelle_etablissement AS nom_etablissement, et.logo_etablissement, et.telephone_etablissement, et.adresse_etablissement
             FROM " . TABLES::INSCRIPTIONS . " i
@@ -761,7 +761,7 @@ class ModelAccessoire extends BaseModel
 
         // Paiements associés à cette inscription
         $stmtP = $db->prepare("
-            SELECT categorie_paiement, montant_paiement, type_paiement, code_paiement, date_paiement
+            SELECT categorie_paiement, tranche_code, montant_paiement, type_paiement, code_paiement, date_paiement
             FROM " . TABLES::PAIEMENTS . "
             WHERE inscription_code = ? AND statut_paiement != '" . STATUTS::ANNULE . "'
             ORDER BY date_paiement DESC
@@ -776,7 +776,11 @@ class ModelAccessoire extends BaseModel
         $dernierCodePaiementAutre = '';
         $dateDernierPaiementAutre = '';
         foreach ($allPayments as $p) {
-            if ($p['categorie_paiement'] === 'FRAIS_ANNEXES') {
+            $cat = strtoupper(trim($p['categorie_paiement'] ?? ''));
+            $tr = strtoupper(trim($p['tranche_code'] ?? ''));
+            $typ = (string)($p['type_paiement'] ?? '');
+            $isFA = ($cat === 'FRAIS_ANNEXES' || $tr === 'FRAIS_ANNEXES' || stripos($typ, 'Frais Annexe') !== false);
+            if ($isFA) {
                 $fraisAnnexesPaye += (float)$p['montant_paiement'];
                 if (empty($dernierCodePaiementFrais)) {
                     $dernierCodePaiementFrais = $p['code_paiement'];
@@ -787,26 +791,27 @@ class ModelAccessoire extends BaseModel
                     $dernierCodePaiementAutre = $p['code_paiement'];
                     $dateDernierPaiementAutre = !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : '';
                 }
-                if ($p['categorie_paiement'] === 'SCOLARITE') {
-                    $scolaritePaye += (float)$p['montant_paiement'];
-                }
+                $scolaritePaye += (float)$p['montant_paiement'];
             }
         }
 
-        // Grille tarifaire des frais annexes correspondante
+        // Grille tarifaire des frais annexes correspondante (avec niveau & catégorie inscription)
         $montantPayerTenue = 0.0;
         if (!empty($student['filiere_code'])) {
+            $niveauCode = $student['niveau_code'] ?? '';
             $stmtFrais = $db->prepare("
                 SELECT fa.montant_frais_annexe 
                 FROM " . TABLES::FRAIS_ANNEXES . " fa
                 JOIN " . TABLES::FILIERES . " fil ON fil.code_filiere = ?
                 WHERE fa.annee_code = ? 
                   AND (fa.type_filiere = fil.type_filiere OR fa.type_filiere = 'TOUT')
+                  AND (fa.niveau_code = ? OR fa.niveau_code IS NULL OR fa.niveau_code = '' OR fa.niveau_code = 'TOUT')
+                  AND (fa.categorie_frais_annexe = 'inscription' OR fa.categorie_frais_annexe IS NULL OR fa.categorie_frais_annexe = '')
                   AND fa.statut_frais_annexe = '" . STATUTS::ACTIF . "'
-                ORDER BY (fa.type_filiere != 'TOUT') DESC
+                ORDER BY (fa.niveau_code = ?) DESC, (fa.type_filiere != 'TOUT') DESC, (fa.categorie_frais_annexe = 'inscription') DESC
                 LIMIT 1
             ");
-            $stmtFrais->execute([$student['filiere_code'], $student['annee_code'] ?? '']);
+            $stmtFrais->execute([$student['filiere_code'], $student['annee_code'] ?? '', $niveauCode, $niveauCode]);
             $faRow = $stmtFrais->fetch(PDO::FETCH_ASSOC);
             if ($faRow && (float)$faRow['montant_frais_annexe'] > 0) {
                 $montantPayerTenue = (float)$faRow['montant_frais_annexe'];
@@ -956,10 +961,18 @@ class ModelAccessoire extends BaseModel
         return $this->getCon()->query("SELECT code_accessoire, libelle_accessoire FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "' ORDER BY libelle_accessoire ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getLatestInscriptionForStudent(string $etudiantCode): ?array
+    public function getLatestInscriptionForStudent(string $etudiantCode, ?string $anneeCode = null): ?array
     {
-        $stmt = $this->getCon()->prepare("SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ? AND statut_inscription != '" . STATUTS::ANNULE . "' ORDER BY id_inscription DESC LIMIT 1");
-        $stmt->execute([$etudiantCode]);
+        $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+        $sql = "SELECT code_inscription FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = ? AND statut_inscription != '" . STATUTS::ANNULE . "'";
+        $params = [$etudiantCode];
+        if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+            $sql .= " AND annee_code = ?";
+            $params[] = $targetAnnee;
+        }
+        $sql .= " ORDER BY id_inscription DESC LIMIT 1";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res ?: null;
     }

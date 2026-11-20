@@ -36,7 +36,11 @@ class SemestreController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_SEMESTRES);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
         $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {

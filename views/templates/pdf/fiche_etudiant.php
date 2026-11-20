@@ -5,18 +5,15 @@ if (empty($etablissement) || !is_array($etablissement)) {
     }
 }
 
-// Logo institutionnel dynamique
+// Logo institutionnel dynamique depuis configurations
 $resolvedLogoPath = null;
 if (!empty($etablissement['logo_etablissement'])) {
-    $candidatePath = __DIR__ . '/../../public/' . ltrim($etablissement['logo_etablissement'], '/');
-    if (file_exists($candidatePath)) {
-        $resolvedLogoPath = $candidatePath;
-    }
-}
-if (!$resolvedLogoPath) {
-    $defaultLogo = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-    if (file_exists($defaultLogo)) {
-        $resolvedLogoPath = $defaultLogo;
+    $cleanLogo = ltrim($etablissement['logo_etablissement'], '/');
+    foreach ([__DIR__ . '/../../../public/' . $cleanLogo, __DIR__ . '/../../../' . $cleanLogo] as $candidatePath) {
+        if (file_exists($candidatePath) && is_file($candidatePath)) {
+            $resolvedLogoPath = $candidatePath;
+            break;
+        }
     }
 }
 
@@ -251,7 +248,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
           </tr>
           <tr>
             <td>Sexe : <span class="val-bold"><?= htmlspecialchars($sexe_etudiant ?? '-') ?></span></td>
-            <td>Nationalité : <span class="val-bold"><?= htmlspecialchars($nationalite ?? 'Ivoirienne') ?></span></td>
+            <td>Nationalité : <span class="val-bold"><?= htmlspecialchars($nationalite ?? '-') ?></span></td>
             <td>Téléphone : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
@@ -261,8 +258,20 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
         </table>
       </td>
       <td style="width: 20%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photo_etudiant) && file_exists(__DIR__ . '/../../public/' . ltrim($photo_etudiant, '/'))): ?>
-          <img src="<?= __DIR__ . '/../../public/' . ltrim($photo_etudiant, '/') ?>" class="photo-box">
+        <?php
+          $resolvedPhoto = '';
+          if (!empty($photo_etudiant)) {
+              $cleanPhoto = ltrim($photo_etudiant, '/');
+              foreach ([__DIR__ . '/../../../public/' . $cleanPhoto, __DIR__ . '/../../../' . $cleanPhoto] as $candPhoto) {
+                  if (file_exists($candPhoto) && is_file($candPhoto)) {
+                      $resolvedPhoto = $candPhoto;
+                      break;
+                  }
+              }
+          }
+        ?>
+        <?php if (!empty($resolvedPhoto)): ?>
+          <img src="<?= $resolvedPhoto ?>" class="photo-box">
         <?php else: ?>
           <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 96px; color: #94A3B8; font-size: 8px;">PHOTO ÉTUDIANT</div>
         <?php endif; ?>
@@ -354,16 +363,16 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
         <div style="font-weight: bold; font-size: 8.5px; color:#1E3A5F;"><?= htmlspecialchars(!empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : 'La Direction des Études') ?></div>
       </td>
       <td style="text-align: right;">
-        <div style="font-size: 8px; color: #64748B; margin-bottom: 2px;">Fait à <?= htmlspecialchars(!empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : (!empty($etablissement['ville_etablissement']) ? $etablissement['ville_etablissement'] : 'Bouaké')) ?>, le <?= date('d/m/Y') ?></div>
+        <div style="font-size: 8px; color: #64748B; margin-bottom: 2px;">Fait à <?= htmlspecialchars(!empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?></div>
         <div class="sign-title" style="text-align: right;"><?= htmlspecialchars(!empty($etablissement['titre_service_scolarite']) ? $etablissement['titre_service_scolarite'] : 'Le Chef du Service Scolarité') ?></div>
-        <div style="margin-top: 24px; font-weight: bold; font-size: 8.5px;"><?= htmlspecialchars(!empty($etablissement['nom_responsable_scolarite']) ? $etablissement['nom_responsable_scolarite'] : 'Service Scolarité GEICG') ?></div>
+        <div style="margin-top: 24px; font-weight: bold; font-size: 8.5px;"><?= htmlspecialchars($etablissement['nom_responsable_scolarite'] ?? '') ?></div>
       </td>
     </tr>
   </table>
 
   <!-- PIED DE PAGE HORODATAGE -->
   <div class="footer-line">
-    Document officiel généré par le système informatique <?= htmlspecialchars($etablissement['sigle_etablissement'] ?? 'GEICG') ?> &bull; Édition du <?= date('d/m/Y H:i:s') ?>
+    Document officiel généré par le système informatique <?= htmlspecialchars($etablissement['sigle_etablissement'] ?? '') ?> &bull; Édition du <?= date('d/m/Y H:i:s') ?>
   </div>
 
 </div>

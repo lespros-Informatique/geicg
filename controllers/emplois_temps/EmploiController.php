@@ -625,10 +625,10 @@ class EmploiController extends BaseController
             if (!$classeInfo) {
                 $classeInfo = ['code_classe' => $classeCode, 'libelle_classe' => $classeCode];
             }
-            $nbEtudiants = count($modelClasse->getEtudiantsForClasse($classeCode));
+            $nbEtudiants = count($modelClasse->getEtudiantsForClasse($classeCode, $anneeCode));
 
             $filterTeachers = $isTeacherOnly ? $teacherCodes : null;
-            $matrix = $this->model->getClassScheduleMatrix($classeCode, $filterTeachers);
+            $matrix = $this->model->getClassScheduleMatrix($classeCode, $filterTeachers, $anneeCode);
             $slots = $matrix['slots'] ?? [];
 
             $anneeAff = !empty($classeInfo['libelle_annee']) ? $classeInfo['libelle_annee'] : $anneeLibelle;

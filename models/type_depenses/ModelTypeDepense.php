@@ -66,15 +66,19 @@ class ModelTypeDepense extends BaseModel
     /**
      * Récupère la liste des dépenses rattachées à ce type
      */
-    public function getDepensesForType(string $typeCode): array
+    public function getDepensesForType(string $typeCode, ?string $anneeCode = null): array
     {
         try {
-            $stmt = $this->getCon()->prepare("
-                SELECT * FROM " . TABLES::DEPENSES . " 
-                WHERE type_depense_code = ? 
-                ORDER BY id_depense DESC
-            ");
-            $stmt->execute([$typeCode]);
+            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+            $sql = "SELECT * FROM " . TABLES::DEPENSES . " WHERE type_depense_code = ?";
+            $params = [$typeCode];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql .= " AND annee_code = ?";
+                $params[] = $targetAnnee;
+            }
+            $sql .= " ORDER BY id_depense DESC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelTypeDepense getDepensesForType error: " . $e->getMessage());

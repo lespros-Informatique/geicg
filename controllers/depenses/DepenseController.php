@@ -44,7 +44,11 @@ class DepenseController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['status' => 1, 'stats' => []]);
+            return;
+        }
         $typeCode = !empty($_GET['type_depense_code']) ? trim($_GET['type_depense_code']) : null;
         $dateDebut = !empty($_GET['date_debut']) ? trim($_GET['date_debut']) : null;
         $dateFin = !empty($_GET['date_fin']) ? trim($_GET['date_fin']) : null;
@@ -57,16 +61,11 @@ class DepenseController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_DEPENSES);
-        if (!empty($_GET['annee_code'])) {
-            $getAnnee = trim($_GET['annee_code']);
-            $aRow = $this->model->getAnneeByCode($getAnnee);
-            if ($aRow) {
-                Session::set('annee_active_code', $aRow['code_annee']);
-                Session::set('annee_active_libelle', $aRow['libelle_annee']);
-            }
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
         }
-
-        $anneeCode = $this->getActiveAnneeCode();
         $typeCode = !empty($_GET['type_depense_code']) ? trim($_GET['type_depense_code']) : null;
         $dateDebut = !empty($_GET['date_debut']) ? trim($_GET['date_debut']) : null;
         $dateFin = !empty($_GET['date_fin']) ? trim($_GET['date_fin']) : null;

@@ -318,7 +318,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
         <div style="margin-top: 25px; font-weight: bold; font-size: 8.5pt;"><?= htmlspecialchars($agent_nom ?? 'Caisse Principale GEICG') ?></div>
       </td>
       <td style="width: 50%; text-align: right;">
-        <div style="font-size: 8pt; margin-bottom: 2px;">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?></div>
+        <div style="font-size: 8pt; margin-bottom: 2px;">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?></div>
         <div style="font-weight: bold; text-decoration: underline;"><?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'Le Chef du Service Financier') ?></div>
         <div style="margin-top: 25px; font-weight: bold; font-size: 8.5pt;"><?= htmlspecialchars($etablissement['nom_responsable_finance'] ?? 'Direction Financière GEICG') ?></div>
       </td>

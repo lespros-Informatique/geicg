@@ -77,24 +77,26 @@ class ModelHome extends BaseModel
             // 2. Compteurs Pédagogiques & Modules Complémentaires consolidés en 1 requête
             $countsRow = [];
             try {
-                $stmtCounts = $db->query("
+                $stmtCounts = $db->prepare("
                     SELECT
                         (SELECT COUNT(*) FROM " . TABLES::ENSEIGNANTS . " WHERE statut_enseignant = '" . STATUTS::ACTIF . "') AS total_enseignants,
                         (SELECT COUNT(*) FROM " . TABLES::MATIERES . " WHERE statut_matiere = '" . STATUTS::ACTIF . "') AS total_matieres,
                         (SELECT COUNT(*) FROM " . TABLES::SALLES . " WHERE statut_salle = '" . STATUTS::ACTIF . "') AS total_salles,
                         (SELECT COUNT(*) FROM " . TABLES::EVENEMENTS . " WHERE statut_evenement = '" . STATUTS::ACTIF . "') AS total_actualites,
                         (SELECT COUNT(*) FROM " . TABLES::EVENEMENTS . " WHERE statut_evenement = '" . STATUTS::ACTIF . "') AS total_evenements,
-                        (SELECT COUNT(*) FROM " . TABLES::DOCUMENTS . " WHERE statut_document = '" . STATUTS::ACTIF . "') AS total_documents,
+                        (SELECT COUNT(*) FROM " . TABLES::DOCUMENTS . " WHERE statut_document = '" . STATUTS::ACTIF . "' AND (? = '' OR annee_code = ?)) AS total_documents,
                         (SELECT COUNT(*) FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "') AS total_filieres,
                         (SELECT COUNT(*) FROM " . TABLES::CYCLES . " WHERE statut_cycle = '" . STATUTS::ACTIF . "') AS total_cycles,
                         (SELECT COUNT(*) FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "') AS total_niveaux,
                         (SELECT COUNT(*) FROM " . TABLES::PARENTS . ") AS total_parents,
-                        (SELECT COUNT(*) FROM " . TABLES::SESSIONS_CAISSE . " WHERE statut_session = 'ouverte') AS total_sessions_caisse,
+                        (SELECT COUNT(*) FROM " . TABLES::SESSIONS_CAISSE . " WHERE statut_session = 'ouverte' AND (? = '' OR annee_code = ?)) AS total_sessions_caisse,
                         (SELECT COUNT(*) FROM " . TABLES::PIECES_FOURNIR_CYCLES . " WHERE statut_piece_cycle = '" . STATUTS::ACTIF . "') AS total_pieces,
                         (SELECT COUNT(*) FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "') AS total_accessoires,
                         (SELECT COUNT(*) FROM " . TABLES::USERS . " WHERE statut_user = '" . STATUTS::ACTIF . "') AS total_users
                 ");
-                $countsRow = $stmtCounts ? ($stmtCounts->fetch(PDO::FETCH_ASSOC) ?: []) : [];
+                $yrParam = $anneeCode ?? '';
+                $stmtCounts->execute([$yrParam, $yrParam, $yrParam, $yrParam]);
+                $countsRow = $stmtCounts->fetch(PDO::FETCH_ASSOC) ?: [];
             } catch (Exception $e) {}
 
             $totalEnseignants = (int)($countsRow['total_enseignants'] ?? 0);
@@ -408,6 +410,8 @@ class ModelHome extends BaseModel
             $sql = "SELECT * FROM v_dash_paiements_details
                     WHERE (annee_code = ? OR ? = '')
                       AND (statut_paiement = 'confirme' OR statut_paiement != '" . STATUTS::ANNULE . "')
+                      AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
+                      AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
                       AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
                     ORDER BY id_paiement DESC
                     LIMIT $limit";
@@ -443,11 +447,12 @@ class ModelHome extends BaseModel
     /**
      * Cours attribués à un enseignant depuis l'emploi du temps (emplois_temps)
      */
-    public function getTeacherCourses(string $userOrTeacherCode, int $limit = 6): array
+    public function getTeacherCourses(string $userOrTeacherCode, int $limit = 6, ?string $anneeCode = null): array
     {
         try {
             $db = $this->pdo->getCon();
-            $stmt = $db->prepare("
+            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+            $sql = "
                 SELECT DISTINCT 
                     edt.matiere_code,
                     edt.classe_code,
@@ -461,10 +466,16 @@ class ModelHome extends BaseModel
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
                 WHERE edt.enseignant_code = ?
-                ORDER BY m.libelle_matiere ASC
-                LIMIT $limit
-            ");
-            $stmt->execute([$userOrTeacherCode]);
+                  AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+            ";
+            $params = [$userOrTeacherCode];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql .= " AND edt.annee_code = ?";
+                $params[] = $targetAnnee;
+            }
+            $sql .= " ORDER BY m.libelle_matiere ASC LIMIT $limit";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             return [];

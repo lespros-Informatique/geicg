@@ -18,7 +18,12 @@ class DocumentController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_DOCUMENTS, PERMISSIONS::MANAGE_DOCUMENTS]);
-        $items = $this->model->getDocumentsList();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
+        $items = $this->model->getDocumentsList($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_document'];

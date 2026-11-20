@@ -10,10 +10,11 @@ class ModelSalle extends BaseModel
     /**
      * Récupère les emplois du temps associés à une salle
      */
-    public function getPlanningForSalle(string $salleCode): array
+    public function getPlanningForSalle(string $salleCode, ?string $anneeCode = null): array
     {
         try {
-            $stmt = $this->getCon()->prepare("
+            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+            $sql = "
                 SELECT edt.*, cl.libelle_classe, m.libelle_matiere,
                        u.nom_user as nom_prof,
                        u.prenom_user as prenom_prof
@@ -23,9 +24,15 @@ class ModelSalle extends BaseModel
                 LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
                 LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
                 WHERE edt.salle_code = ? AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
-                ORDER BY edt.jour ASC, edt.heure_debut ASC
-            ");
-            $stmt->execute([$salleCode]);
+            ";
+            $params = [$salleCode];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql .= " AND edt.annee_code = ?";
+                $params[] = $targetAnnee;
+            }
+            $sql .= " ORDER BY edt.jour ASC, edt.heure_debut ASC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelSalle::getPlanningForSalle error: " . $e->getMessage());

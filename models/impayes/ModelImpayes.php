@@ -83,9 +83,15 @@ class ModelImpayes extends BaseModel
                 }
             }
 
-            // Scolarités & Tranches
-            $stmtSco = $db->prepare("SELECT filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "'");
-            $stmtSco->execute();
+            // Scolarités & Tranches (strictement filtrées par année si spécifiée)
+            $scoSql = "SELECT annee_code, filiere_code, niveau_code, affectation_etat, montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE statut_scolarite = '" . STATUTS::ACTIF . "'";
+            $scoParams = [];
+            if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+                $scoSql .= " AND annee_code = ?";
+                $scoParams[] = $anneeCode;
+            }
+            $stmtSco = $db->prepare($scoSql);
+            $stmtSco->execute($scoParams);
             $scolariteGrid = $stmtSco->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             $stmtTranches = $db->prepare("SELECT * FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE statut_tranche = '" . STATUTS::ACTIF . "' ORDER BY date_limite ASC, id_tranche ASC");
@@ -116,7 +122,8 @@ class ModelImpayes extends BaseModel
                 $scolariteDue = 0;
                 foreach ($scolariteGrid as $sg) {
                     $sgAff = ($sg['affectation_etat'] === 'affecte' || $sg['affectation_etat'] === 'oui') ? 'affecte' : 'non_affecte';
-                    if ($sg['filiere_code'] === $filiereCode && $sg['niveau_code'] === $nCode && $sgAff === $targetAff) {
+                    $matchAnnee = empty($aCode) || empty($sg['annee_code']) || $sg['annee_code'] === $aCode;
+                    if ($matchAnnee && $sg['filiere_code'] === $filiereCode && $sg['niveau_code'] === $nCode && $sgAff === $targetAff) {
                         $scolariteDue = (float)$sg['montant_scolarite'];
                         break;
                     }
@@ -299,9 +306,15 @@ class ModelImpayes extends BaseModel
 
             $moyenneJoursRetard = ($kpiTotalEtudiantsRetard > 0) ? round($totalJoursAccumules / $kpiTotalEtudiantsRetard) : 0;
 
-            // Nombre de relances effectuées le mois courant
-            $stmtCountRelances = $db->prepare("SELECT COUNT(*) as cnt FROM " . TABLES::RELANCES_IMPAYES . " WHERE MONTH(created_at_relance) = MONTH(CURRENT_DATE()) AND YEAR(created_at_relance) = YEAR(CURRENT_DATE())");
-            $stmtCountRelances->execute();
+            // Nombre de relances effectuées le mois courant (filtré par année académique si définie)
+            $relSql = "SELECT COUNT(*) as cnt FROM " . TABLES::RELANCES_IMPAYES . " WHERE MONTH(created_at_relance) = MONTH(CURRENT_DATE()) AND YEAR(created_at_relance) = YEAR(CURRENT_DATE())";
+            $relParams = [];
+            if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+                $relSql .= " AND annee_code = ?";
+                $relParams[] = $anneeCode;
+            }
+            $stmtCountRelances = $db->prepare($relSql);
+            $stmtCountRelances->execute($relParams);
             $relancesMois = (int)($stmtCountRelances->fetchColumn() ?: 0);
 
             return [
@@ -421,18 +434,31 @@ class ModelImpayes extends BaseModel
         return (float)($stmt->fetchColumn() ?: 0);
     }
 
-    public function getScolariteDue(string $filiereCode, string $niveauCode, ?string $anneeCode = null): ?float
+    public function getScolariteDue(string $filiereCode, string $niveauCode, ?string $anneeCode = null, ?string $affectationEtat = null): ?float
     {
         if (empty($anneeCode)) {
             return null;
         }
 
-        $cacheKey = "{$filiereCode}|{$niveauCode}|{$anneeCode}";
+        $normAff = '';
+        if ($affectationEtat !== null && $affectationEtat !== '') {
+            $affLow = strtolower(trim($affectationEtat));
+            $normAff = ($affLow === 'oui' || $affLow === 'affecte') ? 'affecte' : 'non_affecte';
+        }
+
+        $cacheKey = "{$filiereCode}|{$niveauCode}|{$anneeCode}|{$normAff}";
         if (array_key_exists($cacheKey, self::$scolariteDueCache)) {
             return self::$scolariteDueCache[$cacheKey];
         }
-        $stmt = $this->getCon()->prepare("SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_scolarite = '" . STATUTS::ACTIF . "' LIMIT 1");
-        $stmt->execute([$filiereCode, $niveauCode, $anneeCode]);
+        $sql = "SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_scolarite = '" . STATUTS::ACTIF . "'";
+        $params = [$filiereCode, $niveauCode, $anneeCode];
+        if ($normAff !== '') {
+            $sql .= " AND affectation_etat = ?";
+            $params[] = $normAff;
+        }
+        $sql .= " LIMIT 1";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
         $val = $stmt->fetchColumn();
         $res = $val !== false ? (float)$val : null;
         self::$scolariteDueCache[$cacheKey] = $res;

@@ -71,7 +71,7 @@ if (empty($photoPath) || !file_exists($photoPath)) {
 }
 
 $nomDirecteur = !empty($etablissement['nom_directeur_general']) ? $etablissement['nom_directeur_general'] : (!empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : 'La Direction');
-$villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : 'Bouaké';
+$villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="fr">

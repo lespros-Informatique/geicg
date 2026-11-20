@@ -27,7 +27,8 @@ class EnseignantController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
-        $items = $this->model->getAll();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $items = $this->model->getAll($anneeCode ?: null);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_enseignant'];
@@ -79,7 +80,8 @@ class EnseignantController extends BaseController
 
         $programme = $this->model->getProgrammeJourData($date, $ensCode, $anneeCode);
         $etablissement = $this->getEtablissementConfig();
-        $anneeLibelle = $this->getActiveAnneeLibelle();
+        $anneeObj = !empty($anneeCode) ? (new ModelAnnee())->getByCode($anneeCode) : null;
+        $anneeLibelle = $anneeObj['libelle_annee'] ?? $this->getActiveAnneeLibelle();
 
         $data = [
             'etablissement' => $etablissement,
@@ -128,11 +130,11 @@ class EnseignantController extends BaseController
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = trim($_GET['annee_code'] ?? '');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null) ?? '';
         $sexe = strtoupper(trim($_GET['sexe'] ?? ''));
         $typeContrat = strtolower(trim($_GET['type_contrat'] ?? ''));
 
-        $allEnseignants = $this->model->getAll();
+        $allEnseignants = $this->model->getAll($anneeCode ?: null);
         $enseignants = [];
 
         foreach ($allEnseignants as $ens) {

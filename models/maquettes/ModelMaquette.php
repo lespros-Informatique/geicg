@@ -172,7 +172,7 @@ class ModelMaquette extends BaseModel
         if ($coefficient <= 0) $coefficient = 1.00;
         $statut = ($data['statut_maquette'] ?? STATUTS::ACTIF) === STATUTS::INACTIF ? STATUTS::INACTIF : STATUTS::ACTIF;
         $userCode = $data['user_code'] ?? Session::get('user_code') ?? null;
-        $etablissementCode = $data['etablissement_code'] ?? Session::get('etablissement_code') ?? 'ETA-052CG';
+        $etablissementCode = $data['etablissement_code'] ?? Session::get('etablissement_active_code') ?? '';
         $idMaquette = !empty($data['id_maquette']) ? (int)$data['id_maquette'] : null;
 
         if (empty($filiereCode) || empty($niveauCode) || empty($matiereCode) || empty($anneeCode)) {
@@ -236,7 +236,7 @@ class ModelMaquette extends BaseModel
     {
         $db = $this->getCon();
         $userCode = Session::get('user_code');
-        $etablissementCode = Session::get('etablissement_code') ?: 'ETA-052CG';
+        $etablissementCode = Session::get('etablissement_active_code') ?: '';
 
         if (empty($sourceAnneeCode) || empty($targetAnneeCode)) {
             return ['status' => 0, 'message' => 'Année source et année cible requises.'];

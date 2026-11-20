@@ -59,8 +59,15 @@ class ModelEnseignant extends BaseModel
         }
     }
 
-    public function getAll(): array
+    public function getAll(?string $anneeCode = null): array
     {
+        $targetAnnee = $anneeCode ?? (string)Session::get('annee_active_code', '');
+        $edtYearCond = '';
+        $params = [];
+        if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+            $edtYearCond = " AND edt.annee_code = ?";
+            $params[] = $targetAnnee;
+        }
         $sql = "
             SELECT e.*,
                    u.nom_user,
@@ -82,13 +89,17 @@ class ModelEnseignant extends BaseModel
                    GROUP_CONCAT(DISTINCT m.libelle_matiere SEPARATOR ', ') AS matieres_libelles
             FROM " . TABLES::ENSEIGNANTS . " e
             JOIN " . TABLES::USERS . " u ON u.code_user = e.code_enseignant
-            LEFT JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON (edt.enseignant_code = e.code_enseignant OR edt.enseignant_code = e.user_code)
+            LEFT JOIN " . TABLES::EMPLOIS_TEMPS . " edt ON (
+                edt.enseignant_code = e.code_enseignant
+                AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)" . $edtYearCond . "
+            )
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
             GROUP BY e.id_enseignant
             ORDER BY e.id_enseignant DESC
         ";
         try {
-            $stmt = $this->getCon()->query($sql);
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelEnseignant getAll error: " . $e->getMessage());
@@ -214,10 +225,11 @@ class ModelEnseignant extends BaseModel
     /**
      * Récupère les cours / matières planifiés pour un enseignant
      */
-    public function getCoursForEnseignant(string $codeEnseignant): array
+    public function getCoursForEnseignant(string $codeEnseignant, ?string $anneeCode = null): array
     {
         try {
-            $stmt = $this->getCon()->prepare("
+            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+            $sql = "
                 SELECT DISTINCT 
                        edt.matiere_code, 
                        edt.classe_code, 
@@ -228,10 +240,19 @@ class ModelEnseignant extends BaseModel
                 LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
                 WHERE edt.enseignant_code = ?
+                  AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+            ";
+            $params = [$codeEnseignant];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql .= " AND edt.annee_code = ?";
+                $params[] = $targetAnnee;
+            }
+            $sql .= "
                 GROUP BY edt.matiere_code, edt.classe_code, m.libelle_matiere, cl.libelle_classe
                 ORDER BY cl.libelle_classe ASC, m.libelle_matiere ASC
-            ");
-            $stmt->execute([$codeEnseignant]);
+            ";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelEnseignant getCoursForEnseignant error: " . $e->getMessage());

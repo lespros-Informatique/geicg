@@ -12,7 +12,7 @@ $niveau_libelle = $niveau_libelle ?? '-';
 $classe_libelle = $classe_libelle ?? '-';
 $classe_code_or_ref = $classe_code_or_ref ?? ($classe_libelle ?? '-');
 $effectif_classe = $effectif_classe ?? '-';
-$statut_affectation = $statut_affectation ?? 'AFFECTE';
+$statut_affectation = $statut_affectation ?? '-';
 $redoublant = $redoublant ?? 'NON';
 $intitule_periode = $intitule_periode ?? 'SEMESTRE';
 $matieresGenerales = $matieresGenerales ?? [];
@@ -49,9 +49,9 @@ if (empty($etablissement) || !is_array($etablissement)) {
         $etablissement = (new ModelConfiguration())->getConfig();
     }
 }
-$directeur_etudes = $directeur_etudes ?? ($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed');
+$directeur_etudes = $directeur_etudes ?? ($etablissement['nom_directeur_etudes'] ?? '');
 $titre_direction_pedagogique = !empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'LE DIRECTEUR DES ETUDES';
-$ville_signature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : 'Bouaké';
+$ville_signature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
 
 $hasNotes = !empty($totalCoefficients) && (float)$totalCoefficients > 0;
 $moyVal = (float)$moyenneGenerale;
@@ -674,10 +674,10 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
 
   <!-- 6. PIED DE PAGE CONTACTS -->
   <?php
-    $contactsTxt = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 – Cél : 07 79 37 37 38 / 05 04 59 39 99';
-    $adresseTxt = !empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : 'Bouaké quartier Kennedy, route ancien ADDR';
-    $bpTxt = !empty($etablissement['boite_postale']) ? $etablissement['boite_postale'] : '01 BP 960 Bouaké 01';
-    $emailTxt = !empty($etablissement['email_etablissement']) ? $etablissement['email_etablissement'] : 'eicgbouake01@gmail.com';
+    $contactsTxt = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '';
+    $adresseTxt = !empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : '';
+    $bpTxt = !empty($etablissement['boite_postale']) ? $etablissement['boite_postale'] : '';
+    $emailTxt = !empty($etablissement['email_etablissement']) ? $etablissement['email_etablissement'] : '';
   ?>
   <div class="footer-block">
     Contacts : <?= htmlspecialchars($adresseTxt) ?><br>

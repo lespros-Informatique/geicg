@@ -291,7 +291,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       </td>
       <td style="width: 50%; text-align: right; vertical-align: top; font-size: 8pt;">
         <strong><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'Le Directeur des Études & des Examens') ?></strong>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 3px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 3px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
         <div style="height: 20px;"></div>
         <div style="font-size: 7.5pt; color: #94A3B8;"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '(Signature et Cachet)') ?></div>
       </td>

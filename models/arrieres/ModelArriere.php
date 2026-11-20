@@ -13,11 +13,12 @@ class ModelArriere extends BaseModel
         $db = $this->getCon();
         $anneeActiveCode = $anneeActiveCode ?: Session::get('annee_active_code', '');
 
-        $where = "WHERE i_orig.statut_inscription != '" . STATUTS::ANNULE . "'";
+        $where = "WHERE i_orig.statut_inscription != '" . STATUTS::ANNULE . "'"
+            . " AND (i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye, 0)) > 0";
         $params = [];
 
         if (!empty($anneeActiveCode)) {
-            $where .= " AND i_orig.annee_code != ?";
+            $where .= " AND i_orig.annee_code != ? AND (ann_act.date_debut_annee IS NULL OR ann_orig.date_debut_annee IS NULL OR ann_orig.date_debut_annee < ann_act.date_debut_annee)";
             $params[] = $anneeActiveCode;
         }
 
@@ -31,6 +32,8 @@ class ModelArriere extends BaseModel
             $params[] = $classeCode;
             $params[] = $classeCode;
         }
+
+        $joinParams = !empty($anneeActiveCode) ? [$anneeActiveCode] : [];
 
         $sql = "
             SELECT 
@@ -59,6 +62,7 @@ class ModelArriere extends BaseModel
             INNER JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i_orig.etudiant_code
             LEFT JOIN " . TABLES::CLASSES . " c_orig ON c_orig.code_classe = i_orig.classe_code
             LEFT JOIN " . TABLES::ANNEES . " ann_orig ON ann_orig.code_annee = i_orig.annee_code
+            " . (!empty($anneeActiveCode) ? "LEFT JOIN " . TABLES::ANNEES . " ann_act ON ann_act.code_annee = ?" : "") . "
             LEFT JOIN " . TABLES::INSCRIPTIONS . " i_act ON i_act.etudiant_code = e.code_etudiant AND i_act.id_inscription = (
                 SELECT MAX(id_inscription) FROM " . TABLES::INSCRIPTIONS . " WHERE etudiant_code = e.code_etudiant AND statut_inscription != '" . STATUTS::ANNULE . "'
             )
@@ -75,7 +79,7 @@ class ModelArriere extends BaseModel
 
         try {
             $stmt = $db->prepare($sql);
-            $stmt->execute($params);
+            $stmt->execute(array_merge($joinParams, $params));
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             foreach ($rows as &$row) {
@@ -120,19 +124,22 @@ class ModelArriere extends BaseModel
         $sql = "
             SELECT 
                 COUNT(DISTINCT i_orig.etudiant_code) as nb_etudiants_debiteurs,
-                SUM(i_orig.montant_scolarite_inscription) as total_initial_du,
-                SUM(COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_recouvre,
-                SUM(i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye_confirme_scolarite, 0)) as total_solde_arriere
+                COALESCE(SUM(i_orig.montant_scolarite_inscription), 0) as total_initial_du,
+                COALESCE(SUM(COALESCE(p_sub.total_paye_confirme_scolarite, 0)), 0) as total_recouvre,
+                COALESCE(SUM(i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye_confirme_scolarite, 0)), 0) as total_solde_arriere
             FROM " . TABLES::INSCRIPTIONS . " i_orig
+            LEFT JOIN " . TABLES::ANNEES . " ann_orig ON ann_orig.code_annee = i_orig.annee_code
+            LEFT JOIN " . TABLES::ANNEES . " ann_act ON ann_act.code_annee = ?
             LEFT JOIN " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . " p_sub ON p_sub.inscription_code = i_orig.code_inscription
             WHERE i_orig.annee_code != ?
+              AND (ann_act.date_debut_annee IS NULL OR ann_orig.date_debut_annee IS NULL OR ann_orig.date_debut_annee < ann_act.date_debut_annee)
               AND i_orig.statut_inscription != '" . STATUTS::ANNULE . "'
-            HAVING total_solde_arriere > 0
+              AND (i_orig.montant_scolarite_inscription - COALESCE(p_sub.total_paye_confirme_scolarite, 0)) > 0
         ";
 
         try {
             $stmt = $db->prepare($sql);
-            $stmt->execute([$anneeActiveCode]);
+            $stmt->execute([$anneeActiveCode, $anneeActiveCode]);
             $res = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$res) {
@@ -196,10 +203,12 @@ class ModelArriere extends BaseModel
                 THEN p.montant_paiement ELSE 0 END), 0)) as solde_restant
             FROM " . TABLES::INSCRIPTIONS . " i
             LEFT JOIN " . TABLES::ANNEES . " ann ON ann.code_annee = i.annee_code
+            LEFT JOIN " . TABLES::ANNEES . " ann_act ON ann_act.code_annee = ?
             LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
             LEFT JOIN " . TABLES::PAIEMENTS . " p ON p.inscription_code = i.code_inscription
             WHERE i.etudiant_code = ?
               AND i.annee_code != ?
+              AND (ann_act.date_debut_annee IS NULL OR ann.date_debut_annee IS NULL OR ann.date_debut_annee < ann_act.date_debut_annee)
               AND i.statut_inscription != '" . STATUTS::ANNULE . "'
             GROUP BY i.code_inscription, i.annee_code, ann.libelle_annee, c.libelle_classe, i.montant_scolarite_inscription
             HAVING solde_restant > 0
@@ -208,7 +217,7 @@ class ModelArriere extends BaseModel
 
         try {
             $stmt = $db->prepare($sql);
-            $stmt->execute([$etudiantCode, $anneeActiveCode]);
+            $stmt->execute([$anneeActiveCode, $etudiantCode, $anneeActiveCode]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelArriere::getArrieresEtudiantDetail error: " . $e->getMessage());

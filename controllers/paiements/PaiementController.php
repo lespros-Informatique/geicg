@@ -104,7 +104,11 @@ class PaiementController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
 
-        $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['data' => [], 'kpis' => []]);
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $regime = $_GET['regime'] ?? 'ALL';
@@ -488,7 +492,11 @@ class PaiementController extends BaseController
         $this->requirePermission([PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? $this->getActiveAnneeCode();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès non autorisé ou année académique introuvable.");
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $regime = $_GET['regime'] ?? 'ALL';
@@ -496,6 +504,7 @@ class PaiementController extends BaseController
 
         $currentUserName = trim(Auth::user('nom') . ' ' . Auth::user('prenom'));
         $dataView = $this->model->getPrintComptabiliteEtudiantsData($anneeCode, $niveauCode, $classeCode, $regime, $statutPaiement, $currentUserName);
+        $dataView['etablissement'] = $this->getEtablissementConfig();
 
         $html = PdfService::renderTemplate('comptabilite_etudiants.php', $dataView);
 
@@ -530,7 +539,11 @@ class PaiementController extends BaseController
         $this->requirePermission([PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS, PERMISSIONS::MANAGE_PAIEMENTS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? '';
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès non autorisé ou année académique introuvable.");
+            return;
+        }
         $niveauCode = $_GET['niveau_code'] ?? 'ALL';
         $classeCode = $_GET['classe_code'] ?? 'ALL';
         $canalPaiement = $_GET['canal_paiement'] ?? 'ALL';
@@ -540,7 +553,9 @@ class PaiementController extends BaseController
         $dateFin = $_GET['date_fin'] ?? '';
 
         $currentUserName = trim(Auth::user('nom') . ' ' . Auth::user('prenom'));
+        $etab = $this->getEtablissementConfig();
         $dataView = $this->model->getPrintRegistreEncaissementsData($anneeCode, $niveauCode, $classeCode, $canalPaiement, $modePaiement, $categoriePaiement, $dateDebut, $dateFin, $currentUserName);
+        $dataView['etablissement'] = $etab;
 
         $html = PdfService::renderTemplate('registre_encaissements.php', $dataView);
 
@@ -558,10 +573,11 @@ class PaiementController extends BaseController
         );
 
         $filename = 'Registre_Encaissements_' . date('Ymd_His') . '.pdf';
+        $sigleEtab = $etab['sigle_etablissement'] ?? ($etab['nom_etablissement'] ?? '');
         PdfService::generate($html, $filename, [
             'orientation' => 'L',
             'format' => 'A4',
-            'title' => 'Registre des Encaissements - GEICG',
+            'title' => 'Registre des Encaissements' . ($sigleEtab !== '' ? ' - ' . $sigleEtab : ''),
             'margin_left' => 6,
             'margin_right' => 6,
             'margin_top' => 6,
@@ -600,6 +616,7 @@ class PaiementController extends BaseController
             $this->renderNotFound("Le dossier financier de l'étudiant est introuvable.");
             return;
         }
+        $dataView['etablissement'] = $this->getEtablissementConfig();
 
         $html = PdfService::renderTemplate('fiche_versement_etudiant.php', $dataView);
 

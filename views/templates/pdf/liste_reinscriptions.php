@@ -11,15 +11,18 @@ if (empty($etablissement) || !is_array($etablissement)) {
 
 $nomEtab = $etablissement['nom_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION';
 $numAutorisation = $etablissement['numero_autorisation'] ?? 'AGRÉÉ PAR L\'ÉTAT ET LE FDFP';
-$adresse = $etablissement['adresse_etablissement'] ?? 'Bouaké - Côte d\'Ivoire';
-$contacts = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : ($etablissement['telephone_mobile'] ?? '27 31 62 40 57 / 07 79 37 37 38');
+$adresse = $etablissement['adresse_etablissement'] ?? '';
+$contacts = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : ($etablissement['telephone_mobile'] ?? '');
 $email = $etablissement['email_etablissement'] ?? '';
 $siteWeb = $etablissement['site_web'] ?? 'www.groupe-eicg.net';
-$villeSignature = $etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? 'Bouaké');
+$villeSignature = $etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? ($etablissement['ville_etablissement'] ?? ''));
 
-$logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-if (!file_exists($logoPath)) {
-    $logoPath = '/var/www/html/geicg/public/assets/images/logo/logo_eicg.jpg';
+$logoPath = '';
+if (!empty($etablissement['logo_etablissement'])) {
+    $cleanL = ltrim($etablissement['logo_etablissement'], '/');
+    foreach ([__DIR__ . '/../../../public/' . $cleanL, __DIR__ . '/../../../' . $cleanL] as $candL) {
+        if (file_exists($candL) && is_file($candL)) { $logoPath = $candL; break; }
+    }
 }
 ?>
 <!DOCTYPE html>

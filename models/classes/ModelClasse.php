@@ -297,22 +297,28 @@ class ModelClasse extends BaseModel
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public function getEtudiantsForClasse(string $classeCode): array
+    public function getEtudiantsForClasse(string $classeCode, ?string $anneeCode = null): array
     {
-        $stmt = $this->getCon()->prepare("
+        $sql = "
             SELECT e.*, ins.created_at_inscription, ins.statut_inscription, ins.code_inscription, ins.affectation_etat
             FROM " . TABLES::ETUDIANTS . " e
             INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.etudiant_code = e.code_etudiant
             WHERE ins.classe_code = ? AND (ins.statut_inscription != '" . STATUTS::ANNULE . "' OR ins.statut_inscription IS NULL)
-            ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC
-        ");
-        $stmt->execute([$classeCode]);
+        ";
+        $params = [$classeCode];
+        if (!empty($anneeCode) && strtoupper($anneeCode) !== 'ALL') {
+            $sql .= " AND ins.annee_code = ?";
+            $params[] = $anneeCode;
+        }
+        $sql .= " ORDER BY e.nom_etudiant ASC, e.prenom_etudiant ASC";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getMatieresForClasse(string $classeCode): array
+    public function getMatieresForClasse(string $classeCode, ?string $anneeCode = null): array
     {
-        $stmt = $this->getCon()->prepare("
+        $sql = "
             SELECT DISTINCT
                    edt.matiere_code,
                    m.libelle_matiere,
@@ -326,10 +332,19 @@ class ModelClasse extends BaseModel
             LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
             LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
             WHERE edt.classe_code = ?
+              AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+        ";
+        $params = [$classeCode];
+        if (!empty($anneeCode) && strtoupper($anneeCode) !== 'ALL') {
+            $sql .= " AND edt.annee_code = ?";
+            $params[] = $anneeCode;
+        }
+        $sql .= "
             GROUP BY edt.matiere_code, m.libelle_matiere, edt.classe_code, u.nom_user, u.prenom_user, e.grade_enseignant
             ORDER BY m.libelle_matiere ASC
-        ");
-        $stmt->execute([$classeCode]);
+        ";
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }

@@ -9,24 +9,11 @@ $logoPath = '';
 if (!empty($etablissement['logo_etablissement'])) {
     $cLogo = [
         __DIR__ . '/../../../public/' . ltrim($etablissement['logo_etablissement'], '/'),
-        __DIR__ . '/../../../' . ltrim($etablissement['logo_etablissement'], '/'),
-        __DIR__ . '/../../public/' . ltrim($etablissement['logo_etablissement'], '/')
+        __DIR__ . '/../../../' . ltrim($etablissement['logo_etablissement'], '/')
     ];
     foreach ($cLogo as $clp) {
         if (file_exists($clp) && is_file($clp)) {
             $logoPath = $clp;
-            break;
-        }
-    }
-}
-if (empty($logoPath) || !file_exists($logoPath)) {
-    $candidateLogos = [
-        __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg',
-        __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg'
-    ];
-    foreach ($candidateLogos as $l) {
-        if (file_exists($l)) {
-            $logoPath = $l;
             break;
         }
     }
@@ -50,15 +37,19 @@ if ($dateDebutFmt && $dateFinFmt) {
 }
 
 $totalMontant = 0;
+$countValides = 0;
 foreach ($depenses as $d) {
-    $totalMontant += (float)($d['montant_depense'] ?? 0);
+    if (($d['statut_depense'] ?? '') !== 'annule') {
+        $totalMontant += (float)($d['montant_depense'] ?? 0);
+        $countValides++;
+    }
 }
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Registre des Dépenses - <?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE EICG') ?></title>
+  <title>Registre des Dépenses - <?= htmlspecialchars($etablissement['nom_etablissement'] ?? '') ?></title>
   <style>
     @page {
       margin-top: 6mm;
@@ -311,11 +302,10 @@ foreach ($depenses as $d) {
         <th style="width: 3%;">N°</th>
         <th style="width: 9%;">DATE</th>
         <th style="width: 9%;">CODE DÉPENSE</th>
-        <th style="width: 14%; text-align: left;">CATÉGORIE</th>
-        <th style="width: 22%; text-align: left;">MOTIF / DESCRIPTION</th>
-        <th style="width: 13%; text-align: left;">BÉNÉFICIAIRE</th>
-        <th style="width: 8%;">MODE</th>
-        <th style="width: 11%; text-align: left;">AUTEUR / VALIDATEUR</th>
+        <th style="width: 15%; text-align: left;">CATÉGORIE</th>
+        <th style="width: 30%; text-align: left;">MOTIF / DESCRIPTION</th>
+        <th style="width: 13%; text-align: left;">ANNÉE / SESSION</th>
+        <th style="width: 13%; text-align: left;">AUTEUR / VALIDATEUR</th>
         <th style="width: 8%;">STATUT</th>
         <th style="width: 10%; text-align: right;">MONTANT (FCFA)</th>
       </tr>
@@ -326,14 +316,6 @@ foreach ($depenses as $d) {
           <?php
             $rawDate = !empty($d['periode_depense']) ? date('d/m/Y', strtotime($d['periode_depense'])) : '-';
             $statut = $d['statut_depense'] ?? 'en_attente';
-            $mode = $d['mode_reglement'] ?? 'espece';
-            $modeLabels = [
-                'espece' => 'Espèces',
-                'mobile_money' => 'Mobile Money',
-                'cheque' => 'Chèque',
-                'virement' => 'Virement'
-            ];
-            $modeTxt = $modeLabels[$mode] ?? ucfirst($mode);
           ?>
           <tr>
             <td style="text-align: center;"><?= $idx + 1 ?></td>
@@ -341,8 +323,7 @@ foreach ($depenses as $d) {
             <td style="text-align: center; font-weight: bold;"><?= htmlspecialchars($d['code_depense'] ?? '-') ?></td>
             <td style="font-weight: 600;"><?= htmlspecialchars($d['libelle_type_depense'] ?? 'Général') ?></td>
             <td><?= htmlspecialchars($d['description_depense'] ?? ($d['libelle_depense'] ?? '-')) ?></td>
-            <td><?= htmlspecialchars($d['beneficiaire'] ?? '-') ?></td>
-            <td style="text-align: center;"><?= htmlspecialchars($modeTxt) ?></td>
+            <td><?= htmlspecialchars($d['libelle_annee'] ?? ($d['annee_code'] ?? '-')) ?></td>
             <td style="font-size: 6.5pt;">
               <div style="font-weight: bold;"><?= htmlspecialchars(trim($d['auteur_nom_complet'] ?? '-')) ?></div>
               <?php if (!empty($d['confirmateur_nom_complet']) && $statut !== 'en_attente'): ?>
@@ -364,12 +345,12 @@ foreach ($depenses as $d) {
           </tr>
         <?php endforeach; ?>
         <tr class="total-row">
-          <td colspan="9" style="text-align: right; font-weight: bold;">TOTAL DU REGISTRE DES DÉPENSES :</td>
+          <td colspan="8" style="text-align: right; font-weight: bold;">TOTAL NET DU REGISTRE (HORS ANNULÉES) :</td>
           <td style="text-align: right; font-weight: bold; font-size: 8pt; color: #991B1B;"><?= number_format($totalMontant, 0, ',', ' ') ?> FCFA</td>
         </tr>
       <?php else: ?>
         <tr>
-          <td colspan="10" style="text-align: center; padding: 12px; color: #64748B;">Aucune dépense enregistrée pour les critères sélectionnés.</td>
+          <td colspan="9" style="text-align: center; padding: 12px; color: #64748B;">Aucune dépense enregistrée pour les critères sélectionnés.</td>
         </tr>
       <?php endif; ?>
     </tbody>
@@ -383,16 +364,16 @@ foreach ($depenses as $d) {
         <div style="margin-top: 25px; font-weight: bold; font-size: 8pt;"><?= htmlspecialchars($imprimePar) ?></div>
       </td>
       <td style="width: 50%; text-align: right;">
-        <div style="font-size: 7.5pt; margin-bottom: 2px;">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? 'Bouaké') ?>, le <?= date('d/m/Y') ?></div>
+        <div style="font-size: 7.5pt; margin-bottom: 2px;">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?></div>
         <div style="font-weight: bold; text-decoration: underline;"><?= htmlspecialchars($etablissement['titre_service_finance'] ?? 'La Direction Financière & Comptable') ?></div>
-        <div style="margin-top: 25px; font-weight: bold; font-size: 8pt;"><?= htmlspecialchars($etablissement['nom_responsable_finance'] ?? 'Direction Financière') ?></div>
+        <div style="margin-top: 25px; font-weight: bold; font-size: 8pt;"><?= htmlspecialchars($etablissement['nom_responsable_finance'] ?? '') ?></div>
       </td>
     </tr>
   </table>
 
   <!-- PIED DE PAGE -->
   <div class="footer-line">
-    Registre des dépenses extrait du système informatique <?= htmlspecialchars($etablissement['sigle_etablissement'] ?? 'GEICG') ?> &bull; Page 1 &bull; Document officiel
+    Registre des dépenses extrait du système informatique <?= htmlspecialchars($etablissement['sigle_etablissement'] ?? '') ?> &bull; Page 1 &bull; Document officiel
   </div>
 
 </body>

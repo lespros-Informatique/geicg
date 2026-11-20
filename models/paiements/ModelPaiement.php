@@ -12,8 +12,7 @@ class ModelPaiement extends BaseModel
         $where = "WHERE (p.categorie_paiement IS NULL OR p.categorie_paiement != 'FRAIS_ANNEXES') AND (p.tranche_code IS NULL OR p.tranche_code != 'FRAIS_ANNEXES')";
         $params = [];
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $where .= " AND (p.annee_code = ? OR p.inscription_annee_code = ?)";
-            $params[] = $anneeCode;
+            $where .= " AND COALESCE(NULLIF(p.annee_code, ''), p.inscription_annee_code) = ?";
             $params[] = $anneeCode;
         }
         if (!empty($niveauCode) && $niveauCode !== 'ALL') {
@@ -114,8 +113,13 @@ class ModelPaiement extends BaseModel
                 return ['success' => false, 'message' => "Ce paiement est déjà annulé."];
             }
 
-            $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = '" . STATUTS::ANNULE . "', motif_annulation = ?, updated_at_paiement = NOW() WHERE id_paiement = ?");
-            $ok = $stmtUp->execute([$motif, $paiement['id_paiement']]);
+            $obsBase = trim((string)($paiement['observations'] ?? ''));
+            $obsNew = $obsBase;
+            if (!empty($motif)) {
+                $obsNew = trim($obsBase . ($obsBase !== '' ? ' | ' : '') . '[ANNULÉ : ' . $motif . ']');
+            }
+            $stmtUp = $db->prepare("UPDATE " . TABLES::PAIEMENTS . " SET statut_paiement = '" . STATUTS::ANNULE . "', observations = ? WHERE id_paiement = ?");
+            $ok = $stmtUp->execute([$obsNew, $paiement['id_paiement']]);
 
             if ($ok) {
                 return [
@@ -280,20 +284,22 @@ class ModelPaiement extends BaseModel
                 COALESCE(
                     CASE 
                         WHEN i.montant_scolarite_inscription IS NOT NULL AND i.montant_scolarite_inscription > 0 THEN i.montant_scolarite_inscription
-                        WHEN s.montant_scolarite IS NOT NULL AND s.montant_scolarite > 0 THEN s.montant_scolarite
-                        ELSE 0
+                        ELSE (
+                            SELECT s.montant_scolarite
+                            FROM " . TABLES::SCOLARITES . " s
+                            WHERE s.filiere_code = c.filiere_code
+                              AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
+                              AND s.annee_code = i.annee_code
+                              AND (s.affectation_etat = CASE WHEN LOWER(COALESCE(i.affectation_etat, '')) IN ('oui', 'affecte') THEN 'affecte' ELSE 'non_affecte' END OR s.affectation_etat IS NULL OR s.affectation_etat = '')
+                              AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
+                            ORDER BY (s.niveau_code = c.niveau_code) DESC, (s.affectation_etat != '') DESC, s.id_scolarite DESC
+                            LIMIT 1
+                        )
                     END, 0
                 ) as montant_du
             FROM " . TABLES::INSCRIPTIONS . " i
             LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
-            LEFT JOIN " . TABLES::SCOLARITES . " s ON (
-                s.filiere_code = c.filiere_code 
-                AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
-                AND (s.annee_code = i.annee_code OR s.annee_code = '')
-                AND (s.affectation_etat = i.affectation_etat OR s.affectation_etat IS NULL OR s.affectation_etat = '')
-                AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
-            )
             WHERE {$strWhereIns}
         ";
 
@@ -326,8 +332,7 @@ class ModelPaiement extends BaseModel
         $paramsPay = [];
 
         if (!empty($targetAnnee) && $targetAnnee !== 'ALL') {
-            $wherePay[] = "(p.annee_code = ? OR ins.annee_code = ?)";
-            $paramsPay[] = $targetAnnee;
+            $wherePay[] = "COALESCE(NULLIF(p.annee_code, ''), ins.annee_code) = ?";
             $paramsPay[] = $targetAnnee;
         }
         if (!empty($niveauCode) && $niveauCode !== 'ALL') {
@@ -447,19 +452,21 @@ class ModelPaiement extends BaseModel
             SELECT COALESCE(SUM(
                 CASE 
                     WHEN i.montant_scolarite_inscription IS NOT NULL AND i.montant_scolarite_inscription > 0 THEN i.montant_scolarite_inscription
-                    WHEN s.montant_scolarite IS NOT NULL AND s.montant_scolarite > 0 THEN s.montant_scolarite
-                    ELSE 0
+                    ELSE COALESCE((
+                        SELECT s.montant_scolarite
+                        FROM " . TABLES::SCOLARITES . " s
+                        WHERE s.filiere_code = c.filiere_code
+                          AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
+                          AND s.annee_code = i.annee_code
+                          AND (s.affectation_etat = CASE WHEN LOWER(COALESCE(i.affectation_etat, '')) IN ('oui', 'affecte') THEN 'affecte' ELSE 'non_affecte' END OR s.affectation_etat IS NULL OR s.affectation_etat = '')
+                          AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
+                        ORDER BY (s.niveau_code = c.niveau_code) DESC, (s.affectation_etat != '') DESC, s.id_scolarite DESC
+                        LIMIT 1
+                    ), 0)
                 END
             ), 0) as total_exercice
             FROM " . TABLES::INSCRIPTIONS . " i
             LEFT JOIN " . TABLES::CLASSES . " c ON i.classe_code = c.code_classe
-            LEFT JOIN " . TABLES::SCOLARITES . " s ON (
-                s.filiere_code = c.filiere_code 
-                AND (s.niveau_code = c.niveau_code OR s.niveau_code IS NULL OR s.niveau_code = '')
-                AND (s.annee_code = i.annee_code OR s.annee_code = '')
-                AND (s.affectation_etat = i.affectation_etat OR s.affectation_etat IS NULL OR s.affectation_etat = '')
-                AND s.statut_scolarite = '" . STATUTS::ACTIF . "'
-            )
             WHERE i.annee_code = ? AND i.statut_inscription != '" . STATUTS::ANNULE . "'
         ");
         $stmtExercice->execute([$targetExerciceAnnee]);
@@ -1594,11 +1601,15 @@ class ModelPaiement extends BaseModel
             $caissierNom = "La Caisse";
         }
 
-        $logoSrc = $this->encodeImageBase64([
-            'public/assets/images/logo/logo_eicg.jpg',
-            'assets/images/logo/logo_eicg.jpg',
-            'public/uploads/logos/logo_1787358264.jpg'
-        ]);
+        $cfgLogo = '';
+        if (class_exists('ModelConfiguration')) {
+            $cfg = (new ModelConfiguration())->getConfig();
+            $cfgLogo = !empty($cfg['logo_etablissement']) ? 'public/' . ltrim($cfg['logo_etablissement'], '/') : '';
+        }
+        $logoSrc = $this->encodeImageBase64(array_filter([
+            $cfgLogo,
+            !empty($cfg['logo_etablissement']) ? ltrim($cfg['logo_etablissement'], '/') : ''
+        ]));
 
         $photoSrc = $this->encodeImageBase64([
             $pRow['photo_etudiant'] ?? '',
@@ -1625,6 +1636,7 @@ class ModelPaiement extends BaseModel
             'numero_recu' => $numRecuCode,
             'code_inscription' => $inscriptionCode,
             'date_operation' => !empty($pRow['date_paiement']) ? date('d/m/Y H:i:s', strtotime($pRow['date_paiement'])) : date('d/m/Y H:i:s'),
+            'date_operation_raw' => !empty($pRow['date_paiement']) ? $pRow['date_paiement'] : date('Y-m-d H:i:s'),
             'matricule_etudiant' => !empty($pRow['matricule_etudiant']) ? $pRow['matricule_etudiant'] : ($pRow['code_etudiant'] ?? '-'),
             'matricule' => !empty($pRow['matricule_etudiant']) ? $pRow['matricule_etudiant'] : ($pRow['code_etudiant'] ?? '-'),
             'filiere_niveau' => $filiereNiveau,
@@ -1669,6 +1681,9 @@ class ModelPaiement extends BaseModel
             'droit_op_jour' => 0,
             'droit_tot_payer' => 0,
             'droit_tot_verse' => 0,
+            'droit_total_payer' => 0,
+            'droit_total_verse' => 0,
+            'droit_reste_payer' => 0,
             'date_prochain_paiement' => ($scolariteReste <= 0) ? 'SOLDÉ' : date('d/m/Y', strtotime('+30 days', strtotime($pRow['date_paiement'] ?? 'now'))),
             'caissier_nom' => $caissierNom,
             'date_impression' => date('d/m/Y H:i:s'),
@@ -1790,7 +1805,12 @@ class ModelPaiement extends BaseModel
             ];
         }
 
-        $logoSrc = $this->encodeImageBase64(['public/assets/images/logo/logo_eicg.jpg']);
+        $cfgLogo = '';
+        if (class_exists('ModelConfiguration')) {
+            $cfgTmp = (new ModelConfiguration())->getConfig();
+            $cfgLogo = !empty($cfgTmp['logo_etablissement']) ? ltrim($cfgTmp['logo_etablissement'], '/') : '';
+        }
+        $logoSrc = $this->encodeImageBase64(array_filter([$cfgLogo ? 'public/' . $cfgLogo : '', $cfgLogo]));
 
         $anneeRow = $db->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
         $anneeRow->execute([$anneeCode]);
@@ -1854,8 +1874,7 @@ class ModelPaiement extends BaseModel
         }
 
         if (!empty($anneeCode) && $anneeCode !== 'ALL') {
-            $where .= " AND (p.annee_code = ? OR p.inscription_annee_code = ?)";
-            $params[] = $anneeCode;
+            $where .= " AND COALESCE(NULLIF(p.annee_code, ''), p.inscription_annee_code) = ?";
             $params[] = $anneeCode;
         }
 
@@ -1927,7 +1946,12 @@ class ModelPaiement extends BaseModel
             }
         }
 
-        $logoSrc = $this->encodeImageBase64(['public/assets/images/logo/logo_eicg.jpg']);
+        $cfgLogo = '';
+        if (class_exists('ModelConfiguration')) {
+            $cfgTmp = (new ModelConfiguration())->getConfig();
+            $cfgLogo = !empty($cfgTmp['logo_etablissement']) ? ltrim($cfgTmp['logo_etablissement'], '/') : '';
+        }
+        $logoSrc = $this->encodeImageBase64(array_filter([$cfgLogo ? 'public/' . $cfgLogo : '', $cfgLogo]));
 
         $anneeLibelle = 'Toutes les années';
         if (!empty($anneeCode)) {
@@ -1994,7 +2018,7 @@ class ModelPaiement extends BaseModel
             'date_impression' => date('d/m/Y H:i:s'),
             'date_debut' => $dateDebut ? date('d/m/Y', strtotime($dateDebut)) : '-',
             'date_fin' => $dateFin ? date('d/m/Y', strtotime($dateFin)) : '-',
-            'agent_nom' => !empty($currentUserName) ? $currentUserName : 'Service Caisse GEICG'
+            'agent_nom' => !empty($currentUserName) ? $currentUserName : 'Service Caisse'
         ];
     }
 
@@ -2016,10 +2040,12 @@ class ModelPaiement extends BaseModel
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
-            WHERE i.id_inscription = ? OR i.code_inscription = ? OR e.code_etudiant = ? OR e.id_etudiant = ?
+            WHERE (i.id_inscription = ? OR i.code_inscription = ? OR e.code_etudiant = ? OR e.id_etudiant = ?)
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
+            ORDER BY (i.annee_code = ?) DESC, i.id_inscription DESC
             LIMIT 1
         ");
-        $stmtInscr->execute([$id, $id, $id, $id]);
+        $stmtInscr->execute([$id, $id, $id, $id, $activeAnneeCode]);
         $ins = $stmtInscr->fetch(PDO::FETCH_ASSOC);
 
         if (!$ins) {
@@ -2080,10 +2106,12 @@ class ModelPaiement extends BaseModel
 
         $restePayer = max(0, $totalScolariteFixe - $montantPaye);
 
-        $logoSrc = $this->encodeImageBase64([
-            'public/assets/images/logo/logo_eicg.jpg',
-            'assets/images/logo/logo_eicg.jpg'
-        ]);
+        $cfgLogo = '';
+        if (class_exists('ModelConfiguration')) {
+            $cfgTmp = (new ModelConfiguration())->getConfig();
+            $cfgLogo = !empty($cfgTmp['logo_etablissement']) ? ltrim($cfgTmp['logo_etablissement'], '/') : '';
+        }
+        $logoSrc = $this->encodeImageBase64(array_filter([$cfgLogo ? 'public/' . $cfgLogo : '', $cfgLogo]));
 
         $photoSrc = $this->encodeImageBase64([
             $ins['photo_etudiant'] ?? '',
@@ -2170,7 +2198,7 @@ class ModelPaiement extends BaseModel
             'reste_payer' => $restePayer,
             'paiements' => $paiements,
             'echeancier' => $echeancier,
-            'agent_caisse_nom' => !empty($currentUserName) ? $currentUserName : 'Caisse Principale GEICG'
+            'agent_caisse_nom' => !empty($currentUserName) ? $currentUserName : 'Caisse Principale'
         ];
     }
 

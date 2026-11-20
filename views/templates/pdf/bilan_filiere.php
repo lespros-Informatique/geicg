@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -157,7 +166,7 @@
         
         <div class="filiere-box">
           <div class="filiere-header">FILIERE ET NIVEAU</div>
-          <div class="filiere-code"><?= htmlspecialchars($filiere_niveau ?? 'RHC 1A') ?></div>
+          <div class="filiere-code"><?= htmlspecialchars($filiere_niveau ?? '-') ?></div>
         </div>
       </td>
 
@@ -170,21 +179,21 @@
         <table class="stats-table">
           <tr>
             <td class="stat-label" style="width: 18%;">EFFECTIF</td>
-            <td class="stat-val" style="width: 15%; text-align: center; font-size: 12px;"><?= htmlspecialchars($effectif_total ?? '73') ?></td>
+            <td class="stat-val" style="width: 15%; text-align: center; font-size: 12px;"><?= htmlspecialchars($effectif_total ?? '0') ?></td>
             <td class="stat-label" style="width: 33%;">TOTAL A PAYER</td>
-            <td class="stat-val" style="width: 34%;"><?= number_format($total_a_payer ?? 7930000, 0, ',', ' ') ?> CFA</td>
+            <td class="stat-val" style="width: 34%;"><?= number_format($total_a_payer ?? 0, 0, ',', ' ') ?> CFA</td>
           </tr>
           <tr>
             <td class="stat-label">AFFECTE</td>
-            <td class="stat-val" style="text-align: center;"><?= htmlspecialchars($nb_affectes ?? '69') ?></td>
+            <td class="stat-val" style="text-align: center;"><?= htmlspecialchars($nb_affectes ?? '0') ?></td>
             <td class="stat-label">TOTAL PAYE</td>
-            <td class="stat-val"><?= number_format($total_paye ?? 7600000, 0, ',', ' ') ?> CFA</td>
+            <td class="stat-val"><?= number_format($total_paye ?? 0, 0, ',', ' ') ?> CFA</td>
           </tr>
           <tr>
             <td class="stat-label">NON AFF</td>
-            <td class="stat-val" style="text-align: center;"><?= htmlspecialchars($nb_non_affectes ?? '4') ?></td>
+            <td class="stat-val" style="text-align: center;"><?= htmlspecialchars($nb_non_affectes ?? '0') ?></td>
             <td class="stat-label">RESTE A PAYER</td>
-            <td class="stat-val" style="color: #990000;"><?= number_format($reste_a_payer ?? 330000, 0, ',', ' ') ?> CFA</td>
+            <td class="stat-val" style="color: #990000;"><?= number_format($reste_a_payer ?? 0, 0, ',', ' ') ?> CFA</td>
           </tr>
         </table>
       </td>
@@ -210,7 +219,7 @@
           <tr>
             <td class="val-center"><?= $index + 1 ?></td>
             <td style="font-weight: bold;"><?= htmlspecialchars($e['nom_prenoms'] ?? '') ?></td>
-            <td class="val-center"><?= htmlspecialchars($e['statut'] ?? 'AFFECTE') ?></td>
+            <td class="val-center"><?= htmlspecialchars($e['statut'] ?? '-') ?></td>
             <td class="val-right"><?= number_format($e['somme_a_payer'] ?? 0, 0, ',', ' ') ?> CFA</td>
             <td class="val-right"><?= number_format($e['somme_payee'] ?? 0, 0, ',', ' ') ?> CFA</td>
             <td class="val-center"><?= htmlspecialchars($e['tenue'] ?? '') ?></td>
@@ -218,46 +227,16 @@
           </tr>
         <?php endforeach; ?>
       <?php else: ?>
-        <?php 
-          // Default mock demonstration rows matching reference document
-          $mockList = [
-            ['nom' => 'OUATTARA APATCHO ANDREA TISSEN', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'LAGOU YAO JEAN ROMARIC', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'AKPOUE KOUAKOU WILFRIED', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'TOURE NANDIEKPO JEAN-REGIS', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'TANOU ROKIA', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'KOFFI AMOIN PRISCILLE', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'KOFFI KOUASSI SALOMON', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'KOFFI CHRIS RASSOU USHER NATHAN', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'KOUADIO AHOU ANGE', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'CAMARA N\'GANLO LOSSA', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'DOUKOURE MATENIN', 'statut' => 'AFFECTE', 'payer' => 0, 'paye' => 0, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'DIARRA ADJARATOU', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 105000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'GOME ALEXIS', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 65000, 'tenue' => '', 'reste' => 40000],
-            ['nom' => 'TOURE SIE DJAKARIDJA', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 70000, 'tenue' => '', 'reste' => 35000],
-            ['nom' => 'COULIBALY MAMADOU', 'statut' => 'AFFECTE', 'payer' => 105000, 'paye' => 45000, 'tenue' => '', 'reste' => 60000],
-            ['nom' => 'SALEY AWA', 'statut' => 'NON AFFECTE', 'payer' => 235000, 'paye' => 235000, 'tenue' => '', 'reste' => 0],
-            ['nom' => 'COULIBALY GNINGNINRI MELISSA JOHANNA', 'statut' => 'NON AFFECTE', 'payer' => 235000, 'paye' => 140000, 'tenue' => '', 'reste' => 95000],
-          ];
-        ?>
-        <?php foreach ($mockList as $i => $row): ?>
-          <tr>
-            <td class="val-center"><?= $i + 1 ?></td>
-            <td style="font-weight: bold;"><?= htmlspecialchars($row['nom']) ?></td>
-            <td class="val-center"><?= htmlspecialchars($row['statut']) ?></td>
-            <td class="val-right"><?= number_format($row['payer'], 0, ',', ' ') ?> CFA</td>
-            <td class="val-right"><?= number_format($row['paye'], 0, ',', ' ') ?> CFA</td>
-            <td class="val-center"><?= htmlspecialchars($row['tenue']) ?></td>
-            <td class="val-right"><?= number_format($row['reste'], 0, ',', ' ') ?> CFA</td>
-          </tr>
-        <?php endforeach; ?>
+        <tr>
+          <td colspan="7" class="val-center" style="padding: 12px; color: #64748B;">Aucun étudiant enregistré pour cette filière.</td>
+        </tr>
       <?php endif; ?>
     </tbody>
   </table>
 
   <!-- FOOTER -->
   <div class="footer-line">
-    GROUPE ECOLE INTERNATIONALE DE COMMERCE ET DE GESTION (GEICG) - État Financier et Bilan Global de la Filière
+    <?= htmlspecialchars($etablissement['nom_etablissement'] ?? '') ?> - État Financier et Bilan Global de la Filière
   </div>
 
 </body>

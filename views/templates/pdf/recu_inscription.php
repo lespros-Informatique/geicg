@@ -4,14 +4,23 @@
  * Emplacement : /views/templates/pdf/recu_inscription.php
  */
 
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+
 // Générateur de code-barres compact et haut via Picqer Barcode Generator
 if (!function_exists('generatePicqerBarcodeHtml')) {
-    function generatePicqerBarcodeHtml($code, $height = 42) {
+    function generatePicqerBarcodeHtml($code, $height = 42, $widthFactor = 1) {
         $code = (string)($code ?? '');
         if (empty($code)) return '';
         try {
             $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
-            $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, 1, $height);
+            $wf = max(1, (int)round((float)$widthFactor));
+            $pngData = $generator->getBarcode($code, $generator::TYPE_CODE_128, $wf, $height);
             return '<img src="data:image/png;base64,' . base64_encode($pngData) . '" alt="Code-barres ' . htmlspecialchars($code) . '" style="display:inline-block; vertical-align:middle; height:' . $height . 'px; width:auto; max-width:150px;">';
         } catch (\Throwable $e) {
             return '<div style="font-family:monospace; font-weight:bold; font-size:10px;">' . htmlspecialchars($code) . '</div>';
@@ -19,14 +28,21 @@ if (!function_exists('generatePicqerBarcodeHtml')) {
     }
 }
 
-// Chargement du logo officiel Groupe EICG
+// Chargement du logo institutionnel depuis la table configurations
 if (!empty($logo_src)) {
     $logoSrc = $logo_src;
 } else {
-    $logoEicgFile = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
-    $logoSrc = asset('assets/images/logo/logo_eicg.jpg');
-    if (file_exists($logoEicgFile)) {
-        $logoSrc = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoEicgFile));
+    $logoSrc = '';
+    if (!empty($etablissement['logo_etablissement'])) {
+        $cleanLogo = ltrim($etablissement['logo_etablissement'], '/');
+        foreach ([__DIR__ . '/../../../public/' . $cleanLogo, __DIR__ . '/../../../' . $cleanLogo] as $candLogo) {
+            if (file_exists($candLogo) && is_file($candLogo)) {
+                $extL = strtolower(pathinfo($candLogo, PATHINFO_EXTENSION));
+                $mimeL = ($extL === 'png') ? 'png' : (($extL === 'webp') ? 'webp' : 'jpeg');
+                $logoSrc = 'data:image/' . $mimeL . ';base64,' . base64_encode(file_get_contents($candLogo));
+                break;
+            }
+        }
     }
 }
 
@@ -450,15 +466,10 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
         </tr>
         <tr>
           <td class="">AUTRES FRAIS</td>
-          <td ></td>
-          <td ></td>
-          <td ></td>
-          <td ></td>
-
-           <!-- <td class="text-center text-bold"><?= number_format($frais_annexes_op_jour, 0, ',', ' ') ?>CFA</td>
-          <td class="text-center text-bold"><?= number_format($frais_annexes_tot_payer, 0, ',', ' ') ?>CFA</td>
-          <td class="text-center text-bold"><?= number_format($frais_annexes_tot_verse, 0, ',', ' ') ?>CFA</td>
-          <td class="text-center text-bold"><?= number_format($frais_annexes_reste, 0, ',', ' ') ?>CFA</td> -->
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
         </tr>
         <tr class="row-total">
           <td class="text-bold">TOTAL</td>

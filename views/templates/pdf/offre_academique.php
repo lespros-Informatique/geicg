@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -470,7 +479,7 @@
   </table>
 
   <div style="margin-top: 10px; font-size: 7.5pt; color: #94A3B8; text-align: center;">
-    Fait à Bouaké, le <?= date('d/m/Y') ?> &bull; Document à usage pédagogique et administratif interne.
+    Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?> &bull; Document à usage pédagogique et administratif interne.
   </div>
 
 </body>

@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -264,7 +273,7 @@
         Bilan : <?= ($stats['nb_notes'] ?? 0) ?> copies évaluées &bull; <?= ($stats['admis_count'] ?? 0) ?> admis (≥10/20) &bull; <?= max(0, ($stats['nb_notes'] ?? 0) - ($stats['admis_count'] ?? 0)) ?> ajournés
       </td>
       <td style="width: 50%; text-align: right;">
-        Fait à Bouaké, le <?= date('d/m/Y') ?>
+        Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?>
       </td>
     </tr>
   </table>

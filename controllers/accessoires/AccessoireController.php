@@ -49,7 +49,7 @@ class AccessoireController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $rows = $this->model->getActifs();
+        $rows = $this->model->getActifs($this->getActiveAnneeCode());
         $etablissement = $this->getEtablissementConfig();
         $currentUser = Auth::user();
         $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
@@ -85,7 +85,7 @@ class AccessoireController extends BaseController
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::CONFIG_ACADEMIQUE, PERMISSIONS::MANAGE_INSCRIPTIONS]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : null;
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
         $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
         $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
@@ -336,7 +336,8 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES]);
-        $items = $this->model->getAll();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        $items = $this->model->getAll($anneeCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_accessoire'];
@@ -474,7 +475,11 @@ class AccessoireController extends BaseController
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $filiereCode = !empty($_GET['filiere_code']) ? trim($_GET['filiere_code']) : null;
         $cycleCode = !empty($_GET['cycle_code']) ? trim($_GET['cycle_code']) : null;
-        $anneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : null;
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['data' => []]);
+            return;
+        }
         $items = $this->model->getCiblesList($typeFiliere, $niveauCode, $filiereCode, $cycleCode, $anneeCode);
         $this->json(['data' => $items]);
     }
@@ -673,7 +678,11 @@ class AccessoireController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_ACCESSOIRES, PERMISSIONS::VIEW_ACCESSOIRES, PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]);
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->json(['status' => 1, 'stats' => []]);
+            return;
+        }
         $stats = $this->model->getStats($anneeCode);
         $this->json(['status' => 1, 'stats' => $stats]);
     }
@@ -789,8 +798,8 @@ class AccessoireController extends BaseController
         $anneeCode = $this->getActiveAnneeCode();
         $etabCode = $this->getActiveEtablissementCode();
 
-        // Trouver la dernière inscription de l'étudiant via modèle
-        $ins = $this->model->getLatestInscriptionForStudent($etudiantCode);
+        // Trouver la dernière inscription de l'étudiant pour l'année active via modèle
+        $ins = $this->model->getLatestInscriptionForStudent($etudiantCode, $anneeCode);
         $insCode = $ins['code_inscription'] ?? '';
 
         if (empty($insCode)) {

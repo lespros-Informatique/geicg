@@ -60,8 +60,15 @@ class PdfService
             'tempDir' => sys_get_temp_dir()
         ]);
 
-        $mpdf->SetTitle($options['title'] ?? 'Document GEICG');
-        $mpdf->SetAuthor('GEICG - Système d\'Information');
+        $sigleEtab = '';
+        if (class_exists('ModelConfiguration')) {
+            try {
+                $cfgEtab = (new ModelConfiguration())->getConfig();
+                $sigleEtab = trim((string)($cfgEtab['sigle_etablissement'] ?? ($cfgEtab['nom_etablissement'] ?? '')));
+            } catch (Exception $e) {}
+        }
+        $mpdf->SetTitle($options['title'] ?? ($sigleEtab !== '' ? 'Document - ' . $sigleEtab : 'Document Officiel'));
+        $mpdf->SetAuthor($sigleEtab !== '' ? $sigleEtab . ' - Système d\'Information' : 'Système d\'Information');
         $mpdf->showImageErrors = true;
 
         if (!empty($options['watermark_image']) && file_exists($options['watermark_image'])) {

@@ -167,7 +167,7 @@ class BulletinController extends BaseController
             'classe_code_or_ref' => !empty($item['code_classe']) ? $item['code_classe'] : ($item['libelle_classe'] ?? '-'),
             'effectif_classe' => $calc['totalElevesClasse'] ?? '-',
             'statut_affectation' => (!empty($item['affectation_etat']) && strtolower(trim($item['affectation_etat'])) === 'oui') ? 'AFFECTE' : 'NON AFFECTE',
-            'redoublant' => (!empty($item['redoublant']) && strtolower(trim($item['redoublant'])) === 'oui') ? 'OUI' : 'NON',
+            'redoublant' => (!empty($calc['estRedoublant']) ? 'OUI' : 'NON'),
             'intitule_periode' => strtoupper($semestreLibelle ?: 'SEMESTRE'),
             'matieres_notes' => $calc['matieresNotes'] ?? [],
             'matieresGenerales' => $calc['matieresGenerales'] ?? [],
@@ -198,7 +198,7 @@ class BulletinController extends BaseController
             'moy_semestre2' => $calc['moy_semestre2'] ?? null,
             'moy_examen' => $calc['moy_examen'] ?? null,
             'etablissement' => $config,
-            'directeur_etudes' => ($config['nom_directeur_etudes'] ?? 'Dr COULIBALY Sonan Hamed')
+            'directeur_etudes' => ($config['nom_directeur_etudes'] ?? '')
         ];
     }
 

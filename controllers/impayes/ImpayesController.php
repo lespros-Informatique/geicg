@@ -230,6 +230,7 @@ class ImpayesController extends BaseController
         elseif ($severite === 'critique') $severiteLibelle = 'Retard Critique (>30j)';
 
         $dataView = [
+            'etablissement' => $this->getEtablissementConfig(),
             'list' => $result['list'] ?? [],
             'kpis' => $result['kpis'] ?? [],
             'annee_libelle' => $anneeLibelle,
@@ -278,8 +279,8 @@ class ImpayesController extends BaseController
         $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
         $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $ins['annee_code'], $ins['niveau_code'], 'inscription');
 
-        // Scolarité due via modèle
-        $scolariteDue = $this->model->getScolariteDue($ins['filiere_code'], $ins['niveau_code'], $ins['annee_code']);
+        // Scolarité due via modèle (avec affectation_etat)
+        $scolariteDue = $this->model->getScolariteDue($ins['filiere_code'], $ins['niveau_code'], $ins['annee_code'], $ins['affectation_etat'] ?? null);
         if ($scolariteDue === null) {
             $scolariteDue = (float)$ins['montant_scolarite_inscription'];
         }
@@ -306,11 +307,12 @@ class ImpayesController extends BaseController
         $userPrenom = $user['prenom_user'] ?? '';
         $caissierNom = trim($userNom . ' ' . $userPrenom);
 
-        $logoSrc = $this->toBase64([
-            'public/assets/images/logo/logo_eicg.jpg',
-            'assets/images/logo/logo_eicg.jpg',
-            'public/uploads/logos/logo_1787358264.jpg'
-        ]);
+        $etab = $this->getEtablissementConfig();
+        $cfgLogo = !empty($etab['logo_etablissement']) ? ltrim($etab['logo_etablissement'], '/') : '';
+        $logoSrc = $this->toBase64(array_filter([
+            $cfgLogo ? 'public/' . $cfgLogo : '',
+            $cfgLogo
+        ]));
 
         $photoSrc = $this->toBase64([
             $ins['photo_etudiant'] ?? '',
@@ -319,7 +321,8 @@ class ImpayesController extends BaseController
         ]);
 
         $dataView = [
-            'annee_libelle' => $ins['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
+            'etablissement' => $etab,
+            'annee_libelle' => $ins['libelle_annee'] ?? '-',
             'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
             'code_barre_val' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
             'code_inscription' => $ins['code_inscription'],
@@ -382,23 +385,27 @@ class ImpayesController extends BaseController
         $userPrenom = $user['prenom_user'] ?? '';
         $caissierNom = trim($userNom . ' ' . $userPrenom);
 
-        $logoSrc = $this->toBase64([
-            'public/assets/images/logo/logo_eicg.jpg',
-            'assets/images/logo/logo_eicg.jpg',
-            'public/uploads/logos/logo_1787358264.jpg'
-        ]);
+        $etab = $this->getEtablissementConfig();
+        $cfgLogo = !empty($etab['logo_etablissement']) ? ltrim($etab['logo_etablissement'], '/') : '';
+        $logoSrc = $this->toBase64(array_filter([
+            $cfgLogo ? 'public/' . $cfgLogo : '',
+            $cfgLogo
+        ]));
 
         $htmlPages = [];
         $inscCodesMasse = array_column($inscriptions, 'code_inscription');
         $totauxPayesMap = $this->model->getTotalPayeByInscriptions($inscCodesMasse);
 
         foreach ($inscriptions as $ins) {
+            if (!empty($ins['annee_code']) && !$this->canAccessAcademicYear($ins['annee_code'])) {
+                continue;
+            }
             $totalPaye = $totauxPayesMap[$ins['code_inscription']] ?? 0.0;
 
             $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
             $fraisAnnexesDus = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $ins['annee_code'], $ins['niveau_code'], 'inscription');
 
-            $scolariteDue = $this->model->getScolariteDue($ins['filiere_code'], $ins['niveau_code'], $ins['annee_code']);
+            $scolariteDue = $this->model->getScolariteDue($ins['filiere_code'], $ins['niveau_code'], $ins['annee_code'], $ins['affectation_etat'] ?? null);
             if ($scolariteDue === null) {
                 $scolariteDue = (float)$ins['montant_scolarite_inscription'];
             }
@@ -427,7 +434,8 @@ class ImpayesController extends BaseController
             ]);
 
             $dataView = [
-                'annee_libelle' => $ins['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1),
+                'etablissement' => $etab,
+                'annee_libelle' => $ins['libelle_annee'] ?? '-',
                 'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
                 'code_barre_val' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
                 'code_inscription' => $ins['code_inscription'],

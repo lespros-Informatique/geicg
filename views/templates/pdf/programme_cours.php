@@ -20,7 +20,7 @@ $sigleEtab = $etablissement['sigle_etablissement'] ?? 'GEICG';
 $dirTitre = !empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'La Direction des Études & Pédagogie';
 $dirNom = $etablissement['nom_directeur_etudes'] ?? '';
 $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
-$textePiedPage = $etablissement['texte_pied_page'] ?? 'Document officiel généré par le Système GEICG';
+$textePiedPage = $etablissement['texte_pied_page'] ?? 'Document officiel';
 
 $stats = $stats ?? ['total_cours' => 0, 'total_heures' => 0, 'nb_profs' => 0, 'nb_classes' => 0, 'nb_salles' => 0];
 $items = $items ?? [];
@@ -354,8 +354,9 @@ $items = $items ?? [];
             </td>
             <td>
               <strong style="color: #0F172A;"><?= htmlspecialchars($item['libelle_matiere'] ?? '-') ?></strong>
-              <?php if (!empty($item['code_matiere'])): ?>
-                <span style="font-size: 7pt; color: #64748B;">(<?= htmlspecialchars($item['code_matiere']) ?>)</span>
+              <?php $codeMatAff = $item['matiere_code'] ?? ($item['code_matiere'] ?? ''); ?>
+              <?php if (!empty($codeMatAff)): ?>
+                <span style="font-size: 7pt; color: #64748B;">(<?= htmlspecialchars($codeMatAff) ?>)</span>
               <?php endif; ?>
             </td>
             <td>

@@ -7,7 +7,7 @@ class ModelDocument extends BaseModel
     protected ?string $statusField = 'statut_document';
     protected ?string $createdAtField = 'created_at_document';
 
-    public function getDocumentsList(): array
+    public function getDocumentsList(?string $anneeCode = null): array
     {
         try {
             $sql = "SELECT d.*, 
@@ -16,9 +16,16 @@ class ModelDocument extends BaseModel
                            DATE_FORMAT(d.created_at_document, '%d/%m/%Y') as date_creation_formatee
                     FROM " . TABLES::DOCUMENTS . " d
                     LEFT JOIN " . TABLES::FILIERES . " f ON (f.code_filiere = d.filiere_code OR f.libelle_filiere = d.filiere_code)
-                    LEFT JOIN " . TABLES::NIVEAUX . " n ON (n.code_niveau = d.niveaux_code OR n.libelle_niveau = d.niveaux_code)
-                    ORDER BY d.id_document DESC";
-            return $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                    LEFT JOIN " . TABLES::NIVEAUX . " n ON (n.code_niveau = d.niveaux_code OR n.libelle_niveau = d.niveaux_code)";
+            $params = [];
+            if (!empty($anneeCode) && strtoupper($anneeCode) !== 'ALL') {
+                $sql .= " WHERE d.annee_code = ?";
+                $params[] = $anneeCode;
+            }
+            $sql .= " ORDER BY d.id_document DESC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelDocument::getDocumentsList error: " . $e->getMessage());
             return [];

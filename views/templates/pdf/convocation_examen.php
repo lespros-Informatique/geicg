@@ -175,7 +175,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
             <td colspan="2" style="height: 6px;"></td>
           </tr>
           <tr>
-            <td><strong style="font-size: 11.5px;">NUMGPEICG :</strong></td>
+            <td><strong style="font-size: 11.5px;">N° Matricule :</strong></td>
             <td><span class="val-bold" style="font-size: 12px;"><?= htmlspecialchars($num_gpeicg ?? '-') ?></span></td>
           </tr>
           <tr>
@@ -185,8 +185,20 @@ if (empty($etablissement) || !is_array($etablissement)) {
         </table>
       </td>
       <td style="width: 24%; text-align: right; vertical-align: top;">
-        <?php if (!empty($photo_etudiant) && file_exists(__DIR__ . '/../../public/' . ltrim($photo_etudiant, '/'))): ?>
-          <img src="<?= __DIR__ . '/../../public/' . ltrim($photo_etudiant, '/') ?>" class="photo-box">
+        <?php
+          $resolvedConvPhoto = '';
+          if (!empty($photo_etudiant)) {
+              $cleanConv = ltrim($photo_etudiant, '/');
+              foreach ([__DIR__ . '/../../../public/' . $cleanConv, __DIR__ . '/../../../' . $cleanConv] as $candConv) {
+                  if (file_exists($candConv) && is_file($candConv)) {
+                      $resolvedConvPhoto = $candConv;
+                      break;
+                  }
+              }
+          }
+        ?>
+        <?php if (!empty($resolvedConvPhoto)): ?>
+          <img src="<?= $resolvedConvPhoto ?>" class="photo-box">
         <?php else: ?>
           <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 108px; color: #94A3B8; font-size: 9px;">PHOTO</div>
         <?php endif; ?>
@@ -240,29 +252,21 @@ if (empty($etablissement) || !is_array($etablissement)) {
       </tr>
     </thead>
     <tbody>
-      <?php 
-        $defaultEcrites = [
-          ['matiere' => 'TECHNIQUES D\'EXPRESSION ECRITE ET ORALE', 'coeff' => 3, 'date' => 'lundi 22 juin 2026', 'horaire' => '08H00 – 10H00'],
-          ['matiere' => 'ANGLAIS', 'coeff' => 3, 'date' => 'lundi 22 juin 2026', 'horaire' => '10H30 – 12H30'],
-          ['matiere' => 'ECONOMIE ET ORGANISATION D\'ENTREPRISE', 'coeff' => 3, 'date' => 'mardi 23 juin 2026', 'horaire' => '08H00 – 10H00'],
-          ['matiere' => 'DROIT - LEGISLATION DU TRAVAIL ET DE LA COMMUNICATION', 'coeff' => 5, 'date' => 'mardi 23 juin 2026', 'horaire' => '10H30 – 12H30'],
-          ['matiere' => 'COMPTABILITE - INFORMATIQUE', 'coeff' => 4, 'date' => 'mercredi 24 juin 2026', 'horaire' => '08H00 – 10H00'],
-          ['matiere' => 'COMMUNICATION D\'ENTREPRISE - TECHNIQUE DE COMMUNICATION ET D\'ANIMATION', 'coeff' => 5, 'date' => 'mercredi 24 juin 2026', 'horaire' => '10H30 – 12H30'],
-          ['matiere' => 'ENQUETE DE SATISFACTION - STATISTIQUES APPLIQUEES', 'coeff' => 5, 'date' => 'jeudi 25 juin 2026', 'horaire' => '08H00 – 10H00'],
-          ['matiere' => 'MARKETING ET POLITIQUE DE COMMUNICATION', 'coeff' => 4, 'date' => 'jeudi 25 juin 2026', 'horaire' => '10H30 – 12H30'],
-          ['matiere' => 'PSYCHOSOCIOLOGIE APPLIQUEE - PROCESSUS DE PRODUCTION DANS LES MEDIAS', 'coeff' => 5, 'date' => 'vendredi 26 juin 2026', 'horaire' => '08H00 – 10H00'],
-          ['matiere' => 'PSYCHOSOCIOLOGIE DES ORGANISATIONS - NEGOCIATION DES RELATIONS SOCIALES', 'coeff' => 4, 'date' => 'vendredi 26 juin 2026', 'horaire' => '10H30 – 12H30'],
-        ];
-        $listEcrites = !empty($epreuves_ecrites) && is_array($epreuves_ecrites) ? $epreuves_ecrites : $defaultEcrites;
-      ?>
-      <?php foreach ($listEcrites as $item): ?>
+      <?php $listEcrites = !empty($epreuves_ecrites) && is_array($epreuves_ecrites) ? $epreuves_ecrites : []; ?>
+      <?php if (!empty($listEcrites)): ?>
+        <?php foreach ($listEcrites as $item): ?>
+          <tr>
+            <td><?= htmlspecialchars($item['matiere'] ?? '') ?></td>
+            <td style="text-align: center; font-weight: bold;"><?= htmlspecialchars($item['coeff'] ?? '') ?></td>
+            <td style="text-align: center;"><?= htmlspecialchars($item['date'] ?? '') ?></td>
+            <td style="text-align: center;"><?= htmlspecialchars($item['horaire'] ?? '') ?></td>
+          </tr>
+        <?php endforeach; ?>
+      <?php else: ?>
         <tr>
-          <td><?= htmlspecialchars($item['matiere'] ?? '') ?></td>
-          <td style="text-align: center; font-weight: bold;"><?= htmlspecialchars($item['coeff'] ?? '') ?></td>
-          <td style="text-align: center;"><?= htmlspecialchars($item['date'] ?? '') ?></td>
-          <td style="text-align: center;"><?= htmlspecialchars($item['horaire'] ?? '') ?></td>
+          <td colspan="4" style="text-align: center; padding: 8px; color: #64748B;">Aucune épreuve écrite programmée.</td>
         </tr>
-      <?php endforeach; ?>
+      <?php endif; ?>
     </tbody>
   </table>
 
@@ -279,9 +283,9 @@ if (empty($etablissement) || !is_array($etablissement)) {
     </table>
     
     <div class="footer-contacts">
-      Contacts : <?= htmlspecialchars($etablissement['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?><br>
-      <?= htmlspecialchars($etablissement['boite_postale'] ?? '01 BP 960 Bouaké 01') ?> – Email : <?= htmlspecialchars($etablissement['email_etablissement'] ?? 'eicgbouake01@gmail.com') ?><br>
-      Contacts : <?= htmlspecialchars(!empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '27 31 62 40 57 – Cél : 07 79 37 37 38 / 05 04 59 39 99') ?>
+      <?= !empty($etablissement['adresse_etablissement']) ? 'Adresse : ' . htmlspecialchars($etablissement['adresse_etablissement']) . '<br>' : '' ?>
+      <?= !empty($etablissement['boite_postale']) ? htmlspecialchars($etablissement['boite_postale']) : '' ?><?= (!empty($etablissement['boite_postale']) && !empty($etablissement['email_etablissement'])) ? ' – ' : '' ?><?= !empty($etablissement['email_etablissement']) ? 'Email : ' . htmlspecialchars($etablissement['email_etablissement']) : '' ?><br>
+      <?= !empty($etablissement['contacts_formatted']) ? 'Contacts : ' . htmlspecialchars($etablissement['contacts_formatted']) : '' ?>
     </div>
   </div>
 

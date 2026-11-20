@@ -245,7 +245,7 @@ class ModelAnnee extends BaseModel
                     (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ? AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)) as total_etudiants,
                     (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = '" . STATUTS::ACTIF . "' OR statut_classe IS NULL)) as total_classes,
                     (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND (statut_semestre = '" . STATUTS::ACTIF . "' OR statut_semestre IS NULL)) as total_semestres,
-                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != '" . STATUTS::ANNULE . "' OR statut_paiement IS NULL)) as total_recouvrement
+                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != '" . STATUTS::ANNULE . "' OR statut_paiement IS NULL) AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES') AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES') AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')) as total_recouvrement
             ");
             $stmt->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [

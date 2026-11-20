@@ -385,8 +385,13 @@ class ClasseController extends BaseController
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $this->getActiveAnneeCode();
-        $anneeLibelle = $this->getActiveAnneeLibelle();
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès non autorisé ou année académique introuvable.");
+            return;
+        }
+        $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+        $anneeLibelle = $anneeObj['libelle_annee'] ?? $this->getActiveAnneeLibelle();
         $classes = $this->model->getAllWithDetails($anneeCode);
         $etablissement = $this->getEtablissementConfig();
 
@@ -416,7 +421,7 @@ class ClasseController extends BaseController
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
             'format' => 'A4',
-            'title' => 'Répertoire des Classes - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'title' => 'Répertoire des Classes - ' . ($etablissement['nom_etablissement'] ?? ($etablissement['sigle_etablissement'] ?? '')),
             'margin_left' => 10,
             'margin_right' => 10,
             'margin_top' => 10,

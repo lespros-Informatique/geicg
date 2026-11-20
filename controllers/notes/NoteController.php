@@ -242,7 +242,8 @@ class NoteController extends BaseController
             $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
             return;
         }
-        $anneeLibelle = $this->getActiveAnneeLibelle();
+        $anneeObj = (new ModelAnnee())->getByCode($anneeCode);
+        $anneeLibelle = $anneeObj['libelle_annee'] ?? $this->getActiveAnneeLibelle();
         $etablissement = $this->getEtablissementConfig();
 
         $currentUser = Auth::user();
@@ -303,7 +304,11 @@ class NoteController extends BaseController
 
         require_once __DIR__ . '/../../core/PdfService.php';
 
-        $anneeCode = $_GET['annee_code'] ?? Session::get('annee_active_code');
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
+            return;
+        }
         $niveauCode = !empty($_GET['niveau_code']) ? trim($_GET['niveau_code']) : null;
         $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
         $typeComposition = !empty($_GET['type_composition']) ? trim($_GET['type_composition']) : null;

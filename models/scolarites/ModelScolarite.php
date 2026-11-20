@@ -16,6 +16,8 @@ class ModelScolarite extends BaseModel
             LEFT JOIN " . TABLES::NIVEAUX . " n ON s.niveau_code = n.code_niveau
             LEFT JOIN " . TABLES::ANNEES . " a ON s.annee_code = a.code_annee
         ";
+        $joinSql = "";
+        $joinParams = [];
         $conditions = [];
         $params = [];
         if (!empty($anneeCode)) {
@@ -41,17 +43,18 @@ class ModelScolarite extends BaseModel
             $params[] = $statut;
         }
         if (!empty($classeCode)) {
-            $sql .= " LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ? ";
-            $params[] = $classeCode;
+            $joinSql .= " INNER JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ? ";
+            $joinParams[] = $classeCode;
             $conditions[] = "(s.niveau_code = cl.niveau_code AND (s.filiere_code = cl.filiere_code OR s.filiere_code IS NULL OR s.filiere_code = ''))";
         }
+        $sql .= $joinSql;
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
         }
         $sql .= " ORDER BY f.libelle_filiere ASC, n.libelle_niveau ASC, s.affectation_etat ASC, s.id_scolarite DESC ";
 
         $stmt = $this->getCon()->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute(array_merge($joinParams, $params));
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 

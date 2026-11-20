@@ -145,17 +145,24 @@
 
 <div class="page-frame">
 
-  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
+  <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ -->
   <?php 
+    if (empty($etablissement) || !is_array($etablissement)) {
+      if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+      }
+    }
     include __DIR__ . '/components/header_institution.php'; 
     $photoSrc = '';
     if (!empty($photo_etudiant)) {
       $cleanP = ltrim($photo_etudiant, '/');
-      $candidateP = __DIR__ . '/../../public/' . $cleanP;
-      if (file_exists($candidateP)) {
-        $ext = pathinfo($candidateP, PATHINFO_EXTENSION);
-        $mime = ($ext === 'png') ? 'image/png' : 'image/jpeg';
-        $photoSrc = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($candidateP));
+      foreach ([__DIR__ . '/../../../public/' . $cleanP, __DIR__ . '/../../../' . $cleanP] as $candidateP) {
+        if (file_exists($candidateP) && is_file($candidateP)) {
+          $ext = strtolower(pathinfo($candidateP, PATHINFO_EXTENSION));
+          $mime = ($ext === 'png') ? 'image/png' : 'image/jpeg';
+          $photoSrc = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($candidateP));
+          break;
+        }
       }
     }
     if (empty($photoSrc)) {
@@ -189,7 +196,7 @@
             <td colspan="2">Nom_Prénom(s) : <span class="val-bold"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? 'AFFECTE') ?></span></td>
+            <td>Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
             <td>Contact : <span class="val-bold"><?= htmlspecialchars($contact_etudiant ?? '-') ?></span></td>
           </tr>
         </table>
@@ -243,10 +250,13 @@
         </div>
       </td>
       <td style="width: 28%; text-align: right; vertical-align: middle;">
+        <?php $barcodeRappel = (string)($code_barre_val ?? ($code_rappel ?? ($code_inscription ?? ''))); ?>
+        <?php if ($barcodeRappel !== ''): ?>
         <div style="text-align: center; display: inline-block;">
-          <barcode code="<?= htmlspecialchars($code_barre_val ?? $code_rappel ?? ($code_inscription ?? 'RAP-2026-001')) ?>" type="C128A" size="0.65" height="0.6" />
-          <div style="font-size: 8px; font-family: monospace; font-weight: bold; margin-top: 2px;">* <?= htmlspecialchars($code_barre_val ?? $code_rappel ?? ($code_inscription ?? 'RAP-2026-001')) ?> *</div>
+          <barcode code="<?= htmlspecialchars($barcodeRappel) ?>" type="C128A" size="0.65" height="0.6" />
+          <div style="font-size: 8px; font-family: monospace; font-weight: bold; margin-top: 2px;">* <?= htmlspecialchars($barcodeRappel) ?> *</div>
         </div>
+        <?php endif; ?>
       </td>
     </tr>
   </table>

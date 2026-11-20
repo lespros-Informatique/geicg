@@ -1,3 +1,12 @@
+<?php
+if (empty($etablissement) || !is_array($etablissement)) {
+    if (class_exists('ModelConfiguration')) {
+        $etablissement = (new ModelConfiguration())->getConfig();
+    } else {
+        $etablissement = [];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -172,9 +181,9 @@
   <table class="info-table">
     <tr>
       <td style="width: 50%;">
-        N° Reçu : <span class="val-bold"><?= htmlspecialchars($reference_paiement ?? $numero_recu ?? 'REC-ARR-2026-001') ?></span>
+        N° Reçu : <span class="val-bold"><?= htmlspecialchars($reference_paiement ?? $numero_recu ?? '') ?></span>
         <div style="margin-top: 2px;">
-          <barcode code="<?= htmlspecialchars($reference_paiement ?? $numero_recu ?? 'REC-ARR-2026-001') ?>" type="C128A" size="0.6" height="0.6" />
+          <barcode code="<?= htmlspecialchars($reference_paiement ?? $numero_recu ?? '') ?>" type="C128A" size="0.6" height="0.6" />
         </div>
       </td>
       <td style="width: 50%; text-align: right;">Date du versement : <span class="val-bold"><?= htmlspecialchars($date_paiement ?? date('d/m/Y H:i:s')) ?></span></td>
@@ -188,7 +197,7 @@
     </tr>
     <tr>
       <td>Filière & Niveau d'origine : <span class="val-bold"><?= htmlspecialchars($filiere_niveau ?? '-') ?></span></td>
-      <td style="text-align: right;">Statut Affectation : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? 'AFFECTE') ?></span></td>
+      <td style="text-align: right;">Statut Affectation : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
     </tr>
   </table>
 
@@ -248,7 +257,7 @@
       </td>
       <td style="width: 30%; text-align: right;">
         <div style="font-weight: bold; text-decoration: underline;">Le Caissier</div>
-        <div style="margin-top: 15px; font-weight: bold;"><?= htmlspecialchars($caissier_nom ?? 'Agent Caisse GEICG') ?></div>
+        <div style="margin-top: 15px; font-weight: bold;"><?= htmlspecialchars($caissier_nom ?? 'Agent Caisse') ?></div>
       </td>
     </tr>
   </table>

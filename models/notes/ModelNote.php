@@ -143,7 +143,7 @@ class ModelNote extends BaseModel
                 SELECT comp.*, s.libelle_semestre, s.statut_semestre, m.libelle_matiere, cl.libelle_classe, n.libelle_niveau, f.libelle_filiere,
                        COALESCE(comp.coefficient, 1.00) AS coefficient
                 FROM " . TABLES::COMPOSITIONS . " comp
-                LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = comp.semestre_code
+                LEFT JOIN " . TABLES::SEMESTRES . " s ON (s.code_semestre = comp.semestre_code AND (comp.annee_code IS NULL OR comp.annee_code = '' OR s.annee_code = comp.annee_code))
                 LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = ?
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ?
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code

@@ -83,7 +83,7 @@ foreach ($cours as $c) {
 }
 
 $nomDirecteur = !empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : (!empty($etablissement['nom_directeur_general']) ? $etablissement['nom_directeur_general'] : 'La Direction des Études');
-$villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : 'Bouaké';
+$villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
