@@ -519,8 +519,8 @@
     var $annee = $('#filter-annee');
     var $classe = $('#filter-classe');
     if (!$annee.length || !$classe.length) return;
-    // Ignorer la caisse annexe qui gère déjà sa propre synchronisation locale (classesByAnnee)
-    if ($('#table-caisse-annexe').length) return;
+    // Ignorer la caisse annexe et les réinscriptions qui gèrent déjà leur propre synchronisation locale
+    if ($('#table-caisse-annexe, #table-inscriptions').length) return;
     // Ignorer si le sélecteur d'année est en lecture seule ou désactivé
     if ($annee.is('[readonly], :disabled')) return;
 

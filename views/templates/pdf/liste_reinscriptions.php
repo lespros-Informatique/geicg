@@ -238,7 +238,7 @@ if (!empty($etablissement['logo_etablissement'])) {
   <!-- EN-TÊTE FIXE MPDF -->
   <htmlpageheader name="pageHeader">
     <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
-      <?= htmlspecialchars($etablissement['nom_etablissement'] ?? 'GROUPE EICG') ?> &bull; Registre des Candidats à la Réinscription &bull; Session <?= htmlspecialchars($annee_active_libelle ?? '') ?>
+      <?= htmlspecialchars($etablissement['nom_etablissement'] ?? '') ?> &bull; Registre des Candidats à la Réinscription &bull; Session <?= htmlspecialchars($annee_active_libelle ?? '') ?>
     </div>
   </htmlpageheader>
   <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
@@ -248,7 +248,7 @@ if (!empty($etablissement['logo_etablissement'])) {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document officiel GEICG &bull; Édité le <?= date('d/m/Y H:i:s') ?>
+          Document officiel <?= htmlspecialchars($etablissement['sigle_etablissement'] ?? '') ?> &bull; Édité le <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
@@ -278,7 +278,7 @@ if (!empty($etablissement['logo_etablissement'])) {
   <table class="meta-box-table">
     <tr>
       <td style="width: 25%;"><span class="meta-label">Année Antérieure (N-1) :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['annee'] ?? '-') ?></span></td>
-      <td style="width: 25%;"><span class="meta-label">Filière :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['filiere'] ?? 'Toutes les filières') ?></span></td>
+      <td style="width: 25%;"><span class="meta-label">Cycle :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['cycle'] ?? 'Tous les cycles') ?></span></td>
       <td style="width: 25%;"><span class="meta-label">Niveau d'Études :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['niveau'] ?? 'Tous les niveaux') ?></span></td>
       <td style="width: 25%;"><span class="meta-label">Classe Antérieure :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['classe'] ?? 'Toutes les classes') ?></span></td>
     </tr>

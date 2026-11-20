@@ -13,11 +13,13 @@ class InscriptionController extends BaseController
         $this->requirePermission(PERMISSIONS::VIEW_INSCRIPTIONS);
 
         $activeAnneeCode = $this->getActiveAnneeCode();
-        $deps = $this->model->getReinscriptionFormDependencies($activeAnneeCode);
+        $requestedAnnee = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : null;
+        $deps = $this->model->getReinscriptionFormDependencies($activeAnneeCode, $requestedAnnee);
         $annees = $deps['anneesCloturees'];
-        $selectedAnneeCode = !empty($_GET['annee_code']) ? trim($_GET['annee_code']) : ($annees[0]['code_annee'] ?? '');
+        $selectedAnneeCode = $requestedAnnee ?: ($annees[0]['code_annee'] ?? '');
 
         $this->loadView('../views/inscriptions/list.php', [
+            'cycles' => $deps['cycles'],
             'filieres' => $deps['filieres'],
             'niveaux' => $deps['niveaux'],
             'classes' => $deps['classes'],
@@ -33,6 +35,7 @@ class InscriptionController extends BaseController
 
         $activeAnneeCode = $this->getActiveAnneeCode();
         $filterAnnee = trim($_GET['annee_code'] ?? '');
+        $filterCycle = trim($_GET['cycle_code'] ?? '');
         $filterFiliere = trim($_GET['filiere_code'] ?? '');
         $filterNiveau = trim($_GET['niveau_code'] ?? '');
         $filterClasse = trim($_GET['classe_code'] ?? '');
@@ -42,7 +45,7 @@ class InscriptionController extends BaseController
             return;
         }
 
-        $candidates = $this->model->getReinscriptionCandidates($activeAnneeCode, $filterAnnee, $filterFiliere, $filterNiveau, $filterClasse);
+        $candidates = $this->model->getReinscriptionCandidates($activeAnneeCode, $filterAnnee, $filterFiliere, $filterNiveau, $filterClasse, $filterCycle);
         $data = [];
         foreach ($candidates as $cand) {
             $etu = $cand['etudiant'];
@@ -425,11 +428,12 @@ class InscriptionController extends BaseController
         $activeAnneeLibelle = Session::get('annee_active_libelle', 'En cours');
 
         $filterAnnee = trim($_GET['annee_code'] ?? '');
+        $filterCycle = trim($_GET['cycle_code'] ?? '');
         $filterFiliere = trim($_GET['filiere_code'] ?? '');
         $filterNiveau = trim($_GET['niveau_code'] ?? '');
         $filterClasse = trim($_GET['classe_code'] ?? '');
 
-        $deps = $this->model->getReinscriptionFormDependencies($activeAnneeCode);
+        $deps = $this->model->getReinscriptionFormDependencies($activeAnneeCode, $filterAnnee ?: null);
         if (empty($filterAnnee) || $filterAnnee === 'ALL') {
             $filterAnnee = $deps['anneesCloturees'][0]['code_annee'] ?? '';
         }
@@ -439,8 +443,17 @@ class InscriptionController extends BaseController
             $filterAnnee,
             $filterFiliere,
             $filterNiveau,
-            $filterClasse
+            $filterClasse,
+            $filterCycle
         );
+
+        $cycleLabel = 'Tous les cycles';
+        foreach (($deps['cycles'] ?? []) as $cy) {
+            if (($cy['code_cycle'] ?? '') === $filterCycle) {
+                $cycleLabel = $cy['libelle_cycle'] ?? $cycleLabel;
+                break;
+            }
+        }
 
         $filiereLabel = 'Toutes les filières';
         foreach ($deps['filieres'] as $f) {
@@ -501,6 +514,7 @@ class InscriptionController extends BaseController
             'candidates' => $candidates,
             'filtres_labels' => [
                 'annee' => $anneePrevLabel,
+                'cycle' => $cycleLabel,
                 'filiere' => $filiereLabel,
                 'niveau' => $niveauLabel,
                 'classe' => $classeLabel,

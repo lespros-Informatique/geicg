@@ -13,8 +13,34 @@
     var racine = (typeof RACINE !== 'undefined') ? RACINE : (window.RACINE || '/geicg/');
     var dtLang = (typeof GEICG !== 'undefined' && GEICG.dataTableLanguage) ? GEICG.dataTableLanguage : { url: racine + 'json/datatables-i18n-fr-FR.json' };
 
+    // Capture des options complètes pour la cascade Année -> Cycle -> Niveau -> Classe
+    var allNiveauOptions = [];
+    $('#filter-niveau option').each(function () {
+      var val = $(this).val();
+      if (!val || val === 'ALL') return;
+      allNiveauOptions.push({
+        value: val,
+        label: $(this).text().trim(),
+        cycles: String($(this).attr('data-cycles') || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean)
+      });
+    });
+
+    var allClasseOptions = [];
+    $('#filter-classe option').each(function () {
+      var val = $(this).val();
+      if (!val || val === 'ALL') return;
+      allClasseOptions.push({
+        value: val,
+        label: $(this).text().trim(),
+        cycle: String($(this).attr('data-cycle') || ''),
+        filiere: String($(this).attr('data-filiere') || ''),
+        niveau: String($(this).attr('data-niveau') || ''),
+        annee: String($(this).attr('data-annee') || '')
+      });
+    });
+
     if ($.fn.select2) {
-      $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').select2({
+      $('#filter-annee, #filter-cycle, #filter-niveau, #filter-classe').select2({
         width: '100%'
       });
     }
@@ -25,7 +51,7 @@
         url: racine + 'inscription/apiList',
         data: function (d) {
           d.annee_code = $('#filter-annee').val();
-          d.filiere_code = $('#filter-filiere').val();
+          d.cycle_code = $('#filter-cycle').val();
           d.niveau_code = $('#filter-niveau').val();
           d.classe_code = $('#filter-classe').val();
         }
@@ -107,82 +133,160 @@
       }
     });
 
-    function toggleFieldsByAnnee() {
-      var val = $('#filter-annee').val();
-      var hasAnnee = !!(val && val !== '');
-      var $targets = $('#filter-filiere, #filter-niveau, #filter-classe');
-
-      $targets.prop('disabled', !hasAnnee);
-      if (!hasAnnee) {
-        $targets.attr('readonly', 'readonly');
-        $('#btn-reset-filters').prop('disabled', true).addClass('disabled').css('opacity', '0.5');
-      } else {
-        $targets.removeAttr('readonly');
-        $('#btn-reset-filters').prop('disabled', false).removeClass('disabled').css('opacity', '1');
+    function escHtml(text) {
+      if (typeof GEICG !== 'undefined' && typeof GEICG.escapeHtml === 'function') {
+        return GEICG.escapeHtml(text);
       }
-
-      if ($.fn.select2) {
-        $targets.trigger('change.select2');
-        $targets.each(function () {
-          var $container = $(this).next('.select2-container');
-          if (!hasAnnee) {
-            $container.find('.select2-selection').css({
-              'background-color': '#F8FAFC',
-              'cursor': 'not-allowed',
-              'opacity': '0.7'
-            });
-          } else {
-            $container.find('.select2-selection').css({
-              'background-color': '#FFFFFF',
-              'cursor': 'pointer',
-              'opacity': '1'
-            });
-          }
-        });
-      }
-      return hasAnnee;
+      return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    toggleFieldsByAnnee();
-
-    $('#filter-annee').on('change', function () {
-      var hasAnnee = toggleFieldsByAnnee();
-      if (!hasAnnee) {
-        $('#filter-filiere').val('ALL').trigger('change.select2');
-        $('#filter-niveau').val('ALL').trigger('change.select2');
-        $('#filter-classe').val('ALL').trigger('change.select2');
+    function styleSelect2State($el, isDisabled) {
+      if (!$.fn.select2) return;
+      if ($el.hasClass('select2-hidden-accessible')) {
+        $el.trigger('change.select2');
       }
-    });
+      var $container = $el.next('.select2-container');
+      $container.find('.select2-selection').css(isDisabled ? {
+        'background-color': '#F8FAFC',
+        'cursor': 'not-allowed',
+        'opacity': '0.7'
+      } : {
+        'background-color': '#FFFFFF',
+        'cursor': 'pointer',
+        'opacity': '1'
+      });
+    }
 
-    $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe').on('change', function () {
-      var filSelected = $('#filter-filiere').val();
-      var nivSelected = $('#filter-niveau').val();
+    function syncReinscriptionFilters() {
+      var selAnnee = $('#filter-annee').val();
+      var hasAnnee = !!(selAnnee && selAnnee !== '');
+      var $cyc = $('#filter-cycle');
+      var $niv = $('#filter-niveau');
+      var $cls = $('#filter-classe');
 
-      $('#filter-classe option').each(function () {
-        var val = $(this).val();
-        if (val === 'ALL') return;
-        var cFil = $(this).attr('data-filiere');
-        var cNiv = $(this).attr('data-niveau');
+      if (!hasAnnee) {
+        $cyc.val('ALL').prop('disabled', true).attr('aria-readonly', 'true');
+        $niv.html('<option value="ALL">-- Tous les niveaux --</option>').val('ALL').prop('disabled', true).attr('aria-readonly', 'true');
+        $cls.html('<option value="ALL">-- Toutes les classes --</option>').val('ALL').prop('disabled', true).attr('aria-readonly', 'true');
+        $('#btn-reset-filters').prop('disabled', true).addClass('disabled').css('opacity', '0.5');
+        styleSelect2State($cyc, true);
+        styleSelect2State($niv, true);
+        styleSelect2State($cls, true);
+        return false;
+      }
 
-        var matchFil = (filSelected === 'ALL' || cFil === filSelected);
-        var matchNiv = (nivSelected === 'ALL' || cNiv === nivSelected);
+      $cyc.prop('disabled', false).removeAttr('aria-readonly');
+      $('#btn-reset-filters').prop('disabled', false).removeClass('disabled').css('opacity', '1');
+      styleSelect2State($cyc, false);
 
-        if (matchFil && matchNiv) {
-          $(this).show();
-        } else {
-          $(this).hide();
+      var selCyc = $cyc.val();
+      var hasCycle = !!(selCyc && selCyc !== 'ALL');
+
+      if (!hasCycle) {
+        // Par défaut (aucun cycle sélectionné) : Niveau et Classe verrouillés en lecture seule
+        $niv.html('<option value="ALL">-- Tous les niveaux --</option>').val('ALL').prop('disabled', true).attr('aria-readonly', 'true');
+        $cls.html('<option value="ALL">-- Toutes les classes --</option>').val('ALL').prop('disabled', true).attr('aria-readonly', 'true');
+        styleSelect2State($niv, true);
+        styleSelect2State($cls, true);
+        return true;
+      }
+
+      // 1. Déverrouiller et alimenter Niveau d'Études selon le Cycle sélectionné
+      var prevNiv = $niv.val() || 'ALL';
+      var nivHtml = '<option value="ALL">-- Tous les niveaux --</option>';
+      var isPrevNivValid = false;
+
+      allNiveauOptions.forEach(function (opt) {
+        if (opt.cycles.indexOf(selCyc) !== -1) {
+          nivHtml += '<option value="' + escHtml(opt.value) + '" data-cycles="' + escHtml(opt.cycles.join(',')) + '">' + escHtml(opt.label) + '</option>';
+          if (opt.value === prevNiv) isPrevNivValid = true;
         }
       });
 
+      var finalNiv = isPrevNivValid ? prevNiv : 'ALL';
+      $niv.html(nivHtml).val(finalNiv).prop('disabled', false).removeAttr('aria-readonly');
+      styleSelect2State($niv, false);
+
+      // 2. Déverrouiller et alimenter Classe Antérieure selon l'Année, le Cycle et le Niveau
+      var prevCls = $cls.val() || 'ALL';
+      var clsHtml = '<option value="ALL">-- Toutes les classes --</option>';
+      var isPrevClsValid = false;
+
+      allClasseOptions.forEach(function (opt) {
+        var matchCyc = (opt.cycle === selCyc);
+        var matchNiv = (!finalNiv || finalNiv === 'ALL' || opt.niveau === finalNiv);
+        var matchAnn = (!selAnnee || selAnnee === 'ALL' || !opt.annee || opt.annee === selAnnee);
+        if (matchCyc && matchNiv && matchAnn) {
+          clsHtml += '<option value="' + escHtml(opt.value) + '"' +
+            ' data-cycle="' + escHtml(opt.cycle) + '"' +
+            ' data-filiere="' + escHtml(opt.filiere) + '"' +
+            ' data-niveau="' + escHtml(opt.niveau) + '"' +
+            ' data-annee="' + escHtml(opt.annee) + '">' + escHtml(opt.label) + '</option>';
+          if (opt.value === prevCls) isPrevClsValid = true;
+        }
+      });
+
+      var finalCls = isPrevClsValid ? prevCls : 'ALL';
+      $cls.html(clsHtml).val(finalCls).prop('disabled', false).removeAttr('aria-readonly');
+      styleSelect2State($cls, false);
+      return true;
+    }
+
+    syncReinscriptionFilters();
+
+    var anneeReqSeq = 0;
+    $('#filter-annee').on('change', function () {
+      var selAnnee = $(this).val() || '';
+      if (!selAnnee) {
+        syncReinscriptionFilters();
+        table.ajax.reload();
+        return;
+      }
+
+      // Réinitialiser la classe pour éviter d'envoyer une classe d'une autre année
+      $('#filter-classe').val('ALL');
+      var reqId = ++anneeReqSeq;
+      $.ajax({
+        url: racine + 'classe/apiByAnnee',
+        type: 'GET',
+        dataType: 'json',
+        data: { annee_code: selAnnee },
+        success: function (res) {
+          if (reqId !== anneeReqSeq) return;
+          if (res && res.success && Array.isArray(res.data)) {
+            allClasseOptions = res.data.map(function (cl) {
+              return {
+                value: String(cl.code_classe || ''),
+                label: String(cl.libelle_classe || cl.code_classe || ''),
+                cycle: String(cl.cycle_code || ''),
+                filiere: String(cl.filiere_code || ''),
+                niveau: String(cl.niveau_code || ''),
+                annee: String(cl.annee_code || selAnnee)
+              };
+            });
+          }
+          syncReinscriptionFilters();
+          table.ajax.reload();
+        },
+        error: function () {
+          if (reqId !== anneeReqSeq) return;
+          syncReinscriptionFilters();
+          table.ajax.reload();
+        }
+      });
+    });
+
+    $('#filter-cycle, #filter-niveau, #filter-classe').on('change', function () {
+      syncReinscriptionFilters();
       table.ajax.reload();
     });
 
     $('#btn-reset-filters').on('click', function () {
       if ($('#btn-reset-filters').is(':disabled')) return;
-      $('#filter-filiere').val('ALL').trigger('change.select2');
-      $('#filter-niveau').val('ALL').trigger('change.select2');
-      $('#filter-classe').val('ALL').trigger('change.select2');
-      $('#filter-classe option').show();
+      $('#filter-cycle').val('ALL').trigger('change.select2');
+      syncReinscriptionFilters();
       table.ajax.reload();
     });
 
@@ -190,13 +294,13 @@
     $('#btn-print-list').on('click', function (e) {
       e.preventDefault();
       var annee = $('#filter-annee').val() || '';
-      var filiere = $('#filter-filiere').val() || '';
+      var cycle = $('#filter-cycle').val() || '';
       var niveau = $('#filter-niveau').val() || '';
       var classe = $('#filter-classe').val() || '';
 
       var url = racine + 'reinscription/imprimerPdf?' + $.param({
         annee_code: annee,
-        filiere_code: filiere,
+        cycle_code: cycle,
         niveau_code: niveau,
         classe_code: classe
       });

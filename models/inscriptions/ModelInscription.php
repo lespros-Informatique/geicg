@@ -10,7 +10,7 @@ class ModelInscription extends BaseModel
     /**
      * Récupère la liste des étudiants candidats à la réinscription (non encore inscrits sur l'année active)
      */
-    public function getReinscriptionCandidates(string $activeAnneeCode, string $filterAnnee, string $filterFiliere = '', string $filterNiveau = '', string $filterClasse = ''): array
+    public function getReinscriptionCandidates(string $activeAnneeCode, string $filterAnnee, string $filterFiliere = '', string $filterNiveau = '', string $filterClasse = '', string $filterCycle = ''): array
     {
         $db = $this->getCon();
         try {
@@ -38,7 +38,7 @@ class ModelInscription extends BaseModel
             $priorMap = [];
             if (!empty($filterAnnee) && $filterAnnee !== 'ALL') {
                 $stmtPrior = $db->prepare("
-                    SELECT i.*, c.libelle_classe as classe_prev, c.filiere_code as filiere_prev_code, c.niveau_code as niveau_prev_code,
+                    SELECT i.*, c.libelle_classe as classe_prev, c.cycle_code as cycle_prev_code, c.filiere_code as filiere_prev_code, c.niveau_code as niveau_prev_code,
                            f.libelle_filiere as filiere_prev, n.libelle_niveau as niveau_prev, a.libelle_annee as annee_prev
                     FROM " . TABLES::INSCRIPTIONS . " i
                     LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
@@ -51,7 +51,7 @@ class ModelInscription extends BaseModel
                 $stmtPrior->execute([$filterAnnee]);
             } else {
                 $stmtPrior = $db->prepare("
-                    SELECT i.*, c.libelle_classe as classe_prev, c.filiere_code as filiere_prev_code, c.niveau_code as niveau_prev_code,
+                    SELECT i.*, c.libelle_classe as classe_prev, c.cycle_code as cycle_prev_code, c.filiere_code as filiere_prev_code, c.niveau_code as niveau_prev_code,
                            f.libelle_filiere as filiere_prev, n.libelle_niveau as niveau_prev, a.libelle_annee as annee_prev
                     FROM " . TABLES::INSCRIPTIONS . " i
                     LEFT JOIN " . TABLES::CLASSES . " c ON c.code_classe = i.classe_code
@@ -85,10 +85,14 @@ class ModelInscription extends BaseModel
                     continue;
                 }
 
+                $refCycle = $prev['cycle_prev_code'] ?? '';
                 $refFiliere = $prev['filiere_prev_code'] ?? '';
                 $refNiveau = $prev['niveau_prev_code'] ?? '';
                 $refClasse = $prev['classe_code'] ?? '';
 
+                if (!empty($filterCycle) && $filterCycle !== 'ALL' && $refCycle !== $filterCycle) {
+                    continue;
+                }
                 if (!empty($filterFiliere) && $filterFiliere !== 'ALL' && $refFiliere !== $filterFiliere) {
                     continue;
                 }
@@ -415,7 +419,7 @@ class ModelInscription extends BaseModel
     /**
      * Récupère les dépendances pour le formulaire de réinscription
      */
-    public function getReinscriptionFormDependencies(string $activeAnneeCode): array
+    public function getReinscriptionFormDependencies(string $activeAnneeCode, ?string $selectedAnneeCode = null): array
     {
         $db = $this->getCon();
         $stmtCloture = $db->query("SELECT id_annee, code_annee, libelle_annee, statut_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = 'cloture' ORDER BY id_annee DESC");
@@ -425,11 +429,37 @@ class ModelInscription extends BaseModel
             $stmtFallback->execute([$activeAnneeCode]);
             $anneesCloturees = $stmtFallback->fetchAll(PDO::FETCH_ASSOC) ?: [];
         }
+
+        $targetClassAnnee = !empty($selectedAnneeCode)
+            ? $selectedAnneeCode
+            : ($anneesCloturees[0]['code_annee'] ?? $activeAnneeCode);
+
+        $cycles = $db->query("SELECT code_cycle, libelle_cycle, slug_cycle FROM " . TABLES::CYCLES . " WHERE statut_cycle = '" . STATUTS::ACTIF . "' ORDER BY libelle_cycle ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        if (!empty($activeAnneeCode)) {
+
+        $stmtNiv = $db->prepare("
+            SELECT n.code_niveau, n.libelle_niveau,
+                   GROUP_CONCAT(DISTINCT src.cycle_code SEPARATOR ',') AS cycle_codes
+            FROM " . TABLES::NIVEAUX . " n
+            LEFT JOIN (
+                SELECT DISTINCT niveau_code, cycle_code
+                FROM " . TABLES::FILIERE_CYCLES . "
+                WHERE statut_filiere_cycle = '" . STATUTS::ACTIF . "' AND cycle_code IS NOT NULL AND cycle_code != ''
+                UNION
+                SELECT DISTINCT niveau_code, cycle_code
+                FROM " . TABLES::CLASSES . "
+                WHERE statut_classe = '" . STATUTS::ACTIF . "' AND (? = '' OR annee_code = ?) AND cycle_code IS NOT NULL AND cycle_code != ''
+            ) src ON src.niveau_code = n.code_niveau
+            WHERE n.statut_niveau = '" . STATUTS::ACTIF . "'
+            GROUP BY n.id_niveau
+            ORDER BY n.id_niveau ASC
+        ");
+        $stmtNiv->execute([$targetClassAnnee, $targetClassAnnee]);
+        $niveaux = $stmtNiv->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (!empty($targetClassAnnee)) {
             $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ? ORDER BY libelle_classe ASC");
-            $stmtCl->execute([$activeAnneeCode]);
+            $stmtCl->execute([$targetClassAnnee]);
             $classes = $stmtCl->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } else {
             $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -437,6 +467,7 @@ class ModelInscription extends BaseModel
 
         return [
             'anneesCloturees' => $anneesCloturees,
+            'cycles' => $cycles,
             'filieres' => $filieres,
             'niveaux' => $niveaux,
             'classes' => $classes

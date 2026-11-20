@@ -54,39 +54,44 @@
             </select>
           </div>
 
-          <!-- Filtre Filière -->
+          <!-- Filtre Cycle -->
           <div class="form-group" style="margin: 0;">
-            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Filière</label>
-            <select id="filter-filiere" class="form-control select2" style="width: 100%;" <?= empty($selectedAnneeCode) ? 'disabled readonly' : '' ?>>
-              <option value="ALL">-- Toutes les filières --</option>
-              <?php foreach (($filieres ?? []) as $f): ?>
-                <option value="<?= htmlspecialchars($f['code_filiere']) ?>">
-                  <?= htmlspecialchars($f['libelle_filiere']) ?>
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Cycle</label>
+            <select id="filter-cycle" class="form-control select2" style="width: 100%;" <?= empty($selectedAnneeCode) ? 'disabled readonly' : '' ?>>
+              <option value="ALL">-- Tous les cycles --</option>
+              <?php foreach (($cycles ?? []) as $cy): ?>
+                <?php
+                  $displayCycle = (!empty($useSlugCycle) && !empty($cy['slug_cycle']))
+                    ? $cy['slug_cycle']
+                    : $cy['libelle_cycle'];
+                ?>
+                <option value="<?= htmlspecialchars($cy['code_cycle']) ?>" title="<?= htmlspecialchars($cy['libelle_cycle']) ?>">
+                  <?= htmlspecialchars($displayCycle) ?>
                 </option>
               <?php endforeach; ?>
             </select>
           </div>
 
-          <!-- Filtre Niveau -->
+          <!-- Filtre Niveau (Verrouillé par défaut, dépend du Cycle) -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Niveau d'Études</label>
-            <select id="filter-niveau" class="form-control select2" style="width: 100%;" <?= empty($selectedAnneeCode) ? 'disabled readonly' : '' ?>>
+            <select id="filter-niveau" class="form-control select2" style="width: 100%;" disabled aria-readonly="true">
               <option value="ALL">-- Tous les niveaux --</option>
               <?php foreach (($niveaux ?? []) as $n): ?>
-                <option value="<?= htmlspecialchars($n['code_niveau']) ?>">
+                <option value="<?= htmlspecialchars($n['code_niveau']) ?>" data-cycles="<?= htmlspecialchars($n['cycle_codes'] ?? '') ?>">
                   <?= htmlspecialchars($n['libelle_niveau']) ?>
                 </option>
               <?php endforeach; ?>
             </select>
           </div>
 
-          <!-- Filtre Classe -->
+          <!-- Filtre Classe (Verrouillé par défaut, dépend du Cycle et du Niveau) -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">Classe Antérieure (N-1)</label>
-            <select id="filter-classe" class="form-control select2" style="width: 100%;" <?= empty($selectedAnneeCode) ? 'disabled readonly' : '' ?>>
+            <select id="filter-classe" class="form-control select2" style="width: 100%;" disabled aria-readonly="true">
               <option value="ALL">-- Toutes les classes --</option>
               <?php foreach (($classes ?? []) as $c): ?>
-                <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-filiere="<?= htmlspecialchars($c['filiere_code'] ?? '') ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>">
+                <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-cycle="<?= htmlspecialchars($c['cycle_code'] ?? '') ?>" data-filiere="<?= htmlspecialchars($c['filiere_code'] ?? '') ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>" data-annee="<?= htmlspecialchars($c['annee_code'] ?? '') ?>">
                   <?= htmlspecialchars($c['libelle_classe']) ?>
                 </option>
               <?php endforeach; ?>
