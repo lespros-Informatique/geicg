@@ -16,6 +16,7 @@ class EtudiantController extends BaseController
 
         $this->loadView('../views/etudiants/list.php', [
             'annees' => $deps['annees'],
+            'cycles' => $deps['cycles'],
             'niveaux' => $deps['niveaux'],
             'filieres' => $deps['filieres'],
             'classes' => $deps['classes'],
@@ -36,6 +37,7 @@ class EtudiantController extends BaseController
 
         $filters = [
             'annee_code' => $anneeCode,
+            'cycle_code' => $_GET['cycle_code'] ?? ($_POST['cycle_code'] ?? ''),
             'niveau_code' => $_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''),
             'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
             'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),
@@ -446,6 +448,7 @@ class EtudiantController extends BaseController
 
         $filters = [
             'annee_code' => $anneeCode,
+            'cycle_code' => $_GET['cycle_code'] ?? ($_POST['cycle_code'] ?? ''),
             'niveau_code' => $_GET['niveau_code'] ?? ($_POST['niveau_code'] ?? ''),
             'filiere_code' => $_GET['filiere_code'] ?? ($_POST['filiere_code'] ?? ''),
             'classe_code' => $_GET['classe_code'] ?? ($_POST['classe_code'] ?? ''),
@@ -517,6 +520,7 @@ class EtudiantController extends BaseController
             'etudiants' => $etudiants,
             'filtres_labels' => $filtresLabels,
             'classe_libelle' => $filtresLabels['classe'] ?? '',
+            'cycle_libelle' => $filtresLabels['cycle'] ?? '',
             'filiere_libelle' => $filtresLabels['filiere'] ?? '',
             'niveau_libelle' => $filtresLabels['niveau'] ?? '',
             'kpis' => [

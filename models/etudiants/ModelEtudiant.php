@@ -103,6 +103,11 @@ class ModelEtudiant extends BaseModel
             $params[] = $filters['annee_code'];
         }
 
+        if (!empty($filters['cycle_code']) && $filters['cycle_code'] !== 'ALL') {
+            $where[] = "cl.cycle_code = ?";
+            $params[] = $filters['cycle_code'];
+        }
+
         if (!empty($filters['niveau_code']) && $filters['niveau_code'] !== 'ALL') {
             $where[] = "cl.niveau_code = ?";
             $params[] = $filters['niveau_code'];
@@ -178,6 +183,9 @@ class ModelEtudiant extends BaseModel
                 a.libelle_annee,
                 cl.code_classe,
                 cl.libelle_classe,
+                cl.cycle_code,
+                cyc.libelle_cycle,
+                cyc.slug_cycle,
                 f.code_filiere,
                 f.libelle_filiere,
                 f.slug_filiere,
@@ -188,6 +196,7 @@ class ModelEtudiant extends BaseModel
             JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant
             JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
             JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
+            LEFT JOIN " . TABLES::CYCLES . " cyc ON cyc.code_cycle = cl.cycle_code
             JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             WHERE {$whereClause}
@@ -212,6 +221,7 @@ class ModelEtudiant extends BaseModel
         $db = $this->getCon();
         try {
             $annees = $db->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY (CASE WHEN statut_annee = '" . STATUTS::ACTIF . "' THEN 1 ELSE 2 END), date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $cycles = $db->query("SELECT * FROM " . TABLES::CYCLES . " WHERE statut_cycle = '" . STATUTS::ACTIF . "' ORDER BY libelle_cycle ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $niveaux = $db->query("SELECT * FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY libelle_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $filieres = $db->query("SELECT * FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -226,13 +236,14 @@ class ModelEtudiant extends BaseModel
 
             return [
                 'annees' => $annees,
+                'cycles' => $cycles,
                 'niveaux' => $niveaux,
                 'filieres' => $filieres,
                 'classes' => $classes
             ];
         } catch (Exception $e) {
             error_log("ModelEtudiant::getListFilterDependencies error: " . $e->getMessage());
-            return ['annees' => [], 'niveaux' => [], 'filieres' => [], 'classes' => []];
+            return ['annees' => [], 'cycles' => [], 'niveaux' => [], 'filieres' => [], 'classes' => []];
         }
     }
 
@@ -1094,6 +1105,7 @@ class ModelEtudiant extends BaseModel
     {
         $db = $this->getCon();
         $filtresLabels = [
+            'cycle' => 'Tous les cycles',
             'filiere' => 'Toutes les filières',
             'niveau' => 'Tous les niveaux',
             'classe' => 'Toutes les classes',
@@ -1101,6 +1113,13 @@ class ModelEtudiant extends BaseModel
         ];
 
         try {
+            if (!empty($filters['cycle_code']) && $filters['cycle_code'] !== 'ALL') {
+                $stmt = $db->prepare("SELECT libelle_cycle FROM " . TABLES::CYCLES . " WHERE code_cycle = ? LIMIT 1");
+                $stmt->execute([$filters['cycle_code']]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) $filtresLabels['cycle'] = $row['libelle_cycle'];
+            }
+
             if (!empty($filters['filiere_code']) && $filters['filiere_code'] !== 'ALL') {
                 $stmt = $db->prepare("SELECT libelle_filiere FROM " . TABLES::FILIERES . " WHERE code_filiere = ? LIMIT 1");
                 $stmt->execute([$filters['filiere_code']]);
@@ -1117,8 +1136,9 @@ class ModelEtudiant extends BaseModel
 
             if (!empty($filters['classe_code']) && $filters['classe_code'] !== 'ALL') {
                 $stmt = $db->prepare("
-                    SELECT c.*, f.libelle_filiere, n.libelle_niveau 
+                    SELECT c.*, cyc.libelle_cycle, f.libelle_filiere, n.libelle_niveau 
                     FROM " . TABLES::CLASSES . " c 
+                    LEFT JOIN " . TABLES::CYCLES . " cyc ON cyc.code_cycle = c.cycle_code 
                     LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code 
                     LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code 
                     WHERE c.code_classe = ? LIMIT 1
@@ -1127,6 +1147,9 @@ class ModelEtudiant extends BaseModel
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($row) {
                     $filtresLabels['classe'] = $row['libelle_classe'];
+                    if (empty($filters['cycle_code']) || $filters['cycle_code'] === 'ALL') {
+                        $filtresLabels['cycle'] = $row['libelle_cycle'] ?? '-';
+                    }
                     if (empty($filters['filiere_code']) || $filters['filiere_code'] === 'ALL') {
                         $filtresLabels['filiere'] = $row['libelle_filiere'] ?? '-';
                     }

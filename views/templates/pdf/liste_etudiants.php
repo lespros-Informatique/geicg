@@ -200,7 +200,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <table class="meta-box-table">
     <tr>
       <td style="width: 25%;"><span class="meta-label">Année Académique :</span> <span class="meta-value"><?= htmlspecialchars($annee_libelle) ?></span></td>
-      <td style="width: 25%;"><span class="meta-label">Filière :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['filiere'] ?? 'Toutes les filières') ?></span></td>
+      <td style="width: 25%;"><span class="meta-label">Cycle :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['cycle'] ?? 'Tous les cycles') ?></span></td>
       <td style="width: 25%;"><span class="meta-label">Niveau :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['niveau'] ?? 'Tous les niveaux') ?></span></td>
       <td style="width: 25%;"><span class="meta-label">Classe :</span> <span class="meta-value"><?= htmlspecialchars($filtres_labels['classe'] ?? 'Toutes les classes') ?></span></td>
     </tr>

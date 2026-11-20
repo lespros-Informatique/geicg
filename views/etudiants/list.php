@@ -1,5 +1,6 @@
 <?php 
 require_once __DIR__ . '/../../public/inc/header.php'; 
+$cycles = $cycles ?? [];
 $niveaux = $niveaux ?? [];
 $anneeActive = $anneeActive ?? '';
 ?>
@@ -66,21 +67,21 @@ $anneeActive = $anneeActive ?? '';
             </div>
           </div>
 
-          <!-- Filtre Filière -->
+          <!-- Filtre Cycle -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
-              <i data-lucide="book-open" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Filière
+              <i data-lucide="book-open" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Cycle
             </label>
-            <select id="filter-filiere" class="form-control select2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
-              <option value="ALL">-- Toutes les filières --</option>
-              <?php foreach ($filieres as $f): ?>
+            <select id="filter-cycle" class="form-control select2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+              <option value="ALL">-- Tous les cycles --</option>
+              <?php foreach ($cycles as $cy): ?>
                 <?php 
-                  $displayFil = (!empty($useSlugFiliere) && !empty($f['slug_filiere']))
-                    ? $f['slug_filiere']
-                    : $f['libelle_filiere'];
+                  $displayCycle = (!empty($useSlugCycle) && !empty($cy['slug_cycle']))
+                    ? $cy['slug_cycle']
+                    : $cy['libelle_cycle'];
                 ?>
-                <option value="<?= htmlspecialchars($f['code_filiere']) ?>" title="<?= htmlspecialchars($f['libelle_filiere']) ?>">
-                  <?= htmlspecialchars($displayFil) ?>
+                <option value="<?= htmlspecialchars($cy['code_cycle']) ?>" title="<?= htmlspecialchars($cy['libelle_cycle']) ?>">
+                  <?= htmlspecialchars($displayCycle) ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -109,7 +110,7 @@ $anneeActive = $anneeActive ?? '';
             <select id="filter-classe" class="form-control select2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
               <option value="ALL">-- Toutes les classes --</option>
               <?php foreach ($classes as $c): ?>
-                <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-filiere="<?= htmlspecialchars($c['filiere_code'] ?? '') ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>" data-annee="<?= htmlspecialchars($c['annee_code'] ?? '') ?>">
+                <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-cycle="<?= htmlspecialchars($c['cycle_code'] ?? '') ?>" data-filiere="<?= htmlspecialchars($c['filiere_code'] ?? '') ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>" data-annee="<?= htmlspecialchars($c['annee_code'] ?? '') ?>">
                   <?= htmlspecialchars($c['libelle_classe']) ?>
                 </option>
               <?php endforeach; ?>

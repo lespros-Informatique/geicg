@@ -33,7 +33,7 @@
       type: 'GET',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
-        d.filiere_code = $('#filter-filiere').val();
+        d.cycle_code = $('#filter-cycle').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
         d.affectation_etat = $('#filter-regime').val();
@@ -250,7 +250,7 @@
 
   // Initialisation de Select2 sur les filtres
   if ($.fn.select2) {
-    $('#filter-filiere, #filter-niveau, #filter-classe').select2({
+    $('#filter-cycle, #filter-niveau, #filter-classe').select2({
       width: '100%'
     });
   }
@@ -259,7 +259,7 @@
   function updatePrintPdfUrl() {
     var params = {
       annee_code: $('#filter-annee').val() || '',
-      filiere_code: $('#filter-filiere').val() || '',
+      cycle_code: $('#filter-cycle').val() || '',
       niveau_code: $('#filter-niveau').val() || '',
       classe_code: $('#filter-classe').val() || '',
       affectation_etat: $('#filter-regime').val() || '',
@@ -271,7 +271,7 @@
   }
 
   // Déclenchement automatique du rechargement et des colonnes intelligentes
-  $('#filter-annee, #filter-filiere, #filter-niveau, #filter-classe, #filter-regime, #filter-canal, #filter-statut-inscription').on('change', function() {
+  $('#filter-annee, #filter-cycle, #filter-niveau, #filter-classe, #filter-regime, #filter-canal, #filter-statut-inscription').on('change', function() {
     filterClassDropdown();
     updateSmartColumns();
     updatePrintPdfUrl();
@@ -280,9 +280,9 @@
 
   updatePrintPdfUrl();
 
-  // Filtrage en cascade du menu des classes selon la filière et le niveau choisis
+  // Filtrage en cascade du menu des classes selon le cycle et le niveau choisis
   function filterClassDropdown() {
-    var selFil = $('#filter-filiere').val();
+    var selCyc = $('#filter-cycle').val();
     var selNiv = $('#filter-niveau').val();
     var selAnn = $('#filter-annee').val();
     var currentClasseVal = $('#filter-classe').val();
@@ -295,15 +295,15 @@
         return;
       }
 
-      var cFil = $(this).data('filiere');
+      var cCyc = $(this).data('cycle');
       var cNiv = $(this).data('niveau');
       var cAnn = $(this).data('annee');
 
-      var matchFil = (!selFil || selFil === 'ALL' || cFil === selFil);
+      var matchCyc = (!selCyc || selCyc === 'ALL' || cCyc === selCyc);
       var matchNiv = (!selNiv || selNiv === 'ALL' || cNiv === selNiv);
       var matchAnn = (!selAnn || selAnn === 'ALL' || cAnn === selAnn);
 
-      if (matchFil && matchNiv && matchAnn) {
+      if (matchCyc && matchNiv && matchAnn) {
         $(this).prop('disabled', false).show();
         if (optVal === currentClasseVal) isCurrentValValid = true;
       } else {
@@ -321,7 +321,7 @@
   // Réinitialisation des filtres
   $('#btn-reset-filters').on('click', function() {
     $('#filter-annee').val(anneeActiveVal);
-    $('#filter-filiere').val('ALL').trigger('change.select2');
+    $('#filter-cycle').val('ALL').trigger('change.select2');
     $('#filter-niveau').val('ALL').trigger('change.select2');
     $('#filter-classe').val('ALL').trigger('change.select2');
     $('#filter-regime').val('ALL');
