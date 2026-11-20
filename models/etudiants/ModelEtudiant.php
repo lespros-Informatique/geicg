@@ -222,10 +222,50 @@ class ModelEtudiant extends BaseModel
         try {
             $annees = $db->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY (CASE WHEN statut_annee = '" . STATUTS::ACTIF . "' THEN 1 ELSE 2 END), date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $cycles = $db->query("SELECT * FROM " . TABLES::CYCLES . " WHERE statut_cycle = '" . STATUTS::ACTIF . "' ORDER BY libelle_cycle ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $niveaux = $db->query("SELECT * FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY libelle_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+
+            if ($targetAnnee !== '') {
+                $stmtNiv = $db->prepare("
+                    SELECT n.*,
+                           GROUP_CONCAT(DISTINCT src.cycle_code SEPARATOR ',') AS cycle_codes
+                    FROM " . TABLES::NIVEAUX . " n
+                    LEFT JOIN (
+                        SELECT DISTINCT niveau_code, cycle_code
+                        FROM " . TABLES::FILIERE_CYCLES . "
+                        WHERE statut_filiere_cycle = '" . STATUTS::ACTIF . "' AND cycle_code IS NOT NULL AND cycle_code != ''
+                        UNION
+                        SELECT DISTINCT niveau_code, cycle_code
+                        FROM " . TABLES::CLASSES . "
+                        WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ? AND cycle_code IS NOT NULL AND cycle_code != ''
+                    ) src ON src.niveau_code = n.code_niveau
+                    WHERE n.statut_niveau = '" . STATUTS::ACTIF . "'
+                    GROUP BY n.id_niveau
+                    ORDER BY n.libelle_niveau ASC
+                ");
+                $stmtNiv->execute([$targetAnnee]);
+                $niveaux = $stmtNiv->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } else {
+                $niveaux = $db->query("
+                    SELECT n.*,
+                           GROUP_CONCAT(DISTINCT src.cycle_code SEPARATOR ',') AS cycle_codes
+                    FROM " . TABLES::NIVEAUX . " n
+                    LEFT JOIN (
+                        SELECT DISTINCT niveau_code, cycle_code
+                        FROM " . TABLES::FILIERE_CYCLES . "
+                        WHERE statut_filiere_cycle = '" . STATUTS::ACTIF . "' AND cycle_code IS NOT NULL AND cycle_code != ''
+                        UNION
+                        SELECT DISTINCT niveau_code, cycle_code
+                        FROM " . TABLES::CLASSES . "
+                        WHERE statut_classe = '" . STATUTS::ACTIF . "' AND cycle_code IS NOT NULL AND cycle_code != ''
+                    ) src ON src.niveau_code = n.code_niveau
+                    WHERE n.statut_niveau = '" . STATUTS::ACTIF . "'
+                    GROUP BY n.id_niveau
+                    ORDER BY n.libelle_niveau ASC
+                ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            }
+
             $filieres = $db->query("SELECT * FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
             if ($targetAnnee !== '') {
                 $stmtCl = $db->prepare("SELECT * FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ? ORDER BY libelle_classe ASC");
                 $stmtCl->execute([$targetAnnee]);

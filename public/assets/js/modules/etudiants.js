@@ -248,6 +248,32 @@
     table.column(6).visible(selCls === 'ALL' || !selCls);
   }
 
+  // Capture des options complètes pour le filtrage en cascade Cycle -> Niveau -> Classe
+  var allNiveauOptions = [];
+  $('#filter-niveau option').each(function() {
+    var val = $(this).val();
+    if (!val || val === 'ALL') return;
+    allNiveauOptions.push({
+      value: val,
+      label: $(this).text().trim(),
+      cycles: String($(this).attr('data-cycles') || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean)
+    });
+  });
+
+  var allClasseOptions = [];
+  $('#filter-classe option').each(function() {
+    var val = $(this).val();
+    if (!val || val === 'ALL') return;
+    allClasseOptions.push({
+      value: val,
+      label: $(this).text().trim(),
+      cycle: String($(this).attr('data-cycle') || ''),
+      filiere: String($(this).attr('data-filiere') || ''),
+      niveau: String($(this).attr('data-niveau') || ''),
+      annee: String($(this).attr('data-annee') || '')
+    });
+  });
+
   // Initialisation de Select2 sur les filtres
   if ($.fn.select2) {
     $('#filter-cycle, #filter-niveau, #filter-classe').select2({
@@ -270,64 +296,89 @@
     $('#btn-print-etudiants').attr('href', racine + 'etudiant/imprimerPdf?' + qs);
   }
 
+  // Filtrage en cascade : Cycle -> Niveau d'Études & Classe Spécifique (verrouillés si aucun Cycle sélectionné)
+  function syncCycleDependentFilters() {
+    var selCyc = $('#filter-cycle').val();
+    var selAnn = $('#filter-annee').val();
+    var $niv = $('#filter-niveau');
+    var $cls = $('#filter-classe');
+    var hasCycle = (selCyc && selCyc !== 'ALL');
+
+    if (!hasCycle) {
+      // Aucun cycle choisi : verrouiller Niveau et Classe en lecture seule (disabled) et réinitialiser à ALL
+      $niv.html('<option value="ALL">-- Tous les niveaux --</option>').val('ALL').prop('disabled', true).attr('aria-readonly', 'true');
+      $cls.html('<option value="ALL">-- Toutes les classes --</option>').val('ALL').prop('disabled', true).attr('aria-readonly', 'true');
+      if ($.fn.select2) {
+        if ($niv.hasClass('select2-hidden-accessible')) $niv.trigger('change.select2');
+        if ($cls.hasClass('select2-hidden-accessible')) $cls.trigger('change.select2');
+      }
+      return;
+    }
+
+    // 1. Déverrouiller et alimenter Niveau d'Études selon le Cycle sélectionné
+    var prevNiv = $niv.val() || 'ALL';
+    var nivHtml = '<option value="ALL">-- Tous les niveaux --</option>';
+    var isPrevNivValid = false;
+
+    allNiveauOptions.forEach(function(opt) {
+      if (opt.cycles.indexOf(selCyc) !== -1) {
+        nivHtml += '<option value="' + escapeHtml(opt.value) + '" data-cycles="' + escapeHtml(opt.cycles.join(',')) + '">' + escapeHtml(opt.label) + '</option>';
+        if (opt.value === prevNiv) isPrevNivValid = true;
+      }
+    });
+
+    var finalNiv = isPrevNivValid ? prevNiv : 'ALL';
+    $niv.html(nivHtml).val(finalNiv).prop('disabled', false).removeAttr('aria-readonly');
+    if ($.fn.select2 && $niv.hasClass('select2-hidden-accessible')) {
+      $niv.trigger('change.select2');
+    }
+
+    // 2. Déverrouiller et alimenter Classe Spécifique selon le Cycle, le Niveau et l'Année
+    var prevCls = $cls.val() || 'ALL';
+    var clsHtml = '<option value="ALL">-- Toutes les classes --</option>';
+    var isPrevClsValid = false;
+
+    allClasseOptions.forEach(function(opt) {
+      var matchCyc = (opt.cycle === selCyc);
+      var matchNiv = (!finalNiv || finalNiv === 'ALL' || opt.niveau === finalNiv);
+      var matchAnn = (!selAnn || selAnn === 'ALL' || !opt.annee || opt.annee === selAnn);
+      if (matchCyc && matchNiv && matchAnn) {
+        clsHtml += '<option value="' + escapeHtml(opt.value) + '"' +
+          ' data-cycle="' + escapeHtml(opt.cycle) + '"' +
+          ' data-filiere="' + escapeHtml(opt.filiere) + '"' +
+          ' data-niveau="' + escapeHtml(opt.niveau) + '"' +
+          ' data-annee="' + escapeHtml(opt.annee) + '">' + escapeHtml(opt.label) + '</option>';
+        if (opt.value === prevCls) isPrevClsValid = true;
+      }
+    });
+
+    var finalCls = isPrevClsValid ? prevCls : 'ALL';
+    $cls.html(clsHtml).val(finalCls).prop('disabled', false).removeAttr('aria-readonly');
+    if ($.fn.select2 && $cls.hasClass('select2-hidden-accessible')) {
+      $cls.trigger('change.select2');
+    }
+  }
+
+  // Appliquer l'état initial verrouillé au chargement
+  syncCycleDependentFilters();
+  updatePrintPdfUrl();
+
   // Déclenchement automatique du rechargement et des colonnes intelligentes
   $('#filter-annee, #filter-cycle, #filter-niveau, #filter-classe, #filter-regime, #filter-canal, #filter-statut-inscription').on('change', function() {
-    filterClassDropdown();
+    syncCycleDependentFilters();
     updateSmartColumns();
     updatePrintPdfUrl();
     table.ajax.reload();
   });
 
-  updatePrintPdfUrl();
-
-  // Filtrage en cascade du menu des classes selon le cycle et le niveau choisis
-  function filterClassDropdown() {
-    var selCyc = $('#filter-cycle').val();
-    var selNiv = $('#filter-niveau').val();
-    var selAnn = $('#filter-annee').val();
-    var currentClasseVal = $('#filter-classe').val();
-    var isCurrentValValid = false;
-
-    $('#filter-classe option').each(function() {
-      var optVal = $(this).val();
-      if (!optVal || optVal === 'ALL') {
-        $(this).prop('disabled', false).show();
-        return;
-      }
-
-      var cCyc = $(this).data('cycle');
-      var cNiv = $(this).data('niveau');
-      var cAnn = $(this).data('annee');
-
-      var matchCyc = (!selCyc || selCyc === 'ALL' || cCyc === selCyc);
-      var matchNiv = (!selNiv || selNiv === 'ALL' || cNiv === selNiv);
-      var matchAnn = (!selAnn || selAnn === 'ALL' || cAnn === selAnn);
-
-      if (matchCyc && matchNiv && matchAnn) {
-        $(this).prop('disabled', false).show();
-        if (optVal === currentClasseVal) isCurrentValValid = true;
-      } else {
-        $(this).prop('disabled', true).hide();
-      }
-    });
-
-    if (!isCurrentValValid && currentClasseVal !== 'ALL') {
-      $('#filter-classe').val('ALL').trigger('change.select2');
-    } else if ($.fn.select2 && $('#filter-classe').hasClass('select2-hidden-accessible')) {
-      $('#filter-classe').trigger('change.select2');
-    }
-  }
-
   // Réinitialisation des filtres
   $('#btn-reset-filters').on('click', function() {
     $('#filter-annee').val(anneeActiveVal);
     $('#filter-cycle').val('ALL').trigger('change.select2');
-    $('#filter-niveau').val('ALL').trigger('change.select2');
-    $('#filter-classe').val('ALL').trigger('change.select2');
     $('#filter-regime').val('ALL');
     $('#filter-canal').val('ALL');
     $('#filter-statut-inscription').val('ACTIFS');
-    filterClassDropdown();
+    syncCycleDependentFilters();
     updateSmartColumns();
     updatePrintPdfUrl();
     table.ajax.reload();

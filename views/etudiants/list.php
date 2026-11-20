@@ -87,27 +87,27 @@ $anneeActive = $anneeActive ?? '';
             </select>
           </div>
 
-          <!-- Filtre Niveau -->
+          <!-- Filtre Niveau (Verrouillé par défaut, dépend du Cycle) -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
               <i data-lucide="layers" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Niveau d'Études
             </label>
-            <select id="filter-niveau" class="form-control select2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+            <select id="filter-niveau" class="form-control select2" disabled aria-readonly="true" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F1F5F9;">
               <option value="ALL">-- Tous les niveaux --</option>
               <?php foreach ($niveaux as $n): ?>
-                <option value="<?= htmlspecialchars($n['code_niveau']) ?>">
+                <option value="<?= htmlspecialchars($n['code_niveau']) ?>" data-cycles="<?= htmlspecialchars($n['cycle_codes'] ?? '') ?>">
                   <?= htmlspecialchars($n['libelle_niveau']) ?>
                 </option>
               <?php endforeach; ?>
             </select>
           </div>
 
-          <!-- Filtre Classe -->
+          <!-- Filtre Classe (Verrouillé par défaut, dépend du Cycle et du Niveau) -->
           <div class="form-group" style="margin: 0;">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 5px;">
               <i data-lucide="graduation-cap" style="width: 13px; height: 13px; color: #1E3A5F; vertical-align: middle;"></i> Classe Spécifique
             </label>
-            <select id="filter-classe" class="form-control select2" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F8FAFC;">
+            <select id="filter-classe" class="form-control select2" disabled aria-readonly="true" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; background: #F1F5F9;">
               <option value="ALL">-- Toutes les classes --</option>
               <?php foreach ($classes as $c): ?>
                 <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-cycle="<?= htmlspecialchars($c['cycle_code'] ?? '') ?>" data-filiere="<?= htmlspecialchars($c['filiere_code'] ?? '') ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>" data-annee="<?= htmlspecialchars($c['annee_code'] ?? '') ?>">
