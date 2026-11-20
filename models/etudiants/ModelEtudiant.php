@@ -813,6 +813,9 @@ class ModelEtudiant extends BaseModel
                 (string)$inscriptionIdentifier
             ]);
             $inscription = $stmtIns->fetch(PDO::FETCH_ASSOC) ?: null;
+            if ($inscription && !empty($inscription['etudiant_code'])) {
+                $studentIdentifier = $inscription['etudiant_code'];
+            }
         }
 
         // 2. Si non trouvé et $studentIdentifier correspond à une inscription

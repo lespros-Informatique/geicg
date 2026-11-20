@@ -100,7 +100,7 @@
         },
         {
           data: null, orderable: false, width: '130px', className: 'text-center', render: function (d, type, row) {
-            var targetPrintId = row.encrypted_inscription_id || row.encrypted_id || encodeURIComponent(row.code_etudiant || row.id_etudiant);
+            var targetPrintId = row.encrypted_id || encodeURIComponent(row.code_etudiant || row.id_etudiant) || row.encrypted_inscription_id;
             var printUrl = racine + 'etudiant/imprimerFichePdf/' + targetPrintId;
             if (row.encrypted_inscription_id) {
               printUrl += '?inscription_id=' + encodeURIComponent(row.encrypted_inscription_id);
