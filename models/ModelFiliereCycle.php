@@ -156,12 +156,14 @@ class ModelFiliereCycle
         }
     }
 
-    public function getClassesForParcours(string $filiereCode, ?string $cycleCode = null, ?string $niveauCode = null): array
+    public function getClassesForParcours(string $filiereCode, ?string $cycleCode = null, ?string $niveauCode = null, ?string $anneeCode = null): array
     {
         try {
             $cycleVal = $cycleCode ?? '';
             $niveauVal = $niveauCode ?? '';
-            $stmt = $this->con->prepare("
+            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+
+            $sql = "
                 SELECT cl.*, n.libelle_niveau, COUNT(i.id_inscription) as nb_etudiants
                 FROM " . TABLES::CLASSES . " cl
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
@@ -169,10 +171,16 @@ class ModelFiliereCycle
                 WHERE cl.filiere_code = ?
                   AND (cl.cycle_code = ? OR ? = '' OR cl.cycle_code IS NULL)
                   AND (cl.niveau_code = ? OR ? = '' OR cl.niveau_code IS NULL)
-                GROUP BY cl.id_classe
-                ORDER BY cl.libelle_classe ASC
-            ");
-            $stmt->execute([$filiereCode, $cycleVal, $cycleVal, $niveauVal, $niveauVal]);
+            ";
+            $params = [$filiereCode, $cycleVal, $cycleVal, $niveauVal, $niveauVal];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql .= " AND cl.annee_code = ?";
+                $params[] = $targetAnnee;
+            }
+            $sql .= " GROUP BY cl.id_classe ORDER BY cl.libelle_classe ASC";
+
+            $stmt = $this->con->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelFiliereCycle::getClassesForParcours error: " . $e->getMessage());

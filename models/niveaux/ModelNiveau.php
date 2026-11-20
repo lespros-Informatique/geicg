@@ -73,30 +73,50 @@ class ModelNiveau extends BaseModel
         }
     }
 
-    public function getClassesForNiveau(string $niveauCode): array
+    public function getClassesForNiveau(string $niveauCode, ?string $anneeCode = null): array
     {
-        $stmt = $this->getCon()->prepare("
+        $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+        $sql = "
             SELECT cl.*, f.libelle_filiere,
                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as nb_eleves
             FROM " . TABLES::CLASSES . " cl
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             WHERE cl.niveau_code = ?
-            ORDER BY cl.libelle_classe ASC
-        ");
-        $stmt->execute([$niveauCode]);
+        ";
+        $params = [$niveauCode];
+        if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+            $sql .= " AND cl.annee_code = ?";
+            $params[] = $targetAnnee;
+        }
+        $sql .= " ORDER BY cl.libelle_classe ASC";
+
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getStatsForNiveau(string $niveauCode, int $defaultTotalClasses = 0): array
+    public function getStatsForNiveau(string $niveauCode, int $defaultTotalClasses = 0, ?string $anneeCode = null): array
     {
-        $stmt = $this->getCon()->prepare("
-            SELECT 
-                (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
-                (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
-                 JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code 
-                 WHERE cl.niveau_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_etudiants
-        ");
-        $stmt->execute([$niveauCode, $niveauCode]);
+        $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+        if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+            $stmt = $this->getCon()->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND annee_code = ? AND statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
+                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
+                     JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code 
+                     WHERE cl.niveau_code = ? AND ins.annee_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_etudiants
+            ");
+            $stmt->execute([$niveauCode, $targetAnnee, $niveauCode, $targetAnnee]);
+        } else {
+            $stmt = $this->getCon()->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE niveau_code = ? AND statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
+                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
+                     JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code 
+                     WHERE cl.niveau_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_etudiants
+            ");
+            $stmt->execute([$niveauCode, $niveauCode]);
+        }
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total_classes' => $defaultTotalClasses, 'total_etudiants' => 0];
     }
 }

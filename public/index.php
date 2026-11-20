@@ -161,6 +161,7 @@ $route->addRoute('/annee/setActiveSession', [$anneeController, 'setSession']);
 // Module: classe (ClasseController)
 $route->addRoute('/classe/list', [$classeController, 'list']);
 $route->addRoute('/classe/apiList', [$classeController, 'apiList']);
+$route->addRoute('/classe/apiByAnnee', [$classeController, 'apiByAnnee']);
 $route->addRoute('/classe/add', [$classeController, 'add']);
 $route->addRoute('/classe/edit', [$classeController, 'edit']);
 $route->addRoute('/classe/changer', [$classeController, 'changer']);

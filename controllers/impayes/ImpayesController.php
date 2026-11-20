@@ -28,7 +28,7 @@ class ImpayesController extends BaseController
         }
 
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
+        $classes = (new ModelClasse())->getAll($selectedAnneeCode);
 
         $canSendRelance = $this->hasPermission([PERMISSIONS::SEND_RELANCES, PERMISSIONS::MANAGE_IMPAYES]) && $this->canWriteAcademicYear($selectedAnneeCode);
         $canRecordPayment = $this->hasPermission([PERMISSIONS::RECORD_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]) && $this->canWriteAcademicYear($selectedAnneeCode);

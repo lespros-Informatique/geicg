@@ -37,7 +37,7 @@ class ArriereController extends BaseController
         $niveaux = $niveauModel->getAll();
 
         $classeModel = new ModelClasse();
-        $classes = $classeModel->getAll();
+        $classes = $classeModel->getAll($selectedAnneeCode);
 
         $stats = $this->model->getStats($selectedAnneeCode);
 

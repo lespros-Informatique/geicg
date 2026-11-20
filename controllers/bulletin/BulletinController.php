@@ -38,7 +38,7 @@ class BulletinController extends BaseController
                 $modelNote = new ModelNote();
                 $classes = $modelNote->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
             } else {
-                $classes = (new ModelClasse())->getAll();
+                $classes = (new ModelClasse())->getAll($selectedAnneeCode);
             }
 
             $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);

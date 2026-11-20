@@ -41,30 +41,50 @@ class ModelFiliere extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getClassesForFiliere(string $filiereCode): array
+    public function getClassesForFiliere(string $filiereCode, ?string $anneeCode = null): array
     {
-        $stmt = $this->getCon()->prepare("
+        $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+        $sql = "
             SELECT cl.*, n.libelle_niveau,
                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as nb_eleves
             FROM " . TABLES::CLASSES . " cl
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
             WHERE cl.filiere_code = ?
-            ORDER BY cl.libelle_classe ASC
-        ");
-        $stmt->execute([$filiereCode]);
+        ";
+        $params = [$filiereCode];
+        if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+            $sql .= " AND cl.annee_code = ?";
+            $params[] = $targetAnnee;
+        }
+        $sql .= " ORDER BY cl.libelle_classe ASC";
+
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function getStatsForFiliere(string $filiereCode, int $defaultTotalClasses = 0): array
+    public function getStatsForFiliere(string $filiereCode, int $defaultTotalClasses = 0, ?string $anneeCode = null): array
     {
-        $stmt = $this->getCon()->prepare("
-            SELECT 
-                (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE filiere_code = ? AND statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
-                (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
-                 JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code 
-                 WHERE cl.filiere_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_etudiants
-        ");
-        $stmt->execute([$filiereCode, $filiereCode]);
+        $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+        if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+            $stmt = $this->getCon()->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE filiere_code = ? AND annee_code = ? AND statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
+                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
+                     JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code 
+                     WHERE cl.filiere_code = ? AND ins.annee_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_etudiants
+            ");
+            $stmt->execute([$filiereCode, $targetAnnee, $filiereCode, $targetAnnee]);
+        } else {
+            $stmt = $this->getCon()->prepare("
+                SELECT 
+                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE filiere_code = ? AND statut_classe = '" . STATUTS::ACTIF . "') as total_classes,
+                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins 
+                     JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code 
+                     WHERE cl.filiere_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "') as total_etudiants
+            ");
+            $stmt->execute([$filiereCode, $filiereCode]);
+        }
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total_classes' => $defaultTotalClasses, 'total_etudiants' => 0];
     }
 

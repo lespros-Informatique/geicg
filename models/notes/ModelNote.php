@@ -280,10 +280,18 @@ class ModelNote extends BaseModel
         require_once __DIR__ . '/../matieres/ModelMatiere.php';
         require_once __DIR__ . '/../semestres/ModelSemestre.php';
 
+        $targetYear = $anneeCode ?? Session::get('annee_active_code', '');
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
+        $classes = (new ModelClasse())->getAll($targetYear);
         $matieres = (new ModelMatiere())->getAll();
-        $semestres = (new ModelSemestre())->getAll($anneeCode);
+        $semestres = (new ModelSemestre())->getAll($targetYear);
+
+        $params = [];
+        $yearWhere = '';
+        if (!empty($targetYear) && $targetYear !== 'ALL') {
+            $yearWhere = " AND i.annee_code = ?";
+            $params[] = $targetYear;
+        }
 
         $sql = "
             SELECT i.code_inscription, i.classe_code,
@@ -294,10 +302,12 @@ class ModelNote extends BaseModel
             FROM " . TABLES::INSCRIPTIONS . " i
             LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
             LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
-            WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
+            WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'" . $yearWhere . "
             ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC
         ";
-        $inscriptionsDetails = $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
+        $inscriptionsDetails = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         return [
             'niveaux' => $niveaux,

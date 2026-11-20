@@ -34,7 +34,7 @@ class CompositionController extends BaseController
         }
 
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
+        $classes = (new ModelClasse())->getAll($selectedAnneeCode);
         $matieres = (new ModelMatiere())->getAll();
         $semestres = (new ModelSemestre())->getAll($selectedAnneeCode);
 
@@ -100,7 +100,7 @@ class CompositionController extends BaseController
         $annees = $this->getAccessibleAnnees();
         $niveaux = (new ModelNiveau())->getAll();
         $filieres = (new ModelFiliere())->getAll();
-        $classes = (new ModelClasse())->getAll();
+        $classes = (new ModelClasse())->getAll($activeAnneeCode);
         $matieres = (new ModelMatiere())->getAll();
         $semestres = (new ModelSemestre())->getAll($activeAnneeCode);
         $salles = (new ModelSalle())->getAll();
@@ -149,8 +149,8 @@ class CompositionController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
 
-        $semestres = (new ModelSemestre())->getAll();
-        if (empty($data['semestre_code'])) $data['semestre_code'] = !empty($semestres) ? $semestres[0]['code_semestre'] : 'SEM-1';
+        $semestres = (new ModelSemestre())->getAll($anneeCode);
+        if (empty($data['semestre_code'])) $data['semestre_code'] = !empty($semestres) ? $semestres[0]['code_semestre'] : '';
 
         $data['statut_composition'] = $data['statut_composition'] ?? 'programme';
         $data['created_at_composition'] = date('Y-m-d H:i:s');
@@ -272,7 +272,7 @@ class CompositionController extends BaseController
         $annees = (new ModelAnnee())->getAll();
         $niveaux = (new ModelNiveau())->getAll();
         $filieres = (new ModelFiliere())->getAll();
-        $classes = (new ModelClasse())->getAll();
+        $classes = (new ModelClasse())->getAll($anneeCodeToUse);
         $matieres = (new ModelMatiere())->getAll();
         $semestres = (new ModelSemestre())->getAll($anneeCodeToUse);
         $salles = (new ModelSalle())->getAll();

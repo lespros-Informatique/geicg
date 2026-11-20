@@ -40,23 +40,34 @@ class ModelAbsence extends BaseModel
         }
     }
 
-    public function getFormDataDependencies(): array
+    public function getFormDataDependencies(?string $anneeCode = null): array
     {
         require_once __DIR__ . '/../classes/ModelClasse.php';
         require_once __DIR__ . '/../matieres/ModelMatiere.php';
 
-        $classes = (new ModelClasse())->getAll();
+        $targetYear = $anneeCode ?? Session::get('annee_active_code', '');
+        $classes = (new ModelClasse())->getAll($targetYear);
         $matieres = (new ModelMatiere())->getAll();
+
+        $params = [];
+        $yearCondition = '';
+        if (!empty($targetYear) && $targetYear !== 'ALL') {
+            $yearCondition = " AND i.annee_code = ?";
+            $params[] = $targetYear;
+        }
 
         $sql = "
             SELECT DISTINCT e.code_etudiant, e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant,
                    i.code_inscription, i.classe_code, cl.libelle_classe
             FROM " . TABLES::ETUDIANTS . " e
-            LEFT JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant AND i.statut_inscription != '" . STATUTS::ANNULE . "'
+            INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant
+                AND i.statut_inscription != '" . STATUTS::ANNULE . "'" . $yearCondition . "
             LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
             ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC
         ";
-        $etudiantsDetails = $this->getCon()->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stmt = $this->getCon()->prepare($sql);
+        $stmt->execute($params);
+        $etudiantsDetails = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         return [
             'classes' => $classes,

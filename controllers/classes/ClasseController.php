@@ -270,6 +270,43 @@ class ClasseController extends BaseController
         $this->loadView('../views/classes/edit.php', ['item' => []]);
     }
 
+    /**
+     * API JSON légère : retourne les classes actives de l'année académique demandée
+     * (utilisée pour la mise à jour dynamique des filtres #filter-classe sur toutes les vues)
+     */
+    public function apiByAnnee()
+    {
+        $this->requireAuth();
+        $rawAnnee = isset($_GET['annee_code']) ? trim((string)$_GET['annee_code']) : null;
+        $anneeCode = $this->resolveTargetAcademicYear($rawAnnee);
+
+        if (empty($anneeCode)) {
+            $this->json(['status' => 1, 'data' => [], 'annee_code' => '']);
+            return;
+        }
+
+        $teacherCtx = $this->getTeacherContext();
+        if (!empty($teacherCtx['isTeacherOnly']) && !empty($teacherCtx['teacherCodes'])) {
+            $classes = (new ModelNote())->getClassesForTeacher($teacherCtx['teacherCodes'], $anneeCode);
+        } else {
+            $classes = $this->model->getAll($anneeCode);
+        }
+
+        $out = [];
+        foreach ($classes as $c) {
+            $out[] = [
+                'code_classe'    => $c['code_classe'] ?? '',
+                'libelle_classe' => $c['libelle_classe'] ?? '',
+                'niveau_code'    => $c['niveau_code'] ?? '',
+                'filiere_code'   => $c['filiere_code'] ?? '',
+                'type_filiere'   => $c['type_filiere'] ?? '',
+                'annee_code'     => $c['annee_code'] ?? $anneeCode
+            ];
+        }
+
+        $this->json(['status' => 1, 'data' => $out, 'annee_code' => $anneeCode]);
+    }
+
     public function getClassesWithScolarite()
     {
         $this->requireAuth();

@@ -351,7 +351,7 @@ class InscriptionController extends BaseController
 
         $annees = $this->getAccessibleAnnees();
         $activeAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
-        $deps = $this->model->getPriseDeVueDependencies();
+        $deps = $this->model->getPriseDeVueDependencies($activeAnneeCode);
         $stats = $this->model->getPriseDeVueStats($activeAnneeCode ?: '');
 
         $this->loadView('../views/inscriptions/prise_de_vue.php', [

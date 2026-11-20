@@ -82,7 +82,7 @@ class EmploiController extends BaseController
             $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
             $classesWithEmploi = $this->model->getClassesSummaryForTeacher($teacherCodes, $selectedAnneeCode);
         } else {
-            $classes = (new ModelClasse())->getAll();
+            $classes = (new ModelClasse())->getAll($selectedAnneeCode);
             $classesWithEmploi = $this->model->getClassesSummary($selectedAnneeCode);
         }
 

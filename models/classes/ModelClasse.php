@@ -8,6 +8,40 @@ class ModelClasse extends BaseModel
     protected ?string $createdAtField = 'created_at_classe';
 
     /**
+     * Récupère les classes actives filtrées par année académique
+     * (par défaut l'année active en session ; passer 'ALL' pour toutes les années)
+     */
+    public function getAll(?string $anneeCode = null): array
+    {
+        try {
+            $targetAnnee = $anneeCode;
+            if ($targetAnnee === null) {
+                $targetAnnee = (string)Session::get('annee_active_code', '');
+            }
+
+            $sql = "
+                SELECT c.*, COALESCE(f.type_filiere, '') AS type_filiere
+                FROM " . TABLES::CLASSES . " c
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
+                WHERE (c.statut_classe = '" . STATUTS::ACTIF . "' OR c.statut_classe IS NULL)
+            ";
+            $params = [];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql .= " AND c.annee_code = ?";
+                $params[] = $targetAnnee;
+            }
+            $sql .= " ORDER BY c.libelle_classe ASC";
+
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelClasse::getAll error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Récupère les classes actives ayant leur scolarité déjà enregistrée pour une année académique donnée
      *
      * @param string $anneeCode Code de l'année académique

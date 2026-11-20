@@ -11,8 +11,8 @@ class EtudiantController extends BaseController
     {
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_ETUDIANTS);
-        $deps = $this->model->getListFilterDependencies();
         $anneeActive = $this->getActiveAnneeCode();
+        $deps = $this->model->getListFilterDependencies($anneeActive);
 
         $this->loadView('../views/etudiants/list.php', [
             'annees' => $deps['annees'],

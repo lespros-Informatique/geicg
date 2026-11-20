@@ -514,12 +514,99 @@
     syncScrollLock();
   };
 
+  // 11. Synchronisation globale #filter-annee -> #filter-classe
+  GEICG.initAnneeClasseSync = function() {
+    var $annee = $('#filter-annee');
+    var $classe = $('#filter-classe');
+    if (!$annee.length || !$classe.length) return;
+    // Ignorer la caisse annexe qui gère déjà sa propre synchronisation locale (classesByAnnee)
+    if ($('#table-caisse-annexe').length) return;
+    // Ignorer si le sélecteur d'année est en lecture seule ou désactivé
+    if ($annee.is('[readonly], :disabled')) return;
+
+    var syncReqId = 0;
+
+    $annee.on('change.geicgAnneeClasseSync', function() {
+      var anneeCode = $(this).val() || '';
+      var $firstOpt = $classe.find('option').first();
+      var defaultVal = $firstOpt.length ? ($firstOpt.attr('value') !== undefined ? $firstOpt.attr('value') : '') : '';
+      var defaultText = $firstOpt.length ? $firstOpt.text() : '-- Toutes les classes --';
+      var prevClasseVal = $classe.val() || '';
+
+      // Réinitialiser la classe sélectionnée immédiatement pour éviter d'envoyer une classe d'une autre année
+      var hadSpecificClasse = (prevClasseVal !== '' && prevClasseVal !== defaultVal && prevClasseVal !== 'ALL');
+      if (hadSpecificClasse) {
+        $classe.val(defaultVal);
+        if ($.fn.select2 && $classe.hasClass('select2-hidden-accessible')) {
+          $classe.trigger('change.select2');
+        }
+      }
+
+      var currentReq = ++syncReqId;
+      $.ajax({
+        url: GEICG.url('classe/apiByAnnee'),
+        type: 'GET',
+        dataType: 'json',
+        data: { annee_code: anneeCode },
+        success: function(res) {
+          if (currentReq !== syncReqId) return;
+          if (!res || !res.success || !Array.isArray(res.data)) return;
+
+          var selNiveau = $('#filter-niveau').length ? ($('#filter-niveau').val() || '') : '';
+          var selFiliere = $('#filter-filiere').length ? ($('#filter-filiere').val() || '') : '';
+          var selTypeFiliere = $('#filter-type-filiere').length ? ($('#filter-type-filiere').val() || '') : '';
+
+          var html = '<option value="' + GEICG.escapeHtml(defaultVal) + '">' + GEICG.escapeHtml(defaultText) + '</option>';
+          var preserved = false;
+
+          res.data.forEach(function(cl) {
+            var code = cl.code_classe || '';
+            var label = cl.libelle_classe || code;
+            var niveau = cl.niveau_code || '';
+            var filiere = cl.filiere_code || '';
+            var typeFiliere = cl.type_filiere || '';
+            var annee = cl.annee_code || '';
+
+            var matchNiv = (!selNiveau || selNiveau === 'ALL' || niveau === selNiveau);
+            var matchFil = (!selFiliere || selFiliere === 'ALL' || filiere === selFiliere);
+            var matchTyp = (!selTypeFiliere || selTypeFiliere === 'ALL' || typeFiliere === selTypeFiliere);
+            var isDisabled = !(matchNiv && matchFil && matchTyp);
+
+            if (!isDisabled && code === prevClasseVal) {
+              preserved = true;
+            }
+
+            html += '<option value="' + GEICG.escapeHtml(code) + '"' +
+              ' data-niveau="' + GEICG.escapeHtml(niveau) + '"' +
+              ' data-filiere="' + GEICG.escapeHtml(filiere) + '"' +
+              ' data-type-filiere="' + GEICG.escapeHtml(typeFiliere) + '"' +
+              ' data-annee="' + GEICG.escapeHtml(annee) + '"' +
+              (isDisabled ? ' disabled hidden' : '') +
+              '>' + GEICG.escapeHtml(label) + '</option>';
+          });
+
+          $classe.html(html);
+          var newVal = preserved ? prevClasseVal : defaultVal;
+          $classe.val(newVal);
+
+          if ($.fn.select2 && $classe.hasClass('select2-hidden-accessible')) {
+            $classe.trigger('change.select2');
+          }
+          if (hadSpecificClasse && !preserved) {
+            $classe.trigger('change');
+          }
+        }
+      });
+    });
+  };
+
   // Auto-démarrage au chargement du DOM
   $(document).ready(function() {
     GEICG.initUI();
     GEICG.bindToggleStatus();
     GEICG.initSidebar();
     GEICG.initModalScrollLock();
+    GEICG.initAnneeClasseSync();
   });
 
   // Rafraîchissement automatique des icônes et select2 à l'ouverture de toute modale Bootstrap

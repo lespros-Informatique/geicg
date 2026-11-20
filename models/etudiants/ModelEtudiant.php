@@ -207,14 +207,23 @@ class ModelEtudiant extends BaseModel
     /**
      * Récupère les dépendances pour les filtres de la liste des étudiants
      */
-    public function getListFilterDependencies(): array
+    public function getListFilterDependencies(?string $anneeCode = null): array
     {
         $db = $this->getCon();
         try {
             $annees = $db->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY (CASE WHEN statut_annee = '" . STATUTS::ACTIF . "' THEN 1 ELSE 2 END), date_debut_annee DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $niveaux = $db->query("SELECT * FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY libelle_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $filieres = $db->query("SELECT * FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $classes = $db->query("SELECT * FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+            if ($targetAnnee !== '') {
+                $stmtCl = $db->prepare("SELECT * FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ? ORDER BY libelle_classe ASC");
+                $stmtCl->execute([$targetAnnee]);
+                $classes = $stmtCl->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } else {
+                $classes = $db->query("SELECT * FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            }
+
             return [
                 'annees' => $annees,
                 'niveaux' => $niveaux,

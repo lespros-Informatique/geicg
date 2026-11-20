@@ -25,7 +25,7 @@ class DossierEtudiantController extends BaseController
         }
 
         $classeModel = new ModelClasse();
-        $classes = $classeModel->getAll();
+        $classes = $classeModel->getAll($selectedAnneeCode);
 
         $this->loadView('../views/dossier_etudiant/list.php', [
             'annees' => $annees,

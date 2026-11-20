@@ -140,7 +140,7 @@ class AccessoireController extends BaseController
 
         $annees = $this->getAccessibleAnnees();
         $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
-        $classes = (new ModelClasse())->getAll();
+        $classes = !empty($selectedAnneeCode) ? (new ModelClasse())->getAll($selectedAnneeCode) : [];
         $etudiants = (new ModelEtudiant())->getAll();
         $accessoires = $this->model->getAll();
 

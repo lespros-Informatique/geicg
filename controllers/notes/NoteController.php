@@ -118,7 +118,7 @@ class NoteController extends BaseController
                 $classes = $this->model->getClassesForTeacher($teacherCodes, $selectedAnneeCode);
                 $matieres = $this->model->getMatieresForTeacher($teacherCodes, $selectedAnneeCode);
             } else {
-                $classes = (new ModelClasse())->getAll();
+                $classes = (new ModelClasse())->getAll($selectedAnneeCode);
                 $matieres = (new ModelMatiere())->getAll();
             }
 
@@ -685,7 +685,7 @@ class NoteController extends BaseController
         if ($isTeacherOnly && !empty($teacherCodes)) {
             $allUserClasses = $this->model->getClassesForTeacher($teacherCodes, $anneeCode);
         } else {
-            $allUserClasses = (new ModelClasse())->getAll();
+            $allUserClasses = (new ModelClasse())->getAll($anneeCode);
         }
         $userAllowedClassCodes = array_column($allUserClasses, 'code_classe');
 
@@ -878,7 +878,7 @@ class NoteController extends BaseController
             }
         }
 
-        $classes = (new ModelClasse())->getAll();
+        $classes = (new ModelClasse())->getAll($anneeCode);
         $matieres = $this->getMatieresForClasse($selectedClasseCode, $anneeCode, $selectedCompositionCode);
         $semestres = (new ModelSemestre())->getAll($anneeCode);
 

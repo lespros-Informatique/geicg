@@ -423,7 +423,13 @@ class ModelInscription extends BaseModel
         }
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if (!empty($activeAnneeCode)) {
+            $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ? ORDER BY libelle_classe ASC");
+            $stmtCl->execute([$activeAnneeCode]);
+            $classes = $stmtCl->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } else {
+            $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
 
         return [
             'anneesCloturees' => $anneesCloturees,
@@ -436,11 +442,18 @@ class ModelInscription extends BaseModel
     /**
      * Récupère les dépendances pour la prise de vue
      */
-    public function getPriseDeVueDependencies(): array
+    public function getPriseDeVueDependencies(?string $anneeCode = null): array
     {
         $db = $this->getCon();
         $filieres = $db->query("SELECT code_filiere, libelle_filiere FROM " . TABLES::FILIERES . " WHERE statut_filiere = '" . STATUTS::ACTIF . "' ORDER BY libelle_filiere ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+        if ($targetAnnee !== '') {
+            $stmtCl = $db->prepare("SELECT code_classe, libelle_classe, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ? ORDER BY libelle_classe ASC");
+            $stmtCl->execute([$targetAnnee]);
+            $classes = $stmtCl->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } else {
+            $classes = $db->query("SELECT code_classe, libelle_classe, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
         return [
             'filieres' => $filieres,
             'classes' => $classes

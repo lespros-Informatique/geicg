@@ -31,7 +31,7 @@ class ScolariteController extends BaseController
 
         $stats = $this->model->getStats($activeYear);
         $niveaux = (new ModelNiveau())->getAll();
-        $classes = (new ModelClasse())->getAll();
+        $classes = (new ModelClasse())->getAll($activeYear);
         $rawFilieres = (new ModelFiliere())->getFilieresAssocieesAuxCycles();
         $filieres = array_filter($rawFilieres, function($f) {
             return (($f['statut_filiere'] ?? 'actif') === 'actif');

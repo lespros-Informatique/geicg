@@ -193,7 +193,9 @@ class ModelPaiement extends BaseModel
     {
         $db = $this->getCon();
         $niveaux = $db->query("SELECT code_niveau, libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE statut_niveau = '" . STATUTS::ACTIF . "' ORDER BY id_niveau ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $classes = $db->query("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' ORDER BY libelle_classe ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stmtClasses = $db->prepare("SELECT code_classe, libelle_classe, cycle_code, filiere_code, niveau_code, annee_code FROM " . TABLES::CLASSES . " WHERE statut_classe = '" . STATUTS::ACTIF . "' AND annee_code = ? ORDER BY libelle_classe ASC");
+        $stmtClasses->execute([$activeYear]);
+        $classes = $stmtClasses->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $stmtInscr = $db->prepare("
             SELECT 

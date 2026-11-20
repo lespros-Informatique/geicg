@@ -25,7 +25,7 @@ class AbsenceController extends BaseController
             }
         }
 
-        $classes = !empty($selectedAnneeCode) ? (new ModelClasse())->getAll() : [];
+        $classes = !empty($selectedAnneeCode) ? (new ModelClasse())->getAll($selectedAnneeCode) : [];
 
         $this->loadView('../views/absences/list.php', [
             'annees' => $annees,
@@ -245,7 +245,7 @@ class AbsenceController extends BaseController
             $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
             return;
         }
-        $classes = (new ModelClasse())->getAll();
+        $classes = (new ModelClasse())->getAll($anneeCode);
         $matieres = (new ModelMatiere())->getAll();
         
         $selectedClasseCode = $_GET['classe_code'] ?? '';
