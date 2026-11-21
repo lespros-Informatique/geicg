@@ -221,7 +221,7 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
             </tr>
             <tr>
               <td>Numéro réf étudiant( e) : <strong><?= htmlspecialchars($matricule) ?></strong></td>
-              <td>Filière_Niveau : <strong><?= htmlspecialchars($filiereNiveau) ?></strong></td>
+              <td>Filière / Niveau : <strong><?= htmlspecialchars($filiereNiveau) ?></strong></td>
             </tr>
             <tr>
               <td colspan="2">Nom_Prénom(s) : <strong><?= htmlspecialchars($nomComplet) ?></strong></td>
@@ -388,7 +388,7 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
             </tr>
             <tr>
               <td>Numéro réf étudiant( e) : <strong><?= htmlspecialchars($matricule) ?></strong></td>
-              <td>Filière_Niveau : <strong><?= htmlspecialchars($filiereNiveau) ?></strong></td>
+              <td>Filière / Niveau : <strong><?= htmlspecialchars($filiereNiveau) ?></strong></td>
             </tr>
             <tr>
               <td colspan="2">Nom_Prénom(s) : <strong><?= htmlspecialchars($nomComplet) ?></strong></td>

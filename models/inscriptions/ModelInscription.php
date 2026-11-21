@@ -1443,10 +1443,7 @@ class ModelInscription extends BaseModel
             !empty($ins['slug_filiere']) ? $ins['slug_filiere'] : '',
             !empty($ins['slug_niveau']) ? $ins['slug_niveau'] : ''
         ]);
-        $filiereNiveauSlug = !empty($slugParts) ? implode('_', $slugParts) : '-';
-        if (!empty($ins['libelle_classe'])) {
-            $filiereNiveauSlug = str_replace(' ', '_', $ins['libelle_classe']);
-        }
+        $filiereNiveauSlug = !empty($slugParts) ? implode(' / ', $slugParts) : (!empty($ins['libelle_classe']) ? $ins['libelle_classe'] : '-');
 
         $numRecuCode = !empty($lastPaiement['recu_numero_paiement']) ? $lastPaiement['recu_numero_paiement'] : (!empty($lastPaiement['code_paiement']) ? $lastPaiement['code_paiement'] : ('GE-' . sprintf('%08d', $ins['id_inscription'])));
 
