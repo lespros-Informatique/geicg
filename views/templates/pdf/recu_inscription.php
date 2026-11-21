@@ -167,9 +167,9 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
       color: #000000;
       text-align: center;
       padding: 6px 0;
-      margin: 10px 0 4px 0;
+      margin: 10px 0 15px 0;
       font-weight: bold;
-      font-size: 15.5pt;
+      font-size: 16.5pt;
       font-family: 'arial bold';
       letter-spacing: 1.2px;
       text-transform: uppercase;
@@ -179,7 +179,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
       text-align: center;
       font-weight: bold;
       font-size: 10.5pt;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
       color: #000000;
     }
 
@@ -395,7 +395,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
       $showHeaderDivider = false;
       include __DIR__ . '/components/header_institution.php'; 
     ?>
-
+<hr>
     <!-- BANNIÈRE PRINCIPALE ET ANNÉE -->
     <div class="banner-title-box">REÇU D'INSCRIPTION</div>
     <div class="annee-subbanner">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_universitaire) ?></div>
@@ -410,11 +410,11 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
               <td style="width: 46%;">Date : &nbsp;<span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
             </tr>
             <tr>
-              <td>Numéro réf étudiant(e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
-              <td>Filière_Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
+              <td>Matricule : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
+              <td>Filière / Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
             </tr>
             <tr>
-              <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
+              <td colspan="2">Nom & Prénoms(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
             </tr>
             <tr>
               <td>Type d'Opération : &nbsp;<span class="val-bold">Frais d'inscription</span></td>
@@ -537,11 +537,11 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
               <td style="width: 50%;">Date : &nbsp;<span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
             </tr>
             <tr>
-              <td>Numéro réf étudiant(e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
-              <td>Filière_Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
+              <td>Matricule : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
+              <td>Filière / Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
             </tr>
             <tr>
-              <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
+              <td colspan="2">Nom & Prénoms(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
             </tr>
             <tr>
               <td>Type d'Opération : &nbsp;<span style="background:#CCCCCC; padding:1px 6px; font-weight:bold;"><?= htmlspecialchars($type_operation) ?></span></td>
