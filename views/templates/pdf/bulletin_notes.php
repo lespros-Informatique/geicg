@@ -110,14 +110,14 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
       padding: 0;
     }
 
-    /* Cadre pleine page A4 natif mPDF (position:fixed relatif à la zone de marge @page 6mm/7mm) */
+    /* Cadre pleine page A4 natif mPDF (enfant direct de body) */
     .page-border {
       position: fixed;
       top: 0mm;
       left: 0mm;
       width: 196mm;
-      height: 284mm;
-      border: 1.5px solid #000000;
+      height: 283mm;
+      border: 2px solid #000000;
     }
 
     /* Conteneur interne */
@@ -377,20 +377,25 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
       padding: 4px 6px;
     }
 
-    /* Pied de page */
+    /*Pied de page fixe en bas du cadre A4 */
     .footer-block {
+      position: fixed;
+      top: 273mm;
+      left: 4mm;
+      width: 188mm;
       text-align: center;
-      font-size: 6.8pt;
-      margin-top: 5px;
-      line-height: 1.25;
+      font-size: 7.2pt;
+      line-height: 1.3;
       color: #000000;
+      border-top: 0.5px solid #CBD5E1;
+      padding-top: 3px;
     }
   </style>
 </head>
 <body>
-  <div class="page-border"></div>
 <?php endif; ?>
 
+<div class="page-border"></div>
 <div class="page-container">
 
   <!-- 1. EN-TÊTE OFFICIEL UNIFIÉ GEICG -->
@@ -682,18 +687,18 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
     </tbody>
   </table>
 
-  <!-- 6. PIED DE PAGE CONTACTS -->
-  <?php
-    $contactsTxt = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '';
-    $adresseTxt = !empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : '';
-    $bpTxt = !empty($etablissement['boite_postale']) ? $etablissement['boite_postale'] : '';
-    $emailTxt = !empty($etablissement['email_etablissement']) ? $etablissement['email_etablissement'] : '';
-  ?>
-  <div class="footer-block">
-    Contacts : <?= htmlspecialchars($adresseTxt) ?><br>
-    <?= htmlspecialchars($bpTxt) ?> – Email : <?= htmlspecialchars($emailTxt) ?> | Contacts : <?= htmlspecialchars($contactsTxt) ?>
-  </div>
+</div>
 
+<!-- 6. PIED DE PAGE CONTACTS (enfant direct de body pour position:fixed mPDF) -->
+<?php
+  $contactsTxt = !empty($etablissement['contacts_formatted']) ? $etablissement['contacts_formatted'] : '';
+  $adresseTxt = !empty($etablissement['adresse_etablissement']) && $etablissement['adresse_etablissement'] !== 'adresse' ? $etablissement['adresse_etablissement'] : '';
+  $bpTxt = !empty($etablissement['boite_postale']) ? $etablissement['boite_postale'] : '';
+  $emailTxt = !empty($etablissement['email_etablissement']) ? $etablissement['email_etablissement'] : '';
+?>
+<div class="footer-block">
+  Contacts : <?= htmlspecialchars($adresseTxt) ?><br>
+  <?= htmlspecialchars($bpTxt) ?> – Email : <?= htmlspecialchars($emailTxt) ?> | Contacts : <?= htmlspecialchars($contactsTxt) ?>
 </div>
 
 <?php if (empty($is_batch) || !empty($is_last_in_batch)): ?>

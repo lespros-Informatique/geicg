@@ -262,8 +262,8 @@ class BulletinController extends BaseController
                 'orientation' => 'P',
                 'format' => 'A4',
                 'title' => 'Bulletin de Notes - ' . $nomComplet,
-                'margin_left' => 7,
-                'margin_right' => 7,
+                'margin_left' => 6,
+                'margin_right' => 6,
                 'margin_top' => 6,
                 'margin_bottom' => 6,
                 'watermark_logo' => true
@@ -375,8 +375,8 @@ class BulletinController extends BaseController
                 'orientation' => 'P',
                 'format' => 'A4',
                 'title' => 'Bulletins de Notes - Classe ' . $classeLibelle,
-                'margin_left' => 7,
-                'margin_right' => 7,
+                'margin_left' => 6,
+                'margin_right' => 6,
                 'margin_top' => 6,
                 'margin_bottom' => 6,
                 'watermark_logo' => true
