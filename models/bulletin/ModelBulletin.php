@@ -242,18 +242,18 @@ class ModelBulletin extends BaseModel
         $estPremiereAnnee = $this->isPremiereAnnee($item['slug_niveau'] ?? '', $item['libelle_niveau'] ?? '');
         $estDeuxiemeSemestre = $this->isDeuxiemeSemestre((string)$selectedSemestreCode, $semestres);
 
-        // Récupération des coefficients historiques (entiers) de l'année académique dans la table annees
+        // Récupération des coefficients historiques (entiers) des semestres dans la table annees
+        // Le coefficient de l'examen provient directement de la table compositions (comp.coefficient)
         $coefSem1 = 2;
         $coefSem2 = 2;
         $coefExam = 1;
         if (!empty($item['annee_code'])) {
-            $stmtAnnee = $db->prepare("SELECT coef_semestre1, coef_semestre2, coef_examen FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+            $stmtAnnee = $db->prepare("SELECT coef_semestre1, coef_semestre2 FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtAnnee->execute([$item['annee_code']]);
             $anneeRow = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
             if ($anneeRow) {
                 $coefSem1 = max(1, (int)round((float)($anneeRow['coef_semestre1'] ?? 2)));
                 $coefSem2 = max(1, (int)round((float)($anneeRow['coef_semestre2'] ?? 2)));
-                $coefExam = max(1, (int)round((float)($anneeRow['coef_examen'] ?? 1)));
             }
         }
 
@@ -594,8 +594,10 @@ class ModelBulletin extends BaseModel
 
                 if ($tEval === 'EXAMEN') {
                     // En 1ère année : un seul examen annuel au Semestre 2, pondéré par le coefficient de chaque matière dans la maquette pédagogique
+                    // Le coefficient de l'examen ($coefExam) est lu directement depuis la composition (compositions.coefficient)
                     if ($estPremiereAnnee) {
                         if ($sem2Code === null || $sCode === $sem2Code) {
+                            $coefExam = max(1, (int)round($cComp));
                             if (!isset($examMatByInsc[$insc][$mCode])) {
                                 $examMatByInsc[$insc][$mCode] = [
                                     'sum_pond' => 0.0,

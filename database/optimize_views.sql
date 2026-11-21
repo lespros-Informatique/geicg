@@ -93,7 +93,6 @@ SELECT
     a.libelle_annee AS annee_nom,
     a.coef_semestre1,
     a.coef_semestre2,
-    a.coef_examen,
     p.nom_pere,
     p.telephone_pere,
     p.profession_pere,
@@ -452,8 +451,7 @@ SELECT
     a.libelle_annee,
     a.libelle_annee AS annee_nom,
     a.coef_semestre1,
-    a.coef_semestre2,
-    a.coef_examen
+    a.coef_semestre2
 FROM inscriptions i
 INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
 LEFT JOIN classes cl ON cl.code_classe = i.classe_code

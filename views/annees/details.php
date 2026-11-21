@@ -61,10 +61,9 @@ $stAnnee = $item['statut_annee'] ?? 'planifie';
           <div><strong style="color: #64748B;">Date de Début :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_debut_annee']) ? date('d/m/Y', strtotime($item['date_debut_annee'])) : 'Non définie' ?></span></div>
           <div><strong style="color: #64748B;">Date de Fin :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_fin_annee']) ? date('d/m/Y', strtotime($item['date_fin_annee'])) : 'Non définie' ?></span></div>
           <div>
-            <strong style="color: #64748B;">Coefficients Annuels :</strong>
+            <strong style="color: #64748B;">Coefficients Semestriels :</strong>
             <span class="badge" style="background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px; margin-left:4px;">Semestre 1 : <?= (int)($item['coef_semestre1'] ?? 2) ?></span>
             <span class="badge" style="background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px; margin-left:4px;">Semestre 2 : <?= (int)($item['coef_semestre2'] ?? 2) ?></span>
-            <span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px; margin-left:4px;">Examen (1A) : <?= (int)($item['coef_examen'] ?? 1) ?></span>
           </div>
           <div><strong style="color: #64748B;">Statut :</strong> 
             <?php if ($stAnnee === 'actif'): ?>

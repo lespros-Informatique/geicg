@@ -668,7 +668,6 @@ class DatabaseSeeder
                     date_fin_annee = ?,
                     coef_semestre1 = COALESCE(NULLIF(coef_semestre1, 0), 2),
                     coef_semestre2 = COALESCE(NULLIF(coef_semestre2, 0), 2),
-                    coef_examen = COALESCE(NULLIF(coef_examen, 0), 1),
                     updated_at_annee = NOW()
                 WHERE id_annee = ?
             ");
@@ -676,7 +675,6 @@ class DatabaseSeeder
             $row['statut_annee']   = $status;
             $row['coef_semestre1'] = (int)($row['coef_semestre1'] ?? 2);
             $row['coef_semestre2'] = (int)($row['coef_semestre2'] ?? 2);
-            $row['coef_examen']    = (int)($row['coef_examen'] ?? 1);
             return $row;
         }
 
@@ -685,8 +683,8 @@ class DatabaseSeeder
             INSERT INTO annees (
                 libelle_annee, date_debut_annee, date_fin_annee, code_annee,
                 etablissement_code, created_at_annee, statut_annee, user_code,
-                coef_semestre1, coef_semestre2, coef_examen
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 2, 2, 1)
+                coef_semestre1, coef_semestre2
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 2, 2)
         ");
         $ins->execute([$yearLabel, $debut, $fin, $code, $this->etabCode, "{$startYear}-09-01 08:00:00", $status, $this->adminCode]);
         $this->inc('annees');
@@ -700,7 +698,6 @@ class DatabaseSeeder
             'date_fin_annee'   => $fin,
             'coef_semestre1'   => 2,
             'coef_semestre2'   => 2,
-            'coef_examen'      => 1,
         ];
     }
 
