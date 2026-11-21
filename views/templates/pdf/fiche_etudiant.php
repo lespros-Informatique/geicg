@@ -246,25 +246,42 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
       margin-bottom: 8px;
     }
 
-    /* Signatures */
-    .signature-grid {
+    /* Signatures & QR Code (hors table pour que mPDF applique margin/padding sur les div) */
+    .signature-row {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 38px;
+      margin-top: 28px;
     }
-    .signature-grid td {
-      width: 50%;
-      border: none;
-      padding: 8px 12px;
-      vertical-align: top;
-      font-size: 11px;
+    .qr-block {
+      width: 35%;
+      float: left;
+      text-align: left;
+      padding-left: 8px;
+    }
+    .signature-block {
+      width: 260px;
+      float: right;
+      text-align: center;
+      padding-right: 8px;
+    }
+    .sign-date {
+      font-size: 12px;
+      color: #334155;
+      text-align: center;
+      margin-bottom: 7px;
     }
     .sign-title {
       font-weight: bold;
       color: #1E3A5F;
       text-decoration: underline;
-      font-size: 13.5px;
+      font-size: 13px;
+      text-align: center;
       margin-bottom: 6px;
+    }
+    .sign-name {
+      font-weight: bold;
+      font-size: 13px;
+      color: #1E293B;
+      text-align: center;
     }
   </style>
 </head>
@@ -348,7 +365,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
       <tr>
         <td style="width: 34%;">Classe Fréquentée : <span class="val-bold" style="color:#1E3A5F;"><?= htmlspecialchars($classe_precedente ?? '-') ?></span></td>
         <td style="width: 36%;">Filière : <span class="val-bold"><?= htmlspecialchars($filiere_precedente ?? '-') ?></span></td>
-        <td style="width: 30%;">Niveau N-1 : <span class="val-bold"><?= htmlspecialchars($niveau_precedent ?? '-') ?></span></td>
+        <td style="width: 30%;">Niveau : <span class="val-bold"><?= htmlspecialchars($niveau_precedent ?? '-') ?></span></td>
       </tr>
       <tr>
         <td>Année Académique : <span class="val-bold"><?= htmlspecialchars($annee_precedente ?? '-') ?></span></td>
@@ -408,42 +425,37 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     </table>
   </div>
 
-<br>
-<br>
+  <!-- SIGNATURES & QR CODE (2 COLONNES HORS TABLE) -->
+  <div class="signature-row">
+    <div class="qr-block">
+      <?php
+        $qrParts = [];
+        if (!empty($matricule_etudiant) && $matricule_etudiant !== '-') {
+            $qrParts[] = 'Matricule: ' . $matricule_etudiant;
+        }
+        if (!empty($code_inscription) && $code_inscription !== '-') {
+            $qrParts[] = 'Code Inscription: ' . $code_inscription;
+        }
+        $qrPayload = implode(' | ', $qrParts);
+      ?>
+      <?php if ($qrPayload !== ''): ?>
+        <barcode code="<?= htmlspecialchars($qrPayload, ENT_QUOTES, 'UTF-8') ?>" type="QR" size="1.15" error="M" disableborder="1" />
+      <?php endif; ?>
+    </div>
 
-  <!-- SIGNATURES (2 COLONNES) -->
-  <table class="signature-grid">
-    <tr>
-      <td style="text-align: left; vertical-align: middle;">
-        <?php
-          $qrParts = [];
-          if (!empty($matricule_etudiant) && $matricule_etudiant !== '-') {
-              $qrParts[] = 'Matricule: ' . $matricule_etudiant;
-          }
-          if (!empty($code_inscription) && $code_inscription !== '-') {
-              $qrParts[] = 'Code Inscription: ' . $code_inscription;
-          }
-          $qrPayload = implode(' | ', $qrParts);
-        ?>
-        <?php if ($qrPayload !== ''): ?>
-          <barcode code="<?= htmlspecialchars($qrPayload, ENT_QUOTES, 'UTF-8') ?>" type="QR" size="1.15" error="M" disableborder="1" />
-        <?php endif; ?>
-      </td>
-      <td style="text-align: right;">
-        <div style="font-size: 12.5px; color: #334155; margin-bottom: 10px;">
-          Fait à <?= htmlspecialchars(!empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?>
-        </div>
-        <br>
-        <div class="sign-title" style="text-align: right;">
-          <?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?>
-        </div>
-        <br>
-        <div style="margin-top:13px;padding-top: 46px; font-weight: bold; font-size: 13px; color: #46484A;">
-          <?= htmlspecialchars(!empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : '') ?>
-        </div>
-      </td>
-    </tr>
-  </table>
+    <div class="signature-block">
+      <div class="sign-date">
+        Fait à <?= htmlspecialchars(!empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?>
+      </div>
+      <div class="sign-title">
+        <?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?>
+      </div>
+      <div class="sign-name">
+        <?= htmlspecialchars(!empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : '') ?>
+      </div>
+    </div>
+    <div style="clear: both;"></div>
+  </div>
 
 </div>
 
