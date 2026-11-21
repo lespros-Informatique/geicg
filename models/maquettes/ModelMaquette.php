@@ -73,6 +73,7 @@ class ModelMaquette extends BaseModel
             FROM " . VIEWS::MAQUETTES_COMPLETES . "
             WHERE filiere_code = ? AND niveau_code = ?
               AND (annee_code = ? OR ? = '')
+              AND statut_maquette = '" . STATUTS::ACTIF . "'
             ORDER BY 
                 CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC,
                 libelle_matiere ASC
@@ -111,7 +112,7 @@ class ModelMaquette extends BaseModel
     /**
      * Récupère la liste filtrée pour DataTable
      */
-    public function getFilteredList(?string $anneeCode = null, ?string $filiereCode = null, ?string $niveauCode = null, ?string $categorie = null): array
+    public function getFilteredList(?string $anneeCode = null, ?string $filiereCode = null, ?string $niveauCode = null, ?string $categorie = null, bool $onlyActive = false): array
     {
         $db = $this->getCon();
         $sql = "
@@ -122,6 +123,11 @@ class ModelMaquette extends BaseModel
             WHERE 1=1
         ";
         $params = [];
+
+        if ($onlyActive) {
+            $sql .= " AND v.statut_maquette = ?";
+            $params[] = STATUTS::ACTIF;
+        }
 
         if (!empty($anneeCode)) {
             $sql .= " AND v.annee_code = ?";

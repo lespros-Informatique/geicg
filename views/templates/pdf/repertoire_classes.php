@@ -15,9 +15,11 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <style>
     @page {
       margin-top: 8mm;
-      margin-bottom: 10mm;
+      margin-bottom: 12mm;
       margin-left: 8mm;
       margin-right: 8mm;
+      header: html_pageHeader;
+      footer: html_pageFooter;
     }
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
@@ -291,7 +293,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       </tr>
     </table>
   </htmlpagefooter>
-  <sethtmlpagefooter name="pageFooter" value="on" />
+  <sethtmlpagefooter name="pageFooter" value="on" page="ALL" />
 
   <!-- ENTÊTE DE L'ÉTABLISSEMENT UNIFIÉ GEICG -->
   <?php include __DIR__ . '/components/header_institution.php'; ?>

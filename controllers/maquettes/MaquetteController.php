@@ -60,7 +60,7 @@ class MaquetteController extends BaseController
         $niveauCode = $_GET['niveau_code'] ?? null;
         $categorie = $_GET['categorie'] ?? null;
 
-        $items = $this->model->getFilteredList($anneeCode, $filiereCode, $niveauCode, $categorie);
+        $items = $this->model->getFilteredList($anneeCode, $filiereCode, $niveauCode, $categorie, true);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_maquette'];
@@ -89,7 +89,7 @@ class MaquetteController extends BaseController
         $niveauCode = !empty($_GET['niveau_code']) ? $_GET['niveau_code'] : null;
         $categorie = !empty($_GET['categorie']) ? $_GET['categorie'] : null;
 
-        $items = $this->model->getFilteredList($anneeCode, $filiereCode, $niveauCode, $categorie);
+        $items = $this->model->getFilteredList($anneeCode, $filiereCode, $niveauCode, $categorie, true);
         $etablissement = $this->getEtablissementConfig();
 
         $anneeModel = new ModelAnnee();

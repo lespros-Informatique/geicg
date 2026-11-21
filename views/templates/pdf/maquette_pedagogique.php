@@ -15,9 +15,10 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <style>
     @page {
       margin-top: 8mm;
-      margin-bottom: 10mm;
+      margin-bottom: 12mm;
       margin-left: 8mm;
       margin-right: 8mm;
+      footer: html_pageFooter;
     }
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
@@ -233,7 +234,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       </tr>
     </table>
   </htmlpagefooter>
-  <sethtmlpagefooter name="pageFooter" value="on" />
+  <sethtmlpagefooter name="pageFooter" value="on" page="ALL" />
 
   <!-- EN-TÊTE OFFICIEL UNIFIÉ GEICG -->
   <?php include __DIR__ . '/components/header_institution.php'; ?>
@@ -302,8 +303,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
           <th style="width: 140px;">Filière</th>
           <th style="width: 80px;">Niveau</th>
           <th style="width: 120px;" class="text-center">Catégorie Bulletin</th>
-          <th style="width: 65px;" class="text-center">Coefficient</th>
-          <th style="width: 55px;" class="text-center">Statut</th>
+          <th style="width: 75px;" class="text-center">Coefficient</th>
         </tr>
       </thead>
       <tbody>
@@ -330,11 +330,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
             </td>
             <td class="text-center" style="font-weight: bold; font-size: 8.5pt; color: #0F172A;">
               <?= number_format((float)($row['coefficient'] ?? 1.0), 1) ?>
-            </td>
-            <td class="text-center">
-              <span style="font-weight: bold; color: <?= (($row['statut_maquette'] ?? STATUTS::ACTIF) === STATUTS::ACTIF) ? '#15803D' : '#94A3B8' ?>;">
-                <?= ucfirst($row['statut_maquette'] ?? STATUTS::ACTIF) ?>
-              </span>
             </td>
           </tr>
         <?php endforeach; ?>
