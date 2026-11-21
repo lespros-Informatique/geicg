@@ -50,7 +50,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
     }
 }
 $directeur_etudes = $directeur_etudes ?? ($etablissement['nom_directeur_etudes'] ?? '');
-$titre_direction_pedagogique = !empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'LE DIRECTEUR DES ETUDES';
+$titre_direction_pedagogique = !empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '';
 $ville_signature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
 
 $hasNotes = !empty($totalCoefficients) && (float)$totalCoefficients > 0;
@@ -62,11 +62,18 @@ $dist_honneur = $hasNotes && ($moyVal >= 12 && $moyVal < 14);
 $sanc_avertissement = $hasNotes && ($moyVal < 10 && $moyVal >= 8);
 $sanc_blame = $hasNotes && ($moyVal < 8);
 
-$logoPath = !empty($etablissement['logo_etablissement']) ? __DIR__ . '/../../' . ltrim($etablissement['logo_etablissement'], '/') : '';
-if (empty($logoPath) || !file_exists($logoPath)) {
-    $logoPath = __DIR__ . '/../../public/assets/images/logo/logo_eicg.jpg';
-    if (!file_exists($logoPath)) {
-        $logoPath = __DIR__ . '/../../../public/assets/images/logo/logo_eicg.jpg';
+$logoPath = '';
+if (!empty($etablissement['logo_etablissement'])) {
+    $cleanLogoRel = preg_replace('#^public/#', '', ltrim($etablissement['logo_etablissement'], '/'));
+    foreach ([
+        __DIR__ . '/../../../public/' . $cleanLogoRel,
+        __DIR__ . '/../../../' . ltrim($etablissement['logo_etablissement'], '/'),
+        __DIR__ . '/../../' . ltrim($etablissement['logo_etablissement'], '/')
+    ] as $candLogo) {
+        if (file_exists($candLogo) && is_file($candLogo)) {
+            $logoPath = $candLogo;
+            break;
+        }
     }
 }
 
@@ -74,9 +81,11 @@ $defaultPlaceholder = placeholderPath('etudiant');
 
 $photoPath = '';
 if (!empty($photo_etudiant)) {
+    $cleanPhotoRel = preg_replace('#^public/#', '', ltrim($photo_etudiant, '/'));
     $cPaths = [
-        __DIR__ . '/../../public/' . ltrim($photo_etudiant, '/'),
-        __DIR__ . '/../../../public/' . ltrim($photo_etudiant, '/')
+        __DIR__ . '/../../../public/' . $cleanPhotoRel,
+        __DIR__ . '/../../../' . ltrim($photo_etudiant, '/'),
+        __DIR__ . '/../../public/' . $cleanPhotoRel
     ];
     foreach ($cPaths as $cp) {
         if (file_exists($cp) && is_file($cp)) {
@@ -202,15 +211,15 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
       line-height: 1.4;
     }
     .photo-box {
-      width: 96px;
-      height: 108px;
+      width: 120px;
+      height: 140px;
       border: 1px solid #000000;
       object-fit: cover;
       display: block;
     }
     .photo-placeholder {
-      width: 96px;
-      height: 108px;
+      width: 120px;
+      height: 140px;
       border: 1px solid #000000;
       background: #F1F5F9;
       text-align: center;

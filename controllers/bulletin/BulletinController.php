@@ -154,7 +154,7 @@ class BulletinController extends BaseController
 
         return [
             'annee_libelle' => $item['libelle_annee'] ?? '-',
-            'photo_etudiant' => $item['photo_etudiant'] ?? '',
+            'photo_etudiant' => !empty($item['photo_etudiant']) ? $item['photo_etudiant'] : ($item['photo_inscription'] ?? ''),
             'nom_prenom_etudiant' => $nomComplet ?: '-',
             'matricule_etudiant' => $item['matricule_etudiant'] ?? '-',
             'matricule_mesrs' => !empty($item['matricule_mesrs']) ? $item['matricule_mesrs'] : (!empty($item['matricule_menet']) ? $item['matricule_menet'] : ($item['matricule_etudiant'] ?? '-')),
