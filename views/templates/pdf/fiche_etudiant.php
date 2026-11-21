@@ -327,13 +327,14 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
         <td>Mention : <span class="val-bold"><?= htmlspecialchars($mention_n1 ?? 'Non évalué') ?></span></td>
       </tr>
       <tr>
-        <td colspan="3">Statut Redoublement N-1 : <span class="val-bold"><?= htmlspecialchars($est_redoublant ?? 'NON') ?></span></td>
+        <td>Code Inscription : <span class="val-bold" style="color:#1E3A5F;"><?= htmlspecialchars($code_inscription ?? '-') ?></span></td>
+        <td colspan="2">Statut Redoublement N-1 : <span class="val-bold"><?= htmlspecialchars($est_redoublant ?? 'NON') ?></span></td>
       </tr>
     </table>
 
     <!-- DÉCISION OFFICIELLE DU CONSEIL / JURY DE PASSAGE -->
     <div class="decision-banner">
-      DÉCISION DU JURY / CONSEIL DE PASSAGE : <?= htmlspecialchars(mb_strtoupper($decision_n1 ?? 'Autorisé(e) à se réinscrire')) ?>
+      DÉCISION DU JURY : <?= htmlspecialchars(mb_strtoupper($decision_n1 ?? 'Autorisé(e) à se réinscrire')) ?>
     </div>
   </div>
 
