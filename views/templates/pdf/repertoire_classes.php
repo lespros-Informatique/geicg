@@ -234,28 +234,35 @@ if (empty($etablissement) || !is_array($etablissement)) {
 
  
 
-    /* Bloc de Signature */
-    .signature-table {
-      width: 100%;
-      border-collapse: collapse;
+    /* Bloc de Signature (hors table pour que mPDF applique margin/padding sur les div) */
+    .signature-block {
+      width: 48%;
+      margin-left: auto;
       margin-top: 25px;
+      text-align: right;
     }
-  
     .signature-title {
       font-size: 8.7pt;
       font-weight: bold;
       color: #1E3A5F;
       text-transform: uppercase;
       text-align: right;
-      border-bottom: 0.5px solid #CBD5E1;
-      padding-bottom: 3px;
-      margin-bottom: 24px;
+      padding-bottom: 4px;
+      margin-bottom: 2px;
+    }
+    .signature-name {
+      font-weight: bold;
+      font-size: 8.5pt;
+      color: #1E293B;
+      text-align: right;
+      margin-top: 2px;
+      margin-bottom: 18px;
     }
     .signature-mention {
-      font-size: 7pt;
+      font-size: 7.5pt;
       font-style: italic;
       color: #64748B;
-      text-align: center;
+      text-align: right;
     }
   </style>
 </head>
@@ -399,16 +406,11 @@ if (empty($etablissement) || !is_array($etablissement)) {
   </table>
 
   <!-- BLOC DE SIGNATURES -->
-  <table class="signature-table">
-    <tr>
-      <td style="width: 52%;"></td>
-      <td style="text-align: right;">
-        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? '') ?></div>
-        <div style="font-weight: bold; font-size: 8pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px; text-align: center;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
-        <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
-      </td>
-    </tr>
-  </table>
+  <div class="signature-block">
+    <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? '') ?></div>
+    <div class="signature-name"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
+    <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
+  </div>
 
 </body>
 </html>
