@@ -71,9 +71,10 @@ class BulletinController extends BaseController
         $classeCode = !empty($_GET['classe_code']) ? trim($_GET['classe_code']) : null;
         $semestreCode = !empty($_GET['semestre_code']) ? trim($_GET['semestre_code']) : null;
         $statutNotes = !empty($_GET['statut_notes']) ? trim($_GET['statut_notes']) : null;
+        $matricule = !empty($_GET['matricule']) ? trim($_GET['matricule']) : null;
 
-        // Arrêt immédiat si aucune classe sélectionnée ou aucune année académique autorisée
-        if (empty($anneeCode) || empty($classeCode)) {
+        // Arrêt immédiat si ni classe ni matricule sélectionné, ou aucune année académique autorisée
+        if (empty($anneeCode) || (empty($classeCode) && empty($matricule))) {
             $this->json(['data' => []]);
             return;
         }
@@ -95,7 +96,8 @@ class BulletinController extends BaseController
             $classeCode,
             $semestreCode,
             $teacherClasses,
-            $statutNotes
+            $statutNotes,
+            $matricule
         );
 
         $data = [];
@@ -111,13 +113,14 @@ class BulletinController extends BaseController
                     $decision = 'Ajourné(e)';
                 }
             }
+            $rowSemCode = !empty($i['code_semestre']) ? $i['code_semestre'] : $semestreCode;
 
             $data[] = array_merge($i, [
                 'id' => $id,
                 'editId' => $idCrypte,
                 'moyenne_num' => $moy,
                 'decision' => $decision,
-                'semestre_code_selected' => $semestreCode
+                'semestre_code_selected' => $rowSemCode
             ]);
         }
         $this->json(['data' => $data]);

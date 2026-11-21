@@ -169,6 +169,28 @@ $canViewBulletins = isset($canViewBulletins) ? (bool)$canViewBulletins : true;
           </div>
 
         </div>
+
+        <!-- Ligne Recherche par Matricule Étudiant -->
+        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed #E2E8F0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;">
+          <div style="flex: 1; min-width: 260px;">
+            <label for="filter-matricule" style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="search" style="width: 14px; height: 14px; color: #1E3A5F;"></i> Matricule de l'Étudiant
+              <span style="font-size: 11px; font-weight: 600; color: #64748B;">(Recherche tous les bulletins de l'année sans modifier les cartes de statistiques)</span>
+            </label>
+            <div style="position: relative; display: flex; align-items: center;">
+              <i data-lucide="hash" style="width: 15px; height: 15px; color: #64748B; position: absolute; left: 12px; pointer-events: none;"></i>
+              <input type="text" id="filter-matricule" class="form-control" placeholder="Saisir le matricule de l'étudiant (ex: EICG-25-0321 ou matricule MESRS)..." style="padding-left: 36px; padding-right: 36px; height: 38px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; font-weight: 600; color: #0F172A; width: 100%;">
+              <button type="button" id="btn-clear-matricule" title="Effacer la recherche par matricule" style="display: none; position: absolute; right: 8px; background: #F1F5F9; border: none; color: #64748B; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center; cursor: pointer; padding: 0;">
+                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+              </button>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" id="btn-search-matricule" class="btn btn-primary" style="height: 38px; padding: 0 16px; border-radius: 8px; background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+              <i data-lucide="search" style="width: 15px; height: 15px;"></i> Rechercher
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Alerte Invitation Sélection Classe -->

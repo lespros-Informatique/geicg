@@ -30,13 +30,17 @@ class ModelBulletin extends BaseModel
         ?string $classeCode = null,
         ?string $semestreCode = null,
         ?array $teacherClasses = null,
-        ?string $statutNotes = null
+        ?string $statutNotes = null,
+        ?string $matricule = null
     ): array {
         if (empty($anneeCode)) {
             return [];
         }
 
         try {
+            $matricule = $matricule !== null ? trim($matricule) : '';
+            $isMatriculeSearch = ($matricule !== '');
+
             $subParams = [];
             $subWhere = [
                 "n.statut_note = '" . STATUTS::ACTIF . "'",
@@ -51,6 +55,73 @@ class ModelBulletin extends BaseModel
             }
 
             $subWhereSql = implode(" AND ", $subWhere);
+
+            if ($isMatriculeSearch) {
+                // Lors d'une recherche par matricule, on récupère les bulletins par semestre pour l'année académique
+                $semJoinCond = "s.annee_code = v.annee_code";
+                $semJoinParams = [];
+                if (!empty($semestreCode)) {
+                    $semJoinCond .= " AND s.code_semestre = ?";
+                    $semJoinParams[] = $semestreCode;
+                }
+
+                $sql = "SELECT v.*,
+                               s.code_semestre,
+                               s.libelle_semestre,
+                               s.statut_semestre,
+                               COALESCE(n_cnt.nb_notes, 0) AS nb_notes,
+                               n_cnt.moyenne_semestre
+                        FROM " . VIEWS::BULLETIN_INSCRIPTIONS_SYNTHESE . " v
+                        LEFT JOIN " . TABLES::SEMESTRES . " s ON ({$semJoinCond})
+                        LEFT JOIN (
+                            SELECT 
+                                n.inscription_code,
+                                comp.semestre_code,
+                                COUNT(DISTINCT n.id_note) AS nb_notes,
+                                ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moyenne_semestre
+                            FROM " . TABLES::NOTES . " n
+                            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+                            WHERE {$subWhereSql}
+                            GROUP BY n.inscription_code, comp.semestre_code
+                        ) n_cnt ON n_cnt.inscription_code = v.code_inscription
+                               AND (s.code_semestre IS NULL OR n_cnt.semestre_code = s.code_semestre)";
+
+                $conditions = [
+                    "(v.statut_inscription != '" . STATUTS::ANNULE . "' OR v.statut_inscription IS NULL)",
+                    "v.annee_code = ?",
+                    "(v.matricule_etudiant LIKE ? OR v.matricule_mesrs LIKE ? OR v.matricule_menet LIKE ? OR v.code_etudiant LIKE ?)"
+                ];
+                $likeMat = '%' . $matricule . '%';
+                $params = array_merge($semJoinParams, $subParams, [$anneeCode, $likeMat, $likeMat, $likeMat, $likeMat]);
+
+                if (!empty($teacherClasses)) {
+                    $inClasses = implode(',', array_fill(0, count($teacherClasses), '?'));
+                    $conditions[] = "v.classe_code IN ($inClasses)";
+                    foreach ($teacherClasses as $tc) {
+                        $params[] = $tc;
+                    }
+                }
+
+                $sql .= " WHERE " . implode(" AND ", $conditions);
+                $sql .= " ORDER BY v.etudiant_nom ASC, s.id_semestre ASC";
+
+                $stmt = $this->getCon()->prepare($sql);
+                $stmt->execute($params);
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                // Affiner la moyenne semestrielle avec la pondération exacte de la maquette pédagogique
+                foreach ($rows as &$r) {
+                    if ((int)($r['nb_notes'] ?? 0) > 0 && !empty($r['id_inscription']) && !empty($r['code_semestre'])) {
+                        $calc = $this->calculateBulletinData((int)$r['id_inscription'], $r['code_semestre']);
+                        if ($calc && isset($calc['moyenneGenerale'])) {
+                            $r['moyenne_semestre'] = $calc['moyenneGenerale'];
+                        }
+                    }
+                }
+                unset($r);
+
+                return $rows;
+            }
 
             $sql = "SELECT v.*, 
                            COALESCE(n_cnt.nb_notes, 0) AS nb_notes,
