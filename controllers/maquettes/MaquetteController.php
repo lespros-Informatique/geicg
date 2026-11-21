@@ -100,14 +100,14 @@ class MaquetteController extends BaseController
         if (!empty($filiereCode)) {
             $fModel = new ModelFiliere();
             $fObj = $fModel->getByCode($filiereCode);
-            $filiereLibelle = $fObj['libelle_filiere'] ?? $filiereCode;
+            $filiereLibelle = $fObj['libelle_filiere'] ?? ($items[0]['libelle_filiere'] ?? $filiereCode);
         }
 
         $niveauLibelle = 'Tous les niveaux';
         if (!empty($niveauCode)) {
             $nModel = new ModelNiveau();
-            $nObj = $nModel->getByCode($niveauCode);
-            $niveauLibelle = $nObj['libelle_niveau'] ?? $niveauCode;
+            $nObj = $nModel->getByCode($niveauCode, 'code_niveau');
+            $niveauLibelle = $nObj['libelle_niveau'] ?? ($items[0]['libelle_niveau'] ?? $niveauCode);
         }
 
         $editeurNom = Auth::fullName();

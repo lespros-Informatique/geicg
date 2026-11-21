@@ -95,7 +95,7 @@ abstract class BaseModel
                     $base = substr($base, 0, -3) . 'y';
                 } elseif (substr($base, -2) === 'es' && strlen($base) > 2) {
                     $base = substr($base, 0, -1);
-                } elseif (substr($base, -1) === 's' && strlen($base) > 1) {
+                } elseif ((substr($base, -1) === 's' || substr($base, -1) === 'x') && strlen($base) > 1) {
                     $base = substr($base, 0, -1);
                 }
                 $codeField = "code_{$base}";

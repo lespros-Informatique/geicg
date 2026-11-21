@@ -299,7 +299,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       <thead>
         <tr>
           <th style="width: 24px;" class="text-center">#</th>
-          <th>Matière à Enseigner</th>
+          <th>Matière</th>
           <th style="width: 140px;">Filière</th>
           <th style="width: 80px;">Niveau</th>
           <th style="width: 120px;" class="text-center">Catégorie Bulletin</th>
@@ -313,13 +313,13 @@ if (empty($etablissement) || !is_array($etablissement)) {
             <td class="text-center" style="font-weight: bold; color: #64748B;"><?= $idx + 1 ?></td>
             <td>
               <strong style="color: #0F172A; font-size: 8.2pt;"><?= htmlspecialchars($row['libelle_matiere'] ?? $row['matiere_code']) ?></strong>
-              <div style="font-size: 6.8pt; color: #64748B;">Code: <?= htmlspecialchars($row['matiere_code']) ?></div>
+              
             </td>
             <td>
-              <strong style="color: #1E3A5F;"><?= htmlspecialchars($row['libelle_filiere'] ?? $row['filiere_code']) ?></strong>
+              <strong style="color: #0F172A;"><?= htmlspecialchars($row['libelle_filiere'] ?? $row['filiere_code']) ?></strong>
             </td>
             <td>
-              <span style="font-weight: bold; color: #475569;"><?= htmlspecialchars($row['libelle_niveau'] ?? $row['niveau_code']) ?></span>
+              <span style="color: #475569;"><?= htmlspecialchars($row['libelle_niveau'] ?? $row['niveau_code']) ?></span>
             </td>
             <td class="text-center">
               <?php if ($isGen): ?>
