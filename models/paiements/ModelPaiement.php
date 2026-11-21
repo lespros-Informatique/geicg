@@ -1619,10 +1619,8 @@ class ModelPaiement extends BaseModel
 
         $numRecuCode = !empty($pRow['recu_numero_paiement']) ? $pRow['recu_numero_paiement'] : (!empty($pRow['code_paiement']) ? $pRow['code_paiement'] : 'GE-' . sprintf('%08d', $pRow['id_paiement']));
 
-        $refSeed = !empty($pRow['code_paiement']) ? $pRow['code_paiement'] : $numRecuCode;
-        $refCaissHash1 = sprintf("%05d", abs(crc32($refSeed . '_sco')) % 90000 + 10000);
-        $refCaissHash2 = sprintf("%010d", abs(crc32($refSeed . '_cais')) % 9000000000 + 1000000000);
-        $refCaiss = !empty($pRow['reference_paiement']) ? $pRow['reference_paiement'] : ($numRecuCode . 'ScoFOF' . $refCaissHash1 . ',' . $refCaissHash2 . 'ScaisKON');
+        $refCaiss = !empty($pRow['session_caisse_code']) ? $pRow['session_caisse_code'] : ($pRow['reference_paiement'] ?? '');
+        $codeBarreVal = !empty($pRow['code_paiement']) ? $pRow['code_paiement'] : $numRecuCode;
 
         $filiereNiveau = (!empty($pRow['libelle_filiere']) && !empty($pRow['libelle_niveau'])) 
             ? ($pRow['libelle_filiere'] . ' - ' . $pRow['libelle_niveau']) 
@@ -1688,7 +1686,7 @@ class ModelPaiement extends BaseModel
             'caissier_nom' => $caissierNom,
             'date_impression' => date('d/m/Y H:i:s'),
             'ref_caiss' => $refCaiss,
-            'code_barre_val' => $refCaiss,
+            'code_barre_val' => $codeBarreVal,
             'num_versement' => $isFAOp ? ($numVersementFA > 0 ? $numVersementFA : 1) : ($numVersementScolarite > 0 ? $numVersementScolarite : $numVersement),
             'num_versement_scolarite' => $numVersementScolarite,
             'num_versement_fa' => $numVersementFA > 0 ? $numVersementFA : 1

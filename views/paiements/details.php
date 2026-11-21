@@ -78,16 +78,13 @@ if ($isFirstPayment) {
 
 $montantEnLettres = Validator::numberToWordsFCFA($montantOpAfficher);
 
-$refSeed = !empty($item['code_paiement']) ? $item['code_paiement'] : $numRecu;
-$refCaissHash1 = sprintf("%05d", abs(crc32($refSeed . '_sco')) % 90000 + 10000);
-$refCaissHash2 = sprintf("%010d", abs(crc32($refSeed . '_cais')) % 9000000000 + 1000000000);
-$refCaiss = !empty($item['reference_paiement']) 
-    ? $item['reference_paiement'] 
-    : ($numRecu . 'ScoFOF' . $refCaissHash1 . ',' . $refCaissHash2 . 'ScaisKON');
+$refCaiss = !empty($item['session_caisse_code']) 
+    ? $item['session_caisse_code'] 
+    : ($item['reference_paiement'] ?? '');
 
-$barcodeCode = !empty($item['recu_numero_paiement']) 
-    ? $item['recu_numero_paiement'] 
-    : (!empty($item['code_paiement']) ? $item['code_paiement'] : $numRecu);
+$barcodeCode = !empty($item['code_paiement']) 
+    ? $item['code_paiement'] 
+    : (!empty($item['recu_numero_paiement']) ? $item['recu_numero_paiement'] : $numRecu);
 
 // Résolution robuste de la photo de l'étudiant
 $studentPhotoUrl = '';

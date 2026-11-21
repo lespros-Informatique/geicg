@@ -74,6 +74,7 @@ $reste_a_payer = (float)($reste_a_payer ?? 0);
 $caissier_nom = $caissier_nom ?? '';
 $date_impression = $date_impression ?? date('d/m/Y H:i:s');
 $code_barre_val = $code_barre_val ?? $numero_recu;
+$ref_caiss = $ref_caiss ?? ($paiement['session_caisse_code'] ?? '');
 
 // Montants lignes du tableau
 $premiere_tranche = (float)($premiere_tranche ?? 0);
@@ -539,7 +540,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     <!-- DIVISEUR POINTILLÉ ENTRE LES DEUX PARTIES -->
     <div class="dashed-divider-zone">
       <div class="dashed-line"></div>
-      <div class="ref-caiss-text">Réf_caiss <?= htmlspecialchars($code_barre_val) ?></div>
+      <div class="ref-caiss-text">Réf_caiss <?= htmlspecialchars($ref_caiss) ?></div>
     </div>
 
     <!-- ========================================================================= -->
@@ -609,7 +610,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     <table class="notice-row-table" style="margin-top: 8px; margin-bottom: 0;">
       <tr>
         <td style="font-family: monospace; font-weight: bold; font-size: 8pt; font-style: normal;">
-          <?= htmlspecialchars($code_barre_val) ?>
+          Réf_caiss <?= htmlspecialchars($ref_caiss) ?>
         </td>
         <td style="text-align: right; font-weight: bold; font-size: 8pt; font-style: normal;">
           <?= htmlspecialchars($date_impression) ?>
