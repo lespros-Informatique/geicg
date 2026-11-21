@@ -90,33 +90,36 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
 
     /* Bannières Titres */
     .banner-title {
-      background: #A6A6A6;
+      background-color: #999999;
       color: #000000;
-      font-size: 15px;
-      font-weight: bold;
       text-align: center;
-      padding: 4px;
-      margin-top: 4px;
-      margin-bottom: 4px;
+      padding: 6px 0;
+      margin: 10px 0 15px 0;
+      font-weight: bold;
+      font-size: 16.5pt;
+      font-family: 'arial bold';
+      letter-spacing: 1.2px;
       text-transform: uppercase;
     }
     .banner-copy {
-      background: #A6A6A6;
+      background-color: #999999;
       color: #000000;
-      font-size: 13.5px;
-      font-weight: bold;
       text-align: center;
-      padding: 3px;
-      margin-top: 12px;
-      margin-bottom: 4px;
+      padding: 6px 0;
+      margin: 10px 0 15px 0;
+      font-weight: bold;
+      font-size: 12.5pt;
+      font-family: 'arial bold';
+      letter-spacing: 1.2px;
       text-transform: uppercase;
     }
 
     .annee-header {
-      font-size: 13px;
+       text-align: center;
       font-weight: bold;
-      text-align: center;
-      margin-bottom: 6px;
+      font-size: 10.5pt;
+      margin-bottom: 8px;
+      color: #000000;
     }
 
     /* Grille d'Infos Étudiant */
@@ -149,7 +152,7 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
     /* Zone Solde & Code-barres / Caissier (hors table pour mPDF) */
     .bottom-status-row {
       width: 100%;
-      margin-top: 8px;
+      margin-top: 35px;
       margin-bottom: 6px;
     }
     .bottom-status-left {
@@ -191,11 +194,12 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       border-collapse: collapse;
       margin-top: 4px;
       margin-bottom: 6px;
+      
     }
     .fin-table th, .fin-table td {
       border: 1px solid #000000;
       padding: 3px 5px;
-      font-size: 10px;
+      font-size: 9.5pt;
     }
     .fin-table th {
       background: #FFFFFF;
@@ -241,13 +245,16 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       text-align: center;
     }
     .warning-box {
-      background: #FFFF00;
+     
+
+      background-color: #e4e42cff;
       border: 1px solid #000000;
-      padding: 4px 8px;
+      padding: 3px 6px;
       font-weight: bold;
-      font-size: 9.5px;
-      margin-top: 6px;
-      margin-bottom: 6px;
+      font-size: 8.5pt;
+      font-style: italic;
+      color: #000000;
+      margin: 8px 0 8px 0;
     }
 
     /* Gray boxes for copy section */
@@ -264,8 +271,10 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
 
     /* Footer & Signatures */
     .footer-note {
-      font-size: 9.5px;
-      margin-top: 4px;
+      font-size: 8.5pt;
+      color: #000000;
+      font-style: italic;
+      margin-bottom: 20px;
     }
     .signature-area {
       text-align: right;
@@ -291,8 +300,10 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       margin-bottom: 6px;
     }
     .ref-caiss {
-      font-size: 9px;
+      font-size: 10.5pt;
       font-style: italic;
+      text-align: center;
+      margin-top: 15px;
     }
   </style>
 </head>
@@ -306,7 +317,7 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
     $showHeaderDivider = false;
     include __DIR__ . '/components/header_institution.php'; 
   ?>
-
+<hr>
   <!-- BANNIÈRE 1 : REÇU DE VERSEMENT -->
   <div class="banner-title">REÇU DE VERSEMENT</div>
   <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
@@ -358,7 +369,7 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       </td>
     </tr>
   </table>
-
+<br>
   <!-- TABLEAU FINANCIER DÉTAILLÉ -->
   <table class="fin-table">
     <thead>
@@ -462,7 +473,7 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
     $numVersementText = isset($num_versement) ? ($num_versement . ($num_versement == 1 ? 'er' : 'ème')) : '1er';
   ?>
   <div class="banner-copy">COPIE REÇU DU <?= htmlspecialchars($numVersementText) ?> VERSEMENT POUR ARCHIVAGE</div>
-  <div class="annee-header" style="font-size: 11.5px; margin-bottom: 4px;">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
+  <div class="annee-header">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle ?? '-') ?></div>
 
   <table class="info-table">
     <tr>
@@ -525,12 +536,6 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
     <div style="clear: both;"></div>
   </div>
 
-  <table style="width: 100%; font-size: 9px; margin-top: 10px;">
-    <tr>
-      <td style="width: 70%; font-style: italic;"><?= !empty($ref_caiss) ? ('Réf_caiss ' . htmlspecialchars($ref_caiss)) : '' ?></td>
-      <td style="width: 30%; text-align: right;"><?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></td>
-    </tr>
-  </table>
 
 </div>
 

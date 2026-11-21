@@ -110,10 +110,19 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
       padding: 0;
     }
 
-    /* Cadre englobant conforme au modèle */
-    .page-container {
+    /* Cadre pleine page A4 natif mPDF (position:fixed relatif à la zone de marge @page 6mm/7mm) */
+    .page-border {
+      position: fixed;
+      top: 0mm;
+      left: 0mm;
+      width: 196mm;
+      height: 284mm;
       border: 1.5px solid #000000;
-      padding: 6px 8px 6px 8px;
+    }
+
+    /* Conteneur interne */
+    .page-container {
+      padding: 8px 10px 8px 10px;
       box-sizing: border-box;
     }
 
@@ -379,6 +388,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
   </style>
 </head>
 <body>
+  <div class="page-border"></div>
 <?php endif; ?>
 
 <div class="page-container">
