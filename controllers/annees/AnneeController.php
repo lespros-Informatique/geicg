@@ -88,9 +88,9 @@ class AnneeController extends BaseController
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
         $data['annee_code'] = $anneeCode;
-        $data['coef_semestre1'] = isset($data['coef_semestre1']) && $data['coef_semestre1'] !== '' ? (float)$data['coef_semestre1'] : 0.40;
-        $data['coef_semestre2'] = isset($data['coef_semestre2']) && $data['coef_semestre2'] !== '' ? (float)$data['coef_semestre2'] : 0.40;
-        $data['coef_examen'] = isset($data['coef_examen']) && $data['coef_examen'] !== '' ? (float)$data['coef_examen'] : 0.20;
+        $data['coef_semestre1'] = isset($data['coef_semestre1']) && $data['coef_semestre1'] !== '' ? max(1, (int)$data['coef_semestre1']) : 2;
+        $data['coef_semestre2'] = isset($data['coef_semestre2']) && $data['coef_semestre2'] !== '' ? max(1, (int)$data['coef_semestre2']) : 2;
+        $data['coef_examen'] = isset($data['coef_examen']) && $data['coef_examen'] !== '' ? max(1, (int)$data['coef_examen']) : 1;
         
         $filteredData = $this->model->filterData($data);
         $libelle = $data['libelle_annee'] ?? '';
@@ -131,13 +131,13 @@ class AnneeController extends BaseController
         $data = $_POST;
         unset($data['csrf_token']);
         if (isset($data['coef_semestre1']) && $data['coef_semestre1'] !== '') {
-            $data['coef_semestre1'] = (float)$data['coef_semestre1'];
+            $data['coef_semestre1'] = max(1, (int)$data['coef_semestre1']);
         }
         if (isset($data['coef_semestre2']) && $data['coef_semestre2'] !== '') {
-            $data['coef_semestre2'] = (float)$data['coef_semestre2'];
+            $data['coef_semestre2'] = max(1, (int)$data['coef_semestre2']);
         }
         if (isset($data['coef_examen']) && $data['coef_examen'] !== '') {
-            $data['coef_examen'] = (float)$data['coef_examen'];
+            $data['coef_examen'] = max(1, (int)$data['coef_examen']);
         }
         if (!empty($data['libelle_annee'])) {
             if (!$this->checkUnique('annees', 'libelle_annee', $data['libelle_annee'], 'Annee academique', 'id_annee', $id)) return;

@@ -242,18 +242,18 @@ class ModelBulletin extends BaseModel
         $estPremiereAnnee = $this->isPremiereAnnee($item['slug_niveau'] ?? '', $item['libelle_niveau'] ?? '');
         $estDeuxiemeSemestre = $this->isDeuxiemeSemestre((string)$selectedSemestreCode, $semestres);
 
-        // Récupération des coefficients historiques de l'année académique dans la table annees
-        $coefSem1 = 0.40;
-        $coefSem2 = 0.40;
-        $coefExam = 0.20;
+        // Récupération des coefficients historiques (entiers) de l'année académique dans la table annees
+        $coefSem1 = 2;
+        $coefSem2 = 2;
+        $coefExam = 1;
         if (!empty($item['annee_code'])) {
             $stmtAnnee = $db->prepare("SELECT coef_semestre1, coef_semestre2, coef_examen FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtAnnee->execute([$item['annee_code']]);
             $anneeRow = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
             if ($anneeRow) {
-                $coefSem1 = (float)($anneeRow['coef_semestre1'] ?? 0.40);
-                $coefSem2 = (float)($anneeRow['coef_semestre2'] ?? 0.40);
-                $coefExam = (float)($anneeRow['coef_examen'] ?? 0.20);
+                $coefSem1 = max(1, (int)round((float)($anneeRow['coef_semestre1'] ?? 2)));
+                $coefSem2 = max(1, (int)round((float)($anneeRow['coef_semestre2'] ?? 2)));
+                $coefExam = max(1, (int)round((float)($anneeRow['coef_examen'] ?? 1)));
             }
         }
 
@@ -657,13 +657,19 @@ class ModelBulletin extends BaseModel
                     $moyExam = $mEx;
                 }
 
-                // Formules officielles du cahier des charges :
-                // 1ère année : ((moy semestre 1 * coeff) + (moy semestre 2 * coeff) + (moy examen * coeff))
-                // 2ème année : ((moy semestre 1 * coeff) + (moy semestre 2 * coeff))
+                // Formules officielles du cahier des charges (coefficients entiers : somme pondérée / somme des coefficients) :
+                // 1ère année : ((moy semestre 1 * coeff) + (moy semestre 2 * coeff) + (moy examen * coeff)) / (coef_sem1 + coef_sem2 + coef_exam)
+                // 2ème année : ((moy semestre 1 * coeff) + (moy semestre 2 * coeff)) / (coef_sem1 + coef_sem2)
                 if ($estPremiereAnnee) {
-                    $moyAnn = round(((float)($mS1 ?? 0) * $coefSem1) + ((float)($mS2 ?? 0) * $coefSem2) + ((float)($mEx ?? 0) * $coefExam), 2);
+                    $totalCoefAnn = $coefSem1 + $coefSem2 + $coefExam;
+                    $moyAnn = $totalCoefAnn > 0
+                        ? round((((float)($mS1 ?? 0) * $coefSem1) + ((float)($mS2 ?? 0) * $coefSem2) + ((float)($mEx ?? 0) * $coefExam)) / $totalCoefAnn, 2)
+                        : 0.0;
                 } else {
-                    $moyAnn = round(((float)($mS1 ?? 0) * $coefSem1) + ((float)($mS2 ?? 0) * $coefSem2), 2);
+                    $totalCoefAnn = $coefSem1 + $coefSem2;
+                    $moyAnn = $totalCoefAnn > 0
+                        ? round((((float)($mS1 ?? 0) * $coefSem1) + ((float)($mS2 ?? 0) * $coefSem2)) / $totalCoefAnn, 2)
+                        : 0.0;
                 }
 
                 $classeMoyennesAnnuelles[$insc] = $moyAnn;

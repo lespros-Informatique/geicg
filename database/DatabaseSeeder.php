@@ -666,17 +666,17 @@ class DatabaseSeeder
                 SET statut_annee = ?,
                     date_debut_annee = ?,
                     date_fin_annee = ?,
-                    coef_semestre1 = COALESCE(coef_semestre1, 0.40),
-                    coef_semestre2 = COALESCE(coef_semestre2, 0.40),
-                    coef_examen = COALESCE(coef_examen, 0.20),
+                    coef_semestre1 = COALESCE(NULLIF(coef_semestre1, 0), 2),
+                    coef_semestre2 = COALESCE(NULLIF(coef_semestre2, 0), 2),
+                    coef_examen = COALESCE(NULLIF(coef_examen, 0), 1),
                     updated_at_annee = NOW()
                 WHERE id_annee = ?
             ");
             $upd->execute([$status, $debut, $fin, $row['id_annee']]);
             $row['statut_annee']   = $status;
-            $row['coef_semestre1'] = (float)($row['coef_semestre1'] ?? 0.40);
-            $row['coef_semestre2'] = (float)($row['coef_semestre2'] ?? 0.40);
-            $row['coef_examen']    = (float)($row['coef_examen'] ?? 0.20);
+            $row['coef_semestre1'] = (int)($row['coef_semestre1'] ?? 2);
+            $row['coef_semestre2'] = (int)($row['coef_semestre2'] ?? 2);
+            $row['coef_examen']    = (int)($row['coef_examen'] ?? 1);
             return $row;
         }
 
@@ -686,7 +686,7 @@ class DatabaseSeeder
                 libelle_annee, date_debut_annee, date_fin_annee, code_annee,
                 etablissement_code, created_at_annee, statut_annee, user_code,
                 coef_semestre1, coef_semestre2, coef_examen
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.40, 0.40, 0.20)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 2, 2, 1)
         ");
         $ins->execute([$yearLabel, $debut, $fin, $code, $this->etabCode, "{$startYear}-09-01 08:00:00", $status, $this->adminCode]);
         $this->inc('annees');
@@ -698,9 +698,9 @@ class DatabaseSeeder
             'statut_annee'     => $status,
             'date_debut_annee' => $debut,
             'date_fin_annee'   => $fin,
-            'coef_semestre1'   => 0.40,
-            'coef_semestre2'   => 0.40,
-            'coef_examen'      => 0.20,
+            'coef_semestre1'   => 2,
+            'coef_semestre2'   => 2,
+            'coef_examen'      => 1,
         ];
     }
 

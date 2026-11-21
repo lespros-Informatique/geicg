@@ -93,19 +93,19 @@
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px;">
               Coef. Semestre 1 <span style="color: #EF4444;">*</span>
             </label>
-            <input type="number" step="0.01" min="0" name="coef_semestre1" id="annee_coef_s1" required value="0.40" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
+            <input type="number" step="1" min="1" name="coef_semestre1" id="annee_coef_s1" required value="2" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
           </div>
           <div class="form-group">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px;">
               Coef. Semestre 2 <span style="color: #EF4444;">*</span>
             </label>
-            <input type="number" step="0.01" min="0" name="coef_semestre2" id="annee_coef_s2" required value="0.40" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
+            <input type="number" step="1" min="1" name="coef_semestre2" id="annee_coef_s2" required value="2" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
           </div>
           <div class="form-group">
             <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px;">
               Coef. Examen (1A) <span style="color: #EF4444;">*</span>
             </label>
-            <input type="number" step="0.01" min="0" name="coef_examen" id="annee_coef_exam" required value="0.20" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
+            <input type="number" step="1" min="1" name="coef_examen" id="annee_coef_exam" required value="1" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
           </div>
         </div>
       </div>
