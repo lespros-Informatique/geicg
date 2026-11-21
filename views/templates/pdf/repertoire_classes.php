@@ -319,7 +319,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <tr>
       <td>
         <div class="banner-title">RÉPERTOIRE GÉNÉRAL DES CLASSES</div>
-        <div class="banner-sub">NOMENCLATURE DES CLASSES & GROUPES PÉDAGOGIQUES D'ÉTUDIANTS</div>
       </td>
     </tr>
   </table>
@@ -329,7 +328,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <tr>
       <td style="width: 33%;">
         <span class="meta-label">Année Académique :</span> 
-        <span class="meta-value" style="color: #0369A1; font-size: 9.5pt;"><?= htmlspecialchars($annee_libelle ?? 'Active') ?></span>
+        <span class="meta-value" style="color: #0369A1; font-size: 9.5pt;"><?= htmlspecialchars($annee_libelle ?? '-') ?></span>
       </td>
       <td style="width: 34%;">
         <span class="meta-label">Date d'édition :</span> 
@@ -337,21 +336,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       </td>
       <td style="width: 33%;">
         <span class="meta-label">Édité par :</span> 
-        <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? 'Direction des Études') ?></span>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <span class="meta-label">Établissement :</span> 
-        <span class="meta-value"><?= htmlspecialchars(!empty($etablissement['sigle_etablissement']) ? $etablissement['sigle_etablissement'] : 'GROUPE EICG') ?></span>
-      </td>
-      <td>
-        <span class="meta-label">Nombre de Classes :</span> 
-        <span class="meta-value" style="color: #1E3A5F; font-size: 9.5pt;"><?= (int)count($classes) ?> classe(s)</span>
-      </td>
-      <td>
-        <span class="meta-label">Statut du Registre :</span> 
-        <span class="meta-value" style="color: #15803D;">Vérifié & Actif</span>
+        <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? '-') ?></span>
       </td>
     </tr>
   </table>
@@ -360,35 +345,20 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <?php
     $totalCount = count($classes);
     $totalCapacite = 0;
-    $activesCount = 0;
     foreach ($classes as $c) {
       $totalCapacite += (int)($c['capacite_max_classe'] ?? 0);
-      if (($c['statut_classe'] ?? 'actif') === 'actif') {
-        $activesCount++;
-      }
     }
   ?>
   <table class="kpi-table">
     <tr>
-      <td class="kpi-cell" style="width: 33.3%;">
+      <td class="kpi-cell" style="width: 50%;">
         <div class="kpi-num"><?= $totalCount ?></div>
         <div class="kpi-text">Total Classes</div>
       </td>
-      <td class="kpi-cell" style="width: 33.3%;">
+      <td class="kpi-cell" style="width: 50%;">
         <div class="kpi-num" style="color: #0369A1;"><?= $totalCapacite ?></div>
         <div class="kpi-text">Capacité Globale d'Accueil (Places)</div>
       </td>
-      <td class="kpi-cell" style="width: 33.3%;">
-        <div class="kpi-num" style="color: #15803D;"><?= $activesCount ?></div>
-        <div class="kpi-text">Classes Opérationnelles (Actives)</div>
-      </td>
-    </tr>
-  </table>
-
-  <!-- SECTION : TABLEAU DES CLASSES -->
-  <table class="section-header-table">
-    <tr>
-      <td>1. Nomenclature des Classes de Formation</td>
     </tr>
   </table>
 
@@ -456,16 +426,11 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <!-- BLOC DE SIGNATURES -->
   <table class="signature-table">
     <tr>
+      <td style="width: 52%;"></td>
       <td class="signature-box">
-        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'La Direction des Études & Pédagogie') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
-        <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?></div>
-      </td>
-      <td style="width: 4%;"></td>
-      <td class="signature-box">
-        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'La Direction Générale') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? 'La Direction Générale') ?></div>
-        <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?></div>
+        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? '') ?></div>
+        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px; text-align: center;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
+        <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
       </td>
     </tr>
   </table>
