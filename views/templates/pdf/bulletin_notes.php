@@ -110,19 +110,9 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
       padding: 0;
     }
 
-    /* Cadre pleine page A4 natif mPDF (enfant direct de body) */
-    .page-border {
-      position: fixed;
-      top: 0mm;
-      left: 0mm;
-      width: 196mm;
-      height: 283mm;
-      border: 2px solid #000000;
-    }
-
-    /* Conteneur interne */
+    /* Conteneur interne (sans bordure de page) */
     .page-container {
-      padding: 8px 10px 8px 10px;
+      padding: 6px 8px 6px 8px;
       box-sizing: border-box;
     }
 
@@ -395,7 +385,6 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
 <body>
 <?php endif; ?>
 
-<div class="page-border"></div>
 <div class="page-container">
 
   <!-- 1. EN-TÊTE OFFICIEL UNIFIÉ GEICG -->
