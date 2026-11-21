@@ -11,7 +11,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Répertoire des Classes - GEICG</title>
+  <title>Liste des Classes - GEICG</title>
   <style>
     @page {
       margin-top: 8mm;
@@ -73,17 +73,17 @@ if (empty($etablissement) || !is_array($etablissement)) {
       padding: 5px 8px;
       text-align: center;
       color: #FFFFFF;
+      height: 40px;
     }
     .banner-title {
-      font-size: 11pt;
+      font-size: 14pt;
       font-weight: bold;
       letter-spacing: 0.8px;
       text-transform: uppercase;
     }
     .banner-sub {
-      font-size: 7.5pt;
+      font-size: 9.5pt;
       color: #E2E8F0;
-      margin-top: 1px;
     }
 
     /* Cartouche Métadonnées */
@@ -95,10 +95,11 @@ if (empty($etablissement) || !is_array($etablissement)) {
       background-color: #F8FAFC;
     }
     .meta-box-table td {
-      padding: 3.5px 6px;
-      font-size: 8pt;
+      padding: 2.5px 6px;
+      font-size: 9pt;
       vertical-align: middle;
       border: 0.5px solid #E2E8F0;
+      height: 50px;
     }
     .meta-label {
       font-weight: bold;
@@ -113,7 +114,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
     .kpi-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 6px;
+      margin-bottom: 15px;
     }
     .kpi-cell {
       padding: 3px 6px;
@@ -123,12 +124,12 @@ if (empty($etablissement) || !is_array($etablissement)) {
       border-radius: 4px;
     }
     .kpi-num {
-      font-size: 10.5pt;
+      font-size: 11pt;
       font-weight: bold;
       color: #1E3A5F;
     }
     .kpi-text {
-      font-size: 6.8pt;
+      font-size: 8.8pt;
       color: #475569;
       text-transform: uppercase;
       font-weight: bold;
@@ -160,21 +161,23 @@ if (empty($etablissement) || !is_array($etablissement)) {
       margin-bottom: 25px;
     }
     .data-table th {
-      background-color: #1E3A5F;
-      color: #FFFFFF;
-      font-size: 7.5pt;
+      background-color: #D0D3D6F9;
+      color: #0E0E0E;
+      font-size: 9pt;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.4px;
       padding: 4px 6px;
       border: 0.5px solid #1E3A5F;
       text-align: left;
+      height: 42px;
     }
     .data-table td {
       padding: 4px 6px;
-      font-size: 8pt;
+      font-size: 9pt;
       border: 0.5px solid #CBD5E1;
       vertical-align: middle;
+      height: 45px;
     }
     .row-even {
       background-color: #FFFFFF;
@@ -202,55 +205,34 @@ if (empty($etablissement) || !is_array($etablissement)) {
       letter-spacing: 0.3px;
     }
     .badge-cycle {
-      color: #047857;
+      color: #424242;
       font-weight: bold;
-      font-size: 7pt;
-      background-color: #D1FAE5;
-      border: 0.5px solid #A7F3D0;
+      font-size: 10pt;
       padding: 1px 5px;
       border-radius: 3px;
       display: inline-block;
     }
     .badge-filiere {
-      color: #1E3A5F;
+      color: #28292A;
       font-weight: 600;
-      font-size: 7.5pt;
+      font-size: 9pt;
     }
     .badge-niveau {
       color: #64748B;
-      font-size: 7.5pt;
+      font-size: 9.5pt;
       font-weight: bold;
     }
     .badge-capacite {
-      color: #1E3A5F;
+      color: #2F2F2F;
       font-weight: bold;
-      font-size: 7.5pt;
       background-color: #EFF6FF;
       border: 0.5px solid #BFDBFE;
       padding: 1.5px 6px;
       border-radius: 3px;
       display: inline-block;
     }
-    .badge-statut-actif {
-      color: #15803D;
-      font-weight: bold;
-      font-size: 7.5pt;
-      background-color: #DCFCE7;
-      border: 0.5px solid #86EFAC;
-      padding: 1.5px 6px;
-      border-radius: 3px;
-      display: inline-block;
-    }
-    .badge-statut-inactif {
-      color: #B91C1C;
-      font-weight: bold;
-      font-size: 7.5pt;
-      background-color: #FEE2E2;
-      border: 0.5px solid #FCA5A5;
-      padding: 1.5px 6px;
-      border-radius: 3px;
-      display: inline-block;
-    }
+
+ 
 
     /* Bloc de Signature */
     .signature-table {
@@ -258,19 +240,13 @@ if (empty($etablissement) || !is_array($etablissement)) {
       border-collapse: collapse;
       margin-top: 25px;
     }
-    .signature-box {
-      width: 48%;
-      vertical-align: top;
-      border: 0.5px solid #CBD5E1;
-      background-color: #FAFAFA;
-      padding: 6px 10px;
-    }
+  
     .signature-title {
-      font-size: 8pt;
+      font-size: 8.7pt;
       font-weight: bold;
       color: #1E3A5F;
       text-transform: uppercase;
-      text-align: center;
+      text-align: right;
       border-bottom: 0.5px solid #CBD5E1;
       padding-bottom: 3px;
       margin-bottom: 24px;
@@ -298,7 +274,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document généré par le Système GEICG &bull; <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
@@ -318,7 +293,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <table class="banner-table">
     <tr>
       <td>
-        <div class="banner-title">RÉPERTOIRE GÉNÉRAL DES CLASSES</div>
+        <div class="banner-title">LISTE DES CLASSES</div>
       </td>
     </tr>
   </table>
@@ -357,7 +332,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       </td>
       <td class="kpi-cell" style="width: 50%;">
         <div class="kpi-num" style="color: #0369A1;"><?= $totalCapacite ?></div>
-        <div class="kpi-text">Capacité Globale d'Accueil (Places)</div>
+        <div class="kpi-text">Capacité Globale d'Accueil</div>
       </td>
     </tr>
   </table>
@@ -427,9 +402,9 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <table class="signature-table">
     <tr>
       <td style="width: 52%;"></td>
-      <td class="signature-box">
+      <td style="text-align: right;">
         <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? '') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px; text-align: center;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
+        <div style="font-weight: bold; font-size: 8pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px; text-align: center;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
         <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?></div>
       </td>
     </tr>
