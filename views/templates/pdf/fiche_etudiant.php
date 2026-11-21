@@ -250,23 +250,21 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     .signature-grid {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 40px;
+      margin-top: 38px;
     }
     .signature-grid td {
-      width: 33.33%;
-      border: 1px solid #CBD5E1;
-      padding: 9px 10px;
+      width: 50%;
+      border: none;
+      padding: 8px 12px;
       vertical-align: top;
-      background: #FAFAFA;
-      font-size: 9px;
-      height: 105px;
+      font-size: 11px;
     }
     .sign-title {
       font-weight: bold;
       color: #1E3A5F;
       text-decoration: underline;
-      font-size: 9.2px;
-      margin-bottom: 5px;
+      font-size: 13.5px;
+      margin-bottom: 6px;
     }
   </style>
 </head>
@@ -342,7 +340,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
       </td>
     </tr>
   </table>
-
+<hr>
   <!-- SECTION 2 : RÉCAPITULATIF ANCIENNE CLASSE & DÉCISION DE PASSAGE -->
   <div class="section-title"> RÉCAPITULATIF DE L'ANNÉE ACADÉMIQUE <?= $annee_precedente ?> </div>
   <div class="recap-box">
@@ -411,35 +409,33 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
 
 
 
-  <!-- VISAS ET SIGNATURES OFFICIELLES -->
+  <!-- SIGNATURES (2 COLONNES) -->
   <table class="signature-grid">
     <tr>
-      <td>
+      <td style="text-align: left;">
         <div class="sign-title">L'Étudiant(e) / Tuteur Légal</div>
-        <div style="font-size: 8px; font-style: italic; color: #64748B;">"Lu et approuvé, certifié sincère et exact."</div>
-        <div style="height: 46px;">&nbsp;</div>
-        <div style="font-weight: bold; font-size: 8.5px;">Signature :</div>
-      </td>
-      <td>
-        <div class="sign-title"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?></div>
-        <div style="font-size: 8px; color: #475569;">Avis et Décision de passage validée</div>
-        <div style="height: 46px;">&nbsp;</div>
-        <div style="font-weight: bold; font-size: 9px; color:#1E3A5F;"><?= htmlspecialchars(!empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : '') ?></div>
+        <div style="font-size: 9.5px; font-style: italic; color: #64748B;">"Lu et approuvé, certifié sincère et exact."</div>
+        <div style="padding-top: 52px; font-weight: bold; font-size: 10.5px; color: #0F172A;">Signature :</div>
       </td>
       <td style="text-align: right;">
-        <div style="font-size: 8.2px; color: #64748B; margin-bottom: 3px;">Fait à <?= htmlspecialchars(!empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?></div>
-        <div class="sign-title" style="text-align: right;"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?></div>
-        <div style="height: 36px;">&nbsp;</div>
-        <div style="font-weight: bold; font-size: 9px;"><?= htmlspecialchars($etablissement['nom_responsable_scolarite'] ?? '') ?></div>
+        <div style="font-size: 12.5px; color: #334155; margin-bottom: 10px;">
+          Fait à <?= htmlspecialchars(!empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?>
+        </div>
+        <br>
+        <div class="sign-title" style="text-align: right;">
+          <?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?>
+        </div>
+        <br>
+        <div style="margin-top:13px;padding-top: 46px; font-weight: bold; font-size: 13px; color: #46484A;">
+          <?= htmlspecialchars(!empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : '') ?>
+        </div>
       </td>
     </tr>
   </table>
 
 </div>
 
-<div class="footer-line">
-  Document officiel généré par le système informatique <?= htmlspecialchars($etablissement['sigle_etablissement'] ?? '') ?> &bull; Édition du <?= date('d/m/Y H:i:s') ?>
-</div>
+
 
 </body>
 </html>
