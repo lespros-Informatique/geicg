@@ -285,41 +285,57 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     .text-center { text-align: center; }
     .text-bold { font-weight: bold; }
 
-    /* ZONE SOLDE & CODE-BARRES / CAISSIER */
-    .bottom-status-table {
+    /* ZONE SOLDE & CODE-BARRES / CAISSIER (hors table pour que mPDF respecte margin/padding/alignement) */
+    .bottom-status-row {
       width: 100%;
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+    .bottom-status-left {
+      width: 58%;
+      float: left;
+      padding-top: 4px;
+    }
+    .bottom-status-right {
+      width: 210px;
+      float: right;
+      text-align: center;
+    }
+    .solde-inline-table {
       border-collapse: collapse;
-      margin-top: 3px;
-      margin-bottom: 4px;
     }
-    .bottom-status-table td {
-      vertical-align: top;
+    .solde-label-cell {
+      font-size: 9.2pt;
+      padding-right: 14px;
+      vertical-align: middle;
     }
-
-
-    .solde-badge {
-      height: 40px;
+    .solde-badge-cell {
       background-color: #999999;
       color: #ea0a0aff;
       font-weight: 900;
       font-size: 11pt;
-      padding: 5px 20px;
-      display: inline-block;
-      letter-spacing: 1px;
+      padding: 5px 16px;
+      text-align: center;
+      vertical-align: middle;
+      letter-spacing: 0.8px;
     }
-
-
+    .barcode-box {
+      text-align: center;
+      margin-bottom: 8px;
+    }
     .caissier-title {
       font-weight: bold;
       text-decoration: underline;
-      font-size: 8.5pt;
-      margin-top: 8px;
-      display: block;
+      font-size: 9pt;
+      text-align: center;
+      margin-top: 6px;
+      margin-bottom: 3px;
     }
     .caissier-name {
-      font-size: 8pt;
+      font-size: 8.8pt;
+      font-weight: bold;
       color: #000000;
-      margin-top: 1px;
+      text-align: center;
     }
 
     /* ENCADRÉ JAUNE ATTENTION */
@@ -481,24 +497,24 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     </table>
 
     <!-- ZONE SOLDE & CODE-BARRES / CAISSIER -->
-    <table class="bottom-status-table" style="margin-top: 14px;">
-      <tr>
-        <td style="width: 55%;">
-          Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <span class="solde-badge"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE: ' . number_format($reste_a_payer, 0, ',', ' ') . 'CFA') ?></span>
-        </td>
-        <td style="width: 45%; text-align: right;">
-          <div style="display: inline-block; text-align: right;">
-            <div style="margin-bottom: 8px;">
-              <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
-            </div>
-            <br>
-            <div class="caissier-title">CAISSIER(RE)</div>
-            <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div class="bottom-status-row">
+      <div class="bottom-status-left">
+        <table class="solde-inline-table">
+          <tr>
+            <td class="solde-label-cell">Date du Prochain Payement :</td>
+            <td class="solde-badge-cell"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE : ' . number_format($reste_a_payer, 0, ',', ' ') . ' CFA') ?></td>
+          </tr>
+        </table>
+      </div>
+      <div class="bottom-status-right">
+        <div class="barcode-box">
+          <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+        </div>
+        <div class="caissier-title">CAISSIER(RE)</div>
+        <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
+      </div>
+      <div style="clear: both;"></div>
+    </div>
 
     <!-- ENCADRÉ JAUNE N.B & AVIS DE CONSERVATION -->
     <div class="nb-yellow-box">
@@ -565,24 +581,24 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     </table>
 
     <!-- ZONE SOLDE & CODE-BARRES COPIE -->
-    <table class="bottom-status-table" style="margin-top: 16px;">
-      <tr>
-        <td style="width: 55%;">
-          Date du Prochain Payement : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <span class="solde-badge"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE: ' . number_format($reste_a_payer, 0, ',', ' ') . 'CFA') ?></span>
-        </td>
-        <td style="width: 45%; text-align: right; vertical-align: top;">
-          <div style="display: inline-block; text-align: right;">
-            <div style="margin-bottom: 8px;">
-              <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
-            </div>
-            <br>
-            <div class="caissier-title">CAISSIER(RE)</div>
-            <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div class="bottom-status-row">
+      <div class="bottom-status-left">
+        <table class="solde-inline-table">
+          <tr>
+            <td class="solde-label-cell">Date du Prochain Payement :</td>
+            <td class="solde-badge-cell"><?= $reste_a_payer <= 0 ? 'SOLDÉ' : ('RESTE : ' . number_format($reste_a_payer, 0, ',', ' ') . ' CFA') ?></td>
+          </tr>
+        </table>
+      </div>
+      <div class="bottom-status-right">
+        <div class="barcode-box">
+          <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+        </div>
+        <div class="caissier-title">CAISSIER(RE)</div>
+        <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
+      </div>
+      <div style="clear: both;"></div>
+    </div>
 
     <table class="notice-row-table" style="margin-top: 8px; margin-bottom: 0;">
       <tr>
