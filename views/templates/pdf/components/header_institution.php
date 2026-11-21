@@ -103,7 +103,7 @@ if (!empty($siteWebEtab)) {
       <?php endif; ?>
       <?php if (!empty($numAutorisation)): ?>
         <div class="inst-subtitle" style="font-size: <?= $subFontSize ?>; font-weight: bold; color: #0369A1; margin-top: 1px; letter-spacing: 0.2px;">
-          <?= htmlspecialchars(strpos($numAutorisation, 'AGRÉ') !== false ? $numAutorisation : 'AGRÉMENT N° ' . $numAutorisation) ?>
+          <?= htmlspecialchars(strpos($numAutorisation, 'AGRÉ') !== false ? $numAutorisation :  $numAutorisation) ?>
         </div>
       <?php endif; ?>
       <?php if (!empty($contactParts)): ?>
