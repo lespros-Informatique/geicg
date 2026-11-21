@@ -567,8 +567,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
               <td colspan="2">Nom & Prénoms(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
             </tr>
             <tr>
-              <td>Type d'Opération : &nbsp;<span style="background:#CCCCCC; padding:1px 6px; font-weight:bold;"><?= htmlspecialchars($type_operation) ?></span></td>
-              <td>Banque : <span style="background:#CCCCCC; padding:1px 5px; font-weight:bold;">--</span> &nbsp;Reste à Payer : <span style="background:#CCCCCC; padding:1px 6px; font-weight:bold; white-space:nowrap;"><?= number_format($reste_a_payer, 0, ',', ' ') ?>CFA</span></td>
+              <td colspan="2">Type d'Opération : &nbsp;<span style="background:#CCCCCC; padding:1px 6px; font-weight:bold;"><?= htmlspecialchars($type_operation) ?></span></td>
             </tr>
             <tr>
               <td colspan="2">Montant de l'Opération : &nbsp;<span class="val-bold">(<?= htmlspecialchars($montant_operation_formatted) ?>)</span> &nbsp;<span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
