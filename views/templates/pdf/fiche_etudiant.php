@@ -365,9 +365,10 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
       DÉCISION DU JURY : <?= htmlspecialchars(mb_strtoupper($decision_n1 ?? 'Autorisé(e) à se réinscrire')) ?>
     </div>
   </div>
-
-    <!-- SECTION 3: SITUATION FINANCIÈRE DE L'ANCIENNE SESSION (N-1) -->
-  <div class="section-title"> SCOLARITE ANNEE ANTERIEURE (<?= $annee_precedente ?> ) </div>
+<br>
+<hr>
+    <!-- SECTION 3: SITUATION FINANCIÈRE -->
+  <div class="section-title"> SITUATION FINANCIÈRE DE L'ANNÉE (<?= $annee_precedente ?> ) </div>
   <table class="scolarite-table">
     <thead>
       <tr>
@@ -407,15 +408,26 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     </table>
   </div>
 
-
+<br>
+<br>
 
   <!-- SIGNATURES (2 COLONNES) -->
   <table class="signature-grid">
     <tr>
-      <td style="text-align: left;">
-        <div class="sign-title">L'Étudiant(e) / Tuteur Légal</div>
-        <div style="font-size: 9.5px; font-style: italic; color: #64748B;">"Lu et approuvé, certifié sincère et exact."</div>
-        <div style="padding-top: 52px; font-weight: bold; font-size: 10.5px; color: #0F172A;">Signature :</div>
+      <td style="text-align: left; vertical-align: middle;">
+        <?php
+          $qrParts = [];
+          if (!empty($matricule_etudiant) && $matricule_etudiant !== '-') {
+              $qrParts[] = 'Matricule: ' . $matricule_etudiant;
+          }
+          if (!empty($code_inscription) && $code_inscription !== '-') {
+              $qrParts[] = 'Code Inscription: ' . $code_inscription;
+          }
+          $qrPayload = implode(' | ', $qrParts);
+        ?>
+        <?php if ($qrPayload !== ''): ?>
+          <barcode code="<?= htmlspecialchars($qrPayload, ENT_QUOTES, 'UTF-8') ?>" type="QR" size="1.15" error="M" disableborder="1" />
+        <?php endif; ?>
       </td>
       <td style="text-align: right;">
         <div style="font-size: 12.5px; color: #334155; margin-bottom: 10px;">
