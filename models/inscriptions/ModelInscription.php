@@ -1318,10 +1318,26 @@ class ModelInscription extends BaseModel
             return ['error' => "Impossible de générer le reçu d'inscription : Aucun règlement n'a été enregistré pour cet étudiant."];
         }
 
-        $lastPaiement = end($allPaiements);
-        $lastDate = $lastPaiement['date_paiement'] ?? '';
-        $opPayments = array_filter($allPaiements, function($p) use ($lastDate) {
-            if (empty($lastDate)) return true;
+        // Pour le Reçu d'Inscription, cibler le 1er règlement de scolarité (Inscription / Tranche 1)
+        $targetPaiement = null;
+        foreach ($allPaiements as $pCandidate) {
+            $catCand = strtoupper(trim($pCandidate['categorie_paiement'] ?? ''));
+            $trCand = strtoupper(trim($pCandidate['tranche_code'] ?? ''));
+            if ($catCand !== 'FRAIS_ANNEXES' && $trCand !== 'FRAIS_ANNEXES') {
+                $targetPaiement = $pCandidate;
+                break;
+            }
+        }
+        if (!$targetPaiement) {
+            $targetPaiement = reset($allPaiements);
+        }
+
+        $lastPaiement = $targetPaiement;
+        $targetIdPaiement = (int)($targetPaiement['id_paiement'] ?? 0);
+        $lastDate = $targetPaiement['date_paiement'] ?? '';
+        $opPayments = array_filter($allPaiements, function($p) use ($lastDate, $targetIdPaiement) {
+            if ((int)($p['id_paiement'] ?? 0) === $targetIdPaiement) return true;
+            if (empty($lastDate)) return false;
             return ($p['date_paiement'] === $lastDate) || (abs(strtotime($p['date_paiement'] ?? '') - strtotime($lastDate)) <= 10);
         });
 
@@ -1338,24 +1354,18 @@ class ModelInscription extends BaseModel
         }
 
         // Règle comptable 4 : Dissociation stricte Scolarité vs Frais Annexes
-        $droitOpJour = $scolOpJour;
-        $scolariteOpJour = $scolOpJour;
+        $opDuJourMontant = $scolOpJour > 0 ? $scolOpJour : (float)($targetPaiement['montant_paiement'] ?? 0);
+        $scolariteOpJour = $opDuJourMontant;
+        $droitOpJour = 0;
         $fraisAnnexesOpJour = $faOpJour;
 
-        $opDuJourMontant = $scolOpJour;
-        if ($opDuJourMontant <= 0 && !empty($allPaiements)) {
-            $lastCat = strtoupper(trim($lastPaiement['categorie_paiement'] ?? ''));
-            $lastTr = strtoupper(trim($lastPaiement['tranche_code'] ?? ''));
-            if ($lastCat !== 'FRAIS_ANNEXES' && $lastTr !== 'FRAIS_ANNEXES') {
-                $opDuJourMontant = (float)($lastPaiement['montant_paiement'] ?? 0);
-                $droitOpJour = $opDuJourMontant;
-                $scolariteOpJour = $opDuJourMontant;
-            }
-        }
-
+        // Cumul des versements arrêté à l'opération d'inscription (pour que le reçu d'inscription reste fidèle à l'opération initiale)
         $fraisAnnexesVerse = 0;
         $scolariteVerse = 0;
         foreach ($allPaiements as $p) {
+            if ($targetIdPaiement > 0 && (int)($p['id_paiement'] ?? 0) > $targetIdPaiement) {
+                continue;
+            }
             $cat = strtoupper(trim($p['categorie_paiement'] ?? ''));
             $tranche = strtoupper(trim($p['tranche_code'] ?? ''));
             if ($cat === 'FRAIS_ANNEXES' || $tranche === 'FRAIS_ANNEXES') {
@@ -1428,9 +1438,9 @@ class ModelInscription extends BaseModel
         $modelFA = new ModelFraisAnnexe();
         $fraisAnnexesInscription = (float)$modelFA->getMontantByTypeFiliere($typeFiliere, $anneeCode, $niveauCode, 'inscription');
 
-        // Règle comptable 4 : Ne jamais mélanger Frais Annexes dans Droit d'inscription / Scolarité
-        $droitTotPayer = $premiereTrancheMontant;
-        $droitTotVerse = ($premiereTrancheMontant > 0) ? min($scolariteVerse, $premiereTrancheMontant) : $scolariteVerse;
+        // Règle comptable 4 : Ne jamais mélanger Frais Annexes ni dédoubler la 1ère tranche déjà incluse dans SCOLARITE
+        $droitTotPayer = 0;
+        $droitTotVerse = 0;
 
         $fraisAnnexesTotPayer = $fraisAnnexesInscription;
         $fraisAnnexesTotVerse = $fraisAnnexesVerse;

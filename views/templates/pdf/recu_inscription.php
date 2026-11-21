@@ -288,7 +288,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     /* ZONE SOLDE & CODE-BARRES / CAISSIER (hors table pour que mPDF respecte margin/padding/alignement) */
     .bottom-status-row {
       width: 100%;
-      margin-top: 10px;
+      margin-top: 35px;
       margin-bottom: 6px;
     }
     .bottom-status-left {
@@ -474,10 +474,16 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
         </tr>
         <tr>
           <td class="">Droit d'Inscription</td>
-          <td class="text-center text-bold"><?= number_format($droit_op_jour, 0, ',', ' ') ?>CFA</td>
-          <td class="text-center text-bold"><?= number_format($droit_tot_payer, 0, ',', ' ') ?>CFA</td>
-          <td class="text-center text-bold"><?= number_format($droit_tot_verse, 0, ',', ' ') ?>CFA</td>
-          <td class="cell-black"></td>
+          <td class="text-center text-bold"><?= $droit_op_jour > 0 ? number_format($droit_op_jour, 0, ',', ' ') . 'CFA' : '' ?></td>
+          <?php if ($droit_tot_payer > 0): ?>
+            <td class="text-center text-bold"><?= number_format($droit_tot_payer, 0, ',', ' ') ?>CFA</td>
+            <td class="text-center text-bold"><?= number_format($droit_tot_verse, 0, ',', ' ') ?>CFA</td>
+            <td class="cell-black"></td>
+          <?php else: ?>
+            <td class="cell-black"></td>
+            <td class="cell-black"></td>
+            <td class="cell-black"></td>
+          <?php endif; ?>
         </tr>
         <tr>
           <td class="">AUTRES FRAIS</td>
@@ -495,6 +501,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
         </tr>
       </tbody>
     </table>
+  
 
     <!-- ZONE SOLDE & CODE-BARRES / CAISSIER -->
     <div class="bottom-status-row">
@@ -508,7 +515,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
       </div>
       <div class="bottom-status-right">
         <div class="barcode-box">
-          <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+          <?= generatePicqerBarcodeHtml($code_barre_val, 45, 1.35) ?>
         </div>
         <div class="caissier-title">CAISSIER(RE)</div>
         <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
@@ -592,7 +599,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
       </div>
       <div class="bottom-status-right">
         <div class="barcode-box">
-          <?= generatePicqerBarcodeHtml($code_barre_val, 30, 1.35) ?>
+          <?= generatePicqerBarcodeHtml($code_barre_val, 45, 1.35) ?>
         </div>
         <div class="caissier-title">CAISSIER(RE)</div>
         <div class="caissier-name"><?= htmlspecialchars($caissier_nom) ?></div>
