@@ -209,6 +209,34 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
       letter-spacing: 0.3px;
     }
 
+    /* Tableau Scolarité Année Antérieure */
+    .scolarite-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+    .scolarite-table th {
+      background-color: #153D66;
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: bold;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 8px 10px;
+      border: 1px solid #4B484F;
+      letter-spacing: 0.3px;
+    }
+    .scolarite-table td {
+      background-color: #FFFFFF;
+      font-size: 13.5px;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px 8px;
+      border: 1px solid #CBD5E1;
+      vertical-align: middle;
+    }
+
     /* Boîte orientation nouvelle classe */
     .cible-box {
       background: #EFF6FF;
@@ -222,7 +250,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     .signature-grid {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 18px;
+      margin-top: 40px;
     }
     .signature-grid td {
       width: 33.33%;
@@ -340,26 +368,34 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     </div>
   </div>
 
-
     <!-- SECTION 3: SITUATION FINANCIÈRE DE L'ANCIENNE SESSION (N-1) -->
-  <div class="section-title"> SCOLARITE DE L'ANNEE ANTERIEURE (<?= $annee_precedente ?> ) </div>
-  <table class="data-table" style="background: #FAFAFA; border: 1px solid #E2E8F0; padding: 4px;">
-    <tr>
-      <td style="width: 33%;">Scolarité N-1 Fixée : <br><strong style="font-size:9.5px;"><?= number_format((float)($total_scolarite_n1 ?? 0), 0, ',', ' ') ?> FCFA</strong></td>
-      <td style="width: 33%;">Total Versé N-1 : <br><strong style="color:#15803D; font-size:9.5px;"><?= number_format((float)($total_paye_n1 ?? 0), 0, ',', ' ') ?> FCFA</strong></td>
-      <td style="width: 34%; text-align: right;">Reliquat N-1 : <br>
-        <?php if ($soldeRestantN1 <= 0): ?>
-          <span style="background:#DCFCE7; color:#15803D; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:9px;">SOLDÉ (0 FCFA)</span>
-        <?php else: ?>
-          <span style="background:#FEE2E2; color:#B91C1C; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:9.5px;"><?= number_format($soldeRestantN1, 0, ',', ' ') ?> FCFA (IMPAYÉ)</span>
-        <?php endif; ?>
-      </td>
-    </tr>
+  <div class="section-title"> SCOLARITE ANNEE ANTERIEURE (<?= $annee_precedente ?> ) </div>
+  <table class="scolarite-table">
+    <thead>
+      <tr>
+        <th style="width: 33.33%;">Scolarité Fixée</th>
+        <th style="width: 33.33%;">Total Versé</th>
+        <th style="width: 33.34%;">Reliquat</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="color: #0F172A;"><?= number_format((float)($total_scolarite_n1 ?? 0), 0, ',', ' ') ?> FCFA</td>
+        <td style="color: #0F172A;"><?= number_format((float)($total_paye_n1 ?? 0), 0, ',', ' ') ?> FCFA</td>
+        <td>
+          <?php if ($soldeRestantN1 <= 0): ?>
+            <span style="background:#DCFCE7; color:#15803D; padding:3px 9px; border-radius:4px; font-weight:bold; font-size:11.5px;">SOLDÉ (0 FCFA)</span>
+          <?php else: ?>
+            <span style="background:#FEE2E2; color:#B91C1C; padding:3px 9px; border-radius:4px; font-weight:bold; font-size:11.5px;"><?= number_format($soldeRestantN1, 0, ',', ' ') ?> FCFA (IMPAYÉ)</span>
+          <?php endif; ?>
+        </td>
+      </tr>
+    </tbody>
   </table>
 
   <!-- SECTION 4 : ORIENTATION & PROPOSITION POUR LA NOUVELLE CLASSE -->
-  <div class="section-title">ORIENTATION & PROPOSITION DE RÉINSCRIPTION</div>
-  <div class="cible-box">
+  <div style="display: none;" class="section-title">ORIENTATION & PROPOSITION DE RÉINSCRIPTION</div>
+  <div style="display: none;" class="cible-box">
     <table style="width: 100%;">
       <tr>
         <td style="width: 34%;">Nouvelle Classe Suggérée : <span class="val-bold" style="font-size:10.5px; color:#1E3A5F;"><?= htmlspecialchars($classe_cible ?? '-') ?></span></td>
@@ -385,14 +421,14 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
         <div style="font-weight: bold; font-size: 8.5px;">Signature :</div>
       </td>
       <td>
-        <div class="sign-title"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'La Direction des Études') ?></div>
+        <div class="sign-title"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?></div>
         <div style="font-size: 8px; color: #475569;">Avis et Décision de passage validée</div>
         <div style="height: 46px;">&nbsp;</div>
         <div style="font-weight: bold; font-size: 9px; color:#1E3A5F;"><?= htmlspecialchars(!empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : '') ?></div>
       </td>
       <td style="text-align: right;">
         <div style="font-size: 8.2px; color: #64748B; margin-bottom: 3px;">Fait à <?= htmlspecialchars(!empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?></div>
-        <div class="sign-title" style="text-align: right;"><?= htmlspecialchars(!empty($etablissement['titre_service_scolarite']) ? $etablissement['titre_service_scolarite'] : 'Le Chef du Service Scolarité') ?></div>
+        <div class="sign-title" style="text-align: right;"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?></div>
         <div style="height: 36px;">&nbsp;</div>
         <div style="font-weight: bold; font-size: 9px;"><?= htmlspecialchars($etablissement['nom_responsable_scolarite'] ?? '') ?></div>
       </td>
