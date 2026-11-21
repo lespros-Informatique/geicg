@@ -300,8 +300,8 @@ if (empty($etablissement) || !is_array($etablissement)) {
         <tr>
           <th style="width: 24px;" class="text-center">#</th>
           <th>Matière</th>
-          <th style="width: 140px;">Filière</th>
-          <th style="width: 80px;">Niveau</th>
+          <th>Filière</th>
+          <th>Niveau</th>
           <th style="width: 120px;" class="text-center">Catégorie Bulletin</th>
           <th style="width: 75px;" class="text-center">Coefficient</th>
         </tr>
@@ -316,7 +316,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
               
             </td>
             <td>
-              <strong style="color: #0F172A;"><?= htmlspecialchars($row['libelle_filiere'] ?? $row['filiere_code']) ?></strong>
+              <strong style="color: #0F172A;"><?= htmlspecialchars(!empty($row['slug_filiere']) ? $row['slug_filiere'] : ($row['libelle_filiere'] ?? $row['filiere_code'])) ?></strong>
             </td>
             <td>
               <span style="color: #475569;"><?= htmlspecialchars($row['libelle_niveau'] ?? $row['niveau_code']) ?></span>
