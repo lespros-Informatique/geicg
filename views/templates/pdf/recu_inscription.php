@@ -231,12 +231,12 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     .student-info-grid {
       width: 100%;
       border-collapse: collapse;
-      font-size: 8.8pt;
-      line-height: 1.5;
+      font-size: 9.8pt;
+      line-height: 1.55;
     }
     .student-info-grid td {
-      padding: 0.5px 0;
-      vertical-align: top;
+      padding: 3.5px 4px 3.5px 0;
+      vertical-align: middle;
     }
     .val-bold {
       font-weight: bold;
@@ -245,7 +245,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     .amount-words-blue {
       color: #172f43ff;
       font-weight: bold;
-      font-size: 9.5pt;
+      font-size: 9.8pt;
     }
 
     /* TABLEAU FINANCIER DES RÈGLEMENTS */
@@ -406,23 +406,22 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
         <td class="info-left-cell">
           <table class="student-info-grid">
             <tr>
-              <td style="width: 50%;">N° &nbsp;<span class="val-bold"><?= htmlspecialchars($numero_recu) ?></span></td>
-              <td style="text-align: right; padding-right: 15px;"><span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
+              <td style="width: 54%;">N° : &nbsp;<span class="val-bold"><?= htmlspecialchars($numero_recu) ?></span></td>
+              <td style="width: 46%;">Date : &nbsp;<span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
             </tr>
             <tr>
-              <td>Numéro réf étudiant( e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
+              <td>Numéro réf étudiant(e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
               <td>Filière_Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
             </tr>
             <tr>
               <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
             </tr>
             <tr>
-              <td>Type d'Opération : Frais d'inscription</td>
-              <td>Statut : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="val-bold"><?= htmlspecialchars($statut_etudiant) ?></span></td>
+              <td>Type d'Opération : &nbsp;<span class="val-bold">Frais d'inscription</span></td>
+              <td>Statut : &nbsp;<span class="val-bold"><?= htmlspecialchars($statut_etudiant) ?></span></td>
             </tr>
             <tr>
-              <td>Montant de l'Opération : &nbsp;<span class="val-bold">(<?= htmlspecialchars($montant_operation_formatted) ?>)</span></td>
-              <td><span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
+              <td colspan="2">Montant de l'Opération : &nbsp;<span class="val-bold">(<?= htmlspecialchars($montant_operation_formatted) ?>)</span> &nbsp;<span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
             </tr>
           </table>
         </td>
@@ -534,23 +533,22 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
         <td class="info-left-cell">
           <table class="student-info-grid">
             <tr>
-              <td style="width: 50%;">N° &nbsp;<span class="val-bold"><?= htmlspecialchars($numero_recu) ?></span></td>
-              <td style="text-align: right; padding-right: 15px;"><span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
+              <td style="width: 50%;">N° : &nbsp;<span class="val-bold"><?= htmlspecialchars($numero_recu) ?></span></td>
+              <td style="width: 50%;">Date : &nbsp;<span class="val-bold"><?= htmlspecialchars($date_operation) ?></span></td>
             </tr>
             <tr>
-              <td>Numéro réf étudiant( e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
+              <td>Numéro réf étudiant(e) : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule) ?></span></td>
               <td>Filière_Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau) ?></span></td>
             </tr>
             <tr>
               <td colspan="2">Nom_Prénom(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenoms) ?></span></td>
             </tr>
             <tr>
-              <td>Type d'Opération &nbsp;&nbsp;&nbsp;&nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;"><?= htmlspecialchars($type_operation) ?></span></td>
-              <td>Banque : &nbsp;&nbsp;&nbsp;&nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;">--</span> &nbsp;&nbsp;&nbsp;&nbsp; Reste à Payer &nbsp; <span style="background:#CCCCCC; padding:1px 8px; font-weight:bold;"><?= number_format($reste_a_payer, 0, ',', ' ') ?>CFA</span></td>
+              <td>Type d'Opération : &nbsp;<span style="background:#CCCCCC; padding:1px 6px; font-weight:bold;"><?= htmlspecialchars($type_operation) ?></span></td>
+              <td>Banque : <span style="background:#CCCCCC; padding:1px 5px; font-weight:bold;">--</span> &nbsp;Reste à Payer : <span style="background:#CCCCCC; padding:1px 6px; font-weight:bold; white-space:nowrap;"><?= number_format($reste_a_payer, 0, ',', ' ') ?>CFA</span></td>
             </tr>
             <tr>
-              <td>Montant de l'Opération : &nbsp;<span class="val-bold"><?= htmlspecialchars($montant_operation_formatted) ?></span></td>
-              <td><span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
+              <td colspan="2">Montant de l'Opération : &nbsp;<span class="val-bold">(<?= htmlspecialchars($montant_operation_formatted) ?>)</span> &nbsp;<span class="amount-words-blue"><?= htmlspecialchars($montant_en_lettres) ?></span></td>
             </tr>
           </table>
         </td>
