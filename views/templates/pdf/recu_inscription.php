@@ -196,11 +196,11 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     .photo-right-cell {
       vertical-align: top;
       text-align: right;
-      width: 100px;
+      width: 125px;
     }
     .photo-frame {
-      width: 90px;
-      height: 110px;
+      width: 120px;
+      height: 130px;
      /* border: 2px solid #000000;*/
       background: #F1F5F9;
       display: inline-block;
@@ -211,8 +211,8 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
       margin-bottom: 8px;
     }
     .photo-img {
-      width: 90px;
-      height: 110px;
+      width: 120px;
+      height: 130px;
       border: 1px solid #000000;
       object-fit: cover;
       display: block;
@@ -220,7 +220,7 @@ $scolarite_reste = (float)($scolarite_reste ?? max(0, $scolarite_tot_payer - $sc
     .photo-inits {
       width: 100%;
       height: 100%;
-      line-height: 106px;
+      line-height: 126px;
       text-align: center;
       font-weight: bold;
       font-size: 26pt;
