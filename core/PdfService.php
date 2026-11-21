@@ -72,7 +72,18 @@ class PdfService
         $mpdf->showImageErrors = true;
 
         if (!empty($options['watermark_image']) && file_exists($options['watermark_image'])) {
-            $mpdf->SetWatermarkImage($options['watermark_image'], 0.04, [110, 110], 'F');
+            $wmAlpha = isset($options['watermark_alpha']) ? (float)$options['watermark_alpha'] : 0.04;
+            $wmSize = $options['watermark_size'] ?? [110, 110];
+            if (is_array($wmSize) && count($wmSize) === 2 && (float)$wmSize[0] > 0 && (float)$wmSize[1] <= 0) {
+                $imgDim = @getimagesize($options['watermark_image']);
+                if ($imgDim && !empty($imgDim[0]) && !empty($imgDim[1])) {
+                    $wmSize = [(float)$wmSize[0], round((float)$wmSize[0] * ($imgDim[1] / $imgDim[0]), 2)];
+                } else {
+                    $wmSize = [(float)$wmSize[0], (float)$wmSize[0]];
+                }
+            }
+            $wmPos = $options['watermark_position'] ?? 'F';
+            $mpdf->SetWatermarkImage($options['watermark_image'], $wmAlpha, $wmSize, $wmPos);
             $mpdf->showWatermarkImage = true;
         } elseif ($watermark) {
             $mpdf->SetWatermarkText($watermark);

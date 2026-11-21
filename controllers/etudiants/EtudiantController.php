@@ -592,9 +592,21 @@ class EtudiantController extends BaseController
 
             $etudiant = $ficheData['etudiant'];
             $inscription = $ficheData['inscription'];
+            $etablissement = $this->getEtablissementConfig();
             $dataView = array_merge($ficheData['viewData'], [
-                'etablissement' => $this->getEtablissementConfig()
+                'etablissement' => $etablissement
             ]);
+
+            $watermarkLogoPath = null;
+            if (!empty($etablissement['logo_etablissement'])) {
+                $cleanLogo = ltrim($etablissement['logo_etablissement'], '/');
+                foreach ([__DIR__ . '/../../public/' . $cleanLogo, __DIR__ . '/../../' . $cleanLogo] as $candLogo) {
+                    if (file_exists($candLogo) && is_file($candLogo)) {
+                        $watermarkLogoPath = $candLogo;
+                        break;
+                    }
+                }
+            }
 
             $html = PdfService::renderTemplate('fiche_etudiant.php', $dataView);
             if (isset($_GET['html'])) {
@@ -623,7 +635,11 @@ class EtudiantController extends BaseController
                 'margin_right' => 6,
                 'margin_top' => 6,
                 'margin_bottom' => 6,
-                'download' => $download
+                'download' => $download,
+                'watermark_image' => $watermarkLogoPath,
+                'watermark_alpha' => 0.06,
+                'watermark_size' => [135, 0],
+                'watermark_position' => 'F'
             ]);
         } catch (Exception $e) {
             error_log("EtudiantController::imprimerFichePdf error: " . $e->getMessage());
