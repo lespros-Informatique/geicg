@@ -109,13 +109,14 @@ $libelleFA = !empty($libelle_frais_annexe) ? $libelle_frais_annexe : 'Frais Anne
       margin-bottom: 6px;
     }
     .info-table td {
-      padding: 2px 4px;
-      vertical-align: top;
-      font-size: 10.5px;
+      padding: 3px 4px 3px 0;
+      vertical-align: middle;
+      font-size: 9.6pt;
+      line-height: 1.48;
     }
     .photo-box {
-      width: 110px;
-      height: 110px;
+      width: 120px;
+      height: 130px;
       border: 1px solid #92400E;
       object-fit: cover;
       display: inline-block;
@@ -298,11 +299,11 @@ $libelleFA = !empty($libelle_frais_annexe) ? $libelle_frais_annexe : 'Frais Anne
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <div style="display: inline-block; width: 110px; text-align: right;">
+        <div style="display: inline-block; width: 120px; text-align: right;">
           <?php if (!empty($photo_etudiant)): ?>
-            <img src="<?= $photo_etudiant ?>" width="110" height="110" class="photo-box" style="width: 110px; height: 110px; border: 1px solid #92400E; object-fit: cover; display: inline-block;">
+            <img src="<?= $photo_etudiant ?>" width="120" height="130" class="photo-box" style="width: 120px; height: 130px; border: 1px solid #92400E; object-fit: cover; display: inline-block;">
           <?php else: ?>
-            <div class="photo-box" style="width: 110px; height: 110px; border: 1px solid #92400E; background: #FFFBEB; text-align: center; line-height: 110px; color: #92400E; font-size: 9px; display: inline-block;">PHOTO</div>
+            <div class="photo-box" style="width: 120px; height: 130px; border: 1px solid #92400E; background: #FFFBEB; text-align: center; line-height: 126px; color: #92400E; font-size: 9px; display: inline-block;">PHOTO</div>
           <?php endif; ?>
         </div>
       </td>
@@ -446,11 +447,11 @@ $libelleFA = !empty($libelle_frais_annexe) ? $libelle_frais_annexe : 'Frais Anne
         </table>
       </td>
       <td style="width: 22%; text-align: right; vertical-align: top;">
-        <div style="display: inline-block; width: 110px; text-align: right;">
+        <div style="display: inline-block; width: 120px; text-align: right;">
           <?php if (!empty($photo_etudiant)): ?>
-            <img src="<?= $photo_etudiant ?>" width="110" height="110" class="photo-box" style="width: 110px; height: 110px; border: 1px solid #92400E; object-fit: cover; display: inline-block;">
+            <img src="<?= $photo_etudiant ?>" width="120" height="130" class="photo-box" style="width: 120px; height: 130px; border: 1px solid #92400E; object-fit: cover; display: inline-block;">
           <?php else: ?>
-            <div class="photo-box" style="width: 110px; height: 110px; border: 1px solid #92400E; background: #FFFBEB; text-align: center; line-height: 110px; color: #92400E; font-size: 8.5px; display: inline-block;">PHOTO</div>
+            <div class="photo-box" style="width: 120px; height: 130px; border: 1px solid #92400E; background: #FFFBEB; text-align: center; line-height: 126px; color: #92400E; font-size: 8.5px; display: inline-block;">PHOTO</div>
           <?php endif; ?>
         </div>
       </td>

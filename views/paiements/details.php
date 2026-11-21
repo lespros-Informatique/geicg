@@ -217,11 +217,11 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
               </td>
             </tr>
             <tr>
-              <td>Numéro réf étudiant( e) : <strong><?= htmlspecialchars($matricule) ?></strong></td>
+              <td>Matricule : <strong><?= htmlspecialchars($matricule) ?></strong></td>
               <td>Filière / Niveau : <strong><?= htmlspecialchars($filiereNiveau) ?></strong></td>
             </tr>
             <tr>
-              <td colspan="2">Nom_Prénom(s) : <strong><?= htmlspecialchars($nomComplet) ?></strong></td>
+              <td colspan="2">Nom &amp; Prénoms(s) : <strong><?= htmlspecialchars($nomComplet) ?></strong></td>
             </tr>
             <tr>
               <td>Type d'Opération &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($typeOp) ?></span></td>
@@ -384,18 +384,14 @@ $logoSrc = $logoSrc ?? getEtablissementLogoUrl();
               </td>
             </tr>
             <tr>
-              <td>Numéro réf étudiant( e) : <strong><?= htmlspecialchars($matricule) ?></strong></td>
+              <td>Matricule : <strong><?= htmlspecialchars($matricule) ?></strong></td>
               <td>Filière / Niveau : <strong><?= htmlspecialchars($filiereNiveau) ?></strong></td>
             </tr>
             <tr>
-              <td colspan="2">Nom_Prénom(s) : <strong><?= htmlspecialchars($nomComplet) ?></strong></td>
+              <td colspan="2">Nom &amp; Prénoms(s) : <strong><?= htmlspecialchars($nomComplet) ?></strong></td>
             </tr>
             <tr>
-              <td>Type d'Opération &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($typeOp) ?></span></td>
-              <td>
-                Banque : &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($item['mode_paiement_fmt'] ?? ($item['mode_paiement'] ?? 'CAISSE CENTRALE')) ?></span>
-                &nbsp;&nbsp;&nbsp;&nbsp; Reste à Payer &nbsp; <strong><?= number_format($soldeRestant, 0, '', ' ') ?>CFA</strong>
-              </td>
+              <td colspan="2">Type d'Opération &nbsp; <span class="gray-inline-badge"><?= htmlspecialchars($typeOp) ?></span></td>
             </tr>
             <tr>
               <td colspan="2" style="padding-top: 4px;">

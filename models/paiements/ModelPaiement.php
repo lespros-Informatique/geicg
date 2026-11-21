@@ -1622,9 +1622,17 @@ class ModelPaiement extends BaseModel
         $refCaiss = !empty($pRow['session_caisse_code']) ? $pRow['session_caisse_code'] : ($pRow['reference_paiement'] ?? '');
         $codeBarreVal = !empty($pRow['code_paiement']) ? $pRow['code_paiement'] : $numRecuCode;
 
-        $filiereNiveau = (!empty($pRow['libelle_filiere']) && !empty($pRow['libelle_niveau'])) 
-            ? ($pRow['libelle_filiere'] . ' - ' . $pRow['libelle_niveau']) 
-            : ($pRow['libelle_classe'] ?? '-');
+        $slugParts = array_filter([
+            !empty($pRow['slug_filiere']) ? $pRow['slug_filiere'] : '',
+            !empty($pRow['slug_niveau']) ? $pRow['slug_niveau'] : ''
+        ]);
+        if (!empty($slugParts)) {
+            $filiereNiveau = implode(' / ', $slugParts);
+        } else {
+            $filiereNiveau = (!empty($pRow['libelle_filiere']) && !empty($pRow['libelle_niveau'])) 
+                ? ($pRow['libelle_filiere'] . ' / ' . $pRow['libelle_niveau']) 
+                : ($pRow['libelle_classe'] ?? '-');
+        }
 
         return [
             'is_frais_annexes' => $isFAOp,

@@ -126,13 +126,14 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       margin-bottom: 6px;
     }
     .info-table td {
-      padding: 2px 4px;
-      vertical-align: top;
-      font-size: 10.5px;
+      padding: 3px 4px 3px 0;
+      vertical-align: middle;
+      font-size: 9.6pt;
+      line-height: 1.5;
     }
     .photo-box {
-      width: 110px;
-      height: 110px;
+      width: 120px;
+      height: 130px;
       border: 1px solid #000000;
       object-fit: cover;
       display: inline-block;
@@ -141,8 +142,47 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       font-weight: bold;
     }
     .text-blue {
-      color: #0000D0;
+      color: #172f43ff;
       font-weight: bold;
+    }
+
+    /* Zone Solde & Code-barres / Caissier (hors table pour mPDF) */
+    .bottom-status-row {
+      width: 100%;
+      margin-top: 8px;
+      margin-bottom: 6px;
+    }
+    .bottom-status-left {
+      width: 58%;
+      float: left;
+      padding-top: 4px;
+    }
+    .bottom-status-right {
+      width: 210px;
+      float: right;
+      text-align: center;
+    }
+    .solde-inline-table {
+      border-collapse: collapse;
+    }
+    .solde-label-cell {
+      font-size: 9.2pt;
+      padding-right: 12px;
+      vertical-align: middle;
+    }
+    .solde-badge-cell {
+      background-color: #999999;
+      color: #ea0a0aff;
+      font-weight: bold;
+      font-size: 10.5pt;
+      padding: 4px 14px;
+      text-align: center;
+      vertical-align: middle;
+      letter-spacing: 0.6px;
+    }
+    .barcode-box {
+      text-align: center;
+      margin-bottom: 6px;
     }
 
     /* Tableau Financier */
@@ -233,10 +273,15 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
     .signature-title {
       font-weight: bold;
       text-decoration: underline;
-      font-size: 10px;
+      font-size: 9pt;
+      text-align: center;
+      margin-top: 4px;
+      margin-bottom: 2px;
     }
     .signature-name {
-      font-size: 10.5px;
+      font-size: 8.8pt;
+      font-weight: bold;
+      text-align: center;
       margin-top: 2px;
     }
 
@@ -269,52 +314,45 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
   <!-- INFOS ÉTUDIANT (REÇU ORIGINAL) -->
   <table class="info-table">
     <tr>
-      <td style="width: 78%;">
-        <table style="width: 100%;">
+      <td style="width: 76%; vertical-align: top;">
+        <table style="width: 100%; border-collapse: collapse;">
           <tr>
-            <td style="width: 50%;">
-              N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
+            <td style="width: 52%;">
+              N° : &nbsp;<span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
             </td>
             <?php
               $dateOpDisplay = date('d/m/Y');
               if (!empty($date_operation_raw)) {
                   $tsOp = strtotime((string)$date_operation_raw);
-                  if ($tsOp !== false) $dateOpDisplay = date('d/m/Y', $tsOp);
+                  if ($tsOp !== false) $dateOpDisplay = date('d/m/Y H:i:s', $tsOp);
               } elseif (!empty($date_operation)) {
-                  $dateOpStr = trim((string)$date_operation);
-                  if (preg_match('/^(\d{2}\/\d{2}\/\d{4})/', $dateOpStr, $mOp)) {
-                      $dateOpDisplay = $mOp[1];
-                  } else {
-                      $tsOp = strtotime($dateOpStr);
-                      if ($tsOp !== false) $dateOpDisplay = date('d/m/Y', $tsOp);
-                  }
+                  $dateOpDisplay = trim((string)$date_operation);
               }
             ?>
-            <td style="width: 50%; color: #666666;"><?= htmlspecialchars($dateOpDisplay) ?></td>
+            <td style="width: 48%;">Date : &nbsp;<span class="val-bold"><?= htmlspecialchars($dateOpDisplay) ?></span></td>
           </tr>
           <tr>
-            <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
-            <td>Filière / Niveau : <span class="val-bold"><?= htmlspecialchars($filiere_niveau ?? '-') ?></span></td>
+            <td>Matricule : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
+            <td>Filière / Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td colspan="2">Nom_Prénom(s) : <span class="val-bold"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>
+            <td colspan="2">Nom &amp; Prénoms(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>Type d'Opération : <span class="val-bold"><?= htmlspecialchars($type_operation ?? '-') ?></span></td>
-            <td>Statut : <span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
+            <td>Type d'Opération : &nbsp;<span class="val-bold"><?= htmlspecialchars($type_operation ?? '-') ?></span></td>
+            <td>Statut : &nbsp;<span class="val-bold"><?= htmlspecialchars($statut_affectation ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>Montant de l'Opération : <span class="val-bold"><?= number_format($montant_operation ?? 0, 0, ',', ' ') ?>CFA</span></td>
-            <td class="text-blue"><?= htmlspecialchars($montant_operation_lettres ?? '') ?></td>
+            <td colspan="2">Montant de l'Opération : &nbsp;<span class="val-bold">(<?= number_format($montant_operation ?? 0, 0, ',', ' ') ?> CFA)</span> &nbsp;<span class="text-blue"><?= htmlspecialchars($montant_operation_lettres ?? '') ?></span></td>
           </tr>
         </table>
       </td>
-      <td style="width: 22%; text-align: right; vertical-align: top;">
-        <div style="display: inline-block; width: 110px; text-align: right;">
+      <td style="width: 24%; text-align: right; vertical-align: top;">
+        <div style="display: inline-block; width: 120px; text-align: right;">
           <?php if (!empty($photo_etudiant)): ?>
-            <img src="<?= $photo_etudiant ?>" width="110" height="110" class="photo-box" style="width: 110px; height: 110px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
+            <img src="<?= $photo_etudiant ?>" width="120" height="130" class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
           <?php else: ?>
-            <div class="photo-box" style="width: 110px; height: 110px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 110px; color: #94A3B8; font-size: 9px; display: inline-block;">PHOTO</div>
+            <div class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 126px; color: #94A3B8; font-size: 9px; display: inline-block;">PHOTO</div>
           <?php endif; ?>
         </div>
       </td>
@@ -376,34 +414,30 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
   </table>
 
   <!-- STATUT PROCHAIN PAIEMENT & SIGNATURE CAISSIER -->
-  <table style="width: 100%; margin-top: 4px;">
-    <tr>
-      <td style="width: 60%;">
-        Date du Prochain Payement : 
-        <?php 
-          $badgeText = htmlspecialchars($date_prochain_paiement ?? 'SOLDÉ');
-          $isSolde = ($badgeText === 'SOLDÉ');
-        ?>
-        <?php if ($isSolde): ?>
-          <span class="badge-solde-red">SOLDÉ</span>
-        <?php else: ?>
-          <span class="badge-solde-red" style="background: #A6A6A6; color: #000;"><?= $badgeText ?></span>
-        <?php endif; ?>
-      </td>
-      <td style="width: 40%; text-align: right; vertical-align: top;">
-        <div class="signature-title">CAISSIER(RE)</div>
-        <div class="signature-name"><?= htmlspecialchars($caissier_nom ?? '') ?></div>
-        <?php if (!empty($barcodeVal)): ?>
-          <div style="margin-top: 4px; text-align: right;">
-            <div style="display: inline-block; text-align: center;">
-              <?= generatePicqerBarcodeHtml($barcodeVal, 26, 1.0) ?>
-              <div style="font-size: 8px; font-family: 'Courier New', monospace; font-weight: bold; margin-top: 1px;">* <?= htmlspecialchars($barcodeVal) ?> *</div>
-            </div>
-          </div>
-        <?php endif; ?>
-      </td>
-    </tr>
-  </table>
+  <?php 
+    $resteScolDisplay = (float)($total_reste_payer ?? ($scolarite_reste_payer ?? 0));
+    $badgeText = ($resteScolDisplay <= 0) ? 'SOLDÉ' : ('RESTE : ' . number_format($resteScolDisplay, 0, ',', ' ') . ' CFA');
+  ?>
+  <div class="bottom-status-row">
+    <div class="bottom-status-left">
+      <table class="solde-inline-table">
+        <tr>
+          <td class="solde-label-cell">Date du Prochain Payement :</td>
+          <td class="solde-badge-cell"><?= $badgeText ?></td>
+        </tr>
+      </table>
+    </div>
+    <div class="bottom-status-right">
+      <?php if (!empty($barcodeVal)): ?>
+        <div class="barcode-box">
+          <?= generatePicqerBarcodeHtml($barcodeVal, 32, 1.25) ?>
+        </div>
+      <?php endif; ?>
+      <div class="signature-title">CAISSIER(RE)</div>
+      <div class="signature-name"><?= htmlspecialchars($caissier_nom ?? '') ?></div>
+    </div>
+    <div style="clear: both;"></div>
+  </div>
 
   <!-- AVERTISSEMENT N.B -->
   <div class="warning-box">
@@ -432,58 +466,37 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
 
   <table class="info-table">
     <tr>
-      <td style="width: 78%;">
-        <table style="width: 100%;">
+      <td style="width: 76%; vertical-align: top;">
+        <table style="width: 100%; border-collapse: collapse;">
           <tr>
-            <td style="width: 50%;">
-              N° <span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
+            <td style="width: 52%;">
+              N° : &nbsp;<span class="val-bold"><?= htmlspecialchars($code_paiement ?? $code_inscription ?? '-') ?></span>
             </td>
-            <?php
-              $dateOpDisplay = date('d/m/Y');
-              if (!empty($date_operation_raw)) {
-                  $tsOp = strtotime((string)$date_operation_raw);
-                  if ($tsOp !== false) $dateOpDisplay = date('d/m/Y', $tsOp);
-              } elseif (!empty($date_operation)) {
-                  $dateOpStr = trim((string)$date_operation);
-                  if (preg_match('/^(\d{2}\/\d{2}\/\d{4})/', $dateOpStr, $mOp)) {
-                      $dateOpDisplay = $mOp[1];
-                  } else {
-                      $tsOp = strtotime($dateOpStr);
-                      if ($tsOp !== false) $dateOpDisplay = date('d/m/Y', $tsOp);
-                  }
-              }
-            ?>
-            <td style="width: 50%; color: #666666;"><?= htmlspecialchars($dateOpDisplay) ?></td>
+            <td style="width: 48%;">Date : &nbsp;<span class="val-bold"><?= htmlspecialchars($dateOpDisplay) ?></span></td>
           </tr>
           <tr>
-            <td>Numéro réf étudiant( e) : <span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
-            <td>Filière / Niveau : <span class="val-bold"><?= htmlspecialchars($filiere_niveau ?? '-') ?></span></td>
+            <td>Matricule : &nbsp;<span class="val-bold"><?= htmlspecialchars($matricule_etudiant ?? '-') ?></span></td>
+            <td>Filière / Niveau : &nbsp;<span class="val-bold"><?= htmlspecialchars($filiere_niveau ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td colspan="2">Nom_Prénom(s) : <span class="val-bold"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>
+            <td colspan="2">Nom &amp; Prénoms(s) : &nbsp;<span class="val-bold"><?= htmlspecialchars($nom_prenom_etudiant ?? '-') ?></span></td>
           </tr>
           <tr>
-            <td>
-              Type d'Opération <span class="gray-inline-box" style="width: 70px;">&nbsp;</span>
-            </td>
-            <td>
-              Banque : <span class="gray-inline-box" style="width: 70px;">&nbsp;</span>
-              &nbsp;&nbsp;
-              Reste à Payer <span class="gray-inline-box"><?= number_format($total_reste_payer ?? 0, 0, ',', ' ') ?>CFA</span>
+            <td colspan="2">
+              Type d'Opération : &nbsp;<span style="background:#CCCCCC; padding:1px 6px; font-weight:bold;"><?= htmlspecialchars($type_operation ?? '-') ?></span>
             </td>
           </tr>
           <tr>
-            <td>Montant de l'Opération : <span class="val-bold"><?= number_format($montant_operation ?? 0, 0, ',', ' ') ?>CFA</span></td>
-            <td class="text-blue"><?= htmlspecialchars($montant_operation_lettres ?? '') ?></td>
+            <td colspan="2">Montant de l'Opération : &nbsp;<span class="val-bold">(<?= number_format($montant_operation ?? 0, 0, ',', ' ') ?> CFA)</span> &nbsp;<span class="text-blue"><?= htmlspecialchars($montant_operation_lettres ?? '') ?></span></td>
           </tr>
         </table>
       </td>
-      <td style="width: 22%; text-align: right; vertical-align: top;">
-        <div style="display: inline-block; width: 110px; text-align: right;">
+      <td style="width: 24%; text-align: right; vertical-align: top;">
+        <div style="display: inline-block; width: 120px; text-align: right;">
           <?php if (!empty($photo_etudiant)): ?>
-            <img src="<?= $photo_etudiant ?>" width="110" height="110" class="photo-box" style="width: 110px; height: 110px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
+            <img src="<?= $photo_etudiant ?>" width="120" height="130" class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
           <?php else: ?>
-            <div class="photo-box" style="width: 110px; height: 110px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 110px; color: #94A3B8; font-size: 8.5px; display: inline-block;">PHOTO</div>
+            <div class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 126px; color: #94A3B8; font-size: 8.5px; display: inline-block;">PHOTO</div>
           <?php endif; ?>
         </div>
       </td>
@@ -491,26 +504,26 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
   </table>
 
   <!-- STATUT PROCHAIN PAIEMENT & SIGNATURE COPIE -->
-  <table style="width: 100%; margin-top: 4px;">
-    <tr>
-      <td style="width: 60%;">
-        Date du Prochain Payement : 
-        <span class="badge-solde-gray"><?= $badgeText ?></span>
-      </td>
-      <td style="width: 40%; text-align: right; vertical-align: top;">
-        <div class="signature-title">CAISSIER(RE)</div>
-        <div class="signature-name"><?= htmlspecialchars($caissier_nom ?? '') ?></div>
-        <?php if (!empty($barcodeVal)): ?>
-          <div style="margin-top: 4px; text-align: right;">
-            <div style="display: inline-block; text-align: center;">
-              <?= generatePicqerBarcodeHtml($barcodeVal, 26, 1.0) ?>
-              <div style="font-size: 8px; font-family: 'Courier New', monospace; font-weight: bold; margin-top: 1px;">* <?= htmlspecialchars($barcodeVal) ?> *</div>
-            </div>
-          </div>
-        <?php endif; ?>
-      </td>
-    </tr>
-  </table>
+  <div class="bottom-status-row">
+    <div class="bottom-status-left">
+      <table class="solde-inline-table">
+        <tr>
+          <td class="solde-label-cell">Date du Prochain Payement :</td>
+          <td class="solde-badge-cell"><?= $badgeText ?></td>
+        </tr>
+      </table>
+    </div>
+    <div class="bottom-status-right">
+      <?php if (!empty($barcodeVal)): ?>
+        <div class="barcode-box">
+          <?= generatePicqerBarcodeHtml($barcodeVal, 32, 1.25) ?>
+        </div>
+      <?php endif; ?>
+      <div class="signature-title">CAISSIER(RE)</div>
+      <div class="signature-name"><?= htmlspecialchars($caissier_nom ?? '') ?></div>
+    </div>
+    <div style="clear: both;"></div>
+  </div>
 
   <table style="width: 100%; font-size: 9px; margin-top: 10px;">
     <tr>
