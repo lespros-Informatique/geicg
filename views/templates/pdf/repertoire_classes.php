@@ -236,17 +236,17 @@ if (empty($etablissement) || !is_array($etablissement)) {
 
     /* Bloc de Signature (hors table pour que mPDF applique margin/padding sur les div) */
     .signature-block {
-      width: 48%;
-      margin-left: auto;
+      width: 250px;
+      float: right;
       margin-top: 25px;
-      text-align: right;
+      text-align: center;
     }
     .signature-title {
       font-size: 8.7pt;
       font-weight: bold;
       color: #1E3A5F;
       text-transform: uppercase;
-      text-align: right;
+      text-align: center;
       padding-bottom: 4px;
       margin-bottom: 2px;
     }
@@ -254,7 +254,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       font-weight: bold;
       font-size: 8.5pt;
       color: #1E293B;
-      text-align: right;
+      text-align: center;
       margin-top: 2px;
       margin-bottom: 18px;
     }
@@ -262,7 +262,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       font-size: 7.5pt;
       font-style: italic;
       color: #64748B;
-      text-align: right;
+      text-align: center;
     }
   </style>
 </head>
@@ -379,7 +379,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
             </td>
             <td>
               <?php if (!empty($cycleSlug)): ?>
-                <span class="badge-cycle"><?= htmlspecialchars($cycleSlug) ?></span>
+                <span class="badge-cycle"><?= htmlspecialchars($cycleSlug) ?> - </span>
               <?php endif; ?>
               <span class="badge-filiere"><?= htmlspecialchars($filiere) ?></span>
               <?php if (!empty($niveauSlug)): ?>
