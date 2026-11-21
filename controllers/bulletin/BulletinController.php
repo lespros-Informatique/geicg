@@ -187,6 +187,7 @@ class BulletinController extends BaseController
             'moyenneGenerale' => $calc['moyenneGenerale'] ?? 0,
             'mention' => $calc['mention'] ?? '-',
             'decision' => $calc['decision'] ?? '-',
+            'code_distinction_sanction' => $calc['code_distinction_sanction'] ?? 'AUCUN',
             'rang' => $calc['rang'] ?? '-',
             'rangFr' => $calc['rangFr'] ?? (($calc['rang'] ?? '-') !== '-' ? ($calc['rang'] . 'ème') : '-'),
             'totalElevesClasse' => $calc['totalElevesClasse'] ?? '-',

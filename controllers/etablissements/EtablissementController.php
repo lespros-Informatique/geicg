@@ -24,8 +24,9 @@ class EtablissementController extends BaseController
 
         $modelConfig = new ModelConfiguration();
         $conf = $modelConfig->getConfig();
+        $baremes = $modelConfig->getBaremesBulletin(true);
 
-        return array_merge($etab, $conf ?: []);
+        return array_merge($etab, $conf ?: [], ['baremes_bulletin' => $baremes]);
     }
 
     public function list()
@@ -106,6 +107,31 @@ class EtablissementController extends BaseController
 
         // Configuration institutionnelle (table configurations) : MAJ ciblée des champs soumis
         $modelConfig = new ModelConfiguration();
+
+        // Section 5 : Enregistrement du barème des bulletins & mentions
+        if (($this->post('section_id') === 'baremes_bulletin' || isset($data['baremes'])) && !empty($data['baremes']) && is_array($data['baremes'])) {
+            $okBareme = $modelConfig->saveBaremesBulletin($data['baremes']);
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'baremes_bulletin',
+                $id ?: 1,
+                "Mise à jour du barème de notation, mentions et décisions des bulletins",
+                ['nb_paliers' => count($data['baremes'])]
+            );
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+            $msgBareme = "Barème des bulletins & mentions enregistré avec succès !";
+            if ($isAjax) {
+                if ($okBareme) {
+                    $this->success($msgBareme, ['section' => 'baremes_bulletin']);
+                } else {
+                    $this->error("Erreur lors de l'enregistrement du barème.");
+                }
+                return;
+            } else {
+                Session::set('flash_success', $msgBareme);
+                redirect('etablissement/config');
+            }
+        }
         $allowedConfigFields = [
             'nom_etablissement', 'sigle_etablissement', 'slogan_etablissement',
             'numero_autorisation', 'ministere_tutelle', 'adresse_etablissement',

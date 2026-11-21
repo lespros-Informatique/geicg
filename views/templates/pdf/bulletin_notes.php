@@ -56,11 +56,22 @@ $ville_signature = !empty($etablissement['ville_signature']) ? $etablissement['v
 $hasNotes = !empty($totalCoefficients) && (float)$totalCoefficients > 0;
 $moyVal = (float)$moyenneGenerale;
 
-$dist_felicitations = $hasNotes && ($moyVal >= 16);
-$dist_encouragements = $hasNotes && ($moyVal >= 14 && $moyVal < 16);
-$dist_honneur = $hasNotes && ($moyVal >= 12 && $moyVal < 14);
-$sanc_avertissement = $hasNotes && ($moyVal < 10 && $moyVal >= 8);
-$sanc_blame = $hasNotes && ($moyVal < 8);
+if (!isset($code_distinction_sanction) && $hasNotes) {
+    if (!class_exists('ModelConfiguration') && file_exists(__DIR__ . '/../../../models/configurations/ModelConfiguration.php')) {
+        require_once __DIR__ . '/../../../models/configurations/ModelConfiguration.php';
+    }
+    if (class_exists('ModelConfiguration')) {
+        $evalDyn = (new ModelConfiguration())->evaluateNote($moyVal);
+        $code_distinction_sanction = $evalDyn['code_distinction_sanction'] ?? 'AUCUN';
+    }
+}
+$codeDistSanct = strtoupper((string)($code_distinction_sanction ?? 'AUCUN'));
+
+$dist_felicitations  = $hasNotes && ($codeDistSanct === 'FELICITATIONS');
+$dist_encouragements = $hasNotes && ($codeDistSanct === 'ENCOURAGEMENTS');
+$dist_honneur        = $hasNotes && ($codeDistSanct === 'HONNEUR');
+$sanc_avertissement  = $hasNotes && ($codeDistSanct === 'AVERTISSEMENT');
+$sanc_blame          = $hasNotes && ($codeDistSanct === 'BLAME');
 
 $logoPath = '';
 if (!empty($etablissement['logo_etablissement'])) {

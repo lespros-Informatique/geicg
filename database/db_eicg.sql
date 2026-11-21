@@ -2796,3 +2796,31 @@ SET character_set_client = @saved_cs_client;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-11-19  1:33:06
+
+--
+-- Table structure and data for table `baremes_bulletin`
+--
+DROP TABLE IF EXISTS `baremes_bulletin`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `baremes_bulletin` (
+  `id_bareme` int NOT NULL AUTO_INCREMENT,
+  `code_bareme` varchar(50) NOT NULL,
+  `note_min` decimal(4,2) NOT NULL,
+  `note_max` decimal(4,2) NOT NULL,
+  `appreciation_matiere` varchar(100) NOT NULL,
+  `mention_bulletin` varchar(100) NOT NULL,
+  `appreciation_conseil` varchar(150) NOT NULL,
+  `code_distinction_sanction` enum('AUCUN','FELICITATIONS','ENCOURAGEMENTS','HONNEUR','AVERTISSEMENT','BLAME') NOT NULL DEFAULT 'AUCUN',
+  `ordre_affichage` int NOT NULL DEFAULT '1',
+  `etablissement_code` varchar(50) DEFAULT NULL,
+  `statut_bareme` enum('actif','inactif') NOT NULL DEFAULT 'actif',
+  `updated_at_bareme` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_bareme`),
+  UNIQUE KEY `uk_code_bareme` (`code_bareme`),
+  KEY `idx_bareme_statut` (`statut_bareme`),
+  KEY `idx_bareme_notes` (`note_min`,`note_max`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+INSERT INTO `baremes_bulletin` VALUES (1,'BAR-TB',16.00,20.00,'Très Bien','Très Bien','Félicitations du Conseil','FELICITATIONS',1,'5454544456','actif','2026-11-21 15:08:01'),(2,'BAR-B',14.00,15.99,'Bien','Bien','Tableau d\'Honneur','ENCOURAGEMENTS',2,'5454544456','actif','2026-11-21 15:08:01'),(3,'BAR-AB',12.00,13.99,'Assez Bien','Assez Bien','Encouragements','HONNEUR',3,'5454544456','actif','2026-11-21 15:08:01'),(4,'BAR-P',10.00,11.99,'Passable','Passable','Travail passable, peut mieux faire','AUCUN',4,'5454544456','actif','2026-11-21 15:08:01'),(5,'BAR-I',8.00,9.99,'Insuffisant','Insuffisant','Travail insuffisant, redoubler d\'efforts','AVERTISSEMENT',5,'5454544456','actif','2026-11-21 15:08:01'),(6,'BAR-TI',0.00,7.99,'Très Insuffisant','Très Insuffisant','Résultats très faibles, blâme travail','BLAME',6,'5454544456','actif','2026-11-21 15:08:01');
+

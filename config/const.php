@@ -55,6 +55,7 @@ class TABLES
     // INSTITUTION & ACCÈS
     public const ETABLISSEMENTS = 'etablissements';
     public const CONFIGURATIONS = 'configurations';
+    public const BAREMES_BULLETIN = 'baremes_bulletin';
     public const SERVICES = 'services';
     public const FONCTIONS = 'fonctions';
     public const USERS = 'users';

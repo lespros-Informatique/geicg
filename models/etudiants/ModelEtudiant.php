@@ -923,10 +923,11 @@ class ModelEtudiant extends BaseModel
                 $bulletinData = $modelBulletin->calculateBulletinData((int)$inscription['id_inscription']);
                 if ($bulletinData && isset($bulletinData['moyenneGenerale'])) {
                     $mg = (float)$bulletinData['moyenneGenerale'];
-                    if ($mg > 0 || !empty($bulletinData['notesDetails'])) {
+                    if ($mg > 0 || !empty($bulletinData['notesDetails']) || !empty($bulletinData['matieresNotes'])) {
                         $moyenneN1 = $mg;
-                        $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : ($mg >= 10 ? 'Passable' : 'Ajourné(e)');
-                        if ($mg >= 10) {
+                        $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : '-';
+                        $codeDistN1 = strtoupper((string)($bulletinData['code_distinction_sanction'] ?? 'AUCUN'));
+                        if (!in_array($codeDistN1, ['AVERTISSEMENT', 'BLAME'], true) && $mg >= 10) {
                             $decisionN1 = 'Admis(e) en classe supérieure';
                             $decisionBadge = 'success';
                         } else {

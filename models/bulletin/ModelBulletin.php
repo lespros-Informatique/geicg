@@ -176,6 +176,10 @@ class ModelBulletin extends BaseModel
             $matieresNotes[$matCode]['sum_coef_comp'] += $coefComp;
         }
 
+        require_once __DIR__ . '/../configurations/ModelConfiguration.php';
+        $modelConfig = new ModelConfiguration();
+        $baremesBulletin = $modelConfig->getBaremesBulletin(true);
+
         $totalPoints = 0;
         $totalCoefficients = 0;
         foreach ($matieresNotes as $k => &$m) {
@@ -186,12 +190,8 @@ class ModelBulletin extends BaseModel
             // 2. Points de la matière = Moyenne matière x Coefficient de la Maquette Pédagogique
             $m['points'] = round($moyenneMatiere * $m['coefficient'], 2);
 
-            if ($m['moyenne'] >= 16) $m['appreciation'] = 'Très Bien';
-            elseif ($m['moyenne'] >= 14) $m['appreciation'] = 'Bien';
-            elseif ($m['moyenne'] >= 12) $m['appreciation'] = 'Assez Bien';
-            elseif ($m['moyenne'] >= 10) $m['appreciation'] = 'Passable';
-            elseif ($m['moyenne'] >= 8)  $m['appreciation'] = 'Insuffisant';
-            else $m['appreciation'] = 'Très Insuffisant';
+            $evalMat = $modelConfig->evaluateNote((float)$m['moyenne'], $baremesBulletin);
+            $m['appreciation'] = $evalMat['appreciation_matiere'];
 
             $m['rang_matiere'] = '-';
             $totalPoints += $m['points'];
@@ -203,23 +203,12 @@ class ModelBulletin extends BaseModel
 
         $mention = 'Non évalué';
         $decision = 'En attente';
+        $codeDistinctionSanction = 'AUCUN';
         if ($totalCoefficients > 0) {
-            if ($moyenneGenerale >= 16) {
-                $mention = 'Très Bien';
-                $decision = 'Félicitations du Conseil de Faculté / Jury';
-            } elseif ($moyenneGenerale >= 14) {
-                $mention = 'Bien';
-                $decision = 'Tableau d\'Honneur';
-            } elseif ($moyenneGenerale >= 12) {
-                $mention = 'Assez Bien';
-                $decision = 'Encouragements';
-            } elseif ($moyenneGenerale >= 10) {
-                $mention = 'Passable';
-                $decision = 'Admis(e) au semestre';
-            } else {
-                $mention = 'Ajourné(e)';
-                $decision = 'Non validé / Session de rattrapage';
-            }
+            $evalGen = $modelConfig->evaluateNote((float)$moyenneGenerale, $baremesBulletin);
+            $mention = $evalGen['mention_bulletin'];
+            $decision = $evalGen['appreciation_conseil'];
+            $codeDistinctionSanction = $evalGen['code_distinction_sanction'];
         }
 
         $sexeEleve = strtoupper($item['sexe_etudiant'] ?? 'M');
@@ -393,8 +382,8 @@ class ModelBulletin extends BaseModel
         $moyenneGenerales = $totalCoefficientsGenerales > 0 ? round($totalPointsGenerales / $totalCoefficientsGenerales, 2) : 0;
         $moyennePro = $totalCoefficientsPro > 0 ? round($totalPointsPro / $totalCoefficientsPro, 2) : 0;
 
-        $apprGen = ($moyenneGenerales >= 16) ? 'Très Bien' : (($moyenneGenerales >= 14) ? 'Bien' : (($moyenneGenerales >= 12) ? 'Assez Bien' : (($moyenneGenerales >= 10) ? 'Passable' : (($moyenneGenerales >= 8) ? 'Insuffisant' : 'Très Insuffisant'))));
-        $apprPro = ($moyennePro >= 16) ? 'Très Bien' : (($moyennePro >= 14) ? 'Bien' : (($moyennePro >= 12) ? 'Assez Bien' : (($moyennePro >= 10) ? 'Passable' : (($moyennePro >= 8) ? 'Insuffisant' : 'Très Insuffisant'))));
+        $apprGen = $totalCoefficientsGenerales > 0 ? ($modelConfig->evaluateNote((float)$moyenneGenerales, $baremesBulletin)['appreciation_matiere']) : '-';
+        $apprPro = $totalCoefficientsPro > 0 ? ($modelConfig->evaluateNote((float)$moyennePro, $baremesBulletin)['appreciation_matiere']) : '-';
 
         // Calcul dynamique des absences de l'étudiant
         $stmtAbs = $db->prepare("
@@ -472,6 +461,7 @@ class ModelBulletin extends BaseModel
             'moyenneGenerale' => $moyenneGenerale,
             'mention' => $mention,
             'decision' => $decision,
+            'code_distinction_sanction' => $codeDistinctionSanction,
             'rang' => $rang,
             'rangFr' => $rangFr,
             'matieresGenerales' => $matieresGenerales,

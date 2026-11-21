@@ -32,7 +32,7 @@
           </p>
         </div>
         <span class="badge" style="background: #DCFCE7; color: #15803D; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-          <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> 4 Sections Autonomes
+          <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> 5 Sections Autonomes
         </span>
       </div>
 
@@ -49,6 +49,9 @@
         </a>
         <a href="#section-parametres" class="btn btn-sm btn-nav-section" style="background: #F8FAFC; color: #475569; font-weight: 700; border-radius: 8px; padding: 8px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #E2E8F0;">
           <i data-lucide="sliders" style="width: 14px; height: 14px;"></i> 4. Paramètres & Slugs
+        </a>
+        <a href="#section-baremes" class="btn btn-sm btn-nav-section" style="background: #F8FAFC; color: #475569; font-weight: 700; border-radius: 8px; padding: 8px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #E2E8F0;">
+          <i data-lucide="award" style="width: 14px; height: 14px;"></i> 5. Barème Bulletin & Mentions
         </a>
       </div>
 
@@ -407,6 +410,102 @@
           <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid #F1F5F9; width: 100%;">
             <button type="submit" class="btn btn-primary btn-save-section" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
               <i data-lucide="save" style="width: 16px; height: 16px;"></i> Enregistrer les Paramètres & Slugs
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 5 : BARÈME DE NOTATION, MENTIONS & DÉCISIONS DU BULLETIN          -->
+      <!-- ========================================================================= -->
+      <?php
+        $baremesList = $item['baremes_bulletin'] ?? [];
+        $distOptions = [
+          'AUCUN'          => 'Aucune case cochée',
+          'FELICITATIONS'  => 'Distinction : Tableau d\'honneur + Félicitations',
+          'ENCOURAGEMENTS' => 'Distinction : Tableau d\'honneur + Encouragements',
+          'HONNEUR'        => 'Distinction : Tableau d\'honneur',
+          'AVERTISSEMENT'  => 'Sanction : Avertissement Travail',
+          'BLAME'          => 'Sanction : Blâme Travail'
+        ];
+      ?>
+      <div id="section-baremes" class="card config-section-card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; margin-bottom: 24px;">
+        <form class="form-config-section" id="form-config-baremes" action="<?= url('etablissement/edit') ?>" method="POST" style="width: 100%;">
+          <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
+          <input type="hidden" name="id_etablissement" value="<?= htmlspecialchars($item['id_etablissement'] ?? 1) ?>">
+          <input type="hidden" name="section_id" value="baremes_bulletin">
+          <input type="hidden" name="section_name" value="Barème Bulletin & Mentions">
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #E2E8F0; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="font-size: 15px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="award" style="width: 18px; height: 18px; color: #1E3A5F;"></i> 5. Barème de Notation, Mentions & Décisions du Bulletin
+              </div>
+              <p style="color: #64748B; font-size: 12.5px; margin: 4px 0 0 0;">
+                Définissez les intervalles de moyennes (/20), les appréciations par matière, la mention générale, l'appréciation du conseil et la case cochée automatiquement sur le bulletin PDF.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <button type="button" id="btn-add-bareme-row" class="btn btn-sm" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <i data-lucide="plus-circle" style="width: 15px; height: 15px;"></i> Ajouter un palier
+              </button>
+              <span class="badge" style="background: #EFF6FF; color: #1E3A5F; font-weight: 700; font-size: 11px; padding: 5px 10px; border-radius: 6px;">Section 5 / 5</span>
+            </div>
+          </div>
+
+          <div style="overflow-x: auto; margin-bottom: 18px;">
+            <table id="table-baremes-bulletin" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="background: #F8FAFC; border-bottom: 2px solid #CBD5E1; color: #334155; text-align: left;">
+                  <th style="padding: 10px 8px; width: 95px;">Note Min</th>
+                  <th style="padding: 10px 8px; width: 95px;">Note Max</th>
+                  <th style="padding: 10px 8px; width: 18%;">Appréciation Matière</th>
+                  <th style="padding: 10px 8px; width: 16%;">Mention Bilan</th>
+                  <th style="padding: 10px 8px; width: 24%;">Appréciation du Conseil</th>
+                  <th style="padding: 10px 8px;">Distinction / Sanction (Case Bulletin)</th>
+                  <th style="padding: 10px 6px; width: 46px; text-align: center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-baremes-bulletin">
+                <?php foreach ($baremesList as $idx => $b): ?>
+                  <tr class="bareme-row" style="border-bottom: 1px solid #E2E8F0;">
+                    <td style="padding: 8px 6px;">
+                      <input type="hidden" name="baremes[<?= $idx ?>][id_bareme]" value="<?= (int)($b['id_bareme'] ?? 0) ?>">
+                      <input type="number" step="0.01" min="0" max="20" name="baremes[<?= $idx ?>][note_min]" value="<?= htmlspecialchars(number_format((float)($b['note_min'] ?? 0), 2, '.', '')) ?>" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-weight: 700;" required>
+                    </td>
+                    <td style="padding: 8px 6px;">
+                      <input type="number" step="0.01" min="0" max="20" name="baremes[<?= $idx ?>][note_max]" value="<?= htmlspecialchars(number_format((float)($b['note_max'] ?? 20), 2, '.', '')) ?>" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; font-weight: 700;" required>
+                    </td>
+                    <td style="padding: 8px 6px;">
+                      <input type="text" name="baremes[<?= $idx ?>][appreciation_matiere]" value="<?= htmlspecialchars($b['appreciation_matiere'] ?? '') ?>" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Ex: Très Bien" required>
+                    </td>
+                    <td style="padding: 8px 6px;">
+                      <input type="text" name="baremes[<?= $idx ?>][mention_bulletin]" value="<?= htmlspecialchars($b['mention_bulletin'] ?? '') ?>" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Ex: Très Bien" required>
+                    </td>
+                    <td style="padding: 8px 6px;">
+                      <input type="text" name="baremes[<?= $idx ?>][appreciation_conseil]" value="<?= htmlspecialchars($b['appreciation_conseil'] ?? '') ?>" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Ex: Encouragements" required>
+                    </td>
+                    <td style="padding: 8px 6px;">
+                      <select name="baremes[<?= $idx ?>][code_distinction_sanction]" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF;">
+                        <?php foreach ($distOptions as $dCode => $dLabel): ?>
+                          <option value="<?= $dCode ?>" <?= (($b['code_distinction_sanction'] ?? 'AUCUN') === $dCode) ? 'selected' : '' ?>><?= htmlspecialchars($dLabel) ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                    </td>
+                    <td style="padding: 8px 6px; text-align: center;">
+                      <button type="button" class="btn-remove-bareme-row" title="Supprimer ce palier" style="background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; border-radius: 6px; padding: 6px 8px; cursor: pointer;">
+                        <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+                      </button>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid #F1F5F9; width: 100%;">
+            <button type="submit" class="btn btn-primary btn-save-section" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 8px; padding: 10px 24px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+              <i data-lucide="save" style="width: 16px; height: 16px;"></i> Enregistrer le Barème & les Mentions
             </button>
           </div>
         </form>
