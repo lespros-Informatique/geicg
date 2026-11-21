@@ -578,8 +578,8 @@ class ModelBulletin extends BaseModel
             $stmtAnnual->execute([$item['classe_code'], $item['annee_code'] ?? '']);
             $annualRows = $stmtAnnual->fetchAll(PDO::FETCH_ASSOC);
 
-            $semMatByInsc = []; // [insc][semCode][matCode] = ['sum_pond' => 0, 'sum_coef' => 0, 'coef_maq' => X]
-            $examByInsc = [];   // [insc] = ['sum_pond' => 0, 'sum_coef' => 0]
+            $semMatByInsc = [];  // [insc][semCode][matCode] = ['sum_pond' => 0, 'sum_coef' => 0, 'coef_maq' => X]
+            $examMatByInsc = []; // [insc][matCode] = ['sum_pond' => 0, 'sum_coef' => 0, 'coef_maq' => X]
 
             foreach ($annualRows as $ar) {
                 $insc = $ar['inscription_code'];
@@ -593,14 +593,19 @@ class ModelBulletin extends BaseModel
                 if ($cMaq <= 0) $cMaq = 1.0;
 
                 if ($tEval === 'EXAMEN') {
-                    if (!isset($examByInsc[$insc])) {
-                        $examByInsc[$insc] = ['sum_pond' => 0.0, 'sum_coef' => 0.0];
-                    }
-                    $examByInsc[$insc]['sum_pond'] += ($vNote * $cComp);
-                    $examByInsc[$insc]['sum_coef'] += $cComp;
-
-                    // En 1ère année, les notes d'EXAMEN ne rentrent pas dans les moyennes semestrielles
+                    // En 1ère année : un seul examen annuel au Semestre 2, pondéré par le coefficient de chaque matière dans la maquette pédagogique
                     if ($estPremiereAnnee) {
+                        if ($sem2Code === null || $sCode === $sem2Code) {
+                            if (!isset($examMatByInsc[$insc][$mCode])) {
+                                $examMatByInsc[$insc][$mCode] = [
+                                    'sum_pond' => 0.0,
+                                    'sum_coef' => 0.0,
+                                    'coef_maq' => $cMaq
+                                ];
+                            }
+                            $examMatByInsc[$insc][$mCode]['sum_pond'] += ($vNote * $cComp);
+                            $examMatByInsc[$insc][$mCode]['sum_coef'] += $cComp;
+                        }
                         continue;
                     }
                 }
@@ -616,7 +621,7 @@ class ModelBulletin extends BaseModel
                 $semMatByInsc[$insc][$sCode][$mCode]['sum_coef'] += $cComp;
             }
 
-            $allInscCodes = array_unique(array_merge(array_keys($semMatByInsc), array_keys($examByInsc)));
+            $allInscCodes = array_unique(array_merge(array_keys($semMatByInsc), array_keys($examMatByInsc)));
             $classeMoyennesAnnuelles = [];
 
             foreach ($allInscCodes as $insc) {
@@ -647,8 +652,18 @@ class ModelBulletin extends BaseModel
                 }
 
                 $mEx = null;
-                if (!empty($examByInsc[$insc]) && $examByInsc[$insc]['sum_coef'] > 0) {
-                    $mEx = round($examByInsc[$insc]['sum_pond'] / $examByInsc[$insc]['sum_coef'], 2);
+                if (!empty($examMatByInsc[$insc])) {
+                    $ptsEx = 0.0; $cfsEx = 0.0;
+                    foreach ($examMatByInsc[$insc] as $mData) {
+                        if ($mData['sum_coef'] > 0) {
+                            $moyMatEx = round($mData['sum_pond'] / $mData['sum_coef'], 2);
+                            $ptsEx += round($moyMatEx * $mData['coef_maq'], 2);
+                            $cfsEx += $mData['coef_maq'];
+                        }
+                    }
+                    if ($cfsEx > 0) {
+                        $mEx = round($ptsEx / $cfsEx, 2);
+                    }
                 }
 
                 if ($insc === $item['code_inscription']) {

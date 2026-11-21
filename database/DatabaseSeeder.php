@@ -1656,22 +1656,35 @@ class DatabaseSeeder
             $isS1 = ($sIdx === 0);
             $evalDefs = [
                 [
-                    'libelle' => 'Devoir Surveillé — ' . $sem['libelle_semestre'],
-                    'type'    => 'DEVOIR',
-                    'coef'    => 1.00,
-                    'd_deb'   => $isS1 ? "{$startYear}-11-18" : "{$endYear}-04-07",
-                    'd_fin'   => $isS1 ? "{$startYear}-11-22" : "{$endYear}-04-11",
-                    'statut'  => 'termine',
+                    'libelle'   => 'Devoir Surveillé N°1 — ' . $sem['libelle_semestre'],
+                    'type'      => 'DEVOIR',
+                    'coef'      => 1.00,
+                    'd_deb'     => $isS1 ? "{$startYear}-11-18" : "{$endYear}-03-17",
+                    'd_fin'     => $isS1 ? "{$startYear}-11-22" : "{$endYear}-03-21",
+                    'statut'    => 'termine',
                     'fill_rate' => 100,
+                    'only_2a'   => false,
                 ],
                 [
-                    'libelle' => 'Examen de Fin de ' . $sem['libelle_semestre'],
-                    'type'    => 'EXAMEN',
-                    'coef'    => 2.00,
-                    'd_deb'   => $isS1 ? "{$endYear}-01-20" : "{$endYear}-06-15",
-                    'd_fin'   => $isS1 ? "{$endYear}-01-25" : "{$endYear}-06-20",
-                    'statut'  => ($isActiveYear && !$isS1) ? 'programme' : 'termine',
-                    'fill_rate' => ($isActiveYear && !$isS1) ? 65 : 100,
+                    'libelle'   => 'Devoir Surveillé N°2 — ' . $sem['libelle_semestre'],
+                    'type'      => 'DEVOIR',
+                    'coef'      => 1.00,
+                    'd_deb'     => $isS1 ? "{$startYear}-12-16" : "{$endYear}-04-21",
+                    'd_fin'     => $isS1 ? "{$startYear}-12-20" : "{$endYear}-04-25",
+                    'statut'    => 'termine',
+                    'fill_rate' => 100,
+                    'only_2a'   => false,
+                ],
+                [
+                    'libelle'   => $isS1 ? ('Examen de Fin de ' . $sem['libelle_semestre'] . ' (2ème Année)') : 'Examen Annuel de Fin d\'Année',
+                    'type'      => 'EXAMEN',
+                    'coef'      => 2.00,
+                    'd_deb'     => $isS1 ? "{$endYear}-01-20" : "{$endYear}-06-15",
+                    'd_fin'     => $isS1 ? "{$endYear}-01-25" : "{$endYear}-06-20",
+                    'statut'    => ($isActiveYear && !$isS1) ? 'programme' : 'termine',
+                    'fill_rate' => ($isActiveYear && !$isS1) ? 80 : 100,
+                    // En 1ère année, il n'y a qu'un seul examen annuel (au Semestre 2)
+                    'only_2a'   => $isS1,
                 ],
             ];
 
@@ -1694,6 +1707,9 @@ class DatabaseSeeder
                 $this->inc('compositions');
 
                 foreach ($classes as $cl) {
+                    if (!empty($ev['only_2a']) && (int)($cl['niv_index'] ?? 0) === 0) {
+                        continue;
+                    }
                     $cnfCode = $this->genCode('CNF-');
                     $stmtCnf->execute([$cnfCode, $compCode, $cl['niveau_code'], $cl['filiere_code']]);
                     $this->inc('composition_niveau_filiere');
