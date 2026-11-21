@@ -180,20 +180,31 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
       background: #F8FAFC;
       border: 1px solid #CBD5E1;
       border-radius: 5px;
-      padding: 9px 10px;
-      margin-bottom: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
       margin-top: 8px;
+    }
+    .recap-box table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .recap-box td {
+      font-size: 12.5px;
+      line-height: 1.65;
+      padding: 6px 4px;
+      vertical-align: top;
     }
     .decision-banner {
       background: <?= $badgeBg ?>;
       color: <?= $badgeColor ?>;
       border: 1.5px solid <?= $badgeBorder ?>;
       border-radius: 5px;
-      padding: 6px 10px;
+      padding: 8px 12px;
       text-align: center;
-      font-size: 10.5px;
+      font-size: 12px;
+      line-height: 1.45;
       font-weight: bold;
-      margin-top: 8px;
+      margin-top: 10px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
@@ -306,13 +317,13 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
   <div class="recap-box">
     <table style="width: 100%;">
       <tr>
-        <td style="width: 34%;">Classe Fréquentée : <span class="val-bold" style="font-size:10px; color:#1E3A5F;"><?= htmlspecialchars($classe_precedente ?? '-') ?></span></td>
+        <td style="width: 34%;">Classe Fréquentée : <span class="val-bold" style="color:#1E3A5F;"><?= htmlspecialchars($classe_precedente ?? '-') ?></span></td>
         <td style="width: 36%;">Filière : <span class="val-bold"><?= htmlspecialchars($filiere_precedente ?? '-') ?></span></td>
         <td style="width: 30%;">Niveau N-1 : <span class="val-bold"><?= htmlspecialchars($niveau_precedent ?? '-') ?></span></td>
       </tr>
       <tr>
         <td>Année Académique : <span class="val-bold"><?= htmlspecialchars($annee_precedente ?? '-') ?></span></td>
-        <td>Moyenne Générale : <span class="val-bold" style="font-size:10px; color:#0F172A;"><?= htmlspecialchars($moyenne_n1 ?? 'Non renseignée') ?></span></td>
+        <td>Moyenne Générale : <span class="val-bold" style="color:#0F172A;"><?= htmlspecialchars($moyenne_n1 ?? 'Non renseignée') ?></span></td>
         <td>Mention : <span class="val-bold"><?= htmlspecialchars($mention_n1 ?? 'Non évalué') ?></span></td>
       </tr>
       <tr>
