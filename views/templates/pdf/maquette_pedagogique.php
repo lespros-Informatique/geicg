@@ -218,6 +218,23 @@ if (empty($etablissement) || !is_array($etablissement)) {
 </head>
 <body>
 
+  <!-- PIED DE PAGE FIXE POUR MPDF -->
+  <htmlpagefooter name="pageFooter">
+    <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
+      <tr>
+        <td style="width: 40%; text-align: left;">
+        </td>
+        <td style="width: 20%; text-align: center; font-weight: bold;">
+          Page {PAGENO} / {nbpg}
+        </td>
+        <td style="width: 40%; text-align: right;">
+          Réf: REF-MAQ-<?= date('Ymd-His') ?>
+        </td>
+      </tr>
+    </table>
+  </htmlpagefooter>
+  <sethtmlpagefooter name="pageFooter" value="on" />
+
   <!-- EN-TÊTE OFFICIEL UNIFIÉ GEICG -->
   <?php include __DIR__ . '/components/header_institution.php'; ?>
 
@@ -226,7 +243,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <tr>
       <td>
         <div class="banner-title">MAQUETTE PÉDAGOGIQUE & COEFFICIENTS DES MATIÈRES</div>
-        <div class="banner-sub">Programme d'études réparti en Matières Générales et Matières Professionnelles</div>
+        
       </td>
     </tr>
   </table>
