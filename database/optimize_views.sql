@@ -91,6 +91,9 @@ SELECT
     a.code_annee,
     a.libelle_annee,
     a.libelle_annee AS annee_nom,
+    a.coef_semestre1,
+    a.coef_semestre2,
+    a.coef_examen,
     p.nom_pere,
     p.telephone_pere,
     p.profession_pere,
@@ -335,6 +338,7 @@ SELECT
     cl.libelle_classe AS libelle_classe,
     f.libelle_filiere AS libelle_filiere,
     niv.libelle_niveau AS libelle_niveau,
+    niv.slug_niveau AS slug_niveau,
     comp.id_composition AS id_composition,
     comp.code_composition AS code_composition,
     comp.libelle_composition AS libelle_composition,
@@ -446,7 +450,10 @@ SELECT
     n.slug_niveau,
     a.code_annee,
     a.libelle_annee,
-    a.libelle_annee AS annee_nom
+    a.libelle_annee AS annee_nom,
+    a.coef_semestre1,
+    a.coef_semestre2,
+    a.coef_examen
 FROM inscriptions i
 INNER JOIN etudiants e ON e.code_etudiant = i.etudiant_code
 LEFT JOIN classes cl ON cl.code_classe = i.classe_code

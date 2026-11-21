@@ -627,24 +627,24 @@ class DatabaseSeeder
         }
 
         $defaults = [
-            ['BAR-EXC01', 1, 18.00, 20.00, 'Excellent',   'Excellent',   'TH_FELICITATIONS',  'Excellent travail, félicitations du conseil'],
-            ['BAR-TRB02', 2, 16.00, 17.99, 'Très Bien',   'Très Bien',   'TH_FELICITATIONS',  'Très bon travail, félicitations'],
-            ['BAR-BIE03', 3, 14.00, 15.99, 'Bien',        'Bien',        'TH_ENCOURAGEMENTS', 'Bon travail, encouragements du conseil'],
-            ['BAR-ASB04', 4, 12.00, 13.99, 'Assez Bien',  'Assez Bien',  'TH_HONNEUR',        'Travail satisfaisant, tableau d\'honneur'],
-            ['BAR-PAS05', 5, 10.00, 11.99, 'Passable',    'Passable',    'AUCUN',             'Travail passable, peut mieux faire'],
-            ['BAR-INS06', 6,  0.00,  9.99, 'Insuffisant', 'Insuffisant', 'SANCTION_AVERT',    'Travail insuffisant, doit redoubler d\'efforts'],
+            ['BAR-TB', 1, 16.00, 20.00, 'Très Bien',        'Très Bien',        'FELICITATIONS',  'Félicitations du Conseil',                'Admis(e) avec Félicitations du Conseil'],
+            ['BAR-B',  2, 14.00, 15.99, 'Bien',             'Bien',             'ENCOURAGEMENTS', 'Tableau d\'Honneur',                      'Admis(e) avec Tableau d\'Honneur'],
+            ['BAR-AB', 3, 12.00, 13.99, 'Assez Bien',       'Assez Bien',       'HONNEUR',        'Encouragements',                          'Admis(e) avec Encouragements'],
+            ['BAR-P',  4, 10.00, 11.99, 'Passable',         'Passable',         'AUCUN',          'Travail passable, peut mieux faire',      'Admis(e) en classe supérieure'],
+            ['BAR-I',  5,  8.00,  9.99, 'Insuffisant',      'Insuffisant',      'AVERTISSEMENT',  'Travail insuffisant, redoubler d\'efforts','Autorisé(e) à redoubler'],
+            ['BAR-TI', 6,  0.00,  7.99, 'Très Insuffisant', 'Très Insuffisant', 'BLAME',          'Résultats très faibles, blâme travail',   'Ajourné(e) / Résultats très faibles'],
         ];
 
         $stmt = $this->pdo->prepare("
             INSERT INTO baremes_bulletin (
-                code_bareme, ordre_bareme, note_min, note_max,
+                code_bareme, ordre_affichage, note_min, note_max,
                 appreciation_matiere, mention_bulletin, code_distinction_sanction,
-                appreciation_conseil, statut_bareme, etablissement_code
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?)
+                appreciation_conseil, appreciation_conseil_s2, statut_bareme, etablissement_code
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?)
         ");
 
         foreach ($defaults as $d) {
-            $stmt->execute([$d[0], $d[1], $d[2], $d[3], $d[4], $d[5], $d[6], $d[7], $this->etabCode]);
+            $stmt->execute([$d[0], $d[1], $d[2], $d[3], $d[4], $d[5], $d[6], $d[7], $d[8], $this->etabCode]);
             $this->inc('baremes_bulletin');
         }
     }

@@ -226,6 +226,7 @@ class BulletinController extends BaseController
                 $this->renderNotFound("Le bulletin demandé est introuvable.");
                 return;
             }
+            $calc['etablissement'] = $this->getEtablissementConfig();
             $this->loadView('../views/bulletin/details.php', $calc);
         } catch (Exception $e) {
             error_log("BulletinController::details error: " . $e->getMessage());

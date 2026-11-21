@@ -1,6 +1,11 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $encryptedId = $encryptedId ?? '';
+$etablissement = (!empty($etablissement) && is_array($etablissement)) ? $etablissement : [];
+$nomEtablissement = !empty($etablissement['nom_etablissement']) ? $etablissement['nom_etablissement'] : '';
+$titreDirectionPedagogique = !empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'Direction des Études';
+$nomDirecteurEtudes = !empty($etablissement['nom_directeur_etudes']) ? $etablissement['nom_directeur_etudes'] : '';
+$villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : (!empty($etablissement['ville_etablissement']) ? $etablissement['ville_etablissement'] : '');
 $matieresNotes = $matieresNotes ?? [];
 $totalPoints = $totalPoints ?? 0;
 $totalCoefficients = $totalCoefficients ?? 0;
@@ -8,10 +13,21 @@ $moyenneGenerale = $moyenneGenerale ?? 0;
 $mention = $mention ?? '-';
 $decision = $decision ?? '-';
 $rang = $rang ?? 1;
+$rangFr = $rangFr ?? ($rang == 1 ? '1er' : ($rang . 'ème'));
 $totalElevesClasse = $totalElevesClasse ?? 1;
 $moyenneMinClasse = $moyenneMinClasse ?? 0;
 $moyenneMaxClasse = $moyenneMaxClasse ?? 0;
 $moyenneMoyClasse = $moyenneMoyClasse ?? 0;
+$estPremiereAnnee = !empty($est_premiere_annee);
+$estDeuxiemeSemestre = !empty($est_deuxieme_semestre);
+$moyenneRecap = isset($moyenneRecap) ? (float)$moyenneRecap : (float)$moyenneGenerale;
+$rangRecapFr = !empty($rangRecapFr) ? $rangRecapFr : $rangFr;
+$moyenneMinRecap = isset($moyenneMinRecap) ? (float)$moyenneMinRecap : (float)$moyenneMinClasse;
+$moyenneMaxRecap = isset($moyenneMaxRecap) ? (float)$moyenneMaxRecap : (float)$moyenneMaxClasse;
+$moyenneMoyRecap = isset($moyenneMoyRecap) ? (float)$moyenneMoyRecap : (float)$moyenneMoyClasse;
+$coefSem1 = (int)($coef_semestre1 ?? 2);
+$coefSem2 = (int)($coef_semestre2 ?? 2);
+$coefExam = (int)($coef_examen ?? 1);
 $heuresAbsences = $heuresAbsences ?? '0 H';
 ?>
 <div class="app-layout">
@@ -73,8 +89,8 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
               <i data-lucide="graduation-cap" style="width: 32px; height: 32px;"></i>
             </div>
             <div>
-              <h2 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">ÉCOLE INTERNATIONALE DE COMMERCE ET DE GESTION</h2>
-              <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Direction des Études et des Examens &bull; Enseignement Supérieur</p>
+              <h2 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;"><?= htmlspecialchars($nomEtablissement) ?></h2>
+              <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;"><?= htmlspecialchars($titreDirectionPedagogique) ?></p>
             </div>
           </div>
           <div style="text-align: right;">
@@ -301,23 +317,52 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
           </table>
         </div>
 
-        <!-- Class Benchmark Stats & Jury Decision -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px 18px;">
-            <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 8px; text-transform: uppercase;">
-              Statistiques de la Classe (<?= htmlspecialchars($item['libelle_classe'] ?? 'Classe') ?>)
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748B; line-height: 1.8;">
-              <span>Moyenne de la classe : <strong style="color: #0F172A;"><?= number_format($moyenneMoyClasse, 2, ',', ' ') ?> / 20</strong></span>
-              <span>Plus forte moyenne : <strong style="color: #15803D;"><?= number_format($moyenneMaxClasse, 2, ',', ' ') ?> / 20</strong></span>
-              <span>Plus faible : <strong style="color: #B91C1C;"><?= number_format($moyenneMinClasse, 2, ',', ' ') ?> / 20</strong></span>
+        <!-- Récapitulatif Semestriel / Annuel & Appréciation du Conseil -->
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px 20px;">
+            <?php if (!$estDeuxiemeSemestre): ?>
+              <div style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-bottom: 10px; text-transform: uppercase; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                RÉCAPITULATIF SEMESTRE
+              </div>
+              <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
+                <span style="background: #E2E8F0; color: #0F172A; font-weight: 800; font-size: 14px; padding: 4px 12px; border-radius: 6px;">
+                  Moyenne : <?= number_format($moyenneRecap, 2, ',', ' ') ?> / 20
+                </span>
+                <span style="font-size: 13px; font-weight: 800; color: #1E3A5F;">
+                  Rang : <?= htmlspecialchars($rangRecapFr) ?> / <?= htmlspecialchars((string)$totalElevesClasse) ?> Étudiants
+                </span>
+              </div>
+            <?php else: ?>
+              <div style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-bottom: 10px; text-transform: uppercase; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+                RÉCAPITULATIF ANNUEL
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; font-size: 13px; margin-bottom: 10px;">
+                <div>Moy. Semestre 1 <span style="color:#64748B; font-size:11px;">(Coef <?= $coefSem1 ?>)</span> : <strong style="color: #0F172A;"><?= isset($moy_semestre1) && $moy_semestre1 !== null ? number_format((float)$moy_semestre1, 2, ',', ' ') : '-' ?></strong></div>
+                <div>Moy. Semestre 2 <span style="color:#64748B; font-size:11px;">(Coef <?= $coefSem2 ?>)</span> : <strong style="color: #0F172A;"><?= isset($moy_semestre2) && $moy_semestre2 !== null ? number_format((float)$moy_semestre2, 2, ',', ' ') : '-' ?></strong></div>
+                <?php if ($estPremiereAnnee): ?>
+                  <div>Moy. Examen <span style="color:#64748B; font-size:11px;">(Coef <?= $coefExam ?>)</span> : <strong style="color: #0F172A;"><?= isset($moy_examen) && $moy_examen !== null ? number_format((float)$moy_examen, 2, ',', ' ') : '-' ?></strong></div>
+                <?php endif; ?>
+                <div>
+                  <span style="background: #E2E8F0; color: #0F172A; font-weight: 800; padding: 3px 10px; border-radius: 6px; display: inline-block;">
+                    Moy. Générale : <?= number_format($moyenneRecap, 2, ',', ' ') ?> / 20
+                  </span>
+                </div>
+              </div>
+              <div style="font-size: 13px; font-weight: 800; color: #1E3A5F; margin-bottom: 8px;">
+                Rang : <?= htmlspecialchars($rangRecapFr) ?> / <?= htmlspecialchars((string)$totalElevesClasse) ?> Étudiants
+              </div>
+            <?php endif; ?>
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #64748B; border-top: 1px dashed #CBD5E1; padding-top: 8px;">
+              <span>Moy. Min : <strong style="color: #B91C1C;"><?= number_format($moyenneMinRecap, 2, ',', ' ') ?></strong></span>
+              <span>Moy. Max : <strong style="color: #15803D;"><?= number_format($moyenneMaxRecap, 2, ',', ' ') ?></strong></span>
+              <span>Moy. de la classe : <strong style="color: #0F172A;"><?= number_format($moyenneMoyRecap, 2, ',', ' ') ?></strong></span>
             </div>
           </div>
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px 18px;">
-            <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 8px; text-transform: uppercase;">
-              Décision & Observation du Jury
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 13px; font-weight: 800; color: #334155; margin-bottom: 8px; text-transform: uppercase; border-bottom: 1px solid #E2E8F0; padding-bottom: 6px;">
+              Appréciation du conseil <?= $estDeuxiemeSemestre ? '(Fin d\'Année - S2)' : '(Semestre 1)' ?>
             </div>
-            <div style="font-size: 13px; font-weight: 700; color: <?= $moyenneGenerale >= 10 ? '#1E3A5F' : '#B91C1C' ?>;">
+            <div style="font-size: 14px; font-weight: 800; color: <?= $moyenneRecap >= 10 ? '#1E3A5F' : '#B91C1C' ?>;">
               <?= htmlspecialchars($decision) ?>
             </div>
           </div>
@@ -330,11 +375,15 @@ $heuresAbsences = $heuresAbsences ?? '0 H';
             <div style="font-size: 11px; color: #94A3B8; font-style: italic;">Signature et Visa</div>
           </div>
           <div style="text-align: center;">
-            <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 60px;">
-              Fait le <?= date('d/m/Y') ?><br>
-              Le Directeur des Études / Le Jury
+            <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 45px;">
+              Fait<?= $villeSignature !== '' ? ' à ' . htmlspecialchars($villeSignature) : '' ?> le <?= date('d/m/Y') ?><br>
+              <?= htmlspecialchars(mb_strtoupper($titreDirectionPedagogique)) ?>
             </div>
-            <div style="font-size: 11px; color: #94A3B8; font-style: italic;">Cachet de l'établissement</div>
+            <?php if ($nomDirecteurEtudes !== ''): ?>
+              <div style="font-size: 13px; font-weight: 800; color: #0F172A;"><?= htmlspecialchars($nomDirecteurEtudes) ?></div>
+            <?php else: ?>
+              <div style="font-size: 11px; color: #94A3B8; font-style: italic;">Cachet de l'établissement</div>
+            <?php endif; ?>
           </div>
         </div>
 

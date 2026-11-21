@@ -59,7 +59,10 @@ $(document).ready(function() {
         '<input type="text" name="baremes[' + idx + '][mention_bulletin]" value="" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Mention bilan" required>' +
       '</td>' +
       '<td style="padding: 8px 6px;">' +
-        '<input type="text" name="baremes[' + idx + '][appreciation_conseil]" value="" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Appréciation conseil" required>' +
+        '<input type="text" name="baremes[' + idx + '][appreciation_conseil]" value="" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Appréciation conseil (S1)" required>' +
+      '</td>' +
+      '<td style="padding: 8px 6px;">' +
+        '<input type="text" name="baremes[' + idx + '][appreciation_conseil_s2]" value="" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Décision conseil (S2)" required>' +
       '</td>' +
       '<td style="padding: 8px 6px;">' +
         '<select name="baremes[' + idx + '][code_distinction_sanction]" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF;">' +

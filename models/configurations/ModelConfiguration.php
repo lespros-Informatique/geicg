@@ -81,6 +81,7 @@ class ModelConfiguration extends BaseModel
                     'appreciation_matiere'      => $b['appreciation_matiere'] ?? '',
                     'mention_bulletin'          => $b['mention_bulletin'] ?? '',
                     'appreciation_conseil'      => $b['appreciation_conseil'] ?? '',
+                    'appreciation_conseil_s2'   => !empty($b['appreciation_conseil_s2']) ? $b['appreciation_conseil_s2'] : ($b['appreciation_conseil'] ?? ''),
                     'code_distinction_sanction' => $b['code_distinction_sanction'] ?? 'AUCUN'
                 ];
             }
@@ -94,6 +95,7 @@ class ModelConfiguration extends BaseModel
                     'appreciation_matiere'      => $b['appreciation_matiere'] ?? '',
                     'mention_bulletin'          => $b['mention_bulletin'] ?? '',
                     'appreciation_conseil'      => $b['appreciation_conseil'] ?? '',
+                    'appreciation_conseil_s2'   => !empty($b['appreciation_conseil_s2']) ? $b['appreciation_conseil_s2'] : ($b['appreciation_conseil'] ?? ''),
                     'code_distinction_sanction' => $b['code_distinction_sanction'] ?? 'AUCUN'
                 ];
             }
@@ -103,6 +105,7 @@ class ModelConfiguration extends BaseModel
             'appreciation_matiere'      => '-',
             'mention_bulletin'          => '-',
             'appreciation_conseil'      => '-',
+            'appreciation_conseil_s2'   => '-',
             'code_distinction_sanction' => 'AUCUN'
         ];
     }
@@ -126,12 +129,16 @@ class ModelConfiguration extends BaseModel
                 $apprMat = trim((string)($r['appreciation_matiere'] ?? ''));
                 $mention = trim((string)($r['mention_bulletin'] ?? ''));
                 $apprCons = trim((string)($r['appreciation_conseil'] ?? ''));
+                $apprConsS2 = trim((string)($r['appreciation_conseil_s2'] ?? ''));
+                if ($apprConsS2 === '') {
+                    $apprConsS2 = $apprCons;
+                }
                 $codeDist = strtoupper(trim((string)($r['code_distinction_sanction'] ?? 'AUCUN')));
                 if (!in_array($codeDist, $allowedCodes, true)) {
                     $codeDist = 'AUCUN';
                 }
 
-                if ($apprMat === '' && $mention === '' && $apprCons === '') {
+                if ($apprMat === '' && $mention === '' && $apprCons === '' && $apprConsS2 === '') {
                     continue;
                 }
 
@@ -140,19 +147,19 @@ class ModelConfiguration extends BaseModel
                     $stmtUpd = $db->prepare("
                         UPDATE " . TABLES::BAREMES_BULLETIN . "
                         SET note_min = ?, note_max = ?, appreciation_matiere = ?, mention_bulletin = ?,
-                            appreciation_conseil = ?, code_distinction_sanction = ?, ordre_affichage = ?, statut_bareme = 'actif'
+                            appreciation_conseil = ?, appreciation_conseil_s2 = ?, code_distinction_sanction = ?, ordre_affichage = ?, statut_bareme = 'actif'
                         WHERE id_bareme = ?
                     ");
-                    $stmtUpd->execute([$noteMin, $noteMax, $apprMat, $mention, $apprCons, $codeDist, $ordre, $idBareme]);
+                    $stmtUpd->execute([$noteMin, $noteMax, $apprMat, $mention, $apprCons, $apprConsS2, $codeDist, $ordre, $idBareme]);
                     $keptIds[] = $idBareme;
                 } else {
                     $codeBareme = 'BAR-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
                     $stmtIns = $db->prepare("
                         INSERT INTO " . TABLES::BAREMES_BULLETIN . "
-                        (code_bareme, note_min, note_max, appreciation_matiere, mention_bulletin, appreciation_conseil, code_distinction_sanction, ordre_affichage, statut_bareme)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif')
+                        (code_bareme, note_min, note_max, appreciation_matiere, mention_bulletin, appreciation_conseil, appreciation_conseil_s2, code_distinction_sanction, ordre_affichage, statut_bareme)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')
                     ");
-                    $stmtIns->execute([$codeBareme, $noteMin, $noteMax, $apprMat, $mention, $apprCons, $codeDist, $ordre]);
+                    $stmtIns->execute([$codeBareme, $noteMin, $noteMax, $apprMat, $mention, $apprCons, $apprConsS2, $codeDist, $ordre]);
                     $keptIds[] = (int)$db->lastInsertId();
                 }
                 $ordre++;

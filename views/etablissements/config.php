@@ -457,11 +457,12 @@
             <table id="table-baremes-bulletin" style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <thead>
                 <tr style="background: #F8FAFC; border-bottom: 2px solid #CBD5E1; color: #334155; text-align: left;">
-                  <th style="padding: 10px 8px; width: 95px;">Note Min</th>
-                  <th style="padding: 10px 8px; width: 95px;">Note Max</th>
-                  <th style="padding: 10px 8px; width: 18%;">Appréciation Matière</th>
-                  <th style="padding: 10px 8px; width: 16%;">Mention Bilan</th>
-                  <th style="padding: 10px 8px; width: 24%;">Appréciation du Conseil</th>
+                  <th style="padding: 10px 8px; width: 85px;">Note Min</th>
+                  <th style="padding: 10px 8px; width: 85px;">Note Max</th>
+                  <th style="padding: 10px 8px; width: 13%;">Appréciation Matière</th>
+                  <th style="padding: 10px 8px; width: 12%;">Mention Bilan</th>
+                  <th style="padding: 10px 8px; width: 20%;">Appréciation Conseil (S1)</th>
+                  <th style="padding: 10px 8px; width: 20%;">Appréciation / Décision (S2)</th>
                   <th style="padding: 10px 8px;">Distinction / Sanction (Case Bulletin)</th>
                   <th style="padding: 10px 6px; width: 46px; text-align: center;">Action</th>
                 </tr>
@@ -484,6 +485,9 @@
                     </td>
                     <td style="padding: 8px 6px;">
                       <input type="text" name="baremes[<?= $idx ?>][appreciation_conseil]" value="<?= htmlspecialchars($b['appreciation_conseil'] ?? '') ?>" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Ex: Encouragements" required>
+                    </td>
+                    <td style="padding: 8px 6px;">
+                      <input type="text" name="baremes[<?= $idx ?>][appreciation_conseil_s2]" value="<?= htmlspecialchars($b['appreciation_conseil_s2'] ?? ($b['appreciation_conseil'] ?? '')) ?>" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1;" placeholder="Ex: Admis(e) en classe supérieure" required>
                     </td>
                     <td style="padding: 8px 6px;">
                       <select name="baremes[<?= $idx ?>][code_distinction_sanction]" class="form-control" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF;">

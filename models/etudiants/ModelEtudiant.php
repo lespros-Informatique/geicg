@@ -920,18 +920,19 @@ class ModelEtudiant extends BaseModel
             try {
                 require_once __DIR__ . '/../bulletin/ModelBulletin.php';
                 $modelBulletin = new ModelBulletin();
-                $bulletinData = $modelBulletin->calculateBulletinData((int)$inscription['id_inscription']);
-                if ($bulletinData && isset($bulletinData['moyenneGenerale'])) {
-                    $mg = (float)$bulletinData['moyenneGenerale'];
+                $semestresInsc = $modelBulletin->getActiveSemestres($inscription['annee_code'] ?? null);
+                $lastSemCode = !empty($semestresInsc) ? (end($semestresInsc)['code_semestre'] ?? null) : null;
+                $bulletinData = $modelBulletin->calculateBulletinData((int)$inscription['id_inscription'], $lastSemCode);
+                if ($bulletinData && (isset($bulletinData['moyenneRecap']) || isset($bulletinData['moyenneGenerale']))) {
+                    $mg = (float)($bulletinData['moyenneRecap'] ?? $bulletinData['moyenneGenerale']);
                     if ($mg > 0 || !empty($bulletinData['notesDetails']) || !empty($bulletinData['matieresNotes'])) {
                         $moyenneN1 = $mg;
                         $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : '-';
+                        $decisionN1 = !empty($bulletinData['decision']) ? $bulletinData['decision'] : 'Autorisé(e) à se réinscrire';
                         $codeDistN1 = strtoupper((string)($bulletinData['code_distinction_sanction'] ?? 'AUCUN'));
                         if (!in_array($codeDistN1, ['AVERTISSEMENT', 'BLAME'], true) && $mg >= 10) {
-                            $decisionN1 = 'Admis(e) en classe supérieure';
                             $decisionBadge = 'success';
                         } else {
-                            $decisionN1 = 'Ajourné(e) / Redoublement';
                             $decisionBadge = 'warning';
                         }
                     }

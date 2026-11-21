@@ -22,7 +22,7 @@ $stAnnee = $item['statut_annee'] ?? 'planifie';
           <a href="<?= url() ?>etudiant/imprimerPdf?annee_code=<?= urlencode($item['code_annee'] ?? '') ?>" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Imprimer le registre nominatif des étudiants de cette année">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer Registre Annuel
           </a>
-          <?php if ($stAnnee === 'planifie'): ?>
+          <?php if ($stAnnee === 'planifie' || $stAnnee === 'actif'): ?>
             <a href="<?= url('annee/list') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
               <i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier l'année
             </a>
@@ -57,9 +57,15 @@ $stAnnee = $item['statut_annee'] ?? 'planifie';
 
         </div>
 
-        <div style="display: flex; gap: 24px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #F1F5F9; font-size: 13px;">
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #F1F5F9; font-size: 13px; align-items: center;">
           <div><strong style="color: #64748B;">Date de Début :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_debut_annee']) ? date('d/m/Y', strtotime($item['date_debut_annee'])) : 'Non définie' ?></span></div>
           <div><strong style="color: #64748B;">Date de Fin :</strong> <span style="font-weight: 700; color: #0F172A;"><?= !empty($item['date_fin_annee']) ? date('d/m/Y', strtotime($item['date_fin_annee'])) : 'Non définie' ?></span></div>
+          <div>
+            <strong style="color: #64748B;">Coefficients Annuels :</strong>
+            <span class="badge" style="background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px; margin-left:4px;">Semestre 1 : <?= (int)($item['coef_semestre1'] ?? 2) ?></span>
+            <span class="badge" style="background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px; margin-left:4px;">Semestre 2 : <?= (int)($item['coef_semestre2'] ?? 2) ?></span>
+            <span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:700; font-size:11.5px; padding:3px 8px; border-radius:6px; margin-left:4px;">Examen (1A) : <?= (int)($item['coef_examen'] ?? 1) ?></span>
+          </div>
           <div><strong style="color: #64748B;">Statut :</strong> 
             <?php if ($stAnnee === 'actif'): ?>
               <span class="badge" style="background:#DCFCE7; color:#15803D; padding:4px 10px; border-radius:10px; font-weight:700;">Actif</span>

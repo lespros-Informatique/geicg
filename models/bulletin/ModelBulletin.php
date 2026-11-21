@@ -697,10 +697,12 @@ class ModelBulletin extends BaseModel
                 }
             }
 
-            // Au 2ème semestre, les distinctions/sanctions et l'appréciation du conseil sont basées sur la Moyenne Générale Annuelle
+            // Au 2ème semestre, les distinctions/sanctions et l'appréciation du conseil (S2) sont basées sur la Moyenne Générale Annuelle
             if ($totalCoefficients > 0) {
                 $evalAnn = $modelConfig->evaluateNote((float)$moyenneRecap, $baremesBulletin);
-                $decision = $evalAnn['appreciation_conseil'];
+                $decision = !empty($evalAnn['appreciation_conseil_s2'])
+                    ? $evalAnn['appreciation_conseil_s2']
+                    : $evalAnn['appreciation_conseil'];
                 $codeDistinctionSanction = $evalAnn['code_distinction_sanction'];
             }
         }
