@@ -265,7 +265,8 @@ class BulletinController extends BaseController
                 'margin_left' => 7,
                 'margin_right' => 7,
                 'margin_top' => 6,
-                'margin_bottom' => 6
+                'margin_bottom' => 6,
+                'watermark_logo' => true
             ]);
         } catch (Exception $e) {
             error_log("BulletinController::imprimerBulletinPdf error: " . $e->getMessage());
@@ -377,7 +378,8 @@ class BulletinController extends BaseController
                 'margin_left' => 7,
                 'margin_right' => 7,
                 'margin_top' => 6,
-                'margin_bottom' => 6
+                'margin_bottom' => 6,
+                'watermark_logo' => true
             ]);
         } catch (Exception $e) {
             error_log("BulletinController::imprimerClasseBulletinsPdf error: " . $e->getMessage());
@@ -602,7 +604,9 @@ class BulletinController extends BaseController
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
-            'margin_bottom' => 8
+            'margin_bottom' => 8,
+            'watermark_logo' => true,
+            'watermark_alpha' => 0.05
         ]);
     }
 

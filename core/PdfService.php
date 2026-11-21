@@ -61,6 +61,10 @@ class PdfService
         ]);
 
         $sigleEtab = '';
+        $cfgEtab = [];
+        if (!class_exists('ModelConfiguration') && file_exists(__DIR__ . '/../models/configurations/ModelConfiguration.php')) {
+            require_once __DIR__ . '/../models/configurations/ModelConfiguration.php';
+        }
         if (class_exists('ModelConfiguration')) {
             try {
                 $cfgEtab = (new ModelConfiguration())->getConfig();
@@ -71,11 +75,25 @@ class PdfService
         $mpdf->SetAuthor($sigleEtab !== '' ? $sigleEtab . ' - Système d\'Information' : 'Système d\'Information');
         $mpdf->showImageErrors = true;
 
-        if (!empty($options['watermark_image']) && file_exists($options['watermark_image'])) {
-            $wmAlpha = isset($options['watermark_alpha']) ? (float)$options['watermark_alpha'] : 0.04;
-            $wmSize = $options['watermark_size'] ?? [110, 110];
+        // Résolution automatique du logo institutionnel (configurations.logo_etablissement) si watermark_logo => true
+        $watermarkImagePath = $options['watermark_image'] ?? null;
+        if (empty($watermarkImagePath) && !empty($options['watermark_logo']) && !empty($cfgEtab['logo_etablissement'])) {
+            $cleanLogo = ltrim((string)$cfgEtab['logo_etablissement'], '/');
+            foreach ([__DIR__ . '/../public/' . $cleanLogo, __DIR__ . '/../' . $cleanLogo] as $candLogo) {
+                if (file_exists($candLogo) && is_file($candLogo)) {
+                    $watermarkImagePath = $candLogo;
+                    break;
+                }
+            }
+        }
+
+        if (!empty($watermarkImagePath) && file_exists($watermarkImagePath)) {
+            $defaultAlpha = !empty($options['watermark_logo']) ? 0.06 : 0.04;
+            $wmAlpha = isset($options['watermark_alpha']) ? (float)$options['watermark_alpha'] : $defaultAlpha;
+            $defaultWidth = ($orientation === 'L') ? 160 : 135;
+            $wmSize = $options['watermark_size'] ?? (!empty($options['watermark_logo']) ? [$defaultWidth, 0] : [110, 110]);
             if (is_array($wmSize) && count($wmSize) === 2 && (float)$wmSize[0] > 0 && (float)$wmSize[1] <= 0) {
-                $imgDim = @getimagesize($options['watermark_image']);
+                $imgDim = @getimagesize($watermarkImagePath);
                 if ($imgDim && !empty($imgDim[0]) && !empty($imgDim[1])) {
                     $wmSize = [(float)$wmSize[0], round((float)$wmSize[0] * ($imgDim[1] / $imgDim[0]), 2)];
                 } else {
@@ -83,7 +101,7 @@ class PdfService
                 }
             }
             $wmPos = $options['watermark_position'] ?? 'F';
-            $mpdf->SetWatermarkImage($options['watermark_image'], $wmAlpha, $wmSize, $wmPos);
+            $mpdf->SetWatermarkImage($watermarkImagePath, $wmAlpha, $wmSize, $wmPos);
             $mpdf->showWatermarkImage = true;
         } elseif ($watermark) {
             $mpdf->SetWatermarkText($watermark);

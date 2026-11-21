@@ -350,7 +350,9 @@ class ImpayesController extends BaseController
         PdfService::generate($html, $filename, [
             'orientation' => 'P',
             'format' => 'A4',
-            'title' => 'Rappel de Scolarité - ' . $dataView['nom_prenom_etudiant']
+            'title' => 'Rappel de Scolarité - ' . $dataView['nom_prenom_etudiant'],
+            'watermark_logo' => true,
+            'watermark_alpha' => 0.05
         ]);
     }
 
@@ -466,7 +468,9 @@ class ImpayesController extends BaseController
         PdfService::generate($fullHtml, $filename, [
             'orientation' => 'P',
             'format' => 'A4',
-            'title' => 'Rappels de Scolarité en Masse (' . count($inscriptions) . ')'
+            'title' => 'Rappels de Scolarité en Masse (' . count($inscriptions) . ')',
+            'watermark_logo' => true,
+            'watermark_alpha' => 0.05
         ]);
     }
 

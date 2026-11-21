@@ -239,6 +239,10 @@ class ArriereController extends BaseController
         ];
 
         $html = PdfService::renderTemplate('recu_arriere.php', $data);
-        PdfService::generate($html, 'Recu_Arriere_' . $paiement['code_paiement'] . '.pdf', ['orientation' => 'P']);
+        PdfService::generate($html, 'Recu_Arriere_' . $paiement['code_paiement'] . '.pdf', [
+            'orientation' => 'P',
+            'watermark_logo' => true,
+            'watermark_alpha' => 0.05
+        ]);
     }
 }

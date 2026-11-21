@@ -328,7 +328,9 @@ class AccessoireController extends BaseController
             'margin_left' => 6,
             'margin_right' => 6,
             'margin_top' => 6,
-            'margin_bottom' => 6
+            'margin_bottom' => 6,
+            'watermark_logo' => true,
+            'watermark_alpha' => 0.05
         ]);
     }
 

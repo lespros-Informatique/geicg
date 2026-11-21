@@ -404,7 +404,9 @@ class InscriptionController extends BaseController
         if (!empty($_GET['pdf'])) {
             $filename = 'Recu_Inscription_' . ($data['matricule'] ?? 'GEICG') . '.pdf';
             PdfService::generate($html, $filename, [
-                'orientation' => 'P'
+                'orientation' => 'P',
+                'watermark_logo' => true,
+                'watermark_alpha' => 0.05
             ]);
         } else {
             echo $html;

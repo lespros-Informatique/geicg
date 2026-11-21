@@ -482,7 +482,9 @@ class PaiementController extends BaseController
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
-            'margin_bottom' => 8
+            'margin_bottom' => 8,
+            'watermark_logo' => true,
+            'watermark_alpha' => 0.05
         ]);
     }
 
@@ -644,7 +646,8 @@ class PaiementController extends BaseController
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
-            'margin_bottom' => 8
+            'margin_bottom' => 8,
+            'watermark_logo' => true
         ]);
     }
 }
