@@ -281,7 +281,10 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
           </tr>
           <tr>
             <td>Email : <span class="val-bold"><?= htmlspecialchars($email_etudiant ?? '-') ?></span></td>
-            <td>Domicile / Résidence : <span class="val-bold"><?= htmlspecialchars($adresse_etudiant ?? '-') ?></span></td>
+            <td> Résidence : <span class="val-bold"><?= htmlspecialchars($adresse_etudiant ?? '-') ?></span></td>
+          </tr>
+          <tr>
+            <td colspan="2">Redoublant(e) : <span class="val-bold"><?= htmlspecialchars($est_redoublant ?? '-') ?></span></td>
           </tr>
         </table>
       </td>
@@ -327,8 +330,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
         <td>Mention : <span class="val-bold"><?= htmlspecialchars($mention_n1 ?? 'Non évalué') ?></span></td>
       </tr>
       <tr>
-        <td>Code Inscription : <span class="val-bold" style="color:#1E3A5F;"><?= htmlspecialchars($code_inscription ?? '-') ?></span></td>
-        <td colspan="2">Statut Redoublement N-1 : <span class="val-bold"><?= htmlspecialchars($est_redoublant ?? 'NON') ?></span></td>
+        <td colspan="3">Code Inscription : <span class="val-bold" style="color:#1E3A5F;"><?= htmlspecialchars($code_inscription ?? '-') ?></span></td>
       </tr>
     </table>
 
@@ -338,8 +340,25 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     </div>
   </div>
 
-  <!-- SECTION 3 : ORIENTATION & PROPOSITION POUR LA NOUVELLE CLASSE -->
-  <div class="section-title">3. ORIENTATION & PROPOSITION DE RÉINSCRIPTION</div>
+
+    <!-- SECTION 3: SITUATION FINANCIÈRE DE L'ANCIENNE SESSION (N-1) -->
+  <div class="section-title"> SCOLARITE DE L'ANNEE ANTERIEURE (<?= $annee_precedente ?> ) </div>
+  <table class="data-table" style="background: #FAFAFA; border: 1px solid #E2E8F0; padding: 4px;">
+    <tr>
+      <td style="width: 33%;">Scolarité N-1 Fixée : <br><strong style="font-size:9.5px;"><?= number_format((float)($total_scolarite_n1 ?? 0), 0, ',', ' ') ?> FCFA</strong></td>
+      <td style="width: 33%;">Total Versé N-1 : <br><strong style="color:#15803D; font-size:9.5px;"><?= number_format((float)($total_paye_n1 ?? 0), 0, ',', ' ') ?> FCFA</strong></td>
+      <td style="width: 34%; text-align: right;">Reliquat N-1 : <br>
+        <?php if ($soldeRestantN1 <= 0): ?>
+          <span style="background:#DCFCE7; color:#15803D; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:9px;">SOLDÉ (0 FCFA)</span>
+        <?php else: ?>
+          <span style="background:#FEE2E2; color:#B91C1C; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:9.5px;"><?= number_format($soldeRestantN1, 0, ',', ' ') ?> FCFA (IMPAYÉ)</span>
+        <?php endif; ?>
+      </td>
+    </tr>
+  </table>
+
+  <!-- SECTION 4 : ORIENTATION & PROPOSITION POUR LA NOUVELLE CLASSE -->
+  <div class="section-title">ORIENTATION & PROPOSITION DE RÉINSCRIPTION</div>
   <div class="cible-box">
     <table style="width: 100%;">
       <tr>
@@ -354,21 +373,7 @@ $soldeRestantN1 = (float)($solde_n1 ?? 0);
     </table>
   </div>
 
-  <!-- SECTION 4 : SITUATION FINANCIÈRE DE L'ANCIENNE SESSION (N-1) -->
-  <div class="section-title">4. SITUATION COMPTABLE DE L'ANCIENNE CLASSE (N-1)</div>
-  <table class="data-table" style="background: #FAFAFA; border: 1px solid #E2E8F0; padding: 4px;">
-    <tr>
-      <td style="width: 33%;">Scolarité N-1 Fixée : <br><strong style="font-size:9.5px;"><?= number_format((float)($total_scolarite_n1 ?? 0), 0, ',', ' ') ?> FCFA</strong></td>
-      <td style="width: 33%;">Total Versé N-1 : <br><strong style="color:#15803D; font-size:9.5px;"><?= number_format((float)($total_paye_n1 ?? 0), 0, ',', ' ') ?> FCFA</strong></td>
-      <td style="width: 34%; text-align: right;">Reliquat N-1 : <br>
-        <?php if ($soldeRestantN1 <= 0): ?>
-          <span style="background:#DCFCE7; color:#15803D; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:9px;">SOLDÉ (0 FCFA)</span>
-        <?php else: ?>
-          <span style="background:#FEE2E2; color:#B91C1C; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:9.5px;"><?= number_format($soldeRestantN1, 0, ',', ' ') ?> FCFA (IMPAYÉ)</span>
-        <?php endif; ?>
-      </td>
-    </tr>
-  </table>
+
 
   <!-- VISAS ET SIGNATURES OFFICIELLES -->
   <table class="signature-grid">
