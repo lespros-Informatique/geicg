@@ -34,6 +34,7 @@
                 <th style="padding: 12px;">Année Académique</th>
                 <th style="padding: 12px;">Date Début</th>
                 <th style="padding: 12px;">Date Fin</th>
+                <th style="padding: 12px; text-align: center;">Coefficients (S1 / S2 / Exam)</th>
                 <th style="padding: 12px;">Statut</th>
                 <th style="padding: 12px; text-align: right;">Actions</th>
               </tr>
@@ -80,6 +81,32 @@
             Date de Fin <span style="color: #EF4444;">*</span>
           </label>
           <input type="date" name="date_fin_annee" id="annee_date_fin" required class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px;">
+        </div>
+      </div>
+
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+        <div style="font-size: 12px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="sliders" style="width: 14px; height: 14px;"></i> Coefficients de Pondération Annuelle (Bulletins)
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px;">
+              Coef. Semestre 1 <span style="color: #EF4444;">*</span>
+            </label>
+            <input type="number" step="0.01" min="0" name="coef_semestre1" id="annee_coef_s1" required value="0.40" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px;">
+              Coef. Semestre 2 <span style="color: #EF4444;">*</span>
+            </label>
+            <input type="number" step="0.01" min="0" name="coef_semestre2" id="annee_coef_s2" required value="0.40" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-weight: 700; font-size: 12px; color: #334155; margin-bottom: 4px;">
+              Coef. Examen (1A) <span style="color: #EF4444;">*</span>
+            </label>
+            <input type="number" step="0.01" min="0" name="coef_examen" id="annee_coef_exam" required value="0.20" class="form-control" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-weight: 700; font-size: 13px;">
+          </div>
         </div>
       </div>
 

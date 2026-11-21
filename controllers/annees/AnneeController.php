@@ -88,6 +88,9 @@ class AnneeController extends BaseController
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
         $data['annee_code'] = $anneeCode;
+        $data['coef_semestre1'] = isset($data['coef_semestre1']) && $data['coef_semestre1'] !== '' ? (float)$data['coef_semestre1'] : 0.40;
+        $data['coef_semestre2'] = isset($data['coef_semestre2']) && $data['coef_semestre2'] !== '' ? (float)$data['coef_semestre2'] : 0.40;
+        $data['coef_examen'] = isset($data['coef_examen']) && $data['coef_examen'] !== '' ? (float)$data['coef_examen'] : 0.20;
         
         $filteredData = $this->model->filterData($data);
         $libelle = $data['libelle_annee'] ?? '';
@@ -120,13 +123,22 @@ class AnneeController extends BaseController
             return;
         }
 
-        if (($currentItem['statut_annee'] ?? '') !== 'planifie') {
-            $this->error('Seule une année académique en préparation (planifiée) peut être modifiée.');
+        if (($currentItem['statut_annee'] ?? '') === 'cloture') {
+            $this->error('Une année académique clôturée ne peut plus être modifiée.');
             return;
         }
 
         $data = $_POST;
         unset($data['csrf_token']);
+        if (isset($data['coef_semestre1']) && $data['coef_semestre1'] !== '') {
+            $data['coef_semestre1'] = (float)$data['coef_semestre1'];
+        }
+        if (isset($data['coef_semestre2']) && $data['coef_semestre2'] !== '') {
+            $data['coef_semestre2'] = (float)$data['coef_semestre2'];
+        }
+        if (isset($data['coef_examen']) && $data['coef_examen'] !== '') {
+            $data['coef_examen'] = (float)$data['coef_examen'];
+        }
         if (!empty($data['libelle_annee'])) {
             if (!$this->checkUnique('annees', 'libelle_annee', $data['libelle_annee'], 'Annee academique', 'id_annee', $id)) return;
         }

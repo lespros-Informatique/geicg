@@ -126,6 +126,7 @@ class DatabaseSeeder
 
         $this->pdo->beginTransaction();
         try {
+            $this->ensureBaremesBulletin();
             $this->ensureStaffUsers();
             $teachers = $this->seedTeachers();
             $catalog  = $this->ensureAcademicCatalog();
@@ -618,6 +619,36 @@ class DatabaseSeeder
         return $kits;
     }
 
+    private function ensureBaremesBulletin(): void
+    {
+        $cnt = (int)$this->pdo->query("SELECT COUNT(*) FROM baremes_bulletin")->fetchColumn();
+        if ($cnt > 0) {
+            return;
+        }
+
+        $defaults = [
+            ['BAR-EXC01', 1, 18.00, 20.00, 'Excellent',   'Excellent',   'TH_FELICITATIONS',  'Excellent travail, félicitations du conseil'],
+            ['BAR-TRB02', 2, 16.00, 17.99, 'Très Bien',   'Très Bien',   'TH_FELICITATIONS',  'Très bon travail, félicitations'],
+            ['BAR-BIE03', 3, 14.00, 15.99, 'Bien',        'Bien',        'TH_ENCOURAGEMENTS', 'Bon travail, encouragements du conseil'],
+            ['BAR-ASB04', 4, 12.00, 13.99, 'Assez Bien',  'Assez Bien',  'TH_HONNEUR',        'Travail satisfaisant, tableau d\'honneur'],
+            ['BAR-PAS05', 5, 10.00, 11.99, 'Passable',    'Passable',    'AUCUN',             'Travail passable, peut mieux faire'],
+            ['BAR-INS06', 6,  0.00,  9.99, 'Insuffisant', 'Insuffisant', 'SANCTION_AVERT',    'Travail insuffisant, doit redoubler d\'efforts'],
+        ];
+
+        $stmt = $this->pdo->prepare("
+            INSERT INTO baremes_bulletin (
+                code_bareme, ordre_bareme, note_min, note_max,
+                appreciation_matiere, mention_bulletin, code_distinction_sanction,
+                appreciation_conseil, statut_bareme, etablissement_code
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?)
+        ");
+
+        foreach ($defaults as $d) {
+            $stmt->execute([$d[0], $d[1], $d[2], $d[3], $d[4], $d[5], $d[6], $d[7], $this->etabCode]);
+            $this->inc('baremes_bulletin');
+        }
+    }
+
     private function ensureAnnee(string $yearLabel, string $status): array
     {
         $startYear = (int)substr($yearLabel, 0, 4);
@@ -630,16 +661,32 @@ class DatabaseSeeder
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row) {
-            $upd = $this->pdo->prepare("UPDATE annees SET statut_annee = ?, date_debut_annee = ?, date_fin_annee = ?, updated_at_annee = NOW() WHERE id_annee = ?");
+            $upd = $this->pdo->prepare("
+                UPDATE annees
+                SET statut_annee = ?,
+                    date_debut_annee = ?,
+                    date_fin_annee = ?,
+                    coef_semestre1 = COALESCE(coef_semestre1, 0.40),
+                    coef_semestre2 = COALESCE(coef_semestre2, 0.40),
+                    coef_examen = COALESCE(coef_examen, 0.20),
+                    updated_at_annee = NOW()
+                WHERE id_annee = ?
+            ");
             $upd->execute([$status, $debut, $fin, $row['id_annee']]);
-            $row['statut_annee'] = $status;
+            $row['statut_annee']   = $status;
+            $row['coef_semestre1'] = (float)($row['coef_semestre1'] ?? 0.40);
+            $row['coef_semestre2'] = (float)($row['coef_semestre2'] ?? 0.40);
+            $row['coef_examen']    = (float)($row['coef_examen'] ?? 0.20);
             return $row;
         }
 
         $code = $this->genCode('ANN-');
         $ins = $this->pdo->prepare("
-            INSERT INTO annees (libelle_annee, date_debut_annee, date_fin_annee, code_annee, etablissement_code, created_at_annee, statut_annee, user_code)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO annees (
+                libelle_annee, date_debut_annee, date_fin_annee, code_annee,
+                etablissement_code, created_at_annee, statut_annee, user_code,
+                coef_semestre1, coef_semestre2, coef_examen
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.40, 0.40, 0.20)
         ");
         $ins->execute([$yearLabel, $debut, $fin, $code, $this->etabCode, "{$startYear}-09-01 08:00:00", $status, $this->adminCode]);
         $this->inc('annees');
@@ -651,6 +698,9 @@ class DatabaseSeeder
             'statut_annee'     => $status,
             'date_debut_annee' => $debut,
             'date_fin_annee'   => $fin,
+            'coef_semestre1'   => 0.40,
+            'coef_semestre2'   => 0.40,
+            'coef_examen'      => 0.20,
         ];
     }
 

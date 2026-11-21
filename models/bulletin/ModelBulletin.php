@@ -45,7 +45,8 @@ class ModelBulletin extends BaseModel
             $subWhere = [
                 "n.statut_note = '" . STATUTS::ACTIF . "'",
                 "(comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')",
-                "comp.annee_code = ?"
+                "comp.annee_code = ?",
+                "NOT ((REPLACE(UPPER(COALESCE(niv_sub.slug_niveau, '')), ' ', '') IN ('1A', 'L1', '1ERE', '1') OR UPPER(COALESCE(niv_sub.libelle_niveau, '')) LIKE '%PREMIERE%' OR UPPER(COALESCE(niv_sub.libelle_niveau, '')) LIKE '%PREMIÈRE%') AND UPPER(TRIM(COALESCE(comp.type_composition, ''))) = 'EXAMEN')"
             ];
             $subParams[] = $anneeCode;
 
@@ -81,6 +82,9 @@ class ModelBulletin extends BaseModel
                                 ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moyenne_semestre
                             FROM " . TABLES::NOTES . " n
                             INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+                            INNER JOIN " . TABLES::INSCRIPTIONS . " i_sub ON i_sub.code_inscription = n.inscription_code
+                            LEFT JOIN " . TABLES::CLASSES . " cl_sub ON cl_sub.code_classe = i_sub.classe_code
+                            LEFT JOIN " . TABLES::NIVEAUX . " niv_sub ON niv_sub.code_niveau = cl_sub.niveau_code
                             WHERE {$subWhereSql}
                             GROUP BY n.inscription_code, comp.semestre_code
                         ) n_cnt ON n_cnt.inscription_code = v.code_inscription
@@ -134,6 +138,9 @@ class ModelBulletin extends BaseModel
                             ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moyenne_semestre
                         FROM " . TABLES::NOTES . " n
                         INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
+                        INNER JOIN " . TABLES::INSCRIPTIONS . " i_sub ON i_sub.code_inscription = n.inscription_code
+                        LEFT JOIN " . TABLES::CLASSES . " cl_sub ON cl_sub.code_classe = i_sub.classe_code
+                        LEFT JOIN " . TABLES::NIVEAUX . " niv_sub ON niv_sub.code_niveau = cl_sub.niveau_code
                         WHERE {$subWhereSql}
                         GROUP BY n.inscription_code
                     ) n_cnt ON n_cnt.inscription_code = v.code_inscription";
@@ -181,6 +188,33 @@ class ModelBulletin extends BaseModel
         }
     }
 
+    public function isPremiereAnnee(?string $slugNiveau, ?string $libelleNiveau): bool
+    {
+        $slug = strtoupper(str_replace(' ', '', trim((string)$slugNiveau)));
+        $lib = mb_strtoupper(trim((string)$libelleNiveau));
+        if (in_array($slug, ['1A', 'L1', '1ERE', '1'], true)) {
+            return true;
+        }
+        if (str_contains($lib, 'PREMIERE') || str_contains($lib, 'PREMIÈRE') || str_contains($lib, '1ERE') || str_contains($lib, '1ÈRE')) {
+            return true;
+        }
+        return false;
+    }
+
+    public function isDeuxiemeSemestre(string $selectedSemestreCode, array $semestres): bool
+    {
+        foreach ($semestres as $idx => $s) {
+            if (($s['code_semestre'] ?? '') === $selectedSemestreCode) {
+                $sLib = mb_strtolower(trim($s['libelle_semestre'] ?? ''));
+                if (str_contains($sLib, '2') || str_contains($sLib, 'deux') || str_contains($sLib, 'second') || $idx === 1) {
+                    return true;
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
     public function calculateBulletinData(int $id, ?string $selectedSemestreCode = null): ?array
     {
         $db = $this->getCon();
@@ -205,12 +239,36 @@ class ModelBulletin extends BaseModel
             $selectedSemestreCode = $foundSem ?: ($semestres[0]['code_semestre'] ?? '');
         }
 
+        $estPremiereAnnee = $this->isPremiereAnnee($item['slug_niveau'] ?? '', $item['libelle_niveau'] ?? '');
+        $estDeuxiemeSemestre = $this->isDeuxiemeSemestre((string)$selectedSemestreCode, $semestres);
+
+        // Récupération des coefficients historiques de l'année académique dans la table annees
+        $coefSem1 = 0.40;
+        $coefSem2 = 0.40;
+        $coefExam = 0.20;
+        if (!empty($item['annee_code'])) {
+            $stmtAnnee = $db->prepare("SELECT coef_semestre1, coef_semestre2, coef_examen FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+            $stmtAnnee->execute([$item['annee_code']]);
+            $anneeRow = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
+            if ($anneeRow) {
+                $coefSem1 = (float)($anneeRow['coef_semestre1'] ?? 0.40);
+                $coefSem2 = (float)($anneeRow['coef_semestre2'] ?? 0.40);
+                $coefExam = (float)($anneeRow['coef_examen'] ?? 0.20);
+            }
+        }
+
+        // En 1ère année, les notes de type EXAMEN ne sont pas comptabilisées dans le calcul des moyennes de matières du semestre
+        $examFilterSql = $estPremiereAnnee
+            ? " AND UPPER(TRIM(COALESCE(type_evaluation_code, ''))) != 'EXAMEN'"
+            : "";
+
         // Requête ultra-allégée via la vue optimisée VIEWS::BULLETIN_NOTES_DETAILS
         $sqlNotes = "
             SELECT *
             FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
             WHERE inscription_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
               AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
+              {$examFilterSql}
             ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC, type_evaluation_code ASC
         ";
         $stmtNotes = $db->prepare($sqlNotes);
@@ -304,13 +362,14 @@ class ModelBulletin extends BaseModel
                 FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
                 WHERE classe_code = ? AND semestre_code = ? AND annee_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
                   AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
+                  {$examFilterSql}
             ";
             $stmtClass = $db->prepare($sqlClassmates);
             $stmtClass->execute([$item['classe_code'], $selectedSemestreCode, $item['annee_code'] ?? '']);
             $classNotes = $stmtClass->fetchAll(PDO::FETCH_ASSOC);
 
             // 1. Agrégation par étudiant & par matière (Pondérée par composition)
-            $etudiantsNotesByMatiere = []; // [insc][matCode] = ['sum_notes_pond' => 0, 'sum_coef_comp' => 0, 'coefficient_maquette' => X, 'categorie' => Y]
+            $etudiantsNotesByMatiere = [];
             foreach ($classNotes as $cn) {
                 $insc = $cn['code_inscription'];
                 $mat = $cn['matiere_code'] ?: 'MAT_INCONNUE';
@@ -337,7 +396,7 @@ class ModelBulletin extends BaseModel
             $classeMoyennesGlobales = [];
             $classeMoyennesGenerales = [];
             $classeMoyennesPro = [];
-            $classeMoyennesParMatiere = []; // [matCode][insc] = moy
+            $classeMoyennesParMatiere = [];
 
             foreach ($etudiantsNotesByMatiere as $insc => $mats) {
                 $ptsGlob = 0; $coefGlob = 0;
@@ -370,7 +429,7 @@ class ModelBulletin extends BaseModel
                 if ($coefPro > 0)  $classeMoyennesPro[$insc] = round($ptsPro / $coefPro, 2);
             }
 
-            // 3. Calcul du rang général
+            // 3. Calcul du rang général du semestre
             if (!empty($classeMoyennesGlobales)) {
                 arsort($classeMoyennesGlobales);
                 $totalElevesClasse = count($classeMoyennesGlobales);
@@ -469,63 +528,186 @@ class ModelBulletin extends BaseModel
         $absNonJustHeures = (float)($absData['abs_non_justifiees'] ?? 0);
         $heuresAbsences = $totalAbsHeures > 0 ? ($totalAbsHeures . ' H' . ($absNonJustHeures > 0 ? ' (dont ' . $absNonJustHeures . ' H non justifiées)' : '')) : '0 H';
 
-        // Récupération des moyennes multi-semestres et examens pour le récapitulatif annuel
+        // =====================================================================
+        // CALCUL DU BLOC RÉCAPITULATIF (SEMESTRE 1 vs SEMESTRE 2 / ANNUEL)
+        // =====================================================================
         $moySem1 = null;
         $moySem2 = null;
         $moyExam = null;
 
-        $stmtMultiSem = $db->prepare("
-            SELECT comp.semestre_code, s.libelle_semestre,
-                   ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moy_sem
-            FROM " . TABLES::NOTES . " n
-            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-            LEFT JOIN " . TABLES::SEMESTRES . " s ON (s.code_semestre = comp.semestre_code AND (comp.annee_code IS NULL OR comp.annee_code = '' OR s.annee_code = comp.annee_code))
-            WHERE n.inscription_code = ? AND n.statut_note = '" . STATUTS::ACTIF . "'
-              AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
-            GROUP BY comp.semestre_code, s.libelle_semestre
-            ORDER BY s.id_semestre ASC
-        ");
-        $stmtMultiSem->execute([$item['code_inscription']]);
-        $multiSemRows = $stmtMultiSem->fetchAll(PDO::FETCH_ASSOC);
+        $moyenneRecap = $moyenneGenerale;
+        $rangRecap = $rang;
+        $rangRecapFr = $rangFr;
+        $moyenneMinRecap = $moyenneMinClasse;
+        $moyenneMaxRecap = $moyenneMaxClasse;
+        $moyenneMoyRecap = $moyenneMoyClasse;
 
-        foreach ($multiSemRows as $idx => $sr) {
-            $semName = mb_strtolower($sr['libelle_semestre'] ?? '');
-            if (str_contains($semName, '1') || $idx === 0) {
-                if ($moySem1 === null) $moySem1 = (float)$sr['moy_sem'];
-            }
-            if (str_contains($semName, '2') || $idx === 1) {
-                if ($moySem2 === null) $moySem2 = (float)$sr['moy_sem'];
+        if (!$estDeuxiemeSemestre) {
+            $moySem1 = $moyenneGenerale;
+        } else {
+            $moySem2 = $moyenneGenerale;
+        }
+
+        // Déterminer les codes du Semestre 1 et du Semestre 2 de l'année
+        $sem1Code = null;
+        $sem2Code = null;
+        foreach ($semestres as $idx => $s) {
+            $sLib = mb_strtolower(trim($s['libelle_semestre'] ?? ''));
+            if ($sem1Code === null && (str_contains($sLib, '1') || str_contains($sLib, 'prem') || $idx === 0)) {
+                $sem1Code = $s['code_semestre'];
+            } elseif ($sem2Code === null && (str_contains($sLib, '2') || str_contains($sLib, 'deux') || str_contains($sLib, 'second') || $idx === 1)) {
+                $sem2Code = $s['code_semestre'];
             }
         }
 
-        foreach ($semestres as $idx => $s) {
-            if ($s['code_semestre'] === $selectedSemestreCode) {
-                $sLib = mb_strtolower($s['libelle_semestre'] ?? '');
-                if (str_contains($sLib, '1') || $idx === 0) {
-                    $moySem1 = $moyenneGenerale;
-                } elseif (str_contains($sLib, '2') || $idx === 1) {
-                    $moySem2 = $moyenneGenerale;
+        if ($estDeuxiemeSemestre && !empty($item['classe_code'])) {
+            // Requête globale sur toute l'année académique pour la classe afin de calculer :
+            // Moy. Semestre 1, Moy. Semestre 2, Moy. Examen (en 1A), Moy. Générale Annuelle, Rang Annuel et Min/Max/Moy Classe
+            $stmtAnnual = $db->prepare("
+                SELECT inscription_code,
+                       semestre_code,
+                       matiere_code,
+                       type_evaluation_code,
+                       valeur_note,
+                       coefficient_composition,
+                       coefficient_maquette
+                FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
+                WHERE classe_code = ? AND annee_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+                  AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
+            ");
+            $stmtAnnual->execute([$item['classe_code'], $item['annee_code'] ?? '']);
+            $annualRows = $stmtAnnual->fetchAll(PDO::FETCH_ASSOC);
+
+            $semMatByInsc = []; // [insc][semCode][matCode] = ['sum_pond' => 0, 'sum_coef' => 0, 'coef_maq' => X]
+            $examByInsc = [];   // [insc] = ['sum_pond' => 0, 'sum_coef' => 0]
+
+            foreach ($annualRows as $ar) {
+                $insc = $ar['inscription_code'];
+                $sCode = $ar['semestre_code'];
+                $mCode = $ar['matiere_code'] ?: 'MAT_INCONNUE';
+                $tEval = strtoupper(trim((string)($ar['type_evaluation_code'] ?? '')));
+                $vNote = (float)$ar['valeur_note'];
+                $cComp = (float)($ar['coefficient_composition'] ?? 1);
+                if ($cComp <= 0) $cComp = 1.0;
+                $cMaq = (float)($ar['coefficient_maquette'] ?? 1);
+                if ($cMaq <= 0) $cMaq = 1.0;
+
+                if ($tEval === 'EXAMEN') {
+                    if (!isset($examByInsc[$insc])) {
+                        $examByInsc[$insc] = ['sum_pond' => 0.0, 'sum_coef' => 0.0];
+                    }
+                    $examByInsc[$insc]['sum_pond'] += ($vNote * $cComp);
+                    $examByInsc[$insc]['sum_coef'] += $cComp;
+
+                    // En 1ère année, les notes d'EXAMEN ne rentrent pas dans les moyennes semestrielles
+                    if ($estPremiereAnnee) {
+                        continue;
+                    }
+                }
+
+                if (!isset($semMatByInsc[$insc][$sCode][$mCode])) {
+                    $semMatByInsc[$insc][$sCode][$mCode] = [
+                        'sum_pond' => 0.0,
+                        'sum_coef' => 0.0,
+                        'coef_maq' => $cMaq
+                    ];
+                }
+                $semMatByInsc[$insc][$sCode][$mCode]['sum_pond'] += ($vNote * $cComp);
+                $semMatByInsc[$insc][$sCode][$mCode]['sum_coef'] += $cComp;
+            }
+
+            $allInscCodes = array_unique(array_merge(array_keys($semMatByInsc), array_keys($examByInsc)));
+            $classeMoyennesAnnuelles = [];
+
+            foreach ($allInscCodes as $insc) {
+                $mS1 = null;
+                if ($sem1Code !== null && !empty($semMatByInsc[$insc][$sem1Code])) {
+                    $pts = 0.0; $cfs = 0.0;
+                    foreach ($semMatByInsc[$insc][$sem1Code] as $mData) {
+                        if ($mData['sum_coef'] > 0) {
+                            $moyMat = round($mData['sum_pond'] / $mData['sum_coef'], 2);
+                            $pts += round($moyMat * $mData['coef_maq'], 2);
+                            $cfs += $mData['coef_maq'];
+                        }
+                    }
+                    if ($cfs > 0) $mS1 = round($pts / $cfs, 2);
+                }
+
+                $mS2 = null;
+                if ($sem2Code !== null && !empty($semMatByInsc[$insc][$sem2Code])) {
+                    $pts = 0.0; $cfs = 0.0;
+                    foreach ($semMatByInsc[$insc][$sem2Code] as $mData) {
+                        if ($mData['sum_coef'] > 0) {
+                            $moyMat = round($mData['sum_pond'] / $mData['sum_coef'], 2);
+                            $pts += round($moyMat * $mData['coef_maq'], 2);
+                            $cfs += $mData['coef_maq'];
+                        }
+                    }
+                    if ($cfs > 0) $mS2 = round($pts / $cfs, 2);
+                }
+
+                $mEx = null;
+                if (!empty($examByInsc[$insc]) && $examByInsc[$insc]['sum_coef'] > 0) {
+                    $mEx = round($examByInsc[$insc]['sum_pond'] / $examByInsc[$insc]['sum_coef'], 2);
+                }
+
+                if ($insc === $item['code_inscription']) {
+                    $moySem1 = $mS1;
+                    $moySem2 = $mS2 ?? $moyenneGenerale;
+                    $moyExam = $mEx;
+                }
+
+                // Formules officielles du cahier des charges :
+                // 1ère année : ((moy semestre 1 * coeff) + (moy semestre 2 * coeff) + (moy examen * coeff))
+                // 2ème année : ((moy semestre 1 * coeff) + (moy semestre 2 * coeff))
+                if ($estPremiereAnnee) {
+                    $moyAnn = round(((float)($mS1 ?? 0) * $coefSem1) + ((float)($mS2 ?? 0) * $coefSem2) + ((float)($mEx ?? 0) * $coefExam), 2);
+                } else {
+                    $moyAnn = round(((float)($mS1 ?? 0) * $coefSem1) + ((float)($mS2 ?? 0) * $coefSem2), 2);
+                }
+
+                $classeMoyennesAnnuelles[$insc] = $moyAnn;
+            }
+
+            if (isset($classeMoyennesAnnuelles[$item['code_inscription']])) {
+                $moyenneRecap = $classeMoyennesAnnuelles[$item['code_inscription']];
+            }
+
+            if (!empty($classeMoyennesAnnuelles)) {
+                arsort($classeMoyennesAnnuelles);
+                $nbAnn = count($classeMoyennesAnnuelles);
+                $moyenneMaxRecap = max($classeMoyennesAnnuelles);
+                $moyenneMinRecap = min($classeMoyennesAnnuelles);
+                $moyenneMoyRecap = round(array_sum($classeMoyennesAnnuelles) / $nbAnn, 2);
+
+                $pos = 1;
+                foreach ($classeMoyennesAnnuelles as $inscCode => $valAnn) {
+                    if ($inscCode === $item['code_inscription']) {
+                        $rangRecap = $pos;
+                        $rangRecapFr = ($pos === 1) ? (($sexeEleve === 'F') ? '1ère' : '1er') : ($pos . 'ème');
+                        break;
+                    }
+                    $pos++;
                 }
             }
-        }
 
-        $stmtExam = $db->prepare("
-            SELECT ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moy_exam
-            FROM " . TABLES::NOTES . " n
-            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-            WHERE n.inscription_code = ? AND comp.type_composition = 'EXAMEN' AND n.statut_note = '" . STATUTS::ACTIF . "'
-              AND (comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')
-        ");
-        $stmtExam->execute([$item['code_inscription']]);
-        $examVal = $stmtExam->fetchColumn();
-        if ($examVal !== false && $examVal !== null) {
-            $moyExam = (float)$examVal;
+            // Au 2ème semestre, les distinctions/sanctions et l'appréciation du conseil sont basées sur la Moyenne Générale Annuelle
+            if ($totalCoefficients > 0) {
+                $evalAnn = $modelConfig->evaluateNote((float)$moyenneRecap, $baremesBulletin);
+                $decision = $evalAnn['appreciation_conseil'];
+                $codeDistinctionSanction = $evalAnn['code_distinction_sanction'];
+            }
         }
 
         return [
             'item' => $item,
             'semestres' => $semestres,
             'selectedSemestreCode' => $selectedSemestreCode,
+            'est_premiere_annee' => $estPremiereAnnee,
+            'est_deuxieme_semestre' => $estDeuxiemeSemestre,
+            'coef_semestre1' => $coefSem1,
+            'coef_semestre2' => $coefSem2,
+            'coef_examen' => $coefExam,
             'matieresNotes' => $matieresNotes,
             'totalPoints' => $totalPoints,
             'totalCoefficients' => $totalCoefficients,
@@ -551,6 +733,12 @@ class ModelBulletin extends BaseModel
             'moyenneMinClasse' => $moyenneMinClasse,
             'moyenneMaxClasse' => $moyenneMaxClasse,
             'moyenneMoyClasse' => $moyenneMoyClasse,
+            'moyenneRecap' => $moyenneRecap,
+            'rangRecap' => $rangRecap,
+            'rangRecapFr' => $rangRecapFr,
+            'moyenneMinRecap' => $moyenneMinRecap,
+            'moyenneMaxRecap' => $moyenneMaxRecap,
+            'moyenneMoyRecap' => $moyenneMoyRecap,
             'heuresAbsences' => $heuresAbsences,
             'moy_semestre1' => $moySem1,
             'moy_semestre2' => $moySem2,
@@ -587,7 +775,7 @@ class ModelBulletin extends BaseModel
 
         // 1. Informations de la classe
         $stmtC = $db->prepare("
-            SELECT cl.*, f.libelle_filiere, n.libelle_niveau
+            SELECT cl.*, f.libelle_filiere, n.libelle_niveau, n.slug_niveau
             FROM " . TABLES::CLASSES . " cl
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
@@ -615,10 +803,14 @@ class ModelBulletin extends BaseModel
 
         $filiereCode = $classeInfo['filiere_code'] ?? '';
         $niveauCode = $classeInfo['niveau_code'] ?? '';
+        $estPremiereAnneePv = $this->isPremiereAnnee($classeInfo['slug_niveau'] ?? '', $classeInfo['libelle_niveau'] ?? '');
+        $pvExamFilterSql = $estPremiereAnneePv
+            ? " AND UPPER(TRIM(COALESCE(type_evaluation_code, ''))) != 'EXAMEN'"
+            : "";
 
         // 2. Matières assignées / évaluées pour cette classe via VIEWS::BULLETIN_NOTES_DETAILS
         $matWhere = "classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
-              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')";
+              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "'){$pvExamFilterSql}";
         $matParams = [$selectedClasseCode, $selectedSemestreCode];
         if (!empty($anneeCode)) {
             $matWhere .= " AND annee_code = ?";
@@ -682,7 +874,7 @@ class ModelBulletin extends BaseModel
 
         // 4. Batch query allégée via VIEWS::BULLETIN_NOTES_DETAILS
         $notesWhere = "classe_code = ? AND semestre_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
-              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')";
+              AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "'){$pvExamFilterSql}";
         $notesParams = [$selectedClasseCode, $selectedSemestreCode];
         if (!empty($anneeCode)) {
             $notesWhere .= " AND annee_code = ?";

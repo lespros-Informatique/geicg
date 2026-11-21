@@ -188,6 +188,9 @@ CREATE TABLE `annees` (
   `updated_at_annee` datetime DEFAULT NULL,
   `statut_annee` enum('planifie','actif','cloture') NOT NULL DEFAULT 'planifie',
   `user_code` varchar(50) DEFAULT NULL,
+  `coef_semestre1` decimal(5,2) NOT NULL DEFAULT '0.40',
+  `coef_semestre2` decimal(5,2) NOT NULL DEFAULT '0.40',
+  `coef_examen` decimal(5,2) NOT NULL DEFAULT '0.20',
   PRIMARY KEY (`id_annee`),
   UNIQUE KEY `uq_annee_libelle` (`libelle_annee`,`etablissement_code`),
   KEY `idx_annees_code_annee` (`code_annee`),
@@ -203,7 +206,7 @@ CREATE TABLE `annees` (
 
 LOCK TABLES `annees` WRITE;
 /*!40000 ALTER TABLE `annees` DISABLE KEYS */;
-INSERT INTO `annees` VALUES (1,'2025-2026','2025-09-15','2026-07-15','ANN-S9RCBUVE','5454544456','2026-09-14 15:28:19',NULL,'cloture','5wBEh2OfI00frxk8ITPf'),(2,'2026-2027','2026-09-16','2027-06-16','ANN-LS4V0ORV','5454544456','2026-09-15 03:08:30','2026-09-17 00:22:32','actif','5wBEh2OfI00frxk8ITPf');
+INSERT INTO `annees` VALUES (1,'2025-2026','2025-09-15','2026-07-15','ANN-S9RCBUVE','5454544456','2026-09-14 15:28:19',NULL,'cloture','5wBEh2OfI00frxk8ITPf',0.40,0.40,0.20),(2,'2026-2027','2026-09-16','2027-06-16','ANN-LS4V0ORV','5454544456','2026-09-15 03:08:30','2026-09-17 00:22:32','actif','5wBEh2OfI00frxk8ITPf',0.40,0.40,0.20);
 /*!40000 ALTER TABLE `annees` ENABLE KEYS */;
 UNLOCK TABLES;
 

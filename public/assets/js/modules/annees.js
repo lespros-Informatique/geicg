@@ -52,6 +52,20 @@ var configEl = document.getElementById('annees-list-config');
           return '<span style="font-weight:700; color:#1E293B; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="calendar" style="width:14px;height:14px;color:#1E3A5F;"></i> ' + formatted + '</span>';
         }
       },
+      {
+        data: null,
+        className: 'text-center',
+        render: function(d) {
+          var cs1 = d.coef_semestre1 !== undefined && d.coef_semestre1 !== null ? parseFloat(d.coef_semestre1).toFixed(2) : '0.40';
+          var cs2 = d.coef_semestre2 !== undefined && d.coef_semestre2 !== null ? parseFloat(d.coef_semestre2).toFixed(2) : '0.40';
+          var cex = d.coef_examen !== undefined && d.coef_examen !== null ? parseFloat(d.coef_examen).toFixed(2) : '0.20';
+          return '<div style="display:inline-flex; align-items:center; gap:4px;">' +
+                   '<span class="badge" style="background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:11px; padding:3px 7px; border-radius:5px;">S1: ' + cs1 + '</span>' +
+                   '<span class="badge" style="background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:11px; padding:3px 7px; border-radius:5px;">S2: ' + cs2 + '</span>' +
+                   '<span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:700; font-size:11px; padding:3px 7px; border-radius:5px;">Ex: ' + cex + '</span>' +
+                 '</div>';
+        }
+      },
       { data: 'statut_annee', width: '130px', className: 'text-center', render: function(d, type, row) {
         if (d === 'actif') {
           return '<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Active en cours</span>';
@@ -72,9 +86,14 @@ var configEl = document.getElementById('annees-list-config');
           statusBtn = '<button type="button" class="btn btn-sm btn-success btn-activate-annee" data-id="' + d.id_annee + '" style="margin-right:6px; font-weight:700; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" title="Activer cette année académique"><i data-lucide="power" style="width:14px;height:14px;"></i> Activer</button>';
         }
 
-        var editBtn = isPlanifie ?
-          '<button type="button" class="btn btn-sm btn-secondary btn-edit-annee" data-id="' + d.id_annee + '" data-libelle="' + (d.libelle_annee ? $('<div>').text(d.libelle_annee).html() : '') + '" data-debut="' + (d.date_debut_annee || '') + '" data-fin="' + (d.date_fin_annee || '') + '" data-statut="' + (d.statut_annee || 'planifie') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
-          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Seule une année académique en préparation (planifiée) peut être éditée"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
+        var isEditable = (isPlanifie || isActif);
+        var cs1 = d.coef_semestre1 !== undefined && d.coef_semestre1 !== null ? d.coef_semestre1 : '0.40';
+        var cs2 = d.coef_semestre2 !== undefined && d.coef_semestre2 !== null ? d.coef_semestre2 : '0.40';
+        var cex = d.coef_examen !== undefined && d.coef_examen !== null ? d.coef_examen : '0.20';
+
+        var editBtn = isEditable ?
+          '<button type="button" class="btn btn-sm btn-secondary btn-edit-annee" data-id="' + d.id_annee + '" data-libelle="' + (d.libelle_annee ? $('<div>').text(d.libelle_annee).html() : '') + '" data-debut="' + (d.date_debut_annee || '') + '" data-fin="' + (d.date_fin_annee || '') + '" data-cs1="' + cs1 + '" data-cs2="' + cs2 + '" data-cex="' + cex + '" data-statut="' + (d.statut_annee || 'planifie') + '" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>' :
+          '<button class="btn btn-sm btn-secondary" style="margin-right:6px; font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.5; cursor:not-allowed;" disabled title="Une année académique clôturée ne peut plus être éditée"><i data-lucide="edit" style="width:14px;height:14px;"></i> Éditer</button>';
 
         return statusBtn + editBtn +
                '<a href="' + racine + 'annee/details/' + (d.editId || d.id_annee) + '" class="btn btn-sm btn-info" style="font-weight:600; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="eye" style="width:14px;height:14px;"></i> Détails</a>';
@@ -132,6 +151,9 @@ var configEl = document.getElementById('annees-list-config');
     e.preventDefault();
     $('#form-annee')[0].reset();
     $('#annee_id').val('');
+    $('#annee_coef_s1').val('0.40');
+    $('#annee_coef_s2').val('0.40');
+    $('#annee_coef_exam').val('0.20');
     $('#modal-annee-title').html('<i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Année Académique');
     $('#modal-annee').css('display', 'flex');
     if (window.lucide) lucide.createIcons();
@@ -145,11 +167,17 @@ var configEl = document.getElementById('annees-list-config');
     var libelle = $(this).data('libelle');
     var debut = $(this).data('debut');
     var fin = $(this).data('fin');
+    var cs1 = $(this).data('cs1');
+    var cs2 = $(this).data('cs2');
+    var cex = $(this).data('cex');
 
     $('#annee_id').val(id);
     $('#annee_libelle').val(libelle);
     $('#annee_date_debut').val(debut);
     $('#annee_date_fin').val(fin);
+    $('#annee_coef_s1').val(cs1 !== undefined && cs1 !== '' ? cs1 : '0.40');
+    $('#annee_coef_s2').val(cs2 !== undefined && cs2 !== '' ? cs2 : '0.40');
+    $('#annee_coef_exam').val(cex !== undefined && cex !== '' ? cex : '0.20');
 
     $('#modal-annee-title').html('<i data-lucide="edit" style="width: 18px; height: 18px;"></i> Modifier Année Académique');
     $('#modal-annee').css('display', 'flex');

@@ -723,44 +723,96 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
           </table>
         </td>
 
-        <!-- COLONNE DROITE (RÉCAPITULATIF ANNUEL & SIGNATURE) -->
+        <!-- COLONNE DROITE (RÉCAPITULATIF SEMESTRE / ANNUEL & SIGNATURE) -->
         <td class="col-right">
+          <?php
+            $isPremiereAnnee = !empty($est_premiere_annee);
+            $isDeuxiemeSemestre = !empty($est_deuxieme_semestre);
+            $moyRecapVal = isset($moyenneRecap) ? (float)$moyenneRecap : (float)$moyenneGenerale;
+            $rangRecapTxt = !empty($rangRecapFr) ? $rangRecapFr : $rangFr;
+            $minRecapVal = isset($moyenneMinRecap) ? (float)$moyenneMinRecap : (float)$moyenneMinClasse;
+            $maxRecapVal = isset($moyenneMaxRecap) ? (float)$moyenneMaxRecap : (float)$moyenneMaxClasse;
+            $moyClasseRecapVal = isset($moyenneMoyRecap) ? (float)$moyenneMoyRecap : (float)$moyenneMoyClasse;
+          ?>
           <div class="recap-body">
-            <table class="recap-stats-table">
-              <tr>
-                <td colspan="2" style="text-align: center; font-weight: bold; font-size: 11.5pt; text-decoration: underline; padding-top: 2px; padding-bottom: 5px;">
-                  RECAPITULATIF ANNUEL
-                </td>
-              </tr>
-              <tr>
-                <td style="width: 48%; padding-left: 6px;">
-                  Moy. Semestre 1 : &nbsp;<strong><?= $moy_semestre1 !== null ? number_format((float)$moy_semestre1, 2, ',', ' ') : '-' ?></strong>
-                </td>
-                <td style="width: 52%; padding-left: 6px;">
-                  Moy. Semestre 2 : &nbsp;<strong><?= $moy_semestre2 !== null ? number_format((float)$moy_semestre2, 2, ',', ' ') : '-' ?></strong>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding-left: 6px;">
-                  Moy. Examen : &nbsp;&nbsp;&nbsp;&nbsp;<strong><?= $moy_examen !== null ? number_format((float)$moy_examen, 2, ',', ' ') : '-' ?></strong>
-                </td>
-                <td class="moy-gen-highlight">
-                  Moy. Générale : &nbsp;<?= number_format((float)$moyenneGenerale, 2, ',', ' ') ?>
-                </td>
-              </tr>
-              <tr>
-                <td colspan="2" style="text-align: center; padding-top: 5px; padding-bottom: 3px; font-size: 10pt;">
-                  <strong>Rang : <?= htmlspecialchars($rangFr) ?></strong> &nbsp;/<?= htmlspecialchars($totalElevesClasse) ?> Etudiants
-                </td>
-              </tr>
-              <tr>
-                <td colspan="2" style="font-size: 7.6pt; padding-top: 4px; padding-left: 4px; font-size: 8.8pt;">
-                  Moy. Min : &nbsp;<strong><?= number_format((float)$moyenneMinClasse, 2, ',', ' ') ?></strong> &nbsp;&nbsp;&nbsp;
-                  Moy. Max : &nbsp;<strong><?= number_format((float)$moyenneMaxClasse, 2, ',', ' ') ?></strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                  Moy. de la classe : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong><?= number_format((float)$moyenneMoyClasse, 2, ',', ' ') ?></strong>
-                </td>
-              </tr>
-            </table>
+            <?php if (!$isDeuxiemeSemestre): ?>
+              <!-- CAS A : BULLETIN DU PREMIER SEMESTRE (1ère Année & 2ème Année) -->
+              <table class="recap-stats-table">
+                <tr>
+                  <td colspan="2" style="text-align: center; font-weight: bold; font-size: 11.5pt; text-decoration: underline; padding-top: 2px; padding-bottom: 6px;">
+                    RECAPITULATIF SEMESTRE
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="text-align: center; padding: 4px 6px;">
+                    <span class="moy-gen-highlight" style="display: inline-block; padding: 3px 14px !important;">
+                      Moyenne : &nbsp;<?= number_format($moyRecapVal, 2, ',', ' ') ?>
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="text-align: center; padding-top: 5px; padding-bottom: 4px; font-size: 10pt;">
+                    <strong>Rang : <?= htmlspecialchars($rangRecapTxt) ?></strong> &nbsp;/<?= htmlspecialchars($totalElevesClasse) ?> Etudiants
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding-top: 4px; padding-left: 4px; font-size: 8.8pt;">
+                    Moy. Min : &nbsp;<strong><?= number_format($minRecapVal, 2, ',', ' ') ?></strong> &nbsp;&nbsp;&nbsp;
+                    Moy. Max : &nbsp;<strong><?= number_format($maxRecapVal, 2, ',', ' ') ?></strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    Moy. de la classe : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong><?= number_format($moyClasseRecapVal, 2, ',', ' ') ?></strong>
+                  </td>
+                </tr>
+              </table>
+            <?php else: ?>
+              <!-- CAS B : BULLETIN DU DEUXIÈME SEMESTRE (RECAPITULATIF ANNUEL) -->
+              <table class="recap-stats-table">
+                <tr>
+                  <td colspan="2" style="text-align: center; font-weight: bold; font-size: 11.5pt; text-decoration: underline; padding-top: 2px; padding-bottom: 5px;">
+                    RECAPITULATIF ANNUEL
+                  </td>
+                </tr>
+                <tr>
+                  <td style="width: 48%; padding-left: 6px;">
+                    Moy. Semestre 1 : &nbsp;<strong><?= $moy_semestre1 !== null ? number_format((float)$moy_semestre1, 2, ',', ' ') : '-' ?></strong>
+                  </td>
+                  <td style="width: 52%; padding-left: 6px;">
+                    Moy. Semestre 2 : &nbsp;<strong><?= $moy_semestre2 !== null ? number_format((float)$moy_semestre2, 2, ',', ' ') : '-' ?></strong>
+                  </td>
+                </tr>
+                <?php if ($isPremiereAnnee): ?>
+                  <!-- 1ère Année : Moy. Examen + Moy. Générale -->
+                  <tr>
+                    <td style="padding-left: 6px;">
+                      Moy. Examen : &nbsp;&nbsp;&nbsp;&nbsp;<strong><?= $moy_examen !== null ? number_format((float)$moy_examen, 2, ',', ' ') : '-' ?></strong>
+                    </td>
+                    <td class="moy-gen-highlight">
+                      Moy. Générale : &nbsp;<?= number_format($moyRecapVal, 2, ',', ' ') ?>
+                    </td>
+                  </tr>
+                <?php else: ?>
+                  <!-- 2ème Année : Moy. Générale uniquement (sans Moy. Examen) -->
+                  <tr>
+                    <td colspan="2" style="text-align: center; padding: 3px 6px;">
+                      <span class="moy-gen-highlight" style="display: inline-block; padding: 2px 14px !important;">
+                        Moy. Générale : &nbsp;<?= number_format($moyRecapVal, 2, ',', ' ') ?>
+                      </span>
+                    </td>
+                  </tr>
+                <?php endif; ?>
+                <tr>
+                  <td colspan="2" style="text-align: center; padding-top: 5px; padding-bottom: 3px; font-size: 10pt;">
+                    <strong>Rang : <?= htmlspecialchars($rangRecapTxt) ?></strong> &nbsp;/<?= htmlspecialchars($totalElevesClasse) ?> Etudiants
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding-top: 4px; padding-left: 4px; font-size: 8.8pt;">
+                    Moy. Min : &nbsp;<strong><?= number_format($minRecapVal, 2, ',', ' ') ?></strong> &nbsp;&nbsp;&nbsp;
+                    Moy. Max : &nbsp;<strong><?= number_format($maxRecapVal, 2, ',', ' ') ?></strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    Moy. de la classe : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong><?= number_format($moyClasseRecapVal, 2, ',', ' ') ?></strong>
+                  </td>
+                </tr>
+              </table>
+            <?php endif; ?>
           </div>
 
           <table class="split-signature-table">
