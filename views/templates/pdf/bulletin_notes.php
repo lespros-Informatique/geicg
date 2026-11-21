@@ -127,7 +127,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
 
     /* PARTIE 1 : En-tête encadré spécifique au Bulletin */
     .bulletin-header-frame {
-      border: 1.5px solid #000000;
+      border: 1.8px solid #000000;
       padding: 4px 8px;
       margin-bottom: 6px;
     }
@@ -141,7 +141,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
     }
     .inst-title {
       color: #C00000;
-      font-size: 10.8pt;
+      font-size: 11.3pt;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.2px;
@@ -168,7 +168,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
       letter-spacing: 0.5px;
     }
     .annee-header {
-      font-size: 11.5pt;
+      font-size: 12.9pt;
       font-weight: bold;
       text-align: center;
       color: #000000;
@@ -235,7 +235,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
     }
     .info-table td {
       padding: 1.5px 0;
-      font-size: 9.2pt;
+      font-size: 9.9pt;
     }
 
     /* Titres Bulletin */
@@ -352,8 +352,10 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
       vertical-align: middle;
     }
     .chk-label {
-      text-align: right;
+      text-align: left;
       padding-right: 8px !important;
+      font-size: 9.2pt;
+      padding: 0;
     }
     .chk-box-cell {
       width: 22px;
@@ -406,15 +408,15 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
     /*Pied de page fixe en bas du cadre A4 */
     .footer-block {
       position: fixed;
-      top: 273mm;
+      top: 278mm;
       left: 4mm;
       width: 188mm;
       text-align: center;
-      font-size: 7.2pt;
+      font-size: 13pt;
       line-height: 1.3;
       color: #000000;
       border-top: 0.5px solid #CBD5E1;
-      padding-top: 3px;
+      padding-top: 2px;
     }
   </style>
 </head>
@@ -437,9 +439,9 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
   <div class="bulletin-header-frame">
     <table class="bulletin-header-box">
       <tr>
-        <td style="width: 26%; text-align: center;">
+        <td style="width: 26%; text-align: left;">
           <?php if (!empty($logoPath) && file_exists($logoPath)): ?>
-            <img src="<?= $logoPath ?>" style="height: 58px; width: auto;" alt="Logo">
+            <img src="<?= $logoPath ?>" style="height: 60px; width: 150px;" alt="Logo">
           <?php endif; ?>
         </td>
         <td style="width: 74%; text-align: center;">
@@ -741,7 +743,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
                 </td>
               </tr>
               <tr>
-                <td colspan="2" style="font-size: 7.6pt; padding-top: 4px; padding-left: 4px;">
+                <td colspan="2" style="font-size: 7.6pt; padding-top: 4px; padding-left: 4px; font-size: 8.8pt;">
                   Moy. Min : &nbsp;<strong><?= number_format((float)$moyenneMinClasse, 2, ',', ' ') ?></strong> &nbsp;&nbsp;&nbsp;
                   Moy. Max : &nbsp;<strong><?= number_format((float)$moyenneMaxClasse, 2, ',', ' ') ?></strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                   Moy. de la classe : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong><?= number_format((float)$moyenneMoyClasse, 2, ',', ' ') ?></strong>
