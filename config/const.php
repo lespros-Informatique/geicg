@@ -312,6 +312,7 @@ class PERMISSIONS
     // MODULE: SIDEBAR
     public const MENU_ADMINISTRATION              = 'MENU_ADMINISTRATION';
     public const MENU_COMMUNICATION               = 'MENU_COMMUNICATION';
+    public const MENU_EVALUATIONS                 = 'MENU_EVALUATIONS';
     public const MENU_FINANCE                     = 'MENU_FINANCE';
     public const MENU_PEDAGOGIE                   = 'MENU_PEDAGOGIE';
     public const MENU_PLANIFICATION               = 'MENU_PLANIFICATION';

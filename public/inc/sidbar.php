@@ -221,12 +221,12 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MENU 5 : PÉDAGOGIE & ÉVALUATIONS === -->
+        <!-- === MENU 5 : PÉDAGOGIE & COURS === -->
         <?php if ($canAccess(PERMISSIONS::MENU_PEDAGOGIE)): ?>
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-pedagogie" aria-expanded="false">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="award" style="width: 16px; height: 16px;"></i> <span>Pédagogie & Évaluations</span>
+                    <i data-lucide="book-open" style="width: 16px; height: 16px;"></i> <span>Pédagogie & Cours</span>
                 </div>
                 <i data-lucide="chevron-down" class="chevron-icon"></i>
             </div>
@@ -246,6 +246,20 @@
                     <i data-lucide="user-x"></i> <span>Absences & Appel par Classe</span>
                 </a>
                 <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- === MENU 6 : ÉVALUATIONS & DÉLIBÉRATIONS === -->
+        <?php if ($canAccess(PERMISSIONS::MENU_EVALUATIONS)): ?>
+        <div class="nav-section">
+            <div class="sidebar-accordion-toggle" data-bs-target="#sec-evaluations" aria-expanded="false">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="award" style="width: 16px; height: 16px;"></i> <span>Évaluations & Délibérations</span>
+                </div>
+                <i data-lucide="chevron-down" class="chevron-icon"></i>
+            </div>
+            <div class="nav-section-items" id="sec-evaluations">
                 <?php if ($canAccess([PERMISSIONS::VIEW_EXAMENS, PERMISSIONS::MANAGE_EXAMENS])): ?>
                 <a href="<?= url('composition/list') ?>" class="nav-item sub <?= $isActiveRoute('/composition/') ?>" data-title="Planning des Examens">
                     <i data-lucide="award"></i> <span>Planning des Examens</span>
@@ -276,7 +290,7 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MENU 6 : PORTAIL & COMMUNICATION === -->
+        <!-- === MENU 7 : PORTAIL & COMMUNICATION === -->
         <?php if ($canAccess(PERMISSIONS::MENU_COMMUNICATION)): ?>
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-medias" aria-expanded="false">
@@ -305,7 +319,7 @@
         </div>
         <?php endif; ?>
 
-        <!-- === MENU 7 : ADMINISTRATION & SÉCURITÉ === -->
+        <!-- === MENU 8 : ADMINISTRATION & SÉCURITÉ === -->
         <?php if ($canAccess(PERMISSIONS::MENU_ADMINISTRATION)): ?>
         <div class="nav-section">
             <div class="sidebar-accordion-toggle" data-bs-target="#sec-securite" aria-expanded="false">

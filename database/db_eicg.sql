@@ -2862,7 +2862,7 @@ VALUES (
   (
     180,
     'MENU_PEDAGOGIE',
-    'Menu : Pédagogie & Évaluations',
+    'Menu : Pédagogie & Cours',
     'SIDEBAR',
     'actif',
     '2026-10-27 04:15:33'
@@ -2962,6 +2962,14 @@ VALUES (
     'PEDAGOGIE',
     'actif',
     '2026-11-22 13:55:00'
+  ),
+  (
+    193,
+    'MENU_EVALUATIONS',
+    'Menu : Évaluations & Délibérations',
+    'SIDEBAR',
+    'actif',
+    '2026-11-22 18:05:00'
   );
 /*!40000 ALTER TABLE `permissions` ENABLE KEYS */
 ;
@@ -3782,7 +3790,14 @@ VALUES (1347, 'all_control', 'ANNULER_INSCRIPTION'),
   (1625, 'ROLE_SUPERADMIN', 'MANAGE_DELIBERATIONS'),
   (1626, 'all_control', 'MANAGE_DELIBERATIONS'),
   (1627, 'ROLE_DIR_GENERAL', 'MANAGE_DELIBERATIONS'),
-  (1628, 'ROLE_DIR_ETUDES', 'MANAGE_DELIBERATIONS');
+  (1628, 'ROLE_DIR_ETUDES', 'MANAGE_DELIBERATIONS'),
+  (1629, 'ROLE_SUPERADMIN', 'MENU_EVALUATIONS'),
+  (1630, 'all_control', 'MENU_EVALUATIONS'),
+  (1631, 'ROLE_DIR_GENERAL', 'MENU_EVALUATIONS'),
+  (1632, 'ROLE_DIR_ETUDES', 'MENU_EVALUATIONS'),
+  (1633, 'ROLE_CHEF_DEP', 'MENU_EVALUATIONS'),
+  (1634, 'ROLE_ENSEIGNANT', 'MENU_EVALUATIONS'),
+  (1635, 'ROLE_SCOLARITE', 'MENU_EVALUATIONS');
 /*!40000 ALTER TABLE `role_permissions` ENABLE KEYS */
 ;
 UNLOCK TABLES;

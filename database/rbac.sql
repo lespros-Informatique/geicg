@@ -147,7 +147,7 @@ INSERT INTO `permissions` (`id_permission`, `code_permission`, `libelle_permissi
 (177, 'MENU_PLANIFICATION', 'Menu : Planification Académique', 'SIDEBAR', 'actif', '2026-10-27 04:15:33'),
 (178, 'MENU_SCOLARITE', 'Menu : Admissions & Scolarité', 'SIDEBAR', 'actif', '2026-10-27 04:15:33'),
 (179, 'MENU_FINANCE', 'Menu : Finance & Caisse', 'SIDEBAR', 'actif', '2026-10-27 04:15:33'),
-(180, 'MENU_PEDAGOGIE', 'Menu : Pédagogie & Évaluations', 'SIDEBAR', 'actif', '2026-10-27 04:15:33'),
+(180, 'MENU_PEDAGOGIE', 'Menu : Pédagogie & Cours', 'SIDEBAR', 'actif', '2026-10-27 04:15:33'),
 (181, 'MENU_COMMUNICATION', 'Menu : Portail & Communication', 'SIDEBAR', 'actif', '2026-10-27 04:15:33'),
 (182, 'MENU_ADMINISTRATION', 'Menu : Administration & Sécurité', 'SIDEBAR', 'actif', '2026-10-27 04:15:33'),
 (183, 'MANAGE_MAQUETTES', 'Créer & Modifier les Maquettes Pédagogiques', 'ACADEMIQUE', 'actif', '2026-11-19 00:42:16'),
@@ -159,7 +159,8 @@ INSERT INTO `permissions` (`id_permission`, `code_permission`, `libelle_permissi
 (189, 'VIEW_ARRIERES', 'Consulter les Arriérés Années Antérieures', 'FINANCE', 'actif', '2026-11-19 00:42:16'),
 (190, 'REPRENDRE_PHOTO_INSCRIPTION', 'Reprendre / Modifier la Photo d\'Identité d\'un Étudiant', 'SCOLAIRITE', 'actif', '2026-11-22 02:00:00'),
 (191, 'VIEW_DELIBERATIONS', 'Consulter les Délibérations & Décisions Annuelles', 'PEDAGOGIE', 'actif', '2026-11-22 13:55:00'),
-(192, 'MANAGE_DELIBERATIONS', 'Valider, Figer & Ajuster les Délibérations Annuelles', 'PEDAGOGIE', 'actif', '2026-11-22 13:55:00');
+(192, 'MANAGE_DELIBERATIONS', 'Valider, Figer & Ajuster les Délibérations Annuelles', 'PEDAGOGIE', 'actif', '2026-11-22 13:55:00'),
+(193, 'MENU_EVALUATIONS', 'Menu : Évaluations & Délibérations', 'SIDEBAR', 'actif', '2026-11-22 18:05:00');
 
 -- --------------------------------------------------------
 -- 2. Structure & Données : `roles`
@@ -677,7 +678,14 @@ INSERT INTO `role_permissions` (`id`, `role_code`, `permission_code`) VALUES
 (1625, 'ROLE_SUPERADMIN', 'MANAGE_DELIBERATIONS'),
 (1626, 'all_control', 'MANAGE_DELIBERATIONS'),
 (1627, 'ROLE_DIR_GENERAL', 'MANAGE_DELIBERATIONS'),
-(1628, 'ROLE_DIR_ETUDES', 'MANAGE_DELIBERATIONS');
+(1628, 'ROLE_DIR_ETUDES', 'MANAGE_DELIBERATIONS'),
+(1629, 'ROLE_SUPERADMIN', 'MENU_EVALUATIONS'),
+(1630, 'all_control', 'MENU_EVALUATIONS'),
+(1631, 'ROLE_DIR_GENERAL', 'MENU_EVALUATIONS'),
+(1632, 'ROLE_DIR_ETUDES', 'MENU_EVALUATIONS'),
+(1633, 'ROLE_CHEF_DEP', 'MENU_EVALUATIONS'),
+(1634, 'ROLE_ENSEIGNANT', 'MENU_EVALUATIONS'),
+(1635, 'ROLE_SCOLARITE', 'MENU_EVALUATIONS');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;
