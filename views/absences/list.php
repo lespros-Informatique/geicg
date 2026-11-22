@@ -23,9 +23,9 @@ $semestres = $semestres ?? [];
         </div>
       </div>
 
-      <!-- Filtres Multi-Critères (Année, Semestre, Niveau & Classe Select2) -->
+      <!-- Filtres Multi-Critères (Année, Semestre, Niveau, Classe & Période) -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: center;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: center;">
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Année Académique</label>
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
@@ -69,6 +69,14 @@ $semestres = $semestres ?? [];
                 <option value="<?= htmlspecialchars($c['code_classe']) ?>" data-niveau="<?= htmlspecialchars($c['niveau_code'] ?? '') ?>"><?= htmlspecialchars($c['libelle_classe']) ?></option>
               <?php endforeach; ?>
             </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Période (Du)</label>
+            <input type="date" id="filter-date-debut" class="form-control" style="width: 100%; height: 38px; padding: 6px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; color: #0F172A; background: #FFFFFF; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Période (Au)</label>
+            <input type="date" id="filter-date-fin" class="form-control" style="width: 100%; height: 38px; padding: 6px 10px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; color: #0F172A; background: #FFFFFF; box-sizing: border-box;">
           </div>
         </div>
       </div>

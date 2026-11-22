@@ -65,7 +65,11 @@ class AbsenceController extends BaseController
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
         $semestreCode = $_GET['semestre_code'] ?? null;
-        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $semestreCode);
+        $dateDebut = trim((string)($_GET['date_debut'] ?? ''));
+        $dateFin = trim((string)($_GET['date_fin'] ?? ''));
+        $dateDebut = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateDebut) ? $dateDebut : null;
+        $dateFin = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFin) ? $dateFin : null;
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $semestreCode, $dateDebut, $dateFin);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_absence'];

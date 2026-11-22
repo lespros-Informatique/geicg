@@ -6,7 +6,14 @@ class ModelAbsence extends BaseModel
     protected string $primaryKey = 'id_absence';
     protected ?string $createdAtField = 'created_at_absence';
 
-    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $semestreCode = null): array
+    public function getAll(
+        ?string $anneeCode = null,
+        ?string $niveauCode = null,
+        ?string $classeCode = null,
+        ?string $semestreCode = null,
+        ?string $dateDebut = null,
+        ?string $dateFin = null
+    ): array
     {
         if (empty($anneeCode)) {
             return [];
@@ -29,6 +36,14 @@ class ModelAbsence extends BaseModel
         if (!empty($classeCode)) {
             $conditions[] = "classe_code = ?";
             $params[] = $classeCode;
+        }
+        if (!empty($dateDebut)) {
+            $conditions[] = "date_absence >= ?";
+            $params[] = $dateDebut;
+        }
+        if (!empty($dateFin)) {
+            $conditions[] = "date_absence <= ?";
+            $params[] = $dateFin;
         }
         if (!empty($conditions)) {
             $sql .= " WHERE " . implode(" AND ", $conditions);
