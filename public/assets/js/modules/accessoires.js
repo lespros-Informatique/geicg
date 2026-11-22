@@ -1066,47 +1066,71 @@
 
     // Action Tout valider pour un étudiant
     function validateAllKitsForStudent(inscrCode) {
-      if (!confirm("Voulez-vous vraiment marquer TOUTES les fournitures de cet élève comme REMISES / RETIRÉES ?")) return;
+      var executeValidateAll = function () {
+        var toggleStudentUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('accessoire/toggleStudentAllKits') : (racine + 'accessoire/toggleStudentAllKits');
 
-      var toggleStudentUrl = (typeof GEICG !== 'undefined' && GEICG.url) ? GEICG.url('accessoire/toggleStudentAllKits') : (racine + 'accessoire/toggleStudentAllKits');
-
-      $.ajax({
-        url: toggleStudentUrl,
-        type: 'POST',
-        data: {
-          inscription_code: inscrCode,
-          target_etat: 'retire'
-        },
-        dataType: 'json',
-        success: function (res) {
-          if (res.status === 1 || res.success) {
-            var msgSuccess = res.message || 'Tous les kits ont été validés avec succès.';
-            if (typeof showToast === 'function') showToast(msgSuccess, 'success');
-            else if (window.toastr) toastr.success(msgSuccess);
-            table.ajax.reload(function () {
-              if ($('#modal-emargement-student').is(':visible') && currentStudentData) {
-                var updatedData = table.rows().data().toArray().find(function (r) {
-                  return r.code_inscription === inscrCode;
-                });
-                if (updatedData) {
-                  currentStudentData = updatedData;
-                  openStudentKitModal(updatedData);
+        $.ajax({
+          url: toggleStudentUrl,
+          type: 'POST',
+          data: {
+            inscription_code: inscrCode,
+            target_etat: 'retire'
+          },
+          dataType: 'json',
+          success: function (res) {
+            if (res.status === 1 || res.success) {
+              var msgSuccess = res.message || 'Tous les kits ont été validés avec succès.';
+              if (typeof showToast === 'function') showToast(msgSuccess, 'success');
+              else if (window.toastr) toastr.success(msgSuccess);
+              table.ajax.reload(function () {
+                if ($('#modal-emargement-student').is(':visible') && currentStudentData) {
+                  var updatedData = table.rows().data().toArray().find(function (r) {
+                    return r.code_inscription === inscrCode;
+                  });
+                  if (updatedData) {
+                    currentStudentData = updatedData;
+                    openStudentKitModal(updatedData);
+                  }
                 }
-              }
-            }, false);
-            refreshKpis();
-          } else {
-            var msgErr = res.message || 'Erreur lors de la validation.';
-            if (typeof showToast === 'function') showToast(msgErr, 'error');
-            else if (window.toastr) toastr.error(msgErr);
+              }, false);
+              refreshKpis();
+            } else {
+              var msgErr = res.message || 'Erreur lors de la validation.';
+              if (typeof showToast === 'function') showToast(msgErr, 'error');
+              else if (window.toastr) toastr.error(msgErr);
+            }
+          },
+          error: function () {
+            var msgErr2 = 'Erreur lors de la connexion au serveur.';
+            if (typeof showToast === 'function') showToast(msgErr2, 'error');
+            else if (window.toastr) toastr.error(msgErr2);
           }
-        },
-        error: function () {
-          var msgErr2 = 'Erreur lors de la connexion au serveur.';
-          if (typeof showToast === 'function') showToast(msgErr2, 'error');
-          else if (window.toastr) toastr.error(msgErr2);
-        }
-      });
+        });
+      };
+
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Tout marquer comme remis ?',
+          text: 'Voulez-vous vraiment marquer toutes les fournitures de cet élève comme remises / retirées ?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#16A34A',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: '<i class="fas fa-check-double"></i> Oui, tout valider',
+          cancelButtonText: 'Annuler',
+          reverseButtons: true,
+          didOpen: function () {
+            var container = Swal.getContainer();
+            if (container) container.style.zIndex = '10050';
+          }
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            executeValidateAll();
+          }
+        });
+      } else {
+        executeValidateAll();
+      }
     }
 
     // Chargement et affichage du Bon de Remise A4
