@@ -123,7 +123,7 @@ $finalLibelle = !empty($selectedLibelleEval) ? $selectedLibelleEval : $typeLabel
               <th style="padding: 12px 14px; width: 140px; text-align: center;">Note / 20 <span style="color:#EF4444;">*</span></th>
               <th style="padding: 12px 14px; width: 150px; text-align: center;">Appréciation</th>
               <th style="padding: 12px 14px;">Observations / Remarques</th>
-              <th style="padding: 12px 14px; width: 100px; text-align: center;">Action</th>
+              <th style="padding: 12px 14px; width: 130px; text-align: center;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -154,8 +154,14 @@ $finalLibelle = !empty($selectedLibelleEval) ? $selectedLibelleEval : $typeLabel
                 <td style="padding: 12px 14px;">
                   <input type="text" name="notes[<?= $inscCode ?>][observations]" value="<?= htmlspecialchars($obs) ?>" placeholder="Ajouter une remarque ou ABSENT..." class="form-control form-control-sm input-obs" style="border-radius: 8px; font-size: 12px; border: 1px solid #E2E8F0;" data-original="<?= htmlspecialchars($obs) ?>">
                 </td>
-                <td style="padding: 12px 14px; text-align: center;">
+                <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
                   <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <button type="button"
+                            class="btn-save-row"
+                            title="Valider et enregistrer la note de cet étudiant"
+                            style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; background: #16A34A; color: #FFFFFF; border: 1px solid #15803D; transition: all 0.15s ease;">
+                      <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                    </button>
                     <button type="button"
                             class="btn-toggle-absent"
                             title="<?= $isAbsent ? 'Annuler le statut Absent (Marquer présent)' : 'Marquer comme Absent' ?>"

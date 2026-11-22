@@ -1465,6 +1465,111 @@ $(document).ready(function () {
       $noteInput.focus();
     });
 
+    // 7c. Validation / enregistrement individuel de la note d'un étudiant
+    $(document).on('click', '.btn-save-row', function (e) {
+      e.preventDefault();
+      var $btn = $(this);
+      if ($btn.prop('disabled')) return;
+
+      var $row = $btn.closest('tr.note-row');
+      var $form = $('#form-save-batch-notes');
+      var inscCode = $row.attr('data-insc') || '';
+      var $valInput = $row.find('.input-valeur-note');
+      var $obsInput = $row.find('.input-obs');
+      var etuCode = $row.find('input[name$="[etudiant_code]"]').val() || '';
+
+      var rawVal = ($valInput.val() || '').trim();
+      var origVal = String($valInput.data('original') !== undefined ? $valInput.data('original') : '').trim();
+      var obsVal = ($obsInput.val() || '').trim();
+
+      if (rawVal === '' && origVal === '') {
+        if (window.toastr) toastr.info('Veuillez saisir une note pour cet étudiant avant de valider.');
+        $valInput.focus();
+        return;
+      }
+
+      if (rawVal !== '') {
+        var normVal = rawVal.replace(',', '.');
+        var num = parseFloat(normVal);
+        if (isNaN(num) || num < 0 || num > 20) {
+          if (window.toastr) toastr.warning('Veuillez saisir une note valide comprise entre 0 et 20.');
+          $valInput.focus().select();
+          return;
+        }
+        rawVal = normVal;
+        $valInput.val(normVal);
+      }
+
+      var payload = {
+        csrf_token: $form.find('input[name="csrf_token"]').val() || '',
+        annee_code: $('#filter-notes-form input[name="annee_code"]').val() || '',
+        classe_code: $form.find('input[name="classe_code"]').val() || '',
+        matiere_code: $form.find('input[name="matiere_code"]').val() || '',
+        semestre_code: $form.find('input[name="semestre_code"]').val() || '',
+        type_evaluation_code: $form.find('input[name="type_evaluation_code"]').val() || '',
+        composition_code: $form.find('input[name="composition_code"]').val() || '',
+        libelle_eval: $('#input_libelle_eval').val() || '',
+        coefficient: $('#input_coef_eval').val() || '1.00'
+      };
+      payload['notes[' + inscCode + '][etudiant_code]'] = etuCode;
+      payload['notes[' + inscCode + '][valeur_note]'] = rawVal;
+      payload['notes[' + inscCode + '][observations]'] = obsVal;
+
+      $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin" style="font-size: 13px;"></i>');
+
+      $.ajax({
+        url: window.RACINE + 'note/saveBatch',
+        type: 'POST',
+        data: payload,
+        dataType: 'json',
+        success: function (res) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i>');
+          if (window.lucide) lucide.createIcons();
+
+          if (res && (res.status === 1 || res.success)) {
+            if (res.composition_code) {
+              $form.find('input[name="composition_code"]').val(res.composition_code);
+              if ($('#sel_composition_code').length && $('#sel_type_eval').val() === 'EXAMEN') {
+                $('#sel_composition_code').val(res.composition_code);
+              }
+              if (window.history && window.history.replaceState) {
+                try {
+                  var u = new URL(window.location.href);
+                  u.searchParams.set('composition_code', res.composition_code);
+                  window.history.replaceState({}, '', u.toString());
+                } catch (err) { }
+              }
+            }
+
+            $valInput.data('original', $valInput.val());
+            $obsInput.data('original', $obsInput.val());
+            $row.removeClass('row-dirty');
+
+            if ($('.note-row.row-dirty').length === 0) {
+              isFormDirty = false;
+              $('#badge-unsaved').hide();
+            }
+
+            var now = new Date();
+            $('#last-saved-time').text('Dernière sauvegarde : ' + now.toLocaleTimeString());
+            updateDynamicStats();
+
+            if (window.toastr) {
+              toastr.success(rawVal === '' ? 'Note supprimée avec succès.' : 'Note enregistrée avec succès.');
+            }
+          } else {
+            if (window.toastr) toastr.error((res && res.message) ? res.message : 'Erreur lors de la validation de la note.');
+          }
+        },
+        error: function (xhr) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i>');
+          if (window.lucide) lucide.createIcons();
+          var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur technique lors de l\'enregistrement.';
+          if (window.toastr) toastr.error(msg);
+        }
+      });
+    });
+
     // 8. Outils rapides d'assistance (délégation d'événements document pour persistance après AJAX)
     $(document).on('click', '#btn-quick-absent', function () {
       $('.note-row').each(function () {
