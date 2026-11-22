@@ -326,5 +326,8 @@
     <?php extract(ViewContext::headerData()); ?>
 </head>
 <body>
+    <div id="geicg-page-progress" class="no-print is-active" aria-hidden="true">
+        <div id="geicg-page-progress-bar" style="width: 24%;"></div>
+    </div>
     <input type="hidden" id="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
     <div class="js-toast-container"></div>

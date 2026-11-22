@@ -600,6 +600,200 @@
     });
   };
 
+  // 14. Barre de progression globale de chargement de page (Top Progress Bar)
+  GEICG.progress = (function() {
+    var progressValue = 0;
+    var isRunning = false;
+    var trickleTimer = null;
+    var hideTimer = null;
+    var failsafeTimer = null;
+    var ajaxDelayTimer = null;
+
+    function getElements() {
+      var wrap = document.getElementById('geicg-page-progress');
+      var bar = document.getElementById('geicg-page-progress-bar');
+      if (!wrap && document.body) {
+        wrap = document.createElement('div');
+        wrap.id = 'geicg-page-progress';
+        wrap.className = 'no-print';
+        wrap.setAttribute('aria-hidden', 'true');
+        bar = document.createElement('div');
+        bar.id = 'geicg-page-progress-bar';
+        wrap.appendChild(bar);
+        document.body.insertBefore(wrap, document.body.firstChild);
+      }
+      return { wrap: wrap, bar: bar };
+    }
+
+    function clearTimers() {
+      if (trickleTimer) { clearInterval(trickleTimer); trickleTimer = null; }
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      if (failsafeTimer) { clearTimeout(failsafeTimer); failsafeTimer = null; }
+      if (ajaxDelayTimer) { clearTimeout(ajaxDelayTimer); ajaxDelayTimer = null; }
+    }
+
+    function set(val) {
+      progressValue = Math.max(0, Math.min(100, val));
+      var els = getElements();
+      if (!els.wrap || !els.bar) return;
+      els.wrap.classList.add('is-active');
+      els.bar.style.width = progressValue + '%';
+    }
+
+    function start(initial) {
+      clearTimers();
+      isRunning = true;
+      var startPct = (typeof initial === 'number') ? initial : Math.max(progressValue, 18);
+      set(startPct);
+
+      trickleTimer = setInterval(function() {
+        if (!isRunning) return;
+        var inc = 0;
+        if (progressValue < 40) inc = 8;
+        else if (progressValue < 70) inc = 4;
+        else if (progressValue < 88) inc = 1.5;
+        else if (progressValue < 94) inc = 0.5;
+        if (inc > 0) set(progressValue + inc);
+      }, 220);
+
+      // Sécurité anti-blocage (ex: téléchargement de fichier sans déchargement de page)
+      failsafeTimer = setTimeout(function() {
+        done();
+      }, 12000);
+    }
+
+    function done() {
+      if (!isRunning && progressValue === 0) {
+        var elsInit = getElements();
+        if (elsInit.wrap && !elsInit.wrap.classList.contains('is-active')) return;
+      }
+      clearTimers();
+      isRunning = false;
+      set(100);
+      hideTimer = setTimeout(function() {
+        var els = getElements();
+        if (els.wrap && els.bar) {
+          els.wrap.classList.remove('is-active');
+          setTimeout(function() {
+            if (!isRunning) {
+              progressValue = 0;
+              els.bar.style.transition = 'none';
+              els.bar.style.width = '0%';
+              // Forcer le reflow avant de réactiver la transition
+              void els.bar.offsetWidth;
+              els.bar.style.transition = '';
+            }
+          }, 260);
+        }
+      }, 180);
+    }
+
+    function reset() {
+      clearTimers();
+      isRunning = false;
+      progressValue = 0;
+      var els = getElements();
+      if (els.wrap && els.bar) {
+        els.wrap.classList.remove('is-active');
+        els.bar.style.width = '0%';
+      }
+    }
+
+    function isNavigableLink(anchor, e) {
+      if (!anchor || !anchor.getAttribute) return false;
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
+      if (anchor.hasAttribute('download')) return false;
+      var target = (anchor.getAttribute('target') || '').toLowerCase();
+      if (target && target !== '_self') return false;
+      var rawHref = (anchor.getAttribute('href') || '').trim();
+      if (!rawHref || rawHref === '#' || rawHref.indexOf('#') === 0 || rawHref.indexOf('javascript:') === 0 || rawHref.indexOf('mailto:') === 0 || rawHref.indexOf('tel:') === 0) {
+        return false;
+      }
+      if (anchor.hasAttribute('data-bs-toggle') || anchor.hasAttribute('data-toggle') || anchor.hasAttribute('data-no-loader')) {
+        return false;
+      }
+      try {
+        var dest = new URL(anchor.href, window.location.href);
+        if (dest.origin !== window.location.origin) return false;
+        // Ignorer les liens d'impression / export PDF ou fichiers directs
+        var p = (dest.pathname + dest.search).toLowerCase();
+        if (p.indexOf('imprimer') !== -1 || p.indexOf('pdf') !== -1 || p.indexOf('export') !== -1 || p.indexOf('download') !== -1) {
+          return false;
+        }
+        // Ignorer un lien vers exactement la même URL + hash
+        if (dest.pathname === window.location.pathname && dest.search === window.location.search && dest.hash) {
+          return false;
+        }
+        return true;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function init() {
+      // Progression initiale de chargement de la page courante
+      if (document.readyState === 'complete') {
+        done();
+      } else {
+        start(28);
+        document.addEventListener('DOMContentLoaded', function() {
+          if (isRunning && progressValue < 72) set(72);
+        });
+        window.addEventListener('load', function() {
+          done();
+        });
+      }
+
+      // Compatibilité retour/avance navigateur (bfcache)
+      window.addEventListener('pageshow', function(e) {
+        if (e.persisted) reset();
+        else if (document.readyState === 'complete') done();
+      });
+
+      // Déclenchement immédiat au clic sur les liens internes (sidebar, navbar, boutons)
+      document.addEventListener('click', function(e) {
+        var anchor = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+        if (isNavigableLink(anchor, e)) {
+          start(22);
+        }
+      });
+
+      // Déclenchement sur déchargement réel (soumission de formulaire classique, redirection)
+      window.addEventListener('beforeunload', function() {
+        start(30);
+      });
+
+      // Intégration discrète avec les requêtes AJAX jQuery (avec seuil 120ms anti-scintillement)
+      if ($) {
+        $(document).on('ajaxStart.geicgProgress', function() {
+          if (isRunning) return;
+          if (ajaxDelayTimer) clearTimeout(ajaxDelayTimer);
+          ajaxDelayTimer = setTimeout(function() {
+            start(20);
+          }, 120);
+        });
+        $(document).on('ajaxStop.geicgProgress', function() {
+          if (ajaxDelayTimer) {
+            clearTimeout(ajaxDelayTimer);
+            ajaxDelayTimer = null;
+          }
+          if (isRunning) done();
+        });
+      }
+    }
+
+    return {
+      init: init,
+      start: start,
+      set: set,
+      done: done,
+      reset: reset
+    };
+  })();
+
+  // Démarrage immédiat de la barre de progression dès l'exécution du script
+  GEICG.progress.init();
+
   // Auto-démarrage au chargement du DOM
   $(document).ready(function() {
     GEICG.initUI();

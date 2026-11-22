@@ -1343,3 +1343,54 @@ body.modal-open {
 .modal-body::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+/* ==========================================================================
+   BARRE DE PROGRESSION GLOBALE DE CHARGEMENT DE PAGE (TOP PROGRESS BAR)
+   ========================================================================== */
+#geicg-page-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 99999998;
+  pointer-events: none;
+  background: transparent;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+#geicg-page-progress.is-active {
+  opacity: 1;
+}
+#geicg-page-progress-bar {
+  position: relative;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary-color, #1E3A5F) 0%, #2563EB 60%, #38BDF8 100%);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.7), 0 0 4px rgba(56, 189, 248, 0.85);
+  border-radius: 0 2px 2px 0;
+  transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+#geicg-page-progress-bar::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 70px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65));
+  border-radius: 0 2px 2px 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  #geicg-page-progress,
+  #geicg-page-progress-bar {
+    transition: none;
+  }
+}
+@media print {
+  #geicg-page-progress,
+  #geicg-page-progress * {
+    display: none !important;
+  }
+}
