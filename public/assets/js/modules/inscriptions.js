@@ -1181,15 +1181,6 @@
           }
         },
         {
-          data: 'created_at_inscription', render: function (d) {
-            if (!d) return '-';
-            var parts = d.split(' ');
-            var dp = parts[0].split('-');
-            if (dp.length === 3) return '<span style="color:#64748B; font-weight:600; font-size:12.5px;">' + dp[2] + '/' + dp[1] + '/' + dp[0] + '</span>';
-            return d;
-          }
-        },
-        {
           data: 'date_photo', render: function (d) {
             if (!d) return '<span style="color:#94A3B8; font-size:12.5px;">-</span>';
             var parts = String(d).trim().split(' ');

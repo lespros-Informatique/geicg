@@ -44,8 +44,8 @@
             <label style="display: block; font-weight: 700; font-size: 12.5px; color: #334155; margin-bottom: 6px;">Statut Photo</label>
             <select id="filter-photo" class="form-control" style="width: 100%; border-radius: 8px; padding: 9px 12px; border: 1px solid #CBD5E1; font-weight: 600; font-size: 13.5px;">
               <option value="all">Tous les étudiants inscrits</option>
-              <option value="sans_photo" selected>Photos Manquantes</option>
-              <option value="avec_photo">Photos renseignées (Avec photo)</option>
+              <option value="sans_photo" selected>Sans Photos </option>
+              <option value="avec_photo">Avec Photos  </option>
             </select>
           </div>
 
@@ -153,7 +153,6 @@
                 <th style="padding: 12px;">Matricule</th>
                 <th style="padding: 12px;">Nom & Prénoms</th>
                 <th style="padding: 12px;">Classe</th>
-                <th style="padding: 12px;">Date Ins</th>
                 <th style="padding: 12px;">Enr. Photo</th>
                 <th style="padding: 12px; text-align: center; width: 70px;">Action</th>
               </tr>
