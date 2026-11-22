@@ -2293,35 +2293,59 @@
 
     // Action Tout valider rapide
     function validateAllStudentPieces(insCode, etuCode) {
-      if (!confirm("Voulez-vous vraiment marquer TOUTES les pièces de ce dossier comme DÉPOSÉES ?")) return;
-
-      $.ajax({
-        url: window.RACINE + 'dossier_etudiant/saveAll',
-        type: 'POST',
-        data: {
-          inscription_code: insCode,
-          etudiant_code: etuCode
-        },
-        dataType: 'json',
-        success: function (res) {
-          if (res.status === 1 || res.success) {
-            var msgSuccess = res.message || 'Toutes les pièces ont été validées avec succès.';
-            if (typeof showToast === 'function') showToast(msgSuccess, 'success');
-            else if (window.toastr) toastr.success(msgSuccess);
-            table.ajax.reload(null, false);
-            $('#modal-dossier').hide();
-          } else {
-            var msgErr = res.message || 'Erreur lors de la validation.';
-            if (typeof showToast === 'function') showToast(msgErr, 'error');
-            else if (window.toastr) toastr.error(msgErr);
+      var executeSaveAll = function () {
+        $.ajax({
+          url: window.RACINE + 'dossier_etudiant/saveAll',
+          type: 'POST',
+          data: {
+            inscription_code: insCode,
+            etudiant_code: etuCode
+          },
+          dataType: 'json',
+          success: function (res) {
+            if (res.status === 1 || res.success) {
+              var msgSuccess = res.message || 'Toutes les pièces ont été validées avec succès.';
+              if (typeof showToast === 'function') showToast(msgSuccess, 'success');
+              else if (window.toastr) toastr.success(msgSuccess);
+              table.ajax.reload(null, false);
+              $('#modal-dossier').hide();
+            } else {
+              var msgErr = res.message || 'Erreur lors de la validation.';
+              if (typeof showToast === 'function') showToast(msgErr, 'error');
+              else if (window.toastr) toastr.error(msgErr);
+            }
+          },
+          error: function () {
+            var msgErr2 = 'Erreur de connexion au serveur.';
+            if (typeof showToast === 'function') showToast(msgErr2, 'error');
+            else if (window.toastr) toastr.error(msgErr2);
           }
-        },
-        error: function () {
-          var msgErr2 = 'Erreur de connexion au serveur.';
-          if (typeof showToast === 'function') showToast(msgErr2, 'error');
-          else if (window.toastr) toastr.error(msgErr2);
-        }
-      });
+        });
+      };
+
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Tout valider ?',
+          text: 'Voulez-vous vraiment marquer toutes les pièces de ce dossier comme déposées ?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#16A34A',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: '<i class="fas fa-check-double"></i> Oui, tout valider',
+          cancelButtonText: 'Annuler',
+          reverseButtons: true,
+          didOpen: function () {
+            var container = Swal.getContainer();
+            if (container) container.style.zIndex = '10050';
+          }
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            executeSaveAll();
+          }
+        });
+      } else {
+        executeSaveAll();
+      }
     }
 
     // Chargement et impression du Bordereau / Récépissé 
