@@ -207,10 +207,13 @@ class ModelAbsence extends BaseModel
                        v.etu_nom AS nom_etudiant_only,
                        v.etu_prenom AS prenom_etudiant,
                        a.libelle_annee,
-                       e.id_etudiant
+                       e.id_etudiant,
+                       e.photo_etudiant,
+                       ins.photo_inscription
                 FROM " . VIEWS::ABSENCES_COMPLETES . " v
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = COALESCE(NULLIF(v.annee_code, ''), v.inscription_annee_code)
                 LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = v.code_etudiant
+                LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = v.inscription_code
                 WHERE v.id_absence = ? OR v.code_absence = ?
                 LIMIT 1
             ");

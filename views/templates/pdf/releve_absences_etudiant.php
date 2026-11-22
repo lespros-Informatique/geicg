@@ -29,6 +29,36 @@ $fmtHeures = static function ($h): string {
     $val = (float)$h;
     return (fmod($val, 1.0) === 0.0) ? ((int)$val . ' h') : (number_format($val, 1, ',', ' ') . ' h');
 };
+
+// Résolution de la photo de l'étudiant (prise de vue inscription prioritaire, sinon photo profil, sinon placeholder)
+$resolvedStudentPhoto = '';
+$photoCandidatesRaw = array_filter([
+    trim((string)($etudiant['photo_inscription'] ?? '')),
+    trim((string)($etudiant['photo_etudiant'] ?? ''))
+]);
+foreach ($photoCandidatesRaw as $rel) {
+    $cleanRel = ltrim($rel, '/\\');
+    $pathsToTry = [
+        __DIR__ . '/../../../public/' . $cleanRel,
+        __DIR__ . '/../../../' . $cleanRel,
+        __DIR__ . '/../../../public/uploads/etudiants/' . $cleanRel,
+        __DIR__ . '/../../../public/uploads/photos/' . $cleanRel
+    ];
+    foreach ($pathsToTry as $p) {
+        if (file_exists($p) && is_file($p)) {
+            $resolvedStudentPhoto = $p;
+            break 2;
+        }
+    }
+}
+if ($resolvedStudentPhoto === '') {
+    $phPath = function_exists('placeholderPath')
+        ? placeholderPath('etudiant')
+        : (__DIR__ . '/../../../public/assets/images/placeholders/etudiant.png');
+    if (file_exists($phPath) && is_file($phPath)) {
+        $resolvedStudentPhoto = $phPath;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -216,40 +246,59 @@ $fmtHeures = static function ($h): string {
     </tr>
   </table>
 
-  <!-- IDENTITÉ & CURSUS DE L'ÉTUDIANT -->
-  <table class="meta-box-table">
+  <!-- IDENTITÉ & CURSUS DE L'ÉTUDIANT + PHOTO -->
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
     <tr>
-      <td style="width: 55%;">
-        <span class="meta-label">Étudiant :</span>
-        <span class="meta-value"><?= htmlspecialchars($nomComplet) ?></span>
+      <td style="width: 83%; vertical-align: top; padding: 0 8px 0 0;">
+        <table class="meta-box-table" style="margin-bottom: 0;">
+          <tr>
+            <td style="width: 55%;">
+              <span class="meta-label">Étudiant :</span>
+              <span class="meta-value"><?= htmlspecialchars($nomComplet) ?></span>
+            </td>
+            <td style="width: 45%;">
+              <span class="meta-label">Matricule :</span>
+              <span class="meta-value"><?= htmlspecialchars($etudiant['matricule_etudiant'] ?? '-') ?></span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span class="meta-label">Classe :</span>
+              <span class="meta-value"><?= htmlspecialchars($etudiant['libelle_classe'] ?? '-') ?></span>
+              <?php if (!empty($etudiant['libelle_niveau'])): ?>
+                <span style="color: #475569;">(<?= htmlspecialchars($etudiant['libelle_niveau']) ?>)</span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <span class="meta-label">Filière :</span>
+              <span class="meta-value"><?= htmlspecialchars($etudiant['libelle_filiere'] ?? '-') ?></span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <span class="meta-label">Contact :</span>
+              <span class="meta-value"><?= htmlspecialchars(!empty($etudiant['telephone_etudiant']) ? $etudiant['telephone_etudiant'] : '-') ?></span>
+            </td>
+            <td>
+              <span class="meta-label">Édité par :</span>
+              <span class="meta-value"><?= htmlspecialchars(!empty($editeur_nom) ? $editeur_nom : '-') ?></span>
+              <span style="color: #64748B; font-size: 8pt;">(<?= date('d/m/Y H:i') ?>)</span>
+            </td>
+          </tr>
+        </table>
       </td>
-      <td style="width: 45%;">
-        <span class="meta-label">Matricule :</span>
-        <span class="meta-value"><?= htmlspecialchars($etudiant['matricule_etudiant'] ?? '-') ?></span>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <span class="meta-label">Classe :</span>
-        <span class="meta-value"><?= htmlspecialchars($etudiant['libelle_classe'] ?? '-') ?></span>
-        <?php if (!empty($etudiant['libelle_niveau'])): ?>
-          <span style="color: #475569;">(<?= htmlspecialchars($etudiant['libelle_niveau']) ?>)</span>
-        <?php endif; ?>
-      </td>
-      <td>
-        <span class="meta-label">Filière :</span>
-        <span class="meta-value"><?= htmlspecialchars($etudiant['libelle_filiere'] ?? '-') ?></span>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <span class="meta-label">Contact :</span>
-        <span class="meta-value"><?= htmlspecialchars(!empty($etudiant['telephone_etudiant']) ? $etudiant['telephone_etudiant'] : '-') ?></span>
-      </td>
-      <td>
-        <span class="meta-label">Édité par :</span>
-        <span class="meta-value"><?= htmlspecialchars(!empty($editeur_nom) ? $editeur_nom : '-') ?></span>
-        <span style="color: #64748B; font-size: 8pt;">(<?= date('d/m/Y H:i') ?>)</span>
+      <td style="width: 17%; vertical-align: middle; text-align: center; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="text-align: center; vertical-align: middle; padding: 3px;">
+              <?php if ($resolvedStudentPhoto !== ''): ?>
+                <img src="<?= htmlspecialchars($resolvedStudentPhoto) ?>" style="width: 120px; height: 130px; object-fit: cover; display: block; margin: 0 auto;">
+              <?php else: ?>
+                <div style="width: 68px; height: 78px; line-height: 78px; text-align: center; color: #94A3B8; font-size: 7pt;">PHOTO</div>
+              <?php endif; ?>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>
