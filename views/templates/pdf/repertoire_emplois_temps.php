@@ -308,17 +308,21 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <thead>
       <tr>
         <th style="width: 4%; text-align: center;">#</th>
-        <th style="width: 20%;">Classe & Niveau</th>
-        <th style="width: 18%;">Volume & Créneaux</th>
-        <th style="width: 34%;"><?= !empty($isTeacherOnly) ? 'Matière(s) dispensée(s)' : 'Matières & Enseignants' ?></th>
-        <th style="width: 12%; text-align: center;">Statut Planning</th>
-        <th style="width: 12%; text-align: center;">Dernière MàJ</th>
+        <th style="width: 28%;">Classe</th>
+        <th style="width: 24%;">Volume & Créneaux</th>
+        <?php if (!empty($isTeacherOnly)): ?>
+          <th style="width: 28%; text-align: center;">Matière(s) dispensée(s)</th>
+        <?php else: ?>
+          <th style="width: 14%; text-align: center;">Matières</th>
+          <th style="width: 14%; text-align: center;">Enseignants</th>
+        <?php endif; ?>
+        <th style="width: 16%; text-align: center;">Dernière MàJ</th>
       </tr>
     </thead>
     <tbody>
       <?php if (empty($classes)): ?>
         <tr>
-          <td colspan="6" class="text-center" style="padding: 16px; color: #64748B; font-style: italic;">
+          <td colspan="<?= !empty($isTeacherOnly) ? 5 : 6 ?>" class="text-center" style="padding: 16px; color: #64748B; font-style: italic;">
             Aucun emploi du temps n'est actuellement enregistré pour les critères sélectionnés.
           </td>
         </tr>
@@ -330,7 +334,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
             $h = floor($tMinutes / 60);
             $m = $tMinutes % 60;
             $volHoraire = sprintf("%dh%02d", $h, $m);
-            $isComplet = ((int)($c['nb_jours'] ?? 0) >= 5);
           ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center" style="font-weight: bold; color: #64748B;">
@@ -338,8 +341,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
             </td>
             <td>
               <strong style="color: #0F172A; font-size: 8pt;"><?= htmlspecialchars($c['libelle_classe'] ?? $c['code_classe'] ?? '-') ?></strong>
-              <br>
-              <span style="color: #64748B; font-size: 7pt;"><?= htmlspecialchars($c['libelle_niveau'] ?? 'Niveau non défini') ?></span>
             </td>
             <td>
               <span class="badge-volume"><?= $volHoraire ?></span>
@@ -348,20 +349,18 @@ if (empty($etablissement) || !is_array($etablissement)) {
                 <?= (int)($c['nb_creneaux'] ?? 0) ?> créneau(x) &bull; <?= (int)($c['nb_jours'] ?? 0) ?> jour(s)
               </span>
             </td>
-            <td>
-              <?php if (!empty($isTeacherOnly)): ?>
+            <?php if (!empty($isTeacherOnly)): ?>
+              <td class="text-center">
                 <strong style="color: #1E3A5F; font-size: 7.5pt;"><?= (int)($c['nb_matieres'] ?? 0) ?> matière(s) assignée(s)</strong>
-              <?php else: ?>
-                <strong style="color: #1E3A5F; font-size: 7.5pt;"><?= (int)($c['nb_matieres'] ?? 0) ?> matière(s) &bull; <?= (int)($c['nb_profs'] ?? 0) ?> prof(s)</strong>
-              <?php endif; ?>
-            </td>
-            <td class="text-center">
-              <?php if ($isComplet): ?>
-                <span class="badge-statut-complet">Complet</span>
-              <?php else: ?>
-                <span class="badge-statut-brouillon">En saisie (<?= (int)($c['nb_jours'] ?? 0) ?>/6 j)</span>
-              <?php endif; ?>
-            </td>
+              </td>
+            <?php else: ?>
+              <td class="text-center">
+                <strong style="color: #1E3A5F; font-size: 7.5pt;"><?= (int)($c['nb_matieres'] ?? 0) ?> matière(s)</strong>
+              </td>
+              <td class="text-center">
+                <strong style="color: #1E3A5F; font-size: 7.5pt;"><?= (int)($c['nb_profs'] ?? 0) ?> enseignant(s)</strong>
+              </td>
+            <?php endif; ?>
             <td class="text-center" style="font-size: 7pt; color: #64748B;">
               <?= !empty($c['last_update']) ? date('d/m/Y H:i', strtotime($c['last_update'])) : '-' ?>
             </td>
