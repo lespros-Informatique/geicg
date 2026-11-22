@@ -11,7 +11,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title><?= !empty($isTeacherOnly) ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps' ?> - GEICG</title>
+  <title><?= !empty($isTeacherOnly) ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps' ?><?= !empty($etablissement['sigle_etablissement']) ? ' - ' . htmlspecialchars($etablissement['sigle_etablissement']) : '' ?></title>
   <style>
     @page {
       margin-top: 8mm;
@@ -223,7 +223,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <!-- EN-TÊTE FIXE POUR MPDF -->
   <htmlpageheader name="pageHeader">
     <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
-      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; <?= !empty($isTeacherOnly) ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps' ?> &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
+      <?= htmlspecialchars($etablissement['nom_etablissement'] ?? ($etablissement['sigle_etablissement'] ?? '')) ?> &bull; <?= !empty($isTeacherOnly) ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps' ?> &bull; <?= htmlspecialchars($annee_libelle ?? '') ?>
     </div>
   </htmlpageheader>
   <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
@@ -233,7 +233,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document officiel GEICG &bull; Édité le <?= date('d/m/Y H:i:s') ?>
+          <?= htmlspecialchars(!empty($etablissement['texte_pied_page']) ? $etablissement['texte_pied_page'] : trim('Document officiel ' . ($etablissement['sigle_etablissement'] ?? ''))) ?> &bull; Édité le <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
@@ -376,18 +376,70 @@ if (empty($etablissement) || !is_array($etablissement)) {
   </table>
 
   <!-- BLOC DE SIGNATURES OFFICIELLES -->
-  <table class="signature-table">
+  <?php
+    $sigDirPedTitre = trim((string)($etablissement['titre_direction_pedagogique'] ?? ''));
+    $sigDirPedNom = trim((string)($etablissement['nom_directeur_etudes'] ?? ''));
+    $sigDirGenTitre = trim((string)($etablissement['titre_direction_generale'] ?? ''));
+    $sigDirGenNom = trim((string)($etablissement['nom_directeur_general'] ?? ''));
+    $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
+    $sigVille = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
+  ?>
+  <?php if (!empty($sigVille)): ?>
+    <div style="text-align: right; font-size: 7.5pt; color: #475569; margin-top: 10px; margin-bottom: 4px;">
+      Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
+    </div>
+  <?php endif; ?>
+  <table class="signature-table" style="width: 100%; border-collapse: collapse; margin-top: 6px;">
     <tr>
-      <td class="signature-box">
-        <div class="signature-title"><?= !empty($isTeacherOnly) ? "L'Enseignant(e)" : "Le Directeur des Études" ?></div>
-        <div style="height: 38px;"></div>
-        <div class="signature-mention">Date et Signature précédées de la mention manuscrite</div>
+      <td style="width: 48%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse; border: 0.5px solid #CBD5E1; background-color: #FAFAFA;">
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 5px 8px;">
+              <?= htmlspecialchars(!empty($isTeacherOnly) ? "L'Enseignant(e)" : $sigDirPedTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php if (empty($isTeacherOnly) && $sigDirPedNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">
+              <?= htmlspecialchars($sigDirPedNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 7pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
       <td style="width: 4%;"></td>
-      <td class="signature-box">
-        <div class="signature-title"><?= !empty($isTeacherOnly) ? "Le Directeur des Études" : "La Direction Générale" ?></div>
-        <div style="height: 38px;"></div>
-        <div class="signature-mention">Signature & Cachet Officiel de l'Établissement</div>
+      <td style="width: 48%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse; border: 0.5px solid #CBD5E1; background-color: #FAFAFA;">
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 5px 8px;">
+              <?= htmlspecialchars(!empty($isTeacherOnly) ? $sigDirPedTitre : $sigDirGenTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php $rightSigNom = !empty($isTeacherOnly) ? $sigDirPedNom : $sigDirGenNom; ?>
+          <?php if ($rightSigNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">
+              <?= htmlspecialchars($rightSigNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 7pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

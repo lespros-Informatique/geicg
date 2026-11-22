@@ -11,7 +11,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Emploi du Temps - <?= htmlspecialchars($classe['libelle_classe'] ?? 'Classe') ?> - GEICG</title>
+  <title>Emploi du Temps - <?= htmlspecialchars($classe['libelle_classe'] ?? '') ?><?= !empty($etablissement['sigle_etablissement']) ? ' - ' . htmlspecialchars($etablissement['sigle_etablissement']) : '' ?></title>
   <style>
     @page {
       margin-top: 8mm;
@@ -232,7 +232,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <!-- EN-TÊTE FIXE POUR MPDF -->
   <htmlpageheader name="pageHeader">
     <div style="font-size: 7pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
-      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Emploi du Temps - Classe <?= htmlspecialchars($classe['libelle_classe'] ?? '') ?> &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
+      <?= htmlspecialchars($etablissement['nom_etablissement'] ?? ($etablissement['sigle_etablissement'] ?? '')) ?> &bull; Emploi du Temps - Classe <?= htmlspecialchars($classe['libelle_classe'] ?? '') ?> &bull; <?= htmlspecialchars($annee_libelle ?? '') ?>
     </div>
   </htmlpageheader>
   <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
@@ -242,7 +242,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7pt; color: #64748B; padding-top: 3px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document officiel GEICG &bull; Édité le <?= date('d/m/Y H:i') ?>
+          <?= htmlspecialchars(!empty($etablissement['texte_pied_page']) ? $etablissement['texte_pied_page'] : trim('Document officiel ' . ($etablissement['sigle_etablissement'] ?? ''))) ?> &bull; Édité le <?= date('d/m/Y H:i') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
@@ -457,15 +457,65 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <?php endif; ?>
 
   <!-- BLOC DE SIGNATURE ET VISAS -->
-  <table class="signature-table">
+  <?php
+    $sigDirPedTitre = trim((string)($etablissement['titre_direction_pedagogique'] ?? ''));
+    $sigDirPedNom = trim((string)($etablissement['nom_directeur_etudes'] ?? ''));
+    $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
+    $sigVille = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
+  ?>
+  <?php if (!empty($sigVille)): ?>
+    <div style="text-align: right; font-size: 7pt; color: #475569; margin-top: 6px; margin-bottom: 3px;">
+      Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
+    </div>
+  <?php endif; ?>
+  <table class="signature-table" style="width: 100%; border-collapse: collapse; margin-top: 4px;">
     <tr>
-      <td class="signature-box" style="margin-right: 4%;">
-        <div class="signature-title">Le Délégué / Représentant de la Classe</div>
-        <div class="signature-mention">Reçu et pris connaissance le : ..... / ..... / 20.....</div>
+      <td style="width: 48%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse; border: 0.5px solid #CBD5E1; background-color: #FAFAFA;">
+          <tr>
+            <td style="text-align: center; font-size: 7.5pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 4px 8px;">
+              Le Délégué / Représentant de la Classe
+            </td>
+          </tr>
+          <tr>
+            <td height="36" style="height: 36px; text-align: center;">&nbsp;</td>
+          </tr>
+          <?php if ($sigDirPedNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">&nbsp;</td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 6.8pt; font-style: italic; color: #64748B; padding: 0 8px 5px 8px;">
+              Reçu et pris connaissance le : ..... / ..... / 20.....
+            </td>
+          </tr>
+        </table>
       </td>
-      <td class="signature-box">
-        <div class="signature-title">La Direction des Études & de la Pédagogie</div>
-        <div class="signature-mention">Signature & Cachet Officiel de l'Établissement</div>
+      <td style="width: 4%;"></td>
+      <td style="width: 48%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse; border: 0.5px solid #CBD5E1; background-color: #FAFAFA;">
+          <tr>
+            <td style="text-align: center; font-size: 7.5pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 4px 8px;">
+              <?= htmlspecialchars($sigDirPedTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="36" style="height: 36px; text-align: center;">&nbsp;</td>
+          </tr>
+          <?php if ($sigDirPedNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">
+              <?= htmlspecialchars($sigDirPedNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 6.8pt; font-style: italic; color: #64748B; padding: 0 8px 5px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

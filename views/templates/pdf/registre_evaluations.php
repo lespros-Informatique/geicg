@@ -11,7 +11,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Registre des Évaluations - GEICG</title>
+  <title>Registre des Évaluations<?= !empty($etablissement['sigle_etablissement']) ? ' - ' . htmlspecialchars($etablissement['sigle_etablissement']) : '' ?></title>
   <style>
     @page {
       margin-top: 8mm;
@@ -427,19 +427,39 @@ if (empty($etablissement) || !is_array($etablissement)) {
   </table>
 
   <!-- BLOC DE SIGNATURE -->
-  <table class="signature-table">
+  <table class="signature-table" style="width: 100%; border-collapse: collapse; margin-top: 14px;">
     <tr>
-      <td style="width: 66%;"></td>
-      <td class="signature-box">
-        <?php if (!empty($etablissement['ville_signature']) || !empty($etablissement['ville_etablissement'])): ?>
-          <div class="signature-date">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?: $etablissement['ville_etablissement']) ?>, le <?= date('d/m/Y') ?></div>
-        <?php endif; ?>
-        <div class="signature-title"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'La Direction des Études & Examens') ?></div>
-        <div class="signature-space">&nbsp;</div>
-        <?php if (!empty($etablissement['nom_directeur_etudes'])): ?>
-          <div class="signature-name"><?= htmlspecialchars($etablissement['nom_directeur_etudes']) ?></div>
-        <?php endif; ?>
-        <div class="signature-mention"><?= htmlspecialchars(!empty($etablissement['mention_cachet_signature']) ? $etablissement['mention_cachet_signature'] : 'Visa, Cachet officiel et Date') ?></div>
+      <td style="width: 64%;"></td>
+      <td style="width: 36%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse; border: 0.5px solid #CBD5E1; background-color: #FAFAFA;">
+          <?php if (!empty($etablissement['ville_signature']) || !empty($etablissement['ville_etablissement'])): ?>
+          <tr>
+            <td style="text-align: center; font-size: 7.5pt; color: #475569; padding: 5px 8px 2px 8px;">
+              Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?: $etablissement['ville_etablissement']) ?>, le <?= date('d/m/Y') ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 4px 8px 5px 8px;">
+              <?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? '') ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php if (!empty($etablissement['nom_directeur_etudes'])): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">
+              <?= htmlspecialchars($etablissement['nom_directeur_etudes']) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 7pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
+              <?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? '') ?>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

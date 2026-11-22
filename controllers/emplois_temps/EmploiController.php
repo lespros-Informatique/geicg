@@ -698,7 +698,7 @@ class EmploiController extends BaseController
         PdfService::generate($html, $filename, [
             'orientation' => 'L',
             'format' => 'A4',
-            'title' => ($isTeacherOnly ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps') . ' - ' . ($etablissement['libelle_etablissement'] ?? 'GEICG'),
+            'title' => ($isTeacherOnly ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps') . (!empty($etablissement['sigle_etablissement']) ? ' - ' . $etablissement['sigle_etablissement'] : ''),
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
