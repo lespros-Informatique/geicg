@@ -94,6 +94,21 @@ class ModelImpayes extends BaseModel
             $stmtSco->execute($scoParams);
             $scolariteGrid = $stmtSco->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+            // Indexer la grille scolarité en O(1) et précharger les frais annexes en 1 seule requête (zéro N+1)
+            $scolariteMapExact = [];
+            $scolariteMapGlobal = [];
+            foreach ($scolariteGrid as $sg) {
+                $sgAff = ($sg['affectation_etat'] === 'affecte' || $sg['affectation_etat'] === 'oui') ? 'affecte' : 'non_affecte';
+                $baseKey = ($sg['filiere_code'] ?? '') . '|' . ($sg['niveau_code'] ?? '') . '|' . $sgAff;
+                $sgAnn = (string)($sg['annee_code'] ?? '');
+                if ($sgAnn !== '') {
+                    $scolariteMapExact[$sgAnn . '|' . $baseKey] = (float)$sg['montant_scolarite'];
+                } else {
+                    $scolariteMapGlobal[$baseKey] = (float)$sg['montant_scolarite'];
+                }
+            }
+            $modelFA->preloadMontants($anneeCode);
+
             $stmtTranches = $db->prepare("SELECT * FROM " . TABLES::TRANCHES_SCOLARITE . " WHERE statut_tranche = '" . STATUTS::ACTIF . "' ORDER BY date_limite ASC, id_tranche ASC");
             $stmtTranches->execute();
             $tranchesGrid = $stmtTranches->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -118,16 +133,10 @@ class ModelImpayes extends BaseModel
                 $targetAff = $isAffecte ? 'affecte' : 'non_affecte';
                 $typeFiliere = $ins['type_filiere'] ?? 'TERTIAIRE';
 
-                // Calcul du montant de scolarité
-                $scolariteDue = 0;
-                foreach ($scolariteGrid as $sg) {
-                    $sgAff = ($sg['affectation_etat'] === 'affecte' || $sg['affectation_etat'] === 'oui') ? 'affecte' : 'non_affecte';
-                    $matchAnnee = empty($aCode) || empty($sg['annee_code']) || $sg['annee_code'] === $aCode;
-                    if ($matchAnnee && $sg['filiere_code'] === $filiereCode && $sg['niveau_code'] === $nCode && $sgAff === $targetAff) {
-                        $scolariteDue = (float)$sg['montant_scolarite'];
-                        break;
-                    }
-                }
+                // Calcul du montant de scolarité en O(1)
+                $baseKey = "{$filiereCode}|{$nCode}|{$targetAff}";
+                $scolariteDue = $scolariteMapExact["{$aCode}|{$baseKey}"]
+                    ?? ($scolariteMapGlobal[$baseKey] ?? 0);
                 if ($scolariteDue <= 0) {
                     $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
                 }
@@ -394,6 +403,42 @@ class ModelImpayes extends BaseModel
     }
 
     private static array $scolariteDueCache = [];
+    private static bool $scolaritesPreloaded = false;
+
+    /**
+     * Pré-charge en 1 seule requête la grille des scolarités actives pour éviter toute requête SQL dans les boucles de masse.
+     */
+    public function preloadScolaritesDues(?string $anneeCode = null): void
+    {
+        try {
+            $sql = "SELECT filiere_code, niveau_code, annee_code, affectation_etat, montant_scolarite
+                    FROM " . TABLES::SCOLARITES . "
+                    WHERE statut_scolarite = '" . STATUTS::ACTIF . "'";
+            $params = [];
+            if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+                $sql .= " AND annee_code = ?";
+                $params[] = $anneeCode;
+            }
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                $affLow = strtolower(trim((string)($r['affectation_etat'] ?? '')));
+                $normAff = ($affLow === 'oui' || $affLow === 'affecte') ? 'affecte' : 'non_affecte';
+                $montant = (float)$r['montant_scolarite'];
+                $keyExact = ($r['filiere_code'] ?? '') . '|' . ($r['niveau_code'] ?? '') . '|' . ($r['annee_code'] ?? '') . '|' . $normAff;
+                $keyAny = ($r['filiere_code'] ?? '') . '|' . ($r['niveau_code'] ?? '') . '|' . ($r['annee_code'] ?? '') . '|';
+                self::$scolariteDueCache[$keyExact] = $montant;
+                if (!array_key_exists($keyAny, self::$scolariteDueCache)) {
+                    self::$scolariteDueCache[$keyAny] = $montant;
+                }
+            }
+            if (empty($anneeCode) || $anneeCode === 'ALL') {
+                self::$scolaritesPreloaded = true;
+            }
+        } catch (Exception $e) {
+            error_log("ModelImpayes::preloadScolaritesDues error: " . $e->getMessage());
+        }
+    }
 
     public function getTotalPayeByInscriptions(array $inscriptionCodes): array
     {
@@ -402,14 +447,9 @@ class ModelImpayes extends BaseModel
         }
         $placeholders = implode(',', array_fill(0, count($inscriptionCodes), '?'));
         $stmt = $this->getCon()->prepare("
-            SELECT inscription_code, COALESCE(SUM(montant_paiement), 0) as total_paye 
-            FROM " . TABLES::PAIEMENTS . " 
+            SELECT inscription_code, total_paye_scolarite AS total_paye
+            FROM " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . "
             WHERE inscription_code IN ({$placeholders})
-              AND statut_paiement != '" . STATUTS::ANNULE . "'
-              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
-              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
-              AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
-            GROUP BY inscription_code
         ");
         $stmt->execute(array_values($inscriptionCodes));
         $map = [];
@@ -422,13 +462,10 @@ class ModelImpayes extends BaseModel
     public function getTotalPayeByInscription(string $inscriptionCode): float
     {
         $stmt = $this->getCon()->prepare("
-            SELECT SUM(montant_paiement) as total_paye 
-            FROM " . TABLES::PAIEMENTS . " 
-            WHERE inscription_code = ? 
-              AND statut_paiement != '" . STATUTS::ANNULE . "'
-              AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES')
-              AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES')
-              AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')
+            SELECT total_paye_scolarite
+            FROM " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . "
+            WHERE inscription_code = ?
+            LIMIT 1
         ");
         $stmt->execute([$inscriptionCode]);
         return (float)($stmt->fetchColumn() ?: 0);
@@ -449,6 +486,10 @@ class ModelImpayes extends BaseModel
         $cacheKey = "{$filiereCode}|{$niveauCode}|{$anneeCode}|{$normAff}";
         if (array_key_exists($cacheKey, self::$scolariteDueCache)) {
             return self::$scolariteDueCache[$cacheKey];
+        }
+        if (self::$scolaritesPreloaded) {
+            self::$scolariteDueCache[$cacheKey] = null;
+            return null;
         }
         $sql = "SELECT montant_scolarite FROM " . TABLES::SCOLARITES . " WHERE filiere_code = ? AND niveau_code = ? AND annee_code = ? AND statut_scolarite = '" . STATUTS::ACTIF . "'";
         $params = [$filiereCode, $niveauCode, $anneeCode];

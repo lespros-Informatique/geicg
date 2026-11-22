@@ -6024,6 +6024,35 @@ GROUP BY
     `m`.`libelle_matiere`;
 
 --
+-- Final view structure for view `v_moyennes_semestres_inscriptions`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_moyennes_semestres_inscriptions`*/;
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_moyennes_semestres_inscriptions` AS
+SELECT
+    `sm`.`inscription_code` AS `inscription_code`,
+    `sm`.`etudiant_code` AS `etudiant_code`,
+    `sm`.`classe_code` AS `classe_code`,
+    `sm`.`annee_code` AS `annee_code`,
+    `sm`.`semestre_code` AS `semestre_code`,
+    `sm`.`numero_semestre` AS `numero_semestre`,
+    `sm`.`est_premiere_annee` AS `est_premiere_annee`,
+    SUM(`sm`.`nb_notes_matiere`) AS `nb_notes`,
+    COUNT(`sm`.`matiere_code`) AS `nb_matieres`,
+    ROUND(SUM(`sm`.`points_matiere`), 2) AS `total_points`,
+    ROUND(SUM(`sm`.`coefficient_maquette`), 2) AS `total_coef`,
+    ROUND(SUM(`sm`.`points_matiere`) / NULLIF(SUM(`sm`.`coefficient_maquette`), 0), 2) AS `moyenne_semestre`
+FROM `v_moyennes_semestres_matieres` `sm`
+GROUP BY
+    `sm`.`inscription_code`,
+    `sm`.`etudiant_code`,
+    `sm`.`classe_code`,
+    `sm`.`annee_code`,
+    `sm`.`semestre_code`,
+    `sm`.`numero_semestre`,
+    `sm`.`est_premiere_annee`;
+
+--
 -- Final view structure for view `v_synthese_moyennes_annuelles`
 --
 

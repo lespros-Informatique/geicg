@@ -41,24 +41,9 @@ class ModelBulletin extends BaseModel
             $matricule = $matricule !== null ? trim($matricule) : '';
             $isMatriculeSearch = ($matricule !== '');
 
-            $subParams = [];
-            $subWhere = [
-                "n.statut_note = '" . STATUTS::ACTIF . "'",
-                "(comp.statut_composition IS NULL OR LOWER(TRIM(comp.statut_composition)) != '" . STATUTS::ANNULE . "')",
-                "comp.annee_code = ?",
-                "NOT ((REPLACE(UPPER(COALESCE(niv_sub.slug_niveau, '')), ' ', '') IN ('1A', 'L1', '1ERE', '1') OR UPPER(COALESCE(niv_sub.libelle_niveau, '')) LIKE '%PREMIERE%' OR UPPER(COALESCE(niv_sub.libelle_niveau, '')) LIKE '%PREMIÈRE%') AND UPPER(TRIM(COALESCE(comp.type_composition, ''))) = 'EXAMEN')"
-            ];
-            $subParams[] = $anneeCode;
-
-            if (!empty($semestreCode)) {
-                $subWhere[] = "comp.semestre_code = ?";
-                $subParams[] = $semestreCode;
-            }
-
-            $subWhereSql = implode(" AND ", $subWhere);
-
             if ($isMatriculeSearch) {
-                // Lors d'une recherche par matricule, on récupère les bulletins par semestre pour l'année académique
+                // Recherche par matricule : lecture directe en 1 requête via VIEWS::MOYENNES_SEMESTRES_INSCRIPTIONS
+                // (zéro boucle N+1, moyenne pondérée exacte par la maquette pédagogique)
                 $semJoinCond = "s.annee_code = v.annee_code";
                 $semJoinParams = [];
                 if (!empty($semestreCode)) {
@@ -70,25 +55,14 @@ class ModelBulletin extends BaseModel
                                s.code_semestre,
                                s.libelle_semestre,
                                s.statut_semestre,
-                               COALESCE(n_cnt.nb_notes, 0) AS nb_notes,
-                               n_cnt.moyenne_semestre
+                               COALESCE(msi.nb_notes, 0) AS nb_notes,
+                               msi.moyenne_semestre
                         FROM " . VIEWS::BULLETIN_INSCRIPTIONS_SYNTHESE . " v
                         LEFT JOIN " . TABLES::SEMESTRES . " s ON ({$semJoinCond})
-                        LEFT JOIN (
-                            SELECT 
-                                n.inscription_code,
-                                comp.semestre_code,
-                                COUNT(DISTINCT n.id_note) AS nb_notes,
-                                ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moyenne_semestre
-                            FROM " . TABLES::NOTES . " n
-                            INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-                            INNER JOIN " . TABLES::INSCRIPTIONS . " i_sub ON i_sub.code_inscription = n.inscription_code
-                            LEFT JOIN " . TABLES::CLASSES . " cl_sub ON cl_sub.code_classe = i_sub.classe_code
-                            LEFT JOIN " . TABLES::NIVEAUX . " niv_sub ON niv_sub.code_niveau = cl_sub.niveau_code
-                            WHERE {$subWhereSql}
-                            GROUP BY n.inscription_code, comp.semestre_code
-                        ) n_cnt ON n_cnt.inscription_code = v.code_inscription
-                               AND (s.code_semestre IS NULL OR n_cnt.semestre_code = s.code_semestre)";
+                        LEFT JOIN " . VIEWS::MOYENNES_SEMESTRES_INSCRIPTIONS . " msi
+                               ON msi.inscription_code = v.code_inscription
+                              AND msi.annee_code = v.annee_code
+                              AND (s.code_semestre IS NULL OR msi.semestre_code = s.code_semestre)";
 
                 $conditions = [
                     "(v.statut_inscription != '" . STATUTS::ANNULE . "' OR v.statut_inscription IS NULL)",
@@ -96,7 +70,7 @@ class ModelBulletin extends BaseModel
                     "(v.matricule_etudiant LIKE ? OR v.matricule_mesrs LIKE ? OR v.matricule_menet LIKE ? OR v.code_etudiant LIKE ?)"
                 ];
                 $likeMat = '%' . $matricule . '%';
-                $params = array_merge($semJoinParams, $subParams, [$anneeCode, $likeMat, $likeMat, $likeMat, $likeMat]);
+                $params = array_merge($semJoinParams, [$anneeCode, $likeMat, $likeMat, $likeMat, $likeMat]);
 
                 if (!empty($teacherClasses)) {
                     $inClasses = implode(',', array_fill(0, count($teacherClasses), '?'));
@@ -111,45 +85,42 @@ class ModelBulletin extends BaseModel
 
                 $stmt = $this->getCon()->prepare($sql);
                 $stmt->execute($params);
-                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-                // Affiner la moyenne semestrielle avec la pondération exacte de la maquette pédagogique
-                foreach ($rows as &$r) {
-                    if ((int)($r['nb_notes'] ?? 0) > 0 && !empty($r['id_inscription']) && !empty($r['code_semestre'])) {
-                        $calc = $this->calculateBulletinData((int)$r['id_inscription'], $r['code_semestre']);
-                        if ($calc && isset($calc['moyenneGenerale'])) {
-                            $r['moyenne_semestre'] = $calc['moyenneGenerale'];
-                        }
-                    }
-                }
-                unset($r);
-
-                return $rows;
+                return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             }
 
-            $sql = "SELECT v.*, 
-                           COALESCE(n_cnt.nb_notes, 0) AS nb_notes,
-                           n_cnt.moyenne_semestre
-                    FROM " . VIEWS::BULLETIN_INSCRIPTIONS_SYNTHESE . " v
-                    LEFT JOIN (
-                        SELECT 
-                            n.inscription_code, 
-                            COUNT(DISTINCT n.id_note) AS nb_notes,
-                            ROUND(SUM(n.valeur_note * COALESCE(comp.coefficient, 1.00)) / NULLIF(SUM(COALESCE(comp.coefficient, 1.00)), 0), 2) AS moyenne_semestre
-                        FROM " . TABLES::NOTES . " n
-                        INNER JOIN " . TABLES::COMPOSITIONS . " comp ON comp.code_composition = n.composition_code
-                        INNER JOIN " . TABLES::INSCRIPTIONS . " i_sub ON i_sub.code_inscription = n.inscription_code
-                        LEFT JOIN " . TABLES::CLASSES . " cl_sub ON cl_sub.code_classe = i_sub.classe_code
-                        LEFT JOIN " . TABLES::NIVEAUX . " niv_sub ON niv_sub.code_niveau = cl_sub.niveau_code
-                        WHERE {$subWhereSql}
-                        GROUP BY n.inscription_code
-                    ) n_cnt ON n_cnt.inscription_code = v.code_inscription";
+            // Mode liste / filtre par classe : lecture directe via VIEWS::MOYENNES_SEMESTRES_INSCRIPTIONS
+            $joinParams = [];
+            if (!empty($semestreCode)) {
+                $sql = "SELECT v.*,
+                               COALESCE(n_cnt.nb_notes, 0) AS nb_notes,
+                               n_cnt.moyenne_semestre
+                        FROM " . VIEWS::BULLETIN_INSCRIPTIONS_SYNTHESE . " v
+                        LEFT JOIN " . VIEWS::MOYENNES_SEMESTRES_INSCRIPTIONS . " n_cnt
+                               ON n_cnt.inscription_code = v.code_inscription
+                              AND n_cnt.annee_code = v.annee_code
+                              AND n_cnt.semestre_code = ?";
+                $joinParams[] = $semestreCode;
+            } else {
+                $sql = "SELECT v.*,
+                               COALESCE(n_cnt.nb_notes, 0) AS nb_notes,
+                               n_cnt.moyenne_semestre
+                        FROM " . VIEWS::BULLETIN_INSCRIPTIONS_SYNTHESE . " v
+                        LEFT JOIN (
+                            SELECT inscription_code,
+                                   SUM(nb_notes) AS nb_notes,
+                                   ROUND(SUM(total_points) / NULLIF(SUM(total_coef), 0), 2) AS moyenne_semestre
+                            FROM " . VIEWS::MOYENNES_SEMESTRES_INSCRIPTIONS . "
+                            WHERE annee_code = ?
+                            GROUP BY inscription_code
+                        ) n_cnt ON n_cnt.inscription_code = v.code_inscription";
+                $joinParams[] = $anneeCode;
+            }
 
             $conditions = [
                 "(v.statut_inscription != '" . STATUTS::ANNULE . "' OR v.statut_inscription IS NULL)",
                 "v.annee_code = ?"
             ];
-            $params = array_merge($subParams, [$anneeCode]);
+            $params = array_merge($joinParams, [$anneeCode]);
             if (!empty($niveauCode)) {
                 $conditions[] = "v.niveau_code = ?";
                 $params[] = $niveauCode;
@@ -694,6 +665,475 @@ class ModelBulletin extends BaseModel
             'moy_semestre2' => $moySem2,
             'moy_examen' => $moyExam
         ];
+    }
+
+    /**
+     * Calcule en LOT tous les bulletins d'une classe en nombre CONSTANT de requêtes SQL (~6 à 8 requêtes au total,
+     * contre ~8*N requêtes en boucle via calculateBulletinData).
+     * Retourne exactement la même structure que calculateBulletinData() pour chaque étudiant, dans l'ordre des IDs fournis.
+     */
+    public function calculateClasseBulletinsBatch(
+        array $inscriptionIds,
+        string $classeCode,
+        string $anneeCode,
+        ?string $selectedSemestreCode = null,
+        bool $useFrozenDeliberation = true
+    ): array {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $inscriptionIds), fn($v) => $v > 0)));
+        if (empty($ids) || trim($classeCode) === '' || trim($anneeCode) === '') {
+            return [];
+        }
+
+        $db = $this->getCon();
+
+        // 1. Charger toutes les inscriptions complètes en 1 requête
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmtIns = $db->prepare("
+            SELECT *
+            FROM " . VIEWS::INSCRIPTIONS_COMPLETES . "
+            WHERE id_inscription IN ({$placeholders})
+              AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)
+        ");
+        $stmtIns->execute($ids);
+        $rawItems = $stmtIns->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if (empty($rawItems)) {
+            return [];
+        }
+
+        $itemsById = [];
+        $inscCodes = [];
+        foreach ($rawItems as $ri) {
+            $itemsById[(int)$ri['id_inscription']] = $ri;
+            $inscCodes[] = (string)$ri['code_inscription'];
+        }
+        // Conserver l'ordre exact demandé par le contrôleur
+        $orderedItems = [];
+        foreach ($ids as $id) {
+            if (isset($itemsById[$id])) {
+                $orderedItems[] = $itemsById[$id];
+            }
+        }
+        if (empty($orderedItems)) {
+            return [];
+        }
+
+        // 2. Semestres + coefficients de l'année + barèmes (3 requêtes uniques pour toute la classe)
+        $semestres = $this->getActiveSemestres($anneeCode);
+        if (empty($selectedSemestreCode)) {
+            $selectedSemestreCode = $semestres[0]['code_semestre'] ?? '';
+        }
+
+        $firstItem = $orderedItems[0];
+        $estPremiereAnnee = $this->isPremiereAnnee($firstItem['slug_niveau'] ?? '', $firstItem['libelle_niveau'] ?? '');
+        $estDeuxiemeSemestre = $this->isDeuxiemeSemestre((string)$selectedSemestreCode, $semestres);
+
+        $coefSem1 = 2;
+        $coefSem2 = 2;
+        $coefExam = 1;
+        $stmtAnnee = $db->prepare("SELECT coef_semestre1, coef_semestre2 FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+        $stmtAnnee->execute([$anneeCode]);
+        $anneeRow = $stmtAnnee->fetch(PDO::FETCH_ASSOC);
+        if ($anneeRow) {
+            $coefSem1 = max(1, (int)round((float)($anneeRow['coef_semestre1'] ?? 2)));
+            $coefSem2 = max(1, (int)round((float)($anneeRow['coef_semestre2'] ?? 2)));
+        }
+
+        require_once __DIR__ . '/../configurations/ModelConfiguration.php';
+        $modelConfig = new ModelConfiguration();
+        $baremesBulletin = $modelConfig->getBaremesBulletin(true);
+
+        // 3. Charger TOUTES les notes détaillées de la classe pour le semestre en 1 seule requête
+        $examFilterSql = $estPremiereAnnee
+            ? " AND UPPER(TRIM(COALESCE(type_evaluation_code, ''))) != 'EXAMEN'"
+            : "";
+
+        $classNotes = [];
+        if (!empty($selectedSemestreCode)) {
+            $stmtNotes = $db->prepare("
+                SELECT *
+                FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
+                WHERE classe_code = ? AND semestre_code = ? AND annee_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
+                  AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
+                  {$examFilterSql}
+                ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC, type_evaluation_code ASC
+            ");
+            $stmtNotes->execute([$classeCode, $selectedSemestreCode, $anneeCode]);
+            $classNotes = $stmtNotes->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        // Regrouper par inscription et préparer les classements de la classe en mémoire (une seule passe !)
+        $notesByInsc = [];
+        $etudiantsNotesByMatiere = [];
+
+        foreach ($classNotes as $n) {
+            $insc = (string)$n['inscription_code'];
+            $matCode = $n['matiere_code'] ?: 'MAT_INCONNUE';
+            $coefComp = (float)($n['coefficient_composition'] ?? 1);
+            if ($coefComp <= 0) $coefComp = 1.0;
+            $valNote = (float)$n['valeur_note'];
+            $coefMaq = (float)($n['coefficient_maquette'] ?? 1);
+            $catMat = strtoupper($n['categorie_matiere'] ?? CATEGORIES_MATIERES::GENERALE);
+
+            if (!isset($notesByInsc[$insc][$matCode])) {
+                $notesByInsc[$insc][$matCode] = [
+                    'matiere_code' => $matCode,
+                    'libelle' => $n['libelle_matiere'] ?: 'Matière sans nom',
+                    'coefficient' => $coefMaq,
+                    'categorie_matiere' => $catMat,
+                    'prof' => trim($n['nom_enseignant'] ?? ($n['enseignant'] ?? '')) ?: 'Non assigné',
+                    'enseignant' => trim($n['enseignant'] ?? ($n['nom_enseignant'] ?? '')) ?: 'Non assigné',
+                    'evaluations' => [],
+                    'sum_notes_pond' => 0.0,
+                    'sum_coef_comp' => 0.0
+                ];
+            }
+            $notesByInsc[$insc][$matCode]['evaluations'][] = [
+                'type' => $n['type_evaluation_code'],
+                'note' => $valNote,
+                'coefficient' => $coefComp,
+                'observations' => $n['observations'] ?? ''
+            ];
+            $notesByInsc[$insc][$matCode]['sum_notes_pond'] += ($valNote * $coefComp);
+            $notesByInsc[$insc][$matCode]['sum_coef_comp'] += $coefComp;
+
+            if (!isset($etudiantsNotesByMatiere[$insc][$matCode])) {
+                $etudiantsNotesByMatiere[$insc][$matCode] = [
+                    'sum_notes_pond' => 0.0,
+                    'sum_coef_comp' => 0.0,
+                    'coefficient_maquette' => $coefMaq,
+                    'categorie' => $catMat
+                ];
+            }
+            $etudiantsNotesByMatiere[$insc][$matCode]['sum_notes_pond'] += ($valNote * $coefComp);
+            $etudiantsNotesByMatiere[$insc][$matCode]['sum_coef_comp'] += $coefComp;
+        }
+
+        // Calculer une seule fois les classements de la classe (global, général, pro, et par matière)
+        $classeMoyennesGlobales = [];
+        $classeMoyennesGenerales = [];
+        $classeMoyennesPro = [];
+        $classeMoyennesParMatiere = [];
+
+        foreach ($etudiantsNotesByMatiere as $insc => $mats) {
+            $ptsGlob = 0.0; $coefGlob = 0.0;
+            $ptsGen = 0.0;  $coefGen = 0.0;
+            $ptsPro = 0.0;  $coefPro = 0.0;
+
+            foreach ($mats as $matCode => $info) {
+                $cMaquette = $info['coefficient_maquette'];
+                $mVal = $info['sum_coef_comp'] > 0 ? ($info['sum_notes_pond'] / $info['sum_coef_comp']) : 0.0;
+
+                $ptsGlob += ($mVal * $cMaquette);
+                $coefGlob += $cMaquette;
+
+                if ($info['categorie'] === CATEGORIES_MATIERES::GENERALE) {
+                    $ptsGen += ($mVal * $cMaquette);
+                    $coefGen += $cMaquette;
+                } else {
+                    $ptsPro += ($mVal * $cMaquette);
+                    $coefPro += $cMaquette;
+                }
+
+                $classeMoyennesParMatiere[$matCode][$insc] = round($mVal, 2);
+            }
+
+            if ($coefGlob > 0) $classeMoyennesGlobales[$insc] = round($ptsGlob / $coefGlob, 2);
+            if ($coefGen > 0)  $classeMoyennesGenerales[$insc] = round($ptsGen / $coefGen, 2);
+            if ($coefPro > 0)  $classeMoyennesPro[$insc] = round($ptsPro / $coefPro, 2);
+        }
+
+        // Indexer les rangs en O(1)
+        $rankGlobMap = [];
+        $totalElevesClasseGlobal = 1;
+        $moyMaxGlobal = null;
+        $moyMinGlobal = null;
+        $moyMoyGlobal = null;
+
+        if (!empty($classeMoyennesGlobales)) {
+            arsort($classeMoyennesGlobales);
+            $totalElevesClasseGlobal = count($classeMoyennesGlobales);
+            $moyMaxGlobal = max($classeMoyennesGlobales);
+            $moyMinGlobal = min($classeMoyennesGlobales);
+            $moyMoyGlobal = round(array_sum($classeMoyennesGlobales) / $totalElevesClasseGlobal, 2);
+            $pos = 1;
+            foreach ($classeMoyennesGlobales as $ic => $mv) {
+                $rankGlobMap[$ic] = $pos++;
+            }
+        }
+
+        $rankGenMap = [];
+        if (!empty($classeMoyennesGenerales)) {
+            arsort($classeMoyennesGenerales);
+            $pos = 1;
+            foreach ($classeMoyennesGenerales as $ic => $mv) {
+                $rankGenMap[$ic] = $pos++;
+            }
+        }
+
+        $rankProMap = [];
+        if (!empty($classeMoyennesPro)) {
+            arsort($classeMoyennesPro);
+            $pos = 1;
+            foreach ($classeMoyennesPro as $ic => $mv) {
+                $rankProMap[$ic] = $pos++;
+            }
+        }
+
+        $rankMatMap = [];
+        foreach ($classeMoyennesParMatiere as $mCode => $mArr) {
+            arsort($mArr);
+            $pos = 1;
+            foreach ($mArr as $ic => $mv) {
+                $rankMatMap[$mCode][$ic] = $pos++;
+            }
+        }
+
+        // 4. Charger les absences de tous les étudiants en 1 requête
+        $absMap = [];
+        $codePlaceholders = implode(',', array_fill(0, count($inscCodes), '?'));
+        $stmtAbs = $db->prepare("
+            SELECT inscription_code,
+                   COALESCE(SUM(duree_heures), 0) AS total_abs,
+                   COALESCE(SUM(CASE WHEN justifiee = 'non' THEN duree_heures ELSE 0 END), 0) AS abs_non_justifiees
+            FROM " . TABLES::ABSENCES . "
+            WHERE inscription_code IN ({$codePlaceholders})
+            GROUP BY inscription_code
+        ");
+        $stmtAbs->execute(array_values($inscCodes));
+        foreach ($stmtAbs->fetchAll(PDO::FETCH_ASSOC) ?: [] as $ab) {
+            $absMap[$ab['inscription_code']] = [
+                'total_abs' => (float)$ab['total_abs'],
+                'abs_non_justifiees' => (float)$ab['abs_non_justifiees']
+            ];
+        }
+
+        // 5. Si S2 : charger en 1 requête la synthèse annuelle + en 1 requête les délibérations validées
+        $annualMap = [];
+        $classeMoyennesAnnuelles = [];
+        $rankAnnMap = [];
+        $moyMinAnn = null;
+        $moyMaxAnn = null;
+        $moyMoyAnn = null;
+        $delibsMap = [];
+
+        if ($estDeuxiemeSemestre) {
+            $stmtAnnual = $db->prepare("
+                SELECT inscription_code,
+                       coef_semestre1,
+                       coef_semestre2,
+                       coef_examen,
+                       moyenne_s1,
+                       moyenne_s2,
+                       moyenne_examen,
+                       moyenne_annuelle
+                FROM " . VIEWS::SYNTHESE_MOYENNES_ANNUELLES . "
+                WHERE classe_code = ? AND annee_code = ? AND has_notes = 1
+            ");
+            $stmtAnnual->execute([$classeCode, $anneeCode]);
+            foreach ($stmtAnnual->fetchAll(PDO::FETCH_ASSOC) ?: [] as $ar) {
+                $ic = (string)$ar['inscription_code'];
+                $annualMap[$ic] = $ar;
+                if ($estPremiereAnnee && !empty($ar['coef_examen'])) {
+                    $coefExam = max(1, (int)$ar['coef_examen']);
+                }
+                $classeMoyennesAnnuelles[$ic] = $ar['moyenne_annuelle'] !== null ? round((float)$ar['moyenne_annuelle'], 2) : 0.0;
+            }
+            if (!empty($classeMoyennesAnnuelles)) {
+                arsort($classeMoyennesAnnuelles);
+                $nbAnn = count($classeMoyennesAnnuelles);
+                $moyMaxAnn = max($classeMoyennesAnnuelles);
+                $moyMinAnn = min($classeMoyennesAnnuelles);
+                $moyMoyAnn = round(array_sum($classeMoyennesAnnuelles) / $nbAnn, 2);
+                $pos = 1;
+                foreach ($classeMoyennesAnnuelles as $ic => $valAnn) {
+                    $rankAnnMap[$ic] = $pos++;
+                }
+            }
+
+            if ($useFrozenDeliberation && class_exists('ModelDeliberation')) {
+                $allDelibs = (new ModelDeliberation())->getByClasseAndAnnee($classeCode, $anneeCode);
+                foreach ($allDelibs as $ic => $dRow) {
+                    if (($dRow['statut_deliberation'] ?? '') === STATUTS::VALIDE) {
+                        $delibsMap[$ic] = $dRow;
+                    }
+                }
+            }
+        }
+
+        // 6. Assemblage final en mémoire (0 requête SQL dans cette boucle !)
+        $formatRankFr = static function (int $pos, string $sexe): string {
+            return ($pos === 1) ? (($sexe === 'F') ? '1ère' : '1er') : ($pos . 'ème');
+        };
+
+        $results = [];
+        foreach ($orderedItems as $item) {
+            $codeIns = (string)$item['code_inscription'];
+            $sexeEleve = strtoupper($item['sexe_etudiant'] ?? 'M');
+            $matieresNotes = $notesByInsc[$codeIns] ?? [];
+
+            $totalPoints = 0.0;
+            $totalCoefficients = 0.0;
+            foreach ($matieresNotes as $mCode => &$m) {
+                $moyMat = $m['sum_coef_comp'] > 0 ? ($m['sum_notes_pond'] / $m['sum_coef_comp']) : 0.0;
+                $m['moyenne'] = round($moyMat, 2);
+                $m['points'] = round($moyMat * $m['coefficient'], 2);
+                $evalMat = $modelConfig->evaluateNote((float)$m['moyenne'], $baremesBulletin);
+                $m['appreciation'] = $evalMat['appreciation_matiere'];
+                $m['rang_matiere'] = isset($rankMatMap[$mCode][$codeIns])
+                    ? $formatRankFr($rankMatMap[$mCode][$codeIns], $sexeEleve)
+                    : '-';
+                $totalPoints += $m['points'];
+                $totalCoefficients += $m['coefficient'];
+            }
+            unset($m);
+
+            $moyenneGenerale = $totalCoefficients > 0 ? round($totalPoints / $totalCoefficients, 2) : 0;
+
+            $mention = 'Non évalué';
+            $decision = 'En attente';
+            $codeDistinctionSanction = 'AUCUN';
+            if ($totalCoefficients > 0) {
+                $evalGen = $modelConfig->evaluateNote((float)$moyenneGenerale, $baremesBulletin);
+                $mention = $evalGen['mention_bulletin'];
+                $decision = $evalGen['appreciation_conseil'];
+                $codeDistinctionSanction = $evalGen['code_distinction_sanction'];
+            }
+
+            $rang = $rankGlobMap[$codeIns] ?? 1;
+            $rangFr = isset($rankGlobMap[$codeIns]) ? $formatRankFr($rankGlobMap[$codeIns], $sexeEleve) : '1er';
+            $rangGeneralesFr = isset($rankGenMap[$codeIns]) ? $formatRankFr($rankGenMap[$codeIns], $sexeEleve) : '1er';
+            $rangProFr = isset($rankProMap[$codeIns]) ? $formatRankFr($rankProMap[$codeIns], $sexeEleve) : '1er';
+
+            $totalElevesClasse = !empty($classeMoyennesGlobales) ? $totalElevesClasseGlobal : 1;
+            $moyenneMinClasse = $moyMinGlobal !== null ? $moyMinGlobal : $moyenneGenerale;
+            $moyenneMaxClasse = $moyMaxGlobal !== null ? $moyMaxGlobal : $moyenneGenerale;
+            $moyenneMoyClasse = $moyMoyGlobal !== null ? $moyMoyGlobal : $moyenneGenerale;
+
+            $matieresGenerales = [];
+            $matieresPro = [];
+            $totalPointsGenerales = 0.0; $totalCoefficientsGenerales = 0.0;
+            $totalPointsPro = 0.0;       $totalCoefficientsPro = 0.0;
+            foreach ($matieresNotes as $m) {
+                if ($m['categorie_matiere'] === CATEGORIES_MATIERES::PROFESSIONNELLE) {
+                    $matieresPro[] = $m;
+                    $totalPointsPro += $m['points'];
+                    $totalCoefficientsPro += $m['coefficient'];
+                } else {
+                    $matieresGenerales[] = $m;
+                    $totalPointsGenerales += $m['points'];
+                    $totalCoefficientsGenerales += $m['coefficient'];
+                }
+            }
+            $moyenneGenerales = $totalCoefficientsGenerales > 0 ? round($totalPointsGenerales / $totalCoefficientsGenerales, 2) : 0;
+            $moyennePro = $totalCoefficientsPro > 0 ? round($totalPointsPro / $totalCoefficientsPro, 2) : 0;
+            $apprGen = $totalCoefficientsGenerales > 0 ? ($modelConfig->evaluateNote((float)$moyenneGenerales, $baremesBulletin)['appreciation_matiere']) : '-';
+            $apprPro = $totalCoefficientsPro > 0 ? ($modelConfig->evaluateNote((float)$moyennePro, $baremesBulletin)['appreciation_matiere']) : '-';
+
+            $totalAbsHeures = $absMap[$codeIns]['total_abs'] ?? 0.0;
+            $absNonJustHeures = $absMap[$codeIns]['abs_non_justifiees'] ?? 0.0;
+            $heuresAbsences = $totalAbsHeures > 0
+                ? ($totalAbsHeures . ' H' . ($absNonJustHeures > 0 ? ' (dont ' . $absNonJustHeures . ' H non justifiées)' : ''))
+                : '0 H';
+
+            $moySem1 = !$estDeuxiemeSemestre ? $moyenneGenerale : null;
+            $moySem2 = $estDeuxiemeSemestre ? $moyenneGenerale : null;
+            $moyExam = null;
+            $moyenneRecap = $moyenneGenerale;
+            $rangRecap = $rang;
+            $rangRecapFr = $rangFr;
+            $moyenneMinRecap = $moyenneMinClasse;
+            $moyenneMaxRecap = $moyenneMaxClasse;
+            $moyenneMoyRecap = $moyenneMoyClasse;
+            $deliberationOfficielle = null;
+            $cSem1 = $coefSem1;
+            $cSem2 = $coefSem2;
+
+            if ($estDeuxiemeSemestre) {
+                if (isset($annualMap[$codeIns])) {
+                    $ar = $annualMap[$codeIns];
+                    $cSem1 = max(1, (int)($ar['coef_semestre1'] ?? $coefSem1));
+                    $cSem2 = max(1, (int)($ar['coef_semestre2'] ?? $coefSem2));
+                    $moySem1 = $ar['moyenne_s1'] !== null ? round((float)$ar['moyenne_s1'], 2) : null;
+                    $moySem2 = $ar['moyenne_s2'] !== null ? round((float)$ar['moyenne_s2'], 2) : $moyenneGenerale;
+                    $moyExam = $ar['moyenne_examen'] !== null ? round((float)$ar['moyenne_examen'], 2) : null;
+                    $moyenneRecap = $classeMoyennesAnnuelles[$codeIns];
+                }
+                if (!empty($classeMoyennesAnnuelles)) {
+                    $moyenneMaxRecap = $moyMaxAnn;
+                    $moyenneMinRecap = $moyMinAnn;
+                    $moyenneMoyRecap = $moyMoyAnn;
+                    if (isset($rankAnnMap[$codeIns])) {
+                        $rangRecap = $rankAnnMap[$codeIns];
+                        $rangRecapFr = $formatRankFr($rangRecap, $sexeEleve);
+                    }
+                }
+                if ($totalCoefficients > 0) {
+                    $evalAnn = $modelConfig->evaluateNote((float)$moyenneRecap, $baremesBulletin);
+                    $decision = !empty($evalAnn['appreciation_conseil_s2'])
+                        ? $evalAnn['appreciation_conseil_s2']
+                        : $evalAnn['appreciation_conseil'];
+                    $codeDistinctionSanction = $evalAnn['code_distinction_sanction'];
+                }
+                if ($useFrozenDeliberation && isset($delibsMap[$codeIns])) {
+                    $deliberationOfficielle = $delibsMap[$codeIns];
+                    if (!empty($deliberationOfficielle['libelle_decision'])) {
+                        $decision = (string)$deliberationOfficielle['libelle_decision'];
+                    }
+                    if (!empty($deliberationOfficielle['code_distinction_sanction'])) {
+                        $codeDistinctionSanction = (string)$deliberationOfficielle['code_distinction_sanction'];
+                    }
+                }
+            }
+
+            $results[] = [
+                'item' => $item,
+                'semestres' => $semestres,
+                'selectedSemestreCode' => $selectedSemestreCode,
+                'est_premiere_annee' => $estPremiereAnnee,
+                'est_deuxieme_semestre' => $estDeuxiemeSemestre,
+                'coef_semestre1' => $cSem1,
+                'coef_semestre2' => $cSem2,
+                'coef_examen' => $coefExam,
+                'matieresNotes' => $matieresNotes,
+                'totalPoints' => $totalPoints,
+                'totalCoefficients' => $totalCoefficients,
+                'moyenneGenerale' => $moyenneGenerale,
+                'mention' => $mention,
+                'decision' => $decision,
+                'deliberation_officielle' => $deliberationOfficielle,
+                'code_distinction_sanction' => $codeDistinctionSanction,
+                'rang' => $rang,
+                'rangFr' => $rangFr,
+                'matieresGenerales' => $matieresGenerales,
+                'matieresPro' => $matieresPro,
+                'totalPointsGenerales' => $totalPointsGenerales,
+                'totalCoefficientsGenerales' => $totalCoefficientsGenerales,
+                'moyenneGenerales' => $moyenneGenerales,
+                'rangGeneralesFr' => $rangGeneralesFr,
+                'appreciationGenerales' => $apprGen,
+                'totalPointsPro' => $totalPointsPro,
+                'totalCoefficientsPro' => $totalCoefficientsPro,
+                'moyennePro' => $moyennePro,
+                'rangProFr' => $rangProFr,
+                'appreciationPro' => $apprPro,
+                'totalElevesClasse' => $totalElevesClasse,
+                'moyenneMinClasse' => $moyenneMinClasse,
+                'moyenneMaxClasse' => $moyenneMaxClasse,
+                'moyenneMoyClasse' => $moyenneMoyClasse,
+                'moyenneRecap' => $moyenneRecap,
+                'rangRecap' => $rangRecap,
+                'rangRecapFr' => $rangRecapFr,
+                'moyenneMinRecap' => $moyenneMinRecap,
+                'moyenneMaxRecap' => $moyenneMaxRecap,
+                'moyenneMoyRecap' => $moyenneMoyRecap,
+                'heuresAbsences' => $heuresAbsences,
+                'moy_semestre1' => $moySem1,
+                'moy_semestre2' => $moySem2,
+                'moy_examen' => $moyExam
+            ];
+        }
+
+        return $results;
     }
 
     public function calculatePvClasseData(string $selectedClasseCode, string $selectedSemestreCode, ?string $anneeCode = null): array

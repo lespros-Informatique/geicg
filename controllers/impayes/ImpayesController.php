@@ -397,6 +397,8 @@ class ImpayesController extends BaseController
         $htmlPages = [];
         $inscCodesMasse = array_column($inscriptions, 'code_inscription');
         $totauxPayesMap = $this->model->getTotalPayeByInscriptions($inscCodesMasse);
+        $modelFA->preloadMontants();
+        $this->model->preloadScolaritesDues();
 
         foreach ($inscriptions as $ins) {
             if (!empty($ins['annee_code']) && !$this->canAccessAcademicYear($ins['annee_code'])) {

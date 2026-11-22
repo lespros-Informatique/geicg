@@ -340,13 +340,12 @@ class BulletinController extends BaseController
                 return;
             }
 
+            $inscriptionIds = array_map(fn($it) => (int)$it['id_inscription'], $items);
+            $calcsBatch = $this->model->calculateClasseBulletinsBatch($inscriptionIds, $classeCode, $anneeCode, $semestreCode);
+
             $bulletins = [];
-            foreach ($items as $item) {
-                $id = (int)$item['id_inscription'];
-                $calc = $this->calculateBulletinData($id, $semestreCode);
-                if ($calc) {
-                    $bulletins[] = $this->buildBulletinViewData($calc);
-                }
+            foreach ($calcsBatch as $calc) {
+                $bulletins[] = $this->buildBulletinViewData($calc);
             }
 
             if (empty($bulletins)) {

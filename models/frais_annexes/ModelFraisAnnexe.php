@@ -60,12 +60,87 @@ class ModelFraisAnnexe extends BaseModel
     }
 
     private static array $montantCache = [];
+    private static ?array $preloadedActiveRows = null;
+
+    /**
+     * Pré-charge en 1 seule requête tous les tarifs actifs de frais annexes afin d'éviter
+     * toute requête SQL en boucle lors des calculs d'impayés ou d'éditions de masse.
+     */
+    public function preloadMontants(?string $anneeCode = null): void
+    {
+        try {
+            $sql = "
+                SELECT id_frais_annexe, type_filiere, annee_code, niveau_code, categorie_frais_annexe, montant_frais_annexe
+                FROM " . TABLES::FRAIS_ANNEXES . "
+                WHERE statut_frais_annexe = '" . STATUTS::ACTIF . "'
+            ";
+            $params = [];
+            if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+                $sql .= " AND annee_code = ?";
+                $params[] = $anneeCode;
+            }
+            $sql .= " ORDER BY id_frais_annexe DESC";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            if (empty($anneeCode) || $anneeCode === 'ALL') {
+                self::$preloadedActiveRows = $rows;
+            } else {
+                // Conserver les lignes déjà préchargées pour d'autres années si existantes
+                if (self::$preloadedActiveRows === null) {
+                    self::$preloadedActiveRows = [];
+                }
+                self::$preloadedActiveRows = array_values(array_filter(
+                    self::$preloadedActiveRows,
+                    fn($r) => ($r['annee_code'] ?? '') !== $anneeCode
+                ));
+                self::$preloadedActiveRows = array_merge(self::$preloadedActiveRows, $rows);
+            }
+        } catch (Exception $e) {
+            error_log("ModelFraisAnnexe::preloadMontants error: " . $e->getMessage());
+        }
+    }
 
     public function getMontantByTypeFiliere(string $typeFiliere, string $anneeCode, ?string $niveauCode = null, ?string $categorie = null): float
     {
         $cacheKey = "{$typeFiliere}|{$anneeCode}|" . ($niveauCode ?? '') . "|" . ($categorie ?? '');
         if (array_key_exists($cacheKey, self::$montantCache)) {
             return self::$montantCache[$cacheKey];
+        }
+
+        // Résolution 100% en mémoire (0 requête SQL) si preloadMontants() a été appelé
+        if (self::$preloadedActiveRows !== null) {
+            $bestPriority = PHP_INT_MAX;
+            $bestId = -1;
+            $bestMontant = null;
+
+            foreach (self::$preloadedActiveRows as $r) {
+                if (($r['annee_code'] ?? '') !== $anneeCode) continue;
+                $rType = (string)($r['type_filiere'] ?? '');
+                if ($rType !== $typeFiliere && $rType !== 'TOUT') continue;
+                if (!empty($categorie) && ($r['categorie_frais_annexe'] ?? '') !== $categorie) continue;
+
+                $rNiv = (string)($r['niveau_code'] ?? '');
+                $nivPrio = 2;
+                if (!empty($niveauCode)) {
+                    if ($rNiv !== $niveauCode && $rNiv !== '') continue;
+                    $nivPrio = ($rNiv === $niveauCode) ? 1 : 2;
+                }
+                $typePrio = ($rType === $typeFiliere) ? 1 : 2;
+                $priority = ($nivPrio * 10) + $typePrio;
+                $rowId = (int)($r['id_frais_annexe'] ?? 0);
+
+                if ($priority < $bestPriority || ($priority === $bestPriority && $rowId > $bestId)) {
+                    $bestPriority = $priority;
+                    $bestId = $rowId;
+                    $bestMontant = (float)$r['montant_frais_annexe'];
+                }
+            }
+
+            $montant = $bestMontant !== null ? $bestMontant : 0.0;
+            self::$montantCache[$cacheKey] = $montant;
+            return $montant;
         }
 
         $sql = "

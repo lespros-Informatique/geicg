@@ -143,6 +143,7 @@ class VIEWS
     public const MOYENNES_EXAMEN_MATIERES     = 'v_moyennes_examen_matieres';
     public const MOYENNES_EXAMEN_INSCRIPTIONS = 'v_moyennes_examen_inscriptions';
     public const MOYENNES_SEMESTRES_MATIERES  = 'v_moyennes_semestres_matieres';
+    public const MOYENNES_SEMESTRES_INSCRIPTIONS = 'v_moyennes_semestres_inscriptions';
     public const SYNTHESE_MOYENNES_ANNUELLES  = 'v_synthese_moyennes_annuelles';
 }
 
