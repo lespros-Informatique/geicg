@@ -5701,3 +5701,28 @@ VALUES (
     'actif',
     '2026-11-21 15:08:01'
   );
+
+
+--
+-- Table structure for table `password_resets`
+--
+
+DROP TABLE IF EXISTS `password_resets`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `password_resets` (
+  `id_reset` int NOT NULL AUTO_INCREMENT,
+  `user_code` varchar(50) NOT NULL,
+  `email_reset` varchar(150) NOT NULL,
+  `token_hash` varchar(255) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_reset`),
+  UNIQUE KEY `uq_password_resets_token_hash` (`token_hash`),
+  KEY `idx_password_resets_user_code` (`user_code`),
+  KEY `idx_password_resets_email_reset` (`email_reset`),
+  KEY `idx_password_resets_expires_at` (`expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;

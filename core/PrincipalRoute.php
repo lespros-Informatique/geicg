@@ -132,17 +132,13 @@ require_once __DIR__ . '/../controllers/bulletin/BulletinController.php';
 require_once __DIR__ . '/../models/ModelFiliereCycle.php';
 require_once __DIR__ . '/../controllers/filiere_cycles/FiliereCycleController.php';
 
-// Auto-initialisation de l'année académique active en session (avec fallback si aucune marquée active)
+// Auto-initialisation de l'année académique active en session (sans fallback sur une année planifiée)
 if (session_status() === PHP_SESSION_ACTIVE && empty(Session::get('annee_active_code'))) {
     try {
         $dbInit = (new Database())->getCon();
         if ($dbInit) {
             $stmtInit = $dbInit->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
             $rowInit = $stmtInit ? $stmtInit->fetch(PDO::FETCH_ASSOC) : null;
-            if (!$rowInit) {
-                $stmtFallback = $dbInit->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
-                $rowInit = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
-            }
             if ($rowInit) {
                 Session::set('annee_active_code', $rowInit['code_annee']);
                 Session::set('annee_active_libelle', $rowInit['libelle_annee']);

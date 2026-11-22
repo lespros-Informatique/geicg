@@ -372,5 +372,85 @@ class ModelUser extends BaseModel
             return null;
         }
     }
+
+    /**
+     * Crée un jeton sécurisé de réinitialisation de mot de passe (hash SHA-256 en base, validité 60 min)
+     */
+    public function createPasswordResetToken(string $userCode, string $email, int $ttlMinutes = 60, ?string $ipAddress = null): ?string
+    {
+        try {
+            $db = $this->getCon();
+            $rawToken = bin2hex(random_bytes(32));
+            $tokenHash = hash('sha256', $rawToken);
+            $expiresAt = date('Y-m-d H:i:s', time() + ($ttlMinutes * 60));
+
+            // Invalider les anciens jetons non utilisés de cet utilisateur
+            $stmtInv = $db->prepare("
+                UPDATE `" . TABLES::PASSWORD_RESETS . "`
+                SET `used_at` = NOW()
+                WHERE `user_code` = ? AND `used_at` IS NULL
+            ");
+            $stmtInv->execute([$userCode]);
+
+            $stmtIns = $db->prepare("
+                INSERT INTO `" . TABLES::PASSWORD_RESETS . "` (`user_code`, `email_reset`, `token_hash`, `expires_at`, `ip_address`, `created_at`)
+                VALUES (?, ?, ?, ?, ?, NOW())
+            ");
+            $stmtIns->execute([$userCode, $email, $tokenHash, $expiresAt, $ipAddress]);
+
+            return $rawToken;
+        } catch (Exception $e) {
+            error_log("ModelUser::createPasswordResetToken error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Vérifie la validité d'un jeton de réinitialisation (non utilisé, non expiré, utilisateur actif)
+     */
+    public function findValidPasswordReset(string $rawToken): ?array
+    {
+        $cleanToken = trim($rawToken);
+        if ($cleanToken === '' || !ctype_xdigit($cleanToken)) {
+            return null;
+        }
+
+        try {
+            $tokenHash = hash('sha256', $cleanToken);
+            $stmt = $this->getCon()->prepare("
+                SELECT pr.*, u.id_user, u.nom_user, u.prenom_user, u.email_user, u.statut_user
+                FROM `" . TABLES::PASSWORD_RESETS . "` pr
+                INNER JOIN `" . TABLES::USERS . "` u ON u.code_user = pr.user_code
+                WHERE pr.token_hash = ?
+                  AND pr.used_at IS NULL
+                  AND pr.expires_at > NOW()
+                  AND u.statut_user = '" . STATUTS::ACTIF . "'
+                LIMIT 1
+            ");
+            $stmt->execute([$tokenHash]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            error_log("ModelUser::findValidPasswordReset error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Marque un jeton de réinitialisation comme utilisé (usage unique)
+     */
+    public function markPasswordResetUsed(int $idReset, string $userCode): bool
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                UPDATE `" . TABLES::PASSWORD_RESETS . "`
+                SET `used_at` = NOW()
+                WHERE (`id_reset` = ? OR `user_code` = ?) AND `used_at` IS NULL
+            ");
+            return $stmt->execute([$idReset, $userCode]);
+        } catch (Exception $e) {
+            error_log("ModelUser::markPasswordResetUsed error: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 

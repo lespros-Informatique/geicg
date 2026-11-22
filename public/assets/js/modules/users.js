@@ -660,6 +660,152 @@ window.toggleModuleInput = function() {
 
   }
 
+  // =========================================================================
+  // 8. VUE : MOT DE PASSE OUBLIÉ (views/users/forgot_password.php)
+  // =========================================================================
+  function initForgotPasswordModule() {
+    if (!$('#form-forgot-password').length) return;
+
+    var cfg = {};
+    var cfgEl = document.getElementById('forgot-password-config');
+    if (cfgEl) {
+      try { cfg = JSON.parse(cfgEl.textContent || '{}'); } catch (e) {}
+    }
+    var actionUrl = cfg.actionUrl || ((window.RACINE || '/') + 'user/motDePasseOublie');
+
+    $('#form-forgot-password').on('submit', function(e) {
+      e.preventDefault();
+      var $form = $(this);
+      var $btn = $('#btn-submit-forgot');
+      var $feedback = $('#forgot-password-feedback');
+      var originalHtml = $btn.html();
+
+      $feedback.hide();
+      $btn.prop('disabled', true).html('<span class="btn-text"><i data-lucide="loader"></i> Envoi en cours...</span>');
+      if (window.lucide) lucide.createIcons();
+
+      $.ajax({
+        url: actionUrl,
+        type: 'POST',
+        data: $form.serialize(),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function(res) {
+          $btn.prop('disabled', false).html(originalHtml);
+          if (window.lucide) lucide.createIcons();
+
+          var isSuccess = (res && (res.status === 1 || res.status === true || res.success));
+          var msg = (res && res.message) ? res.message : (isSuccess ? 'Demande traitée avec succès.' : 'Une erreur est survenue.');
+
+          if (isSuccess) {
+            $feedback.css({ 'background': '#F0FDF4', 'border': '1px solid #BBF7D0', 'color': '#15803D' }).text(msg).fadeIn();
+            if (typeof showToast === 'function') showToast(msg, 'success');
+            $form[0].reset();
+          } else {
+            $feedback.css({ 'background': '#FEF2F2', 'border': '1px solid #FECACA', 'color': '#B91C1C' }).text(msg).fadeIn();
+            if (typeof showToast === 'function') showToast(msg, 'error');
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false).html(originalHtml);
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur de communication avec le serveur.';
+          try {
+            var json = xhr.responseJSON || JSON.parse(xhr.responseText);
+            if (json && json.message) msg = json.message;
+          } catch (err) {}
+          $feedback.css({ 'background': '#FEF2F2', 'border': '1px solid #FECACA', 'color': '#B91C1C' }).text(msg).fadeIn();
+          if (typeof showToast === 'function') showToast(msg, 'error');
+        }
+      });
+    });
+  }
+
+  // =========================================================================
+  // 9. VUE : RÉINITIALISATION DU MOT DE PASSE (views/users/reset_password.php)
+  // =========================================================================
+  function initResetPasswordModule() {
+    if (!$('#form-reset-password').length) return;
+
+    var cfg = {};
+    var cfgEl = document.getElementById('reset-password-config');
+    if (cfgEl) {
+      try { cfg = JSON.parse(cfgEl.textContent || '{}'); } catch (e) {}
+    }
+    var actionUrl = cfg.actionUrl || ((window.RACINE || '/') + 'user/reinitialiserMotDePasse');
+    var loginUrl = cfg.loginUrl || ((window.RACINE || '/') + 'user/connexion');
+
+    $(document).on('click', '.btn-toggle-reset-pwd', function() {
+      var targetSel = $(this).data('target');
+      var $input = $(targetSel);
+      if (!$input.length) return;
+      var isPwd = ($input.attr('type') === 'password');
+      $input.attr('type', isPwd ? 'text' : 'password');
+      $(this).html('<i data-lucide="' + (isPwd ? 'eye-off' : 'eye') + '"></i>');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    $('#form-reset-password').on('submit', function(e) {
+      e.preventDefault();
+      var newPwd = $('#reset_new_password').val() || '';
+      var confPwd = $('#reset_confirm_password').val() || '';
+      var $feedback = $('#reset-password-feedback');
+
+      if (newPwd.length < 6) {
+        $feedback.css({ 'background': '#FEF2F2', 'border': '1px solid #FECACA', 'color': '#B91C1C' }).text('Le mot de passe doit contenir au moins 6 caractères.').fadeIn();
+        return;
+      }
+      if (newPwd !== confPwd) {
+        $feedback.css({ 'background': '#FEF2F2', 'border': '1px solid #FECACA', 'color': '#B91C1C' }).text('La confirmation du mot de passe ne correspond pas.').fadeIn();
+        return;
+      }
+
+      var $form = $(this);
+      var $btn = $('#btn-submit-reset');
+      var originalHtml = $btn.html();
+
+      $feedback.hide();
+      $btn.prop('disabled', true).html('<span class="btn-text"><i data-lucide="loader"></i> Mise à jour...</span>');
+      if (window.lucide) lucide.createIcons();
+
+      $.ajax({
+        url: actionUrl,
+        type: 'POST',
+        data: $form.serialize(),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function(res) {
+          var isSuccess = (res && (res.status === 1 || res.status === true || res.success));
+          var msg = (res && res.message) ? res.message : (isSuccess ? 'Mot de passe réinitialisé !' : 'Erreur lors de la réinitialisation.');
+
+          if (isSuccess) {
+            $feedback.css({ 'background': '#F0FDF4', 'border': '1px solid #BBF7D0', 'color': '#15803D' }).text(msg).fadeIn();
+            if (typeof showToast === 'function') showToast(msg, 'success');
+            setTimeout(function() {
+              window.location.href = (res && res.redirect) ? res.redirect : loginUrl;
+            }, 1400);
+          } else {
+            $btn.prop('disabled', false).html(originalHtml);
+            if (window.lucide) lucide.createIcons();
+            $feedback.css({ 'background': '#FEF2F2', 'border': '1px solid #FECACA', 'color': '#B91C1C' }).text(msg).fadeIn();
+            if (typeof showToast === 'function') showToast(msg, 'error');
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false).html(originalHtml);
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur de communication avec le serveur.';
+          try {
+            var json = xhr.responseJSON || JSON.parse(xhr.responseText);
+            if (json && json.message) msg = json.message;
+          } catch (err) {}
+          $feedback.css({ 'background': '#FEF2F2', 'border': '1px solid #FECACA', 'color': '#B91C1C' }).text(msg).fadeIn();
+          if (typeof showToast === 'function') showToast(msg, 'error');
+        }
+      });
+    });
+  }
+
   $(document).ready(function() {
     initUsersListModule();
     initUsersEditModule();
@@ -668,6 +814,8 @@ window.toggleModuleInput = function() {
     initRolesEditModule();
     initPermissionsListModule();
     initPermissionsEditModule();
+    initForgotPasswordModule();
+    initResetPasswordModule();
     if (window.lucide) lucide.createIcons();
   });
 

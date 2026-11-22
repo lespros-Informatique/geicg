@@ -39,7 +39,12 @@ $loginLogo = $loginLogo ?? '';
           </div>
 
           <div class="form-field">
-            <label for="password">Mot de passe</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label for="password" style="margin-bottom: 0;">Mot de passe</label>
+              <a href="<?= url('user/motDePasseOublie') ?>" style="font-size: 12px; font-weight: 700; color: #1E3A5F; text-decoration: none;">
+                Mot de passe oublié ?
+              </a>
+            </div>
             <div class="input-with-icon">
               <span class="input-icon"><?= Validator::icon('lock'); ?></span>
               <input type="password" class="form-control" id="password" name="password" required>

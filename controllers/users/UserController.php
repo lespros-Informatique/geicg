@@ -505,6 +505,163 @@ class UserController extends BaseController
         redirect('user/connexion');
     }
 
+    /**
+     * Demande de réinitialisation de mot de passe (Mot de passe oublié)
+     */
+    public function motDePasseOublie()
+    {
+        $this->requireGuest();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $this->loadView('../views/users/forgot_password.php', [
+                'etablissement' => $this->getEtablissementConfig()
+            ]);
+            return;
+        }
+
+        $this->requirePost(true);
+
+        $identifiant = trim((string)$this->post('login'));
+        if ($identifiant === '') {
+            $this->error('Veuillez saisir votre adresse e-mail ou votre numéro de téléphone.');
+            return;
+        }
+
+        $genericSuccessMsg = "Si un compte actif est associé à cet identifiant, un e-mail contenant les instructions de réinitialisation vient d'être envoyé.";
+        $user = $this->model->findUserByLogin($identifiant);
+
+        if ($user && ($user['statut_user'] ?? '') === STATUTS::ACTIF && !empty($user['email_user'])) {
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+            $rawToken = $this->model->createPasswordResetToken(
+                (string)$user['code_user'],
+                (string)$user['email_user'],
+                60,
+                $ipAddress
+            );
+
+            if ($rawToken) {
+                $etabCfg = $this->getEtablissementConfig();
+                $sigleEtab = !empty($etabCfg['sigle_etablissement'])
+                    ? $etabCfg['sigle_etablissement']
+                    : (!empty($etabCfg['nom_etablissement']) ? $etabCfg['nom_etablissement'] : 'GEICG');
+
+                $resetUrl = url('user/reinitialiserMotDePasse/' . $rawToken);
+                $nomComplet = trim(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? ''));
+
+                $mailRes = MailerService::sendTemplate(
+                    (string)$user['email_user'],
+                    'Réinitialisation de votre mot de passe - ' . $sigleEtab,
+                    'reset_password',
+                    [
+                        'userNom'       => $nomComplet ?: 'Utilisateur',
+                        'userEmail'     => (string)$user['email_user'],
+                        'resetUrl'      => $resetUrl,
+                        'ttlMinutes'    => 60,
+                        'etablissement' => $etabCfg
+                    ]
+                );
+
+                AuditLogger::log(
+                    AuditLogger::ACTION_UPDATE,
+                    'auth',
+                    (string)$user['code_user'],
+                    "Demande de réinitialisation du mot de passe pour {$user['email_user']}",
+                    ['email' => $user['email_user'], 'mail_sent' => !empty($mailRes['status'])],
+                    (int)$user['id_user'],
+                    (string)$user['code_user'],
+                    $nomComplet
+                );
+
+                if (empty($mailRes['status'])) {
+                    error_log("UserController::motDePasseOublie mail error: " . ($mailRes['message'] ?? 'Erreur SMTP'));
+                    $this->error("Impossible d'envoyer l'e-mail de réinitialisation pour le moment. Veuillez contacter l'administrateur.");
+                    return;
+                }
+            }
+        }
+
+        $this->success($genericSuccessMsg);
+    }
+
+    /**
+     * Réinitialisation effective du mot de passe via le lien envoyé par e-mail
+     */
+    public function reinitialiserMotDePasse($tokenParam = null)
+    {
+        $this->requireGuest();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $token = trim((string)($tokenParam ?? ($_GET['token'] ?? '')));
+            $resetRow = ($token !== '') ? $this->model->findValidPasswordReset($token) : null;
+
+            $this->loadView('../views/users/reset_password.php', [
+                'token'         => $token,
+                'isValidToken'  => !empty($resetRow),
+                'resetUserName' => $resetRow ? trim(($resetRow['nom_user'] ?? '') . ' ' . ($resetRow['prenom_user'] ?? '')) : '',
+                'etablissement' => $this->getEtablissementConfig()
+            ]);
+            return;
+        }
+
+        $this->requirePost(true);
+
+        $token = trim((string)($this->post('token') ?: ($tokenParam ?? '')));
+        $newPassword = (string)$this->post('new_password');
+        $confirmPassword = (string)$this->post('confirm_password');
+
+        if ($token === '') {
+            $this->error('Lien de réinitialisation invalide ou manquant.');
+            return;
+        }
+
+        if ($newPassword === '' || $confirmPassword === '') {
+            $this->error('Veuillez saisir et confirmer votre nouveau mot de passe.');
+            return;
+        }
+
+        if (strlen($newPassword) < 6) {
+            $this->error('Le nouveau mot de passe doit contenir au moins 6 caractères.');
+            return;
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            $this->error('La confirmation du mot de passe ne correspond pas.');
+            return;
+        }
+
+        $resetRow = $this->model->findValidPasswordReset($token);
+        if (!$resetRow) {
+            $this->error('Ce lien de réinitialisation est invalide, déjà utilisé ou a expiré. Veuillez effectuer une nouvelle demande.');
+            return;
+        }
+
+        $userId = (int)$resetRow['id_user'];
+        $userCode = (string)$resetRow['user_code'];
+        $nomComplet = trim(($resetRow['nom_user'] ?? '') . ' ' . ($resetRow['prenom_user'] ?? ''));
+
+        $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+        if ($this->model->updatePassword($hash, $userId)) {
+            $this->model->markPasswordResetUsed((int)$resetRow['id_reset'], $userCode);
+
+            AuditLogger::log(
+                AuditLogger::ACTION_UPDATE,
+                'auth',
+                $userCode,
+                "Mot de passe réinitialisé avec succès via le lien de récupération ({$resetRow['email_user']})",
+                ['id_user' => $userId, 'email' => $resetRow['email_user']],
+                $userId,
+                $userCode,
+                $nomComplet
+            );
+
+            $this->success('Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.', [
+                'redirect' => url('user/connexion')
+            ]);
+        } else {
+            $this->error('Une erreur technique est survenue lors de la mise à jour du mot de passe.');
+        }
+    }
+
     public function logout()
     {
         $this->decon();

@@ -59,6 +59,7 @@ class TABLES
     public const SERVICES = 'services';
     public const FONCTIONS = 'fonctions';
     public const USERS = 'users';
+    public const PASSWORD_RESETS = 'password_resets';
     public const ROLES = 'roles';
     public const PERMISSIONS = 'permissions';
     public const ROLE_PERMISSIONS = 'role_permissions';
