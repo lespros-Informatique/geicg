@@ -310,9 +310,6 @@
 
     <div style="background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px;">
       <button type="button" class="btn btn-secondary btn-close-modal-recepisse" style="font-weight: 700; border-radius: 8px; padding: 8px 18px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; cursor: pointer;">Fermer</button>
-      <button type="button" id="btn-trigger-print-recepisse" class="btn btn-primary" style="background: #1E3A5F; border: none; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 8px 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-        <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Lancer l'Impression
-      </button>
     </div>
   </div>
 </div>
