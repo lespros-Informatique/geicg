@@ -1153,12 +1153,16 @@ $(document).ready(function () {
             icon: 'warning',
             title: 'Semestre requis',
             text: 'Veuillez sélectionner le semestre avant d\'afficher la liste des étudiants.',
-            confirmButtonColor: '#1E3A5F'
+            confirmButtonColor: '#1E3A5F',
+            didOpen: function () {
+              var c = document.querySelector('.swal2-container');
+              if (c) c.style.zIndex = '10050';
+            }
           }).then(function () {
             $('#sel_semestre_code').select2('open');
           });
-        } else {
-          alert('Veuillez sélectionner le semestre.');
+        } else if (window.toastr) {
+          toastr.warning('Veuillez sélectionner le semestre.');
           $('#sel_semestre_code').focus();
         }
         return;
@@ -1444,28 +1448,71 @@ $(document).ready(function () {
     });
 
     $(document).on('click', '#btn-quick-fill', function () {
-      var noteVal = prompt('Entrez la note uniforme à attribuer aux étudiants non notés (entre 0 et 20) :');
-      if (noteVal !== null && noteVal.trim() !== '') {
-        var num = parseFloat(noteVal.replace(',', '.'));
-        if (isNaN(num) || num < 0 || num > 20) {
-          alert('Veuillez saisir une note valide entre 0 et 20.');
-          return;
-        }
+      var applyUniformNote = function (num) {
+        var filledCount = 0;
         $('.note-row').each(function () {
           var $val = $(this).find('.input-valeur-note');
           if ($val.val().trim() === '') {
             $val.val(num.toFixed(2));
             $(this).addClass('row-dirty');
+            filledCount++;
           }
         });
-        isFormDirty = true;
-        $('#badge-unsaved').show();
-        updateDynamicStats();
+        if (filledCount > 0) {
+          isFormDirty = true;
+          $('#badge-unsaved').show();
+          updateDynamicStats();
+          if (window.toastr) toastr.success('Note ' + num.toFixed(2) + '/20 attribuée à ' + filledCount + ' étudiant(s) non noté(s).');
+        } else {
+          if (window.toastr) toastr.info('Tous les étudiants de cette grille ont déjà une note.');
+        }
+      };
+
+      if (window.Swal) {
+        Swal.fire({
+          icon: 'question',
+          title: 'Attribuer une note uniforme',
+          text: 'Entrez la note à attribuer aux étudiants non notés (entre 0 et 20) :',
+          input: 'number',
+          inputAttributes: {
+            min: '0',
+            max: '20',
+            step: '0.25',
+            placeholder: 'Ex : 10.00'
+          },
+          showCancelButton: true,
+          confirmButtonText: 'Appliquer',
+          cancelButtonText: 'Annuler',
+          confirmButtonColor: '#1E3A5F',
+          cancelButtonColor: '#64748B',
+          reverseButtons: true,
+          didOpen: function () {
+            var c = document.querySelector('.swal2-container');
+            if (c) c.style.zIndex = '10050';
+          },
+          inputValidator: function (value) {
+            if (value === null || String(value).trim() === '') {
+              return 'Veuillez saisir une note entre 0 et 20.';
+            }
+            var parsed = parseFloat(String(value).replace(',', '.'));
+            if (isNaN(parsed) || parsed < 0 || parsed > 20) {
+              return 'La note doit être un nombre compris entre 0 et 20.';
+            }
+            return null;
+          }
+        }).then(function (result) {
+          if (result.isConfirmed && result.value !== undefined) {
+            var num = parseFloat(String(result.value).replace(',', '.'));
+            if (!isNaN(num) && num >= 0 && num <= 20) {
+              applyUniformNote(num);
+            }
+          }
+        });
       }
     });
 
     $(document).on('click', '#btn-quick-clear', function () {
-      if (confirm('Voulez-vous réinitialiser toutes les modifications non enregistrées ?')) {
+      var doReset = function () {
         $('.note-row').each(function () {
           var $val = $(this).find('.input-valeur-note');
           var $obs = $(this).find('.input-obs');
@@ -1479,6 +1526,31 @@ $(document).ready(function () {
         isFormDirty = false;
         $('#badge-unsaved').hide();
         updateDynamicStats();
+        if (window.toastr) toastr.info('Modifications non enregistrées réinitialisées.');
+      };
+
+      if (window.Swal) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Réinitialiser la grille ?',
+          text: 'Toutes les modifications non enregistrées seront annulées et restaurées à leur valeur initiale.',
+          showCancelButton: true,
+          confirmButtonText: 'Oui, réinitialiser',
+          cancelButtonText: 'Annuler',
+          confirmButtonColor: '#DC2626',
+          cancelButtonColor: '#64748B',
+          reverseButtons: true,
+          didOpen: function () {
+            var c = document.querySelector('.swal2-container');
+            if (c) c.style.zIndex = '10050';
+          }
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            doReset();
+          }
+        });
+      } else {
+        doReset();
       }
     });
 
