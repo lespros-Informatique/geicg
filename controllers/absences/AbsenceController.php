@@ -82,6 +82,110 @@ class AbsenceController extends BaseController
         $this->json(['data' => $data]);
     }
 
+    public function imprimerPdf()
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ABSENCES);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($anneeCode)) {
+            $this->error("Accès non autorisé aux absences de cette année académique.");
+            return;
+        }
+
+        $niveauCode = trim((string)($_GET['niveau_code'] ?? '')) ?: null;
+        $classeCode = trim((string)($_GET['classe_code'] ?? '')) ?: null;
+        $semestreCode = trim((string)($_GET['semestre_code'] ?? '')) ?: null;
+        $dateDebutRaw = trim((string)($_GET['date_debut'] ?? ''));
+        $dateFinRaw = trim((string)($_GET['date_fin'] ?? ''));
+        $dateDebut = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateDebutRaw) ? $dateDebutRaw : null;
+        $dateFin = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFinRaw) ? $dateFinRaw : null;
+
+        $etablissement = $this->getEtablissementConfig();
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $semestreCode, $dateDebut, $dateFin);
+        $filterLabels = $this->model->getFilterLabels($anneeCode, $semestreCode, $niveauCode, $classeCode);
+
+        $totalHeures = 0.0;
+        $heuresJustifiees = 0.0;
+        $heuresInjustifiees = 0.0;
+        $nbJustifiees = 0;
+        $nbInjustifiees = 0;
+        foreach ($items as $it) {
+            $h = (float)($it['duree_heures'] ?? 0);
+            $totalHeures += $h;
+            if (($it['justifiee'] ?? 'non') === STATUTS::JUSTIFIE) {
+                $nbJustifiees++;
+                $heuresJustifiees += $h;
+            } else {
+                $nbInjustifiees++;
+                $heuresInjustifiees += $h;
+            }
+        }
+
+        $periodeLabel = 'Toute la période';
+        if ($dateDebut && $dateFin) {
+            $periodeLabel = 'Du ' . date('d/m/Y', strtotime($dateDebut)) . ' au ' . date('d/m/Y', strtotime($dateFin));
+        } elseif ($dateDebut) {
+            $periodeLabel = 'À partir du ' . date('d/m/Y', strtotime($dateDebut));
+        } elseif ($dateFin) {
+            $periodeLabel = "Jusqu'au " . date('d/m/Y', strtotime($dateFin));
+        }
+
+        $editeurNom = Auth::fullName();
+
+        $data = [
+            'etablissement' => $etablissement,
+            'annee_libelle' => $filterLabels['annee'] !== '' ? $filterLabels['annee'] : $this->getActiveAnneeLibelle(),
+            'editeur_nom' => $editeurNom,
+            'absences' => $items,
+            'filtres' => [
+                'semestre' => $filterLabels['semestre'],
+                'niveau' => $filterLabels['niveau'],
+                'classe' => $filterLabels['classe'],
+                'periode' => $periodeLabel
+            ],
+            'kpis' => [
+                'total_absences' => count($items),
+                'total_heures' => $totalHeures,
+                'nb_justifiees' => $nbJustifiees,
+                'heures_justifiees' => $heuresJustifiees,
+                'nb_injustifiees' => $nbInjustifiees,
+                'heures_injustifiees' => $heuresInjustifiees
+            ]
+        ];
+
+        $html = PdfService::renderTemplate('registre_absences.php', $data);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'absences',
+            $anneeCode,
+            "Impression du registre des absences (" . count($items) . " enregistrement(s))",
+            [
+                'annee_code' => $anneeCode,
+                'semestre_code' => $semestreCode,
+                'niveau_code' => $niveauCode,
+                'classe_code' => $classeCode,
+                'date_debut' => $dateDebut,
+                'date_fin' => $dateFin
+            ]
+        );
+
+        $sigle = trim((string)($etablissement['sigle_etablissement'] ?? ''));
+        $filename = 'Registre_Absences_' . date('Ymd_His') . '.pdf';
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'Registre des Absences' . ($sigle !== '' ? ' - ' . $sigle : ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 10
+        ]);
+    }
+
     public function add()
     {
         $this->requirePost(false);

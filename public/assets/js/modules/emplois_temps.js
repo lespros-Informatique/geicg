@@ -916,6 +916,26 @@
     $sem.val('').trigger('change.select2');
   }
 
+  function updatePrintAbsencesUrl() {
+    var $btn = $('#btn-print-absences');
+    if (!$btn.length) return;
+    var params = [];
+    var annee = $('#filter-annee').val();
+    var sem = $('#filter-semestre').val();
+    var niv = $('#filter-niveau').val();
+    var cls = $('#filter-classe').val();
+    var dDeb = $('#filter-date-debut').val();
+    var dFin = $('#filter-date-fin').val();
+    if (annee) params.push('annee_code=' + encodeURIComponent(annee));
+    if (sem) params.push('semestre_code=' + encodeURIComponent(sem));
+    if (niv) params.push('niveau_code=' + encodeURIComponent(niv));
+    if (cls) params.push('classe_code=' + encodeURIComponent(cls));
+    if (dDeb) params.push('date_debut=' + encodeURIComponent(dDeb));
+    if (dFin) params.push('date_fin=' + encodeURIComponent(dFin));
+    $btn.attr('href', window.RACINE + 'absence/imprimerPdf' + (params.length ? ('?' + params.join('&')) : ''));
+  }
+  updatePrintAbsencesUrl();
+
   // Filtrage en cascade Niveau -> Classe
   $('#filter-niveau').on('change', function() {
     var niveauCode = $(this).val();
@@ -932,15 +952,18 @@
     } else {
       $('#filter-classe').select2({ width: '100%' });
     }
+    updatePrintAbsencesUrl();
     table.ajax.reload();
   });
 
   $('#filter-annee').on('change', function() {
     rebuildSemestreFilterForAnnee($(this).val());
+    updatePrintAbsencesUrl();
     table.ajax.reload();
   });
 
   $('#filter-classe, #filter-semestre, #filter-date-debut, #filter-date-fin').on('change', function() {
+    updatePrintAbsencesUrl();
     table.ajax.reload();
   });
 

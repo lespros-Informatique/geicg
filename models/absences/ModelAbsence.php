@@ -153,6 +153,52 @@ class ModelAbsence extends BaseModel
         ];
     }
 
+    public function getFilterLabels(
+        ?string $anneeCode = null,
+        ?string $semestreCode = null,
+        ?string $niveauCode = null,
+        ?string $classeCode = null
+    ): array {
+        $labels = [
+            'annee' => '',
+            'semestre' => 'Tous',
+            'niveau' => 'Tous',
+            'classe' => 'Toutes'
+        ];
+
+        $db = $this->getCon();
+        try {
+            if (!empty($anneeCode)) {
+                $stmt = $db->prepare("SELECT libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+                $stmt->execute([$anneeCode]);
+                $val = $stmt->fetchColumn();
+                if ($val) $labels['annee'] = (string)$val;
+            }
+            if (!empty($semestreCode)) {
+                $stmt = $db->prepare("SELECT libelle_semestre FROM " . TABLES::SEMESTRES . " WHERE code_semestre = ? LIMIT 1");
+                $stmt->execute([$semestreCode]);
+                $val = $stmt->fetchColumn();
+                if ($val) $labels['semestre'] = (string)$val;
+            }
+            if (!empty($niveauCode)) {
+                $stmt = $db->prepare("SELECT libelle_niveau FROM " . TABLES::NIVEAUX . " WHERE code_niveau = ? LIMIT 1");
+                $stmt->execute([$niveauCode]);
+                $val = $stmt->fetchColumn();
+                if ($val) $labels['niveau'] = (string)$val;
+            }
+            if (!empty($classeCode)) {
+                $stmt = $db->prepare("SELECT libelle_classe FROM " . TABLES::CLASSES . " WHERE code_classe = ? LIMIT 1");
+                $stmt->execute([$classeCode]);
+                $val = $stmt->fetchColumn();
+                if ($val) $labels['classe'] = (string)$val;
+            }
+        } catch (Exception $e) {
+            error_log("ModelAbsence::getFilterLabels: " . $e->getMessage());
+        }
+
+        return $labels;
+    }
+
     public function getByIdWithDetails($id): ?array
     {
         try {

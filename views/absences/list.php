@@ -13,13 +13,20 @@ $semestres = $semestres ?? [];
           <h1 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">Gestion des Absences</h1>
           <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Gestion et consultation du registre Gestion des Absences</p>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <?php if (Auth::can(PERMISSIONS::VIEW_ABSENCES)): ?>
+          <a href="<?= url('absence/imprimerPdf') . (!empty($selectedAnneeCode) ? ('?annee_code=' . urlencode($selectedAnneeCode)) : '') ?>" id="btn-print-absences" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px; text-decoration: none; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" title="Imprimer le registre des absences en PDF">
+            <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
+          </a>
+          <?php endif; ?>
+          <?php if (Auth::can(PERMISSIONS::MANAGE_ABSENCES)): ?>
           <a href="<?= url('absence/saisieClasse') ?>" class="btn btn-outline-primary" style="border-color: #1E3A5F; color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="users" style="width: 18px; height: 18px;"></i> Appel par Classe
           </a>
           <a href="<?= url('absence/formulaire') ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;">
             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Ajouter Absence
           </a>
+          <?php endif; ?>
         </div>
       </div>
 
