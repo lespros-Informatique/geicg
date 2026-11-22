@@ -203,16 +203,96 @@ class ModelAbsence extends BaseModel
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT *, etu_nom AS nom_etudiant, etu_prenom AS prenom_etudiant
-                FROM " . VIEWS::ABSENCES_COMPLETES . "
-                WHERE id_absence = ? OR code_absence = ?
+                SELECT v.*,
+                       v.etu_nom AS nom_etudiant_only,
+                       v.etu_prenom AS prenom_etudiant,
+                       a.libelle_annee,
+                       e.id_etudiant
+                FROM " . VIEWS::ABSENCES_COMPLETES . " v
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = COALESCE(NULLIF(v.annee_code, ''), v.inscription_annee_code)
+                LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = v.code_etudiant
+                WHERE v.id_absence = ? OR v.code_absence = ?
                 LIMIT 1
             ");
             $stmt->execute([$id, (string)$id]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                return null;
+            }
+            if (empty($row['nom_etudiant'])) {
+                $row['nom_etudiant'] = trim(($row['etu_nom'] ?? '') . ' ' . ($row['etu_prenom'] ?? ''));
+            }
+            return $row;
         } catch (Exception $e) {
             error_log("ModelAbsence::getByIdWithDetails error: " . $e->getMessage());
             return null;
+        }
+    }
+
+    public function getStudentAbsenceContext(
+        string $inscriptionCode,
+        ?string $anneeCode = null,
+        ?string $semestreCode = null
+    ): array {
+        $stats = [
+            'annuel_count' => 0,
+            'annuel_heures' => 0.0,
+            'annuel_justifiees_count' => 0,
+            'annuel_justifiees_heures' => 0.0,
+            'annuel_injustifiees_count' => 0,
+            'annuel_injustifiees_heures' => 0.0,
+            'semestre_count' => 0,
+            'semestre_heures' => 0.0,
+            'semestre_injustifiees_heures' => 0.0
+        ];
+
+        if ($inscriptionCode === '') {
+            return ['history' => [], 'stats' => $stats];
+        }
+
+        try {
+            $sql = "SELECT * FROM " . VIEWS::ABSENCES_COMPLETES . " WHERE inscription_code = ?";
+            $params = [$inscriptionCode];
+            if (!empty($anneeCode)) {
+                $sql .= " AND (annee_code = ? OR inscription_annee_code = ?)";
+                $params[] = $anneeCode;
+                $params[] = $anneeCode;
+            }
+            $sql .= " ORDER BY date_absence DESC, id_absence DESC";
+
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            $history = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            foreach ($history as $h) {
+                $heures = (float)($h['duree_heures'] ?? 0);
+                $isJust = (($h['justifiee'] ?? 'non') === STATUTS::JUSTIFIE);
+                $stats['annuel_count']++;
+                $stats['annuel_heures'] += $heures;
+                if ($isJust) {
+                    $stats['annuel_justifiees_count']++;
+                    $stats['annuel_justifiees_heures'] += $heures;
+                } else {
+                    $stats['annuel_injustifiees_count']++;
+                    $stats['annuel_injustifiees_heures'] += $heures;
+                }
+
+                if (!empty($semestreCode) && ($h['semestre_code'] ?? '') === $semestreCode) {
+                    $stats['semestre_count']++;
+                    $stats['semestre_heures'] += $heures;
+                    if (!$isJust) {
+                        $stats['semestre_injustifiees_heures'] += $heures;
+                    }
+                }
+            }
+
+            return [
+                'history' => $history,
+                'stats' => $stats
+            ];
+        } catch (Exception $e) {
+            error_log("ModelAbsence::getStudentAbsenceContext error: " . $e->getMessage());
+            return ['history' => [], 'stats' => $stats];
         }
     }
 

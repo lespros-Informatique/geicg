@@ -1184,6 +1184,76 @@
 
   // =========================================================================
   // =========================================================================
+  // 5b. VUE : DÉTAILS D'UNE ABSENCE (views/absences/details.php)
+  // =========================================================================
+  function initAbsencesDetailsModule() {
+    if (!$('#absences-details-config').length) return;
+
+    var cfg = {};
+    try {
+      cfg = JSON.parse(document.getElementById('absences-details-config').textContent || '{}');
+    } catch (e) {}
+
+    if (window.lucide) lucide.createIcons();
+
+    $('#btn-toggle-justifiee-detail').on('click', function() {
+      var $btn = $(this);
+      var targetStatus = $btn.data('target-status');
+      var isJustifying = (targetStatus === 'oui');
+      var absenceId = cfg.absenceId || 0;
+      var csrfToken = cfg.csrfToken || '';
+      if (!absenceId) return;
+
+      var executeToggle = function() {
+        $btn.prop('disabled', true);
+        $.ajax({
+          url: window.RACINE + 'absence/changer',
+          type: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          data: {
+            id: absenceId,
+            statut: targetStatus,
+            csrf_token: csrfToken
+          },
+          dataType: 'json',
+          success: function(res) {
+            if (res.status === 1 || res.success) {
+              if (window.toastr) toastr.success(res.message || 'Statut de justification mis à jour.');
+              setTimeout(function() { window.location.reload(); }, 450);
+            } else {
+              if (window.toastr) toastr.error(res.message || 'Erreur lors de la mise à jour.');
+              $btn.prop('disabled', false);
+            }
+          },
+          error: function() {
+            if (window.toastr) toastr.error('Erreur réseau lors de la mise à jour.');
+            $btn.prop('disabled', false);
+          }
+        });
+      };
+
+      if (window.Swal) {
+        Swal.fire({
+          title: isJustifying ? 'Justifier cette absence ?' : 'Marquer comme non justifiée ?',
+          text: isJustifying
+            ? 'Le statut de cette absence passera immédiatement à « Justifiée ».'
+            : 'Cette absence sera comptabilisée comme « Non justifiée ».',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: isJustifying ? '#16A34A' : '#D97706',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: isJustifying ? 'Oui, justifier' : 'Oui, confirmer',
+          cancelButtonText: 'Annuler'
+        }).then(function(result) {
+          if (result.isConfirmed) executeToggle();
+        });
+      } else {
+        executeToggle();
+      }
+    });
+  }
+
+  // =========================================================================
   // 6. VUE : LISTE & GESTION DES SALLES DE COURS (views/salles/list.php)
   // =========================================================================
   function initSallesListModule() {
@@ -1358,6 +1428,7 @@
     initAbsencesListModule();
     initAbsencesEditModule();
     initAbsencesSaisieClasseModule();
+    initAbsencesDetailsModule();
     initSallesListModule();
     if (window.lucide) lucide.createIcons();
   });

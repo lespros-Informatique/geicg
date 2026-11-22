@@ -314,11 +314,33 @@ class AbsenceController extends BaseController
             $id = $this->validator->decrypter($details);
             $item = $this->model->getByIdWithDetails($id);
             if (!$item) { redirect('absence/list'); }
-            $encryptedId = $this->validator->crypter($id);
+            $encryptedId = $this->validator->crypter($item['id_absence']);
+            $encryptedEtudiantId = !empty($item['id_etudiant'])
+                ? $this->validator->crypter($item['id_etudiant'])
+                : (!empty($item['code_etudiant']) ? $this->validator->crypter($item['code_etudiant']) : '');
         } catch (Exception $e) {
             redirect('absence/list');
         }
-        $this->loadView('../views/absences/details.php', ['item' => $item, 'encryptedId' => $encryptedId]);
+
+        $context = $this->model->getStudentAbsenceContext(
+            (string)($item['inscription_code'] ?? ''),
+            !empty($item['annee_code']) ? (string)$item['annee_code'] : ($item['inscription_annee_code'] ?? null),
+            !empty($item['semestre_code']) ? (string)$item['semestre_code'] : null
+        );
+
+        $history = [];
+        foreach ($context['history'] as $h) {
+            $h['encrypted_id'] = $this->validator->crypter($h['id_absence']);
+            $history[] = $h;
+        }
+
+        $this->loadView('../views/absences/details.php', [
+            'item' => $item,
+            'encryptedId' => $encryptedId,
+            'encryptedEtudiantId' => $encryptedEtudiantId,
+            'studentStats' => $context['stats'],
+            'studentHistory' => $history
+        ]);
     }
 
     public function edition($details)
