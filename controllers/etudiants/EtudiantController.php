@@ -505,11 +505,7 @@ class EtudiantController extends BaseController
         }
 
         $etablissement = $this->getEtablissementConfig();
-        $currentUser = Auth::user();
-        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
-        if (empty($editeurNom)) {
-            $editeurNom = 'Service Inscription & Scolarité';
-        }
+        $editeurNom = Auth::fullName();
 
         $isClassList = (!empty($filters['classe_code']) && $filters['classe_code'] !== 'ALL');
 
@@ -552,14 +548,15 @@ class EtudiantController extends BaseController
         }
 
         $filename = $docTitle . '_' . date('Ymd_His') . '.pdf';
+        $sigleTitle = trim((string)($etablissement['sigle_etablissement'] ?? ($etablissement['nom_etablissement'] ?? '')));
         PdfService::generate($html, $filename, [
             'orientation' => $orientation,
             'format' => 'A4',
-            'title' => ($isClassList ? 'Liste de Classe & Émargement - ' : 'Registre Nominatif des Étudiants - ') . ($etablissement['nom_etablissement'] ?? 'GROUPE EICG'),
+            'title' => ($isClassList ? 'Liste de Classe & Émargement' : 'Registre Nominatif des Étudiants') . ($sigleTitle !== '' ? ' - ' . $sigleTitle : ''),
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
-            'margin_bottom' => 8
+            'margin_bottom' => 10
         ]);
     }
 

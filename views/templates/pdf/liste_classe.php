@@ -242,7 +242,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
             <td class="text-center text-bold"><?= $i + 1 ?></td>
             <td class="text-center text-bold" style="font-family: monospace; color: #1E3A5F;"><?= htmlspecialchars($e['matricule_etudiant'] ?? $e['code_etudiant']) ?></td>
             <td class="text-left text-bold"><?= htmlspecialchars($nomComplet) ?></td>
-            <td class="text-center text-bold"><?= htmlspecialchars($e['sexe_etudiant'] ?? 'M') ?></td>
+            <td class="text-center text-bold"><?= htmlspecialchars(!empty($e['sexe_etudiant']) ? $e['sexe_etudiant'] : '-') ?></td>
             <td class="text-center">
               <?php if ($isAffecte): ?>
                 <span class="badge-affecte">Affecté(e) État</span>
@@ -264,28 +264,83 @@ if (empty($etablissement) || !is_array($etablissement)) {
   </table>
 
   <br>
-  <!-- BAS DE PAGE ET SIGNATURES -->
+  <!-- BAS DE PAGE ET SIGNATURES OFFICIELLES -->
+  <?php
+    $sigDirPedTitre = trim((string)($etablissement['titre_direction_pedagogique'] ?? ''));
+    $sigDirPedNom = trim((string)($etablissement['nom_directeur_etudes'] ?? ''));
+    $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
+    $sigVille = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
+  ?>
   <table class="footer-summary">
     <tr>
-      <td style="width: 55%;">
+      <td style="width: 60%;">
         Bilan des Présences : &nbsp;&nbsp;&nbsp;&nbsp; Présents : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ] &nbsp;&nbsp;&nbsp;&nbsp; Absents : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ] &nbsp;&nbsp;&nbsp;&nbsp; Retards : [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]
       </td>
-      <td style="width: 45%; text-align: right;">
-        Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?>
+      <td style="width: 40%; text-align: right;">
+        <?php if (!empty($sigVille)): ?>
+          Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
+        <?php endif; ?>
       </td>
     </tr>
   </table>
 
-  <table class="signature-grid">
+  <table style="width: 100%; border-collapse: collapse; margin-top: 14px;">
     <tr>
-      <td style="width: 33%;">
-        <div style="font-weight: bold; text-decoration: underline;">Le Délégué de Classe</div>
+      <td style="width: 32%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              Le Délégué de Classe
+            </td>
+          </tr>
+          <tr>
+            <td height="40" style="height: 40px;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-size: 7.5pt; font-style: italic; color: #64748B;">Signature</td>
+          </tr>
+        </table>
       </td>
-      <td style="width: 34%; text-align: center;">
-        <div style="font-weight: bold; text-decoration: underline;">Le Enseignant / Surveillant</div>
+      <td style="width: 2%;"></td>
+      <td style="width: 32%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              L'Enseignant / Surveillant
+            </td>
+          </tr>
+          <tr>
+            <td height="40" style="height: 40px;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-size: 7.5pt; font-style: italic; color: #64748B;">Signature</td>
+          </tr>
+        </table>
       </td>
-      <td style="width: 33%; text-align: right;">
-        <div style="font-weight: bold; text-decoration: underline;">La Direction des Études</div>
+      <td style="width: 2%;"></td>
+      <td style="width: 32%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              <?= htmlspecialchars($sigDirPedTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="40" style="height: 40px;">&nbsp;</td>
+          </tr>
+          <?php if ($sigDirPedNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 9pt; font-weight: bold; color: #0F172A;">
+              <?= htmlspecialchars($sigDirPedNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 7.5pt; font-style: italic; color: #64748B;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

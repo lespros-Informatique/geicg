@@ -11,7 +11,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Liste des Étudiants - GROUPE EICG</title>
+  <title>Liste des Étudiants<?= !empty($etablissement['sigle_etablissement']) ? ' - ' . htmlspecialchars($etablissement['sigle_etablissement']) : '' ?></title>
   <style>
     @page {
       margin-top: 8mm;
@@ -183,6 +183,24 @@ if (empty($etablissement) || !is_array($etablissement)) {
 </head>
 <body>
 
+  <!-- PIED DE PAGE FIXE POUR MPDF -->
+  <htmlpagefooter name="pageFooter">
+    <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 8pt; color: #64748B; padding-top: 4px;">
+      <tr>
+        <td style="width: 40%; text-align: left;">
+          <?= htmlspecialchars(!empty($etablissement['texte_pied_page']) ? $etablissement['texte_pied_page'] : trim('Document officiel ' . ($etablissement['sigle_etablissement'] ?? ''))) ?>
+        </td>
+        <td style="width: 20%; text-align: center; font-weight: bold;">
+          Page {PAGENO} / {nbpg}
+        </td>
+        <td style="width: 40%; text-align: right;">
+          REF : <?= date('YmdHis') ?>
+        </td>
+      </tr>
+    </table>
+  </htmlpagefooter>
+  <sethtmlpagefooter name="pageFooter" value="on" />
+
   <!-- EN-TÊTE ÉTABLISSEMENT UNIFIÉ GEICG -->
   <?php include __DIR__ . '/components/header_institution.php'; ?>
 
@@ -190,8 +208,8 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <table class="banner-table">
     <tr>
       <td>
-        <div class="banner-title">REGISTRE DES ÉTUDIANTS INSCRIIS</div>
-        <div class="banner-sub">ANNEE ACADEMIQUE : <?= htmlspecialchars($annee_libelle) ?></div>
+        <div class="banner-title">REGISTRE DES ÉTUDIANTS INSCRITS</div>
+        <div class="banner-sub">ANNÉE ACADÉMIQUE : <?= htmlspecialchars($annee_libelle ?? '') ?></div>
       </td>
     </tr>
   </table>
@@ -252,7 +270,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
             <td class="text-center text-bold"><?= $idx + 1 ?></td>
             <td class="text-center text-bold" style="font-family: monospace; color: #1E3A5F;"><?= htmlspecialchars($e['matricule_etudiant'] ?? '-') ?></td>
             <td class="text-left text-bold"><?= htmlspecialchars($nomComplet) ?></td>
-            <td class="text-center text-bold"><?= htmlspecialchars($e['sexe_etudiant'] ?? 'M') ?></td>
+            <td class="text-center text-bold"><?= htmlspecialchars(!empty($e['sexe_etudiant']) ? $e['sexe_etudiant'] : '-') ?></td>
             <td class="text-center">
               <?php if ($isAffecte): ?>
                 <span class="badge-affecte">Affecté(e) État</span>
@@ -277,25 +295,46 @@ if (empty($etablissement) || !is_array($etablissement)) {
     </tbody>
   </table>
 
-  <!-- FOOTER & SIGNATURE -->
-  <table class="footer-table">
+  <!-- BLOC DE SIGNATURE OFFICIELLE -->
+  <?php
+    $sigDirPedTitre = trim((string)($etablissement['titre_direction_pedagogique'] ?? ''));
+    $sigDirPedNom = trim((string)($etablissement['nom_directeur_etudes'] ?? ''));
+    $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
+    $sigVille = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
+  ?>
+  <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
     <tr>
-      <td style="width: 50%;">
-        Ce document est issu du Système de Gestion Intégré GROUPE EICG.
-      </td>
-      <td style="width: 50%; text-align: right;">
-        Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?? ($etablissement['ville_etablissement'] ?? '')) ?>, le <?= date('d/m/Y') ?>
-      </td>
-    </tr>
-  </table>
-
-  <table class="signature-grid">
-    <tr>
-      <td style="width: 50%;">
-        <div style="font-weight: bold; text-decoration: underline;">Le Responsable du Registre</div>
-      </td>
-      <td style="width: 50%; text-align: right;">
-        <div style="font-weight: bold; text-decoration: underline;">La Direction Académique</div>
+      <td style="width: 60%;"></td>
+      <td style="width: 40%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <?php if (!empty($sigVille)): ?>
+          <tr>
+            <td style="text-align: center; font-size: 9pt; color: #475569; padding: 0 8px 3px 8px;">
+              Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              <?= htmlspecialchars($sigDirPedTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php if ($sigDirPedNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 10pt; font-weight: bold; color: #0F172A;">
+              <?= htmlspecialchars($sigDirPedNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; font-style: italic; color: #64748B; padding: 0 8px 4px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>
