@@ -276,19 +276,18 @@ if (empty($etablissement) || !is_array($etablissement)) {
 
   <table class="signature-grid">
     <tr>
-      <td style="width: 33%;">
-        <div style="font-weight: bold; text-decoration: underline;">L'Enseignant de la Matière</div>
+      <td style="width: 40%;">
+        <div style="font-size: 11pt; font-weight: bold; text-decoration: underline;">L'Enseignant de la Matière</div>
         <?php if (!empty($info['nom_enseignant'])): ?>
-          <div style="font-weight: bold; font-size: 8pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($info['nom_enseignant']) ?></div>
+          <div style="font-size: 10pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($info['nom_enseignant']) ?></div>
         <?php endif; ?>
       </td>
-      <td style="width: 34%; text-align: center;">
-        <div style="font-weight: bold; text-decoration: underline;">Le Responsable Pédagogique</div>
+      <td style="width: 20%; text-align: center;">
       </td>
-      <td style="width: 33%; text-align: right;">
-        <div style="font-weight: bold; text-decoration: underline;"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'La Direction des Études & Examens') ?></div>
+      <td style="width: 40%; text-align: right;">
+        <div style="font-size: 11pt; font-weight: bold; text-decoration: underline;"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'La Direction des Études & Examens') ?></div>
         <?php if (!empty($etablissement['nom_directeur_etudes'])): ?>
-          <div style="font-weight: bold; font-size: 8pt; color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes']) ?></div>
+          <div style="font-size: 10pt;   color: #1E293B; margin-top: 4px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes']) ?></div>
         <?php endif; ?>
       </td>
     </tr>
