@@ -123,7 +123,7 @@ $finalLibelle = !empty($selectedLibelleEval) ? $selectedLibelleEval : $typeLabel
               <th style="padding: 12px 14px; width: 140px; text-align: center;">Note / 20 <span style="color:#EF4444;">*</span></th>
               <th style="padding: 12px 14px; width: 150px; text-align: center;">Appréciation</th>
               <th style="padding: 12px 14px;">Observations / Remarques</th>
-              <th style="padding: 12px 14px; width: 80px; text-align: center;">Action</th>
+              <th style="padding: 12px 14px; width: 100px; text-align: center;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -155,9 +155,20 @@ $finalLibelle = !empty($selectedLibelleEval) ? $selectedLibelleEval : $typeLabel
                   <input type="text" name="notes[<?= $inscCode ?>][observations]" value="<?= htmlspecialchars($obs) ?>" placeholder="Ajouter une remarque ou ABSENT..." class="form-control form-control-sm input-obs" style="border-radius: 8px; font-size: 12px; border: 1px solid #E2E8F0;" data-original="<?= htmlspecialchars($obs) ?>">
                 </td>
                 <td style="padding: 12px 14px; text-align: center;">
-                  <button type="button" class="btn btn-sm btn-link text-danger btn-toggle-absent" title="Basculer statut Absent" style="padding: 4px;">
-                    <i data-lucide="user-minus" style="width: 15px; height: 15px;"></i>
-                  </button>
+                  <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <button type="button"
+                            class="btn-toggle-absent"
+                            title="<?= $isAbsent ? 'Annuler le statut Absent (Marquer présent)' : 'Marquer comme Absent' ?>"
+                            style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; <?= $isAbsent ? 'background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0;' : 'background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;' ?>">
+                      <i data-lucide="<?= $isAbsent ? 'user-check' : 'user-x' ?>" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    <button type="button"
+                            class="btn-clear-row"
+                            title="Effacer la note et l'observation"
+                            style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1; transition: all 0.15s ease;">
+                      <i data-lucide="eraser" style="width: 16px; height: 16px;"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>

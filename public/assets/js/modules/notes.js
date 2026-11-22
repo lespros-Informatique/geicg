@@ -1410,6 +1410,21 @@ $(document).ready(function () {
 
     updateDynamicStats();
 
+    // Helper pour synchroniser l'icône et le style du bouton Absent/Présent d'une ligne
+    function syncAbsentButtonUI($row, isAbs) {
+      var $btn = $row.find('.btn-toggle-absent');
+      if (!$btn.length) return;
+      if (isAbs) {
+        $btn.attr('title', 'Annuler le statut Absent (Marquer présent)')
+          .css({ background: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0' })
+          .html('<i data-lucide="user-check" style="width: 16px; height: 16px;"></i>');
+      } else {
+        $btn.attr('title', 'Marquer comme Absent')
+          .css({ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' })
+          .html('<i data-lucide="user-x" style="width: 16px; height: 16px;"></i>');
+      }
+    }
+
     // 7. Bouton bascule statut absent par ligne
     $(document).on('click', '.btn-toggle-absent', function (e) {
       e.preventDefault();
@@ -1418,29 +1433,52 @@ $(document).ready(function () {
       var $obsInput = $row.find('.input-obs');
 
       if ($row.hasClass('row-absent')) {
-        $row.removeClass('row-absent');
+        $row.removeClass('row-absent').addClass('row-dirty');
         if ($obsInput.val() === 'ABSENT') $obsInput.val('');
+        syncAbsentButtonUI($row, false);
       } else {
-        $row.addClass('row-absent');
+        $row.addClass('row-absent row-dirty');
         $noteInput.val('0');
         $obsInput.val('ABSENT');
+        syncAbsentButtonUI($row, true);
       }
+      if (window.lucide) lucide.createIcons();
       isFormDirty = true;
       $('#badge-unsaved').show();
       updateDynamicStats();
     });
 
+    // 7b. Bouton effacer la note et l'observation d'une ligne
+    $(document).on('click', '.btn-clear-row', function (e) {
+      e.preventDefault();
+      var $row = $(this).closest('tr');
+      var $noteInput = $row.find('.input-valeur-note');
+      var $obsInput = $row.find('.input-obs');
+      $noteInput.val('');
+      $obsInput.val('');
+      $row.removeClass('row-absent').addClass('row-dirty');
+      syncAbsentButtonUI($row, false);
+      if (window.lucide) lucide.createIcons();
+      isFormDirty = true;
+      $('#badge-unsaved').show();
+      updateDynamicStats();
+      $noteInput.focus();
+    });
+
     // 8. Outils rapides d'assistance (délégation d'événements document pour persistance après AJAX)
     $(document).on('click', '#btn-quick-absent', function () {
       $('.note-row').each(function () {
-        var $val = $(this).find('.input-valeur-note');
-        var $obs = $(this).find('.input-obs');
+        var $row = $(this);
+        var $val = $row.find('.input-valeur-note');
+        var $obs = $row.find('.input-obs');
         if ($val.val().trim() === '') {
           $val.val('0');
           $obs.val('ABSENT');
-          $(this).addClass('row-absent row-dirty');
+          $row.addClass('row-absent row-dirty');
+          syncAbsentButtonUI($row, true);
         }
       });
+      if (window.lucide) lucide.createIcons();
       isFormDirty = true;
       $('#badge-unsaved').show();
       updateDynamicStats();
@@ -1514,15 +1552,17 @@ $(document).ready(function () {
     $(document).on('click', '#btn-quick-clear', function () {
       var doReset = function () {
         $('.note-row').each(function () {
-          var $val = $(this).find('.input-valeur-note');
-          var $obs = $(this).find('.input-obs');
+          var $row = $(this);
+          var $val = $row.find('.input-valeur-note');
+          var $obs = $row.find('.input-obs');
           $val.val($val.data('original'));
           $obs.val($obs.data('original'));
-          $(this).removeClass('row-dirty');
-          if (($obs.val() || '').toLowerCase().indexOf('absent') === -1) {
-            $(this).removeClass('row-absent');
-          }
+          $row.removeClass('row-dirty');
+          var isAbs = (($obs.val() || '').toLowerCase().indexOf('absent') !== -1);
+          $row.toggleClass('row-absent', isAbs);
+          syncAbsentButtonUI($row, isAbs);
         });
+        if (window.lucide) lucide.createIcons();
         isFormDirty = false;
         $('#badge-unsaved').hide();
         updateDynamicStats();
