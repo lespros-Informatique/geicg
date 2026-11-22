@@ -1032,14 +1032,13 @@
           var iconCol = isRetire ? '#15803D' : '#EA580C';
           var statusIcon = isRetire ? 'check-circle-2' : 'clock';
           var btnClass = isRetire ? 'btn-outline-secondary' : 'btn-success';
-          var btnDisabledAttr = isStudentComplet ? ' disabled aria-disabled="true"' : '';
-          var btnStyle = isStudentComplet
-            ? 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; opacity: 0.7; white-space: nowrap; cursor: not-allowed;'
-            : (isRetire
-              ? 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; white-space: nowrap; cursor: pointer;'
-              : 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #15803D; color: #FFFFFF; border: none; white-space: nowrap; cursor: pointer;');
-          var btnText = isStudentComplet ? 'Remis' : (isRetire ? 'Annuler la remise' : 'Marquer comme Remis');
-          var iconName = isStudentComplet ? 'check-circle-2' : (isRetire ? 'rotate-ccw' : 'check');
+          var isBtnDisabled = (isRetire || isStudentComplet);
+          var btnDisabledAttr = isBtnDisabled ? ' disabled aria-disabled="true"' : '';
+          var btnStyle = isBtnDisabled
+            ? 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; opacity: 0.65; white-space: nowrap; cursor: not-allowed;'
+            : 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #15803D; color: #FFFFFF; border: none; white-space: nowrap; cursor: pointer;';
+          var btnText = isRetire ? 'Annuler la remise' : 'Marquer comme Remis';
+          var iconName = isRetire ? 'rotate-ccw' : 'check';
           var dateText = item.date_retrait_formatee
             ? ('<span style="display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; color: #15803D; background: #DCFCE7; padding: 2px 8px; border-radius: 999px; margin-left: 8px;">Remis le ' + escapeHtml(item.date_retrait_formatee) + '</span>')
             : '<span style="display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; color: #EA580C; background: #FFEDD5; padding: 2px 8px; border-radius: 999px; margin-left: 8px;">En attente de retrait</span>';
@@ -1055,7 +1054,7 @@
               '</div>' +
             '</div>' +
             '<div style="flex-shrink: 0;">' +
-              '<button type="button" class="btn btn-sm ' + btnClass + ' btn-toggle-item-modal" data-id="' + item.id_accessoire_inscription + '"' + btnDisabledAttr + ' style="' + btnStyle + '">' +
+              '<button type="button" class="btn btn-sm ' + btnClass + ' btn-toggle-item-modal" data-id="' + item.id_accessoire_inscription + '" data-etat="' + escapeHtml(item.etat_retrait || '') + '"' + btnDisabledAttr + ' style="' + btnStyle + '">' +
                 '<i data-lucide="' + iconName + '" style="width: 15px; height: 15px;"></i> ' + btnText +
               '</button>' +
             '</div>' +
@@ -1072,7 +1071,7 @@
 
     // Action toggle item unitaire dans le modal
     $(document).on('click', '.btn-toggle-item-modal', function () {
-      if ($(this).prop('disabled')) return;
+      if ($(this).prop('disabled') || $(this).data('etat') === 'retire') return;
       if (currentStudentData) {
         var tk = parseInt(currentStudentData.total_kits, 10) || 0;
         var tr = parseInt(currentStudentData.total_retires, 10) || 0;
