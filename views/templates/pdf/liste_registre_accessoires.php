@@ -263,13 +263,12 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document officiel GEICG &bull; Édité le <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
         </td>
         <td style="width: 40%; text-align: right;">
-          Réf: REF-KITS-<?= date('Ymd-His') ?>
+          REF : <?= date('YmdHis') ?>
         </td>
       </tr>
     </table>
@@ -381,26 +380,6 @@ $tauxRetrait = (float)($stats['taux_retrait'] ?? ($stats['taux'] ?? 0));
         <?php endforeach; ?>
       <?php endif; ?>
     </tbody>
-  </table>
-
-  <!-- SECTION DES SIGNATURES OFFICIELLES (CONFORME RÈGLE 9) -->
-  <table class="signature-table">
-    <tr>
-      <td class="signature-box" style="width: 48%;">
-        <div class="signature-title">L'Agent Responsable du Matériel & Kits</div>
-        <div style="height: 40px;"></div>
-        <div class="signature-mention"><?= htmlspecialchars($editeur_nom) ?></div>
-      </td>
-      <td style="width: 4%;"></td>
-      <td class="signature-box" style="width: 48%;">
-        <div class="signature-title"><?= htmlspecialchars($titreDirection) ?></div>
-        <div style="text-align: center; font-size: 7.5pt; color: #475569; margin-bottom: 2px;">
-          Fait à <?= htmlspecialchars($villeSignature) ?>, le <?= date('d/m/Y') ?>
-        </div>
-        <div style="height: 35px;"></div>
-        <div class="signature-mention"><?= htmlspecialchars($nomSignataire) ?></div>
-      </td>
-    </tr>
   </table>
 
 </body>
