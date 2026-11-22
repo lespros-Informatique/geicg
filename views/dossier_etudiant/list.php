@@ -214,17 +214,6 @@
       
       <!-- Document A4  d'impression -->
       <div style="border: 2px solid #1E3A5F; padding: 24px; border-radius: 12px; background: #FFFFFF; font-family: 'Segoe UI', Arial, sans-serif;">
-        
-        <!-- En-tête Récépissé -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #CBD5E1; padding-bottom: 16px; margin-bottom: 20px;">
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <img id="rec-etab-logo" src="<?= asset('images/logo-placeholder.png') ?>" style="max-height: 55px; max-width: 140px; object-fit: contain;" onerror="this.style.display='none'">
-          </div>
-          <div style="text-align: right;">
-            <span class="badge bg-dark" style="font-size: 11px; padding: 6px 12px; text-transform: uppercase; background: #0F172A; color: #FFF; border-radius: 6px;" id="rec-annee">ANNÉE -</span>
-            <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-top: 6px;">Émis le : <span id="rec-date-emission">-</span></div>
-          </div>
-        </div>
 
         <!-- Titre du Document -->
         <div style="text-align: center; margin-bottom: 22px;">

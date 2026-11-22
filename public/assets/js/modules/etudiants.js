@@ -2363,11 +2363,7 @@
             $('#rec-student-matricule').text(s.matricule_etudiant || '-');
             $('#rec-student-classe').text(s.libelle_classe || '-');
             $('#rec-student-phone').text(s.telephone_etudiant || '-');
-            $('#rec-annee').text(s.libelle_annee ? ('Année Académique ' + s.libelle_annee) : 'GEICG');
-            $('#rec-date-emission').text(res.date_emission || '-');
             $('#rec-agent-nom').text(res.agent_nom || 'Administration');
-
-            if (s.logo_etablissement) $('#rec-etab-logo').attr('src', window.RACINE + s.logo_etablissement).show();
 
             $('#rec-count-deposees').text(res.deposees_count || 0);
             $('#rec-count-manquantes').text(res.manquantes_count || 0);
