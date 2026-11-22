@@ -252,6 +252,7 @@ class ModelInscription extends BaseModel
                     i.created_at_inscription,
                     i.statut_inscription,
                     i.photo_inscription,
+                    i.date_photo,
                     e.code_etudiant,
                     e.matricule_etudiant,
                     e.nom_etudiant,
@@ -376,6 +377,7 @@ class ModelInscription extends BaseModel
                     i.etudiant_code,
                     i.annee_code,
                     i.photo_inscription,
+                    i.date_photo,
                     e.matricule_etudiant,
                     e.code_etudiant,
                     e.photo_etudiant,
@@ -396,18 +398,19 @@ class ModelInscription extends BaseModel
     }
 
     /**
-     * Met à jour la photo d'inscription et synchronise avec la fiche étudiant
+     * Met à jour la photo d'inscription, renseigne date_photo (date PHP) et synchronise avec la fiche étudiant
      */
     public function updatePhoto(int $idInscription, string $relativePath, string $codeEtu = '', string $matEtu = ''): bool
     {
         $db = $this->getCon();
+        $now = date('Y-m-d H:i:s');
         try {
-            $stmt = $db->prepare("UPDATE " . TABLES::INSCRIPTIONS . " SET photo_inscription = ?, updated_at_inscription = NOW() WHERE id_inscription = ?");
-            $ok = $stmt->execute([$relativePath, $idInscription]);
+            $stmt = $db->prepare("UPDATE " . TABLES::INSCRIPTIONS . " SET photo_inscription = ?, date_photo = ?, updated_at_inscription = ? WHERE id_inscription = ?");
+            $ok = $stmt->execute([$relativePath, $now, $now, $idInscription]);
 
             if (!empty($codeEtu) || !empty($matEtu)) {
-                $db->prepare("UPDATE " . TABLES::ETUDIANTS . " SET photo_etudiant = ?, updated_at_etudiant = NOW() WHERE code_etudiant = ? OR (matricule_etudiant = ? AND matricule_etudiant != '') OR code_etudiant = ?")
-                   ->execute([$relativePath, $codeEtu, $matEtu, $codeEtu]);
+                $db->prepare("UPDATE " . TABLES::ETUDIANTS . " SET photo_etudiant = ?, updated_at_etudiant = ? WHERE code_etudiant = ? OR (matricule_etudiant = ? AND matricule_etudiant != '') OR code_etudiant = ?")
+                   ->execute([$relativePath, $now, $codeEtu, $matEtu, $codeEtu]);
             }
             return (bool)$ok;
         } catch (Exception $e) {

@@ -1405,6 +1405,7 @@ CREATE TABLE `inscriptions` (
   `affectation_etat` enum('oui', 'non') NOT NULL DEFAULT 'non',
   `statut_inscription` enum('en_attente', 'valide', 'solde', 'annule') NOT NULL DEFAULT 'valide',
   `photo_inscription` varchar(255) DEFAULT NULL,
+  `date_photo` datetime DEFAULT NULL,
   PRIMARY KEY (`id_inscription`),
   UNIQUE KEY `uq_inscription` (`etudiant_code`, `annee_code`),
   KEY `idx_inscriptions_canal` (`canal_inscription`),
@@ -1415,6 +1416,7 @@ CREATE TABLE `inscriptions` (
   KEY `idx_inscriptions_user_code` (`user_code`),
   KEY `idx_inscriptions_affectation_etat` (`affectation_etat`),
   KEY `idx_inscriptions_statut_inscription` (`statut_inscription`),
+  KEY `idx_inscriptions_date_photo` (`date_photo`),
   KEY `idx_insc_annee_classe_statut` (
     `annee_code`,
     `classe_code`,
