@@ -157,6 +157,7 @@
 <!-- ========================================================================= -->
 <!-- MODAL INTERACTIVE : PRISE DE VUE WEBCAM & TÉLÉVERSEMENT FOTO              -->
 <!-- ========================================================================= -->
+<?php if (!empty($canTakePhoto) || !empty($canRetakePhoto)): ?>
 <div id="modal-upload-photo" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
   <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); overflow: hidden; animation: slideDown 0.2s ease-out;">
     <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
@@ -231,6 +232,14 @@
     </form>
   </div>
 </div>
+<?php endif; ?>
+
+<script type="application/json" id="prise-de-vue-config">
+<?= json_encode([
+    'canTakePhoto'   => !empty($canTakePhoto),
+    'canRetakePhoto' => !empty($canRetakePhoto)
+]) ?>
+</script>
 
 <?php 
 ViewContext::setScripts(['public/assets/js/modules/inscriptions.js']);

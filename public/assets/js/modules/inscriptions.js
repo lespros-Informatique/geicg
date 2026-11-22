@@ -1136,6 +1136,16 @@
       return '<img src="' + placeholderUrl + '" style="width:' + size + 'px; height:' + size + 'px; border-radius:50%; object-fit:cover; border:2px solid #CBD5E1; box-shadow:0 1px 3px rgba(0,0,0,0.08); background:#F8FAFC;" title="Sans photo - ' + escapedName + '">';
     }
 
+    var pdvConfigEl = document.getElementById('prise-de-vue-config');
+    var pdvConfig = { canTakePhoto: false, canRetakePhoto: false };
+    if (pdvConfigEl) {
+      try {
+        var parsedPdvCfg = JSON.parse(pdvConfigEl.textContent || '{}');
+        pdvConfig.canTakePhoto = !!parsedPdvCfg.canTakePhoto;
+        pdvConfig.canRetakePhoto = !!parsedPdvCfg.canRetakePhoto;
+      } catch (e) { }
+    }
+
     var table = $('#table-prise-de-vue').DataTable({
       ajax: {
         url: racine + 'inscription/apiPriseDeVue',
@@ -1181,6 +1191,12 @@
         },
         {
           data: null, orderable: false, width: '70px', render: function (d) {
+            if (d.has_photo && !pdvConfig.canRetakePhoto) {
+              return '<span title="Permission requise pour reprendre la photo" style="color:#94A3B8; display:inline-flex; align-items:center; justify-content:center;"><i data-lucide="lock" style="width:15px;height:15px;"></i></span>';
+            }
+            if (!d.has_photo && !pdvConfig.canTakePhoto) {
+              return '<span style="color:#CBD5E1;">—</span>';
+            }
             var safeNom = $('<div>').text(d.nom_complet || '').html();
             var safeInfo = $('<div>').text((d.matricule_etudiant || '-') + ' • ' + (d.libelle_classe || '-')).html();
             var actionTitle = d.has_photo ? 'Reprendre la photo' : 'Prendre la photo';
@@ -1191,6 +1207,7 @@
             return '<button type="button" class="btn-action-icon btn-upload-photo" ' +
               'data-id="' + d.id_inscription + '" ' +
               'data-code="' + d.code_inscription + '" ' +
+              'data-has-photo="' + (d.has_photo ? '1' : '0') + '" ' +
               'data-nom="' + safeNom + '" ' +
               'data-info="' + safeInfo + '" ' +
               'style="' + btnStyle + '" ' +
@@ -1220,6 +1237,10 @@
     });
 
     table.on('xhr.dt', function (e, settings, json, xhr) {
+      if (json && json.permissions) {
+        pdvConfig.canTakePhoto = !!json.permissions.can_take_photo;
+        pdvConfig.canRetakePhoto = !!json.permissions.can_retake_photo;
+      }
       if (json && json.stats) {
         var s = json.stats;
         $('#kpi-total-inscrits').text(s.total || 0);
@@ -1283,6 +1304,15 @@
     $('#tab-mode-file').on('click', function () { switchToTab('file'); });
 
     $(document).on('click', '.btn-upload-photo', function () {
+      var hasPhoto = String($(this).data('has-photo')) === '1';
+      if (hasPhoto && !pdvConfig.canRetakePhoto) {
+        showNotify("Accès refusé : vous n'avez pas la permission de reprendre une photo existante.", 'error');
+        return;
+      }
+      if (!hasPhoto && !pdvConfig.canTakePhoto) {
+        showNotify("Accès refusé : vous n'avez pas la permission d'enregistrer une photo.", 'error');
+        return;
+      }
       var id = $(this).data('id');
       var code = $(this).data('code');
       var nom = $(this).data('nom');

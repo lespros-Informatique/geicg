@@ -285,6 +285,7 @@ class PERMISSIONS
     public const MANAGE_ETUDIANTS                 = 'MANAGE_ETUDIANTS';
     public const MANAGE_INSCRIPTIONS              = 'MANAGE_INSCRIPTIONS';
     public const MANAGE_INSCRIPTIONS_SANS_PHOTO   = 'MANAGE_INSCRIPTIONS_SANS_PHOTO';
+    public const REPRENDRE_PHOTO_INSCRIPTION      = 'REPRENDRE_PHOTO_INSCRIPTION';
     public const MANAGE_PARENTS                   = 'MANAGE_PARENTS';
     public const MANAGE_PIECES                    = 'MANAGE_PIECES';
     public const MANAGE_REMISE_KITS               = 'MANAGE_REMISE_KITS';

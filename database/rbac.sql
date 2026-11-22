@@ -156,7 +156,8 @@ INSERT INTO `permissions` (`id_permission`, `code_permission`, `libelle_permissi
 (186, 'VIEW_LOGS', 'Consulter le Journal d\'Audit & Logs Système', 'ADMINISTRATION', 'actif', '2026-11-19 00:42:16'),
 (187, 'CANCEL_CAISSE_ANNEXE', 'Annuler un Encaissement de la Caisse Annexe', 'FINANCE', 'actif', '2026-11-19 00:42:16'),
 (188, 'MANAGE_ARRIERES', 'Gérer & Encaisser les Arriérés Années Antérieures', 'FINANCE', 'actif', '2026-11-19 00:42:16'),
-(189, 'VIEW_ARRIERES', 'Consulter les Arriérés Années Antérieures', 'FINANCE', 'actif', '2026-11-19 00:42:16');
+(189, 'VIEW_ARRIERES', 'Consulter les Arriérés Années Antérieures', 'FINANCE', 'actif', '2026-11-19 00:42:16'),
+(190, 'REPRENDRE_PHOTO_INSCRIPTION', 'Reprendre / Modifier la Photo d\'Identité d\'un Étudiant', 'SCOLAIRITE', 'actif', '2026-11-22 02:00:00');
 
 -- --------------------------------------------------------
 -- 2. Structure & Données : `roles`
@@ -661,7 +662,10 @@ INSERT INTO `role_permissions` (`id`, `role_code`, `permission_code`) VALUES
 (1612, 'all_control', 'VIEW_ARRIERES'),
 (1613, 'ROLE_DIR_GENERAL', 'VIEW_ARRIERES'),
 (1614, 'ROLE_COMPTABLE', 'VIEW_ARRIERES'),
-(1615, 'ROLE_CAISSIER', 'VIEW_ARRIERES');
+(1615, 'ROLE_CAISSIER', 'VIEW_ARRIERES'),
+(1616, 'ROLE_SUPERADMIN', 'REPRENDRE_PHOTO_INSCRIPTION'),
+(1617, 'all_control', 'REPRENDRE_PHOTO_INSCRIPTION'),
+(1618, 'ROLE_DIR_ETUDES', 'REPRENDRE_PHOTO_INSCRIPTION');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

@@ -138,7 +138,7 @@
                     <i data-lucide="clipboard-check"></i> <span>Réinscriptions</span>
                 </a>
                 <?php endif; ?>
-                <?php if ($canAccess([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS])): ?>
+                <?php if ($canAccess([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION, PERMISSIONS::MANAGE_INSCRIPTIONS])): ?>
                 <a href="<?= url('inscription/prise_de_vue') ?>" class="nav-item sub <?= $isActiveRoute(['/inscription/prise_de_vue', '/inscription/sans_photo']) ?>" data-title="Prise de vue">
                     <i data-lucide="camera"></i> <span>Prise de vue</span>
                 </a>

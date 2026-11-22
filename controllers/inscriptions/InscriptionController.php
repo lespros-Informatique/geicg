@@ -350,7 +350,7 @@ class InscriptionController extends BaseController
     public function priseDeVue()
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $annees = $this->getAccessibleAnnees();
         $activeAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
@@ -362,7 +362,9 @@ class InscriptionController extends BaseController
             'filieres' => $activeAnneeCode ? ($deps['filieres'] ?? []) : [],
             'classes' => $activeAnneeCode ? ($deps['classes'] ?? []) : [],
             'selectedAnneeCode' => $activeAnneeCode ?: '',
-            'stats' => $stats
+            'stats' => $stats,
+            'canTakePhoto' => Auth::can([PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]),
+            'canRetakePhoto' => Auth::can(PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION)
         ]);
     }
 
@@ -649,7 +651,7 @@ class InscriptionController extends BaseController
     public function apiPriseDeVue()
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $this->requirePermission([PERMISSIONS::VIEW_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
         if ($anneeCode === null) {
@@ -678,7 +680,14 @@ class InscriptionController extends BaseController
                     'photo_path' => $photoPath
                 ]);
             }
-            $this->json(['data' => $data, 'stats' => $stats]);
+            $this->json([
+                'data' => $data,
+                'stats' => $stats,
+                'permissions' => [
+                    'can_take_photo' => Auth::can([PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]),
+                    'can_retake_photo' => Auth::can(PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION)
+                ]
+            ]);
         } catch (Exception $e) {
             error_log("InscriptionController::apiPriseDeVue error: " . $e->getMessage());
             $this->json(['data' => [], 'error' => $e->getMessage()]);
@@ -689,7 +698,7 @@ class InscriptionController extends BaseController
     {
         $this->requirePost(false);
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS]);
+        $this->requirePermission([PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION, PERMISSIONS::MANAGE_INSCRIPTIONS]);
 
         $idInscription = (int)($_POST['id_inscription'] ?? 0);
         $codeInscription = trim($_POST['code_inscription'] ?? '');
@@ -705,6 +714,20 @@ class InscriptionController extends BaseController
         if (!$inscInfo) {
             $this->error("Inscription introuvable.");
             return;
+        }
+
+        // Contrôle RBAC granulaire : reprendre une photo existante exige la permission REPRENDRE_PHOTO_INSCRIPTION
+        $alreadyHasPhoto = (!empty($inscInfo['photo_inscription']) || !empty($inscInfo['photo_etudiant']));
+        if ($alreadyHasPhoto) {
+            if (!Auth::can(PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION)) {
+                $this->error("Accès refusé : vous n'avez pas la permission de reprendre ou modifier une photo existante.", 403);
+                return;
+            }
+        } else {
+            if (!Auth::can([PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO, PERMISSIONS::MANAGE_INSCRIPTIONS])) {
+                $this->error("Accès refusé : vous n'avez pas la permission d'enregistrer une photo d'inscription.", 403);
+                return;
+            }
         }
 
         // Dossier classé par année académique
