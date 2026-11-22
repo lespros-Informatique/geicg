@@ -5832,3 +5832,293 @@ CREATE TABLE `deliberations` (
   KEY `idx_delib_statut` (`statut_deliberation`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+
+--
+-- Final view structure for view `v_moyennes_examen_matieres`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_moyennes_examen_matieres`*/;
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_moyennes_examen_matieres` AS
+SELECT
+    `n`.`inscription_code` AS `inscription_code`,
+    `i`.`etudiant_code` AS `etudiant_code`,
+    `i`.`classe_code` AS `classe_code`,
+    `i`.`annee_code` AS `annee_code`,
+    `comp`.`semestre_code` AS `semestre_code`,
+    CASE
+        WHEN LOWER(TRIM(COALESCE(`s`.`libelle_semestre`, ''))) LIKE '%2%'
+          OR LOWER(TRIM(COALESCE(`s`.`libelle_semestre`, ''))) LIKE '%deux%'
+          OR LOWER(TRIM(COALESCE(`s`.`libelle_semestre`, ''))) LIKE '%second%'
+        THEN 2
+        ELSE 1
+    END AS `numero_semestre`,
+    CASE
+        WHEN UPPER(REPLACE(TRIM(COALESCE(`niv`.`slug_niveau`, '')), ' ', '')) IN ('1A', 'L1', '1ERE', '1')
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIERE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIÈRE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ERE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ÈRE%'
+        THEN 1
+        ELSE 0
+    END AS `est_premiere_annee`,
+    `cm`.`matiere_code` AS `matiere_code`,
+    `m`.`libelle_matiere` AS `libelle_matiere`,
+    COALESCE(MAX(`mq`.`categorie_matiere`), 'GENERALE') AS `categorie_matiere`,
+    COUNT(`n`.`id_note`) AS `nb_notes_examen`,
+    MAX(CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END) AS `coef_examen`,
+    COALESCE(MAX(CASE WHEN COALESCE(`mq`.`coefficient`, 0) > 0 THEN `mq`.`coefficient` ELSE NULL END), 1.00) AS `coefficient_maquette`,
+    ROUND(
+        SUM(`n`.`valeur_note` * (CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END))
+        / NULLIF(SUM(CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END), 0),
+        2
+    ) AS `moyenne_matiere_examen`,
+    ROUND(
+        ROUND(
+            SUM(`n`.`valeur_note` * (CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END))
+            / NULLIF(SUM(CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END), 0),
+            2
+        ) * COALESCE(MAX(CASE WHEN COALESCE(`mq`.`coefficient`, 0) > 0 THEN `mq`.`coefficient` ELSE NULL END), 1.00),
+        2
+    ) AS `points_matiere_examen`
+FROM `notes` `n`
+JOIN `composition_matieres` `cm` ON `cm`.`id_composition_matiere` = `n`.`composition_matiere_id`
+JOIN `compositions` `comp` ON `comp`.`code_composition` = `cm`.`composition_code`
+JOIN `inscriptions` `i` ON `i`.`code_inscription` = `n`.`inscription_code`
+JOIN `classes` `cl` ON `cl`.`code_classe` = `i`.`classe_code`
+JOIN `niveaux` `niv` ON `niv`.`code_niveau` = `cl`.`niveau_code`
+JOIN `matieres` `m` ON `m`.`code_matiere` = `cm`.`matiere_code`
+LEFT JOIN `semestres` `s` ON `s`.`code_semestre` = `comp`.`semestre_code` AND `s`.`annee_code` = `i`.`annee_code`
+LEFT JOIN `maquettes_pedagogiques` `mq`
+       ON `mq`.`annee_code` = `i`.`annee_code`
+      AND `mq`.`filiere_code` = `cl`.`filiere_code`
+      AND `mq`.`niveau_code` = `cl`.`niveau_code`
+      AND `mq`.`matiere_code` = `cm`.`matiere_code`
+      AND `mq`.`statut_maquette` = 'actif'
+WHERE `n`.`statut_note` = 'actif'
+  AND UPPER(TRIM(COALESCE(`comp`.`type_composition`, ''))) = 'EXAMEN'
+  AND (`comp`.`statut_composition` IS NULL OR LOWER(TRIM(`comp`.`statut_composition`)) != 'annule')
+  AND (`i`.`statut_inscription` IS NULL OR `i`.`statut_inscription` != 'annule')
+GROUP BY
+    `n`.`inscription_code`,
+    `i`.`etudiant_code`,
+    `i`.`classe_code`,
+    `i`.`annee_code`,
+    `comp`.`semestre_code`,
+    `numero_semestre`,
+    `est_premiere_annee`,
+    `cm`.`matiere_code`,
+    `m`.`libelle_matiere`;
+
+--
+-- Final view structure for view `v_moyennes_examen_inscriptions`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_moyennes_examen_inscriptions`*/;
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_moyennes_examen_inscriptions` AS
+SELECT
+    `em`.`inscription_code` AS `inscription_code`,
+    `em`.`etudiant_code` AS `etudiant_code`,
+    `em`.`classe_code` AS `classe_code`,
+    `em`.`annee_code` AS `annee_code`,
+    `em`.`semestre_code` AS `semestre_code`,
+    `em`.`numero_semestre` AS `numero_semestre`,
+    `em`.`est_premiere_annee` AS `est_premiere_annee`,
+    COUNT(`em`.`matiere_code`) AS `nb_matieres_examen`,
+    GREATEST(1, CAST(ROUND(MAX(`em`.`coef_examen`), 0) AS UNSIGNED)) AS `coef_examen`,
+    ROUND(SUM(`em`.`points_matiere_examen`), 2) AS `total_points_examen`,
+    ROUND(SUM(`em`.`coefficient_maquette`), 2) AS `total_coef_examen`,
+    ROUND(SUM(`em`.`points_matiere_examen`) / NULLIF(SUM(`em`.`coefficient_maquette`), 0), 2) AS `moyenne_examen`
+FROM `v_moyennes_examen_matieres` `em`
+GROUP BY
+    `em`.`inscription_code`,
+    `em`.`etudiant_code`,
+    `em`.`classe_code`,
+    `em`.`annee_code`,
+    `em`.`semestre_code`,
+    `em`.`numero_semestre`,
+    `em`.`est_premiere_annee`;
+
+--
+-- Final view structure for view `v_moyennes_semestres_matieres`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_moyennes_semestres_matieres`*/;
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_moyennes_semestres_matieres` AS
+SELECT
+    `n`.`inscription_code` AS `inscription_code`,
+    `i`.`etudiant_code` AS `etudiant_code`,
+    `i`.`classe_code` AS `classe_code`,
+    `i`.`annee_code` AS `annee_code`,
+    `comp`.`semestre_code` AS `semestre_code`,
+    CASE
+        WHEN LOWER(TRIM(COALESCE(`s`.`libelle_semestre`, ''))) LIKE '%2%'
+          OR LOWER(TRIM(COALESCE(`s`.`libelle_semestre`, ''))) LIKE '%deux%'
+          OR LOWER(TRIM(COALESCE(`s`.`libelle_semestre`, ''))) LIKE '%second%'
+        THEN 2
+        ELSE 1
+    END AS `numero_semestre`,
+    CASE
+        WHEN UPPER(REPLACE(TRIM(COALESCE(`niv`.`slug_niveau`, '')), ' ', '')) IN ('1A', 'L1', '1ERE', '1')
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIERE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIÈRE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ERE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ÈRE%'
+        THEN 1
+        ELSE 0
+    END AS `est_premiere_annee`,
+    `cm`.`matiere_code` AS `matiere_code`,
+    `m`.`libelle_matiere` AS `libelle_matiere`,
+    COALESCE(MAX(`mq`.`categorie_matiere`), 'GENERALE') AS `categorie_matiere`,
+    COUNT(`n`.`id_note`) AS `nb_notes_matiere`,
+    COALESCE(MAX(CASE WHEN COALESCE(`mq`.`coefficient`, 0) > 0 THEN `mq`.`coefficient` ELSE NULL END), 1.00) AS `coefficient_maquette`,
+    ROUND(
+        SUM(`n`.`valeur_note` * (CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END))
+        / NULLIF(SUM(CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END), 0),
+        2
+    ) AS `moyenne_matiere`,
+    ROUND(
+        ROUND(
+            SUM(`n`.`valeur_note` * (CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END))
+            / NULLIF(SUM(CASE WHEN COALESCE(`comp`.`coefficient`, 0) > 0 THEN `comp`.`coefficient` ELSE 1.00 END), 0),
+            2
+        ) * COALESCE(MAX(CASE WHEN COALESCE(`mq`.`coefficient`, 0) > 0 THEN `mq`.`coefficient` ELSE NULL END), 1.00),
+        2
+    ) AS `points_matiere`
+FROM `notes` `n`
+JOIN `composition_matieres` `cm` ON `cm`.`id_composition_matiere` = `n`.`composition_matiere_id`
+JOIN `compositions` `comp` ON `comp`.`code_composition` = `cm`.`composition_code`
+JOIN `inscriptions` `i` ON `i`.`code_inscription` = `n`.`inscription_code`
+JOIN `classes` `cl` ON `cl`.`code_classe` = `i`.`classe_code`
+JOIN `niveaux` `niv` ON `niv`.`code_niveau` = `cl`.`niveau_code`
+JOIN `matieres` `m` ON `m`.`code_matiere` = `cm`.`matiere_code`
+LEFT JOIN `semestres` `s` ON `s`.`code_semestre` = `comp`.`semestre_code` AND `s`.`annee_code` = `i`.`annee_code`
+LEFT JOIN `maquettes_pedagogiques` `mq`
+       ON `mq`.`annee_code` = `i`.`annee_code`
+      AND `mq`.`filiere_code` = `cl`.`filiere_code`
+      AND `mq`.`niveau_code` = `cl`.`niveau_code`
+      AND `mq`.`matiere_code` = `cm`.`matiere_code`
+      AND `mq`.`statut_maquette` = 'actif'
+WHERE `n`.`statut_note` = 'actif'
+  AND (`comp`.`statut_composition` IS NULL OR LOWER(TRIM(`comp`.`statut_composition`)) != 'annule')
+  AND (`i`.`statut_inscription` IS NULL OR `i`.`statut_inscription` != 'annule')
+  AND (
+      UPPER(TRIM(COALESCE(`comp`.`type_composition`, ''))) != 'EXAMEN'
+      OR NOT (
+          UPPER(REPLACE(TRIM(COALESCE(`niv`.`slug_niveau`, '')), ' ', '')) IN ('1A', 'L1', '1ERE', '1')
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIERE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIÈRE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ERE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ÈRE%'
+      )
+  )
+GROUP BY
+    `n`.`inscription_code`,
+    `i`.`etudiant_code`,
+    `i`.`classe_code`,
+    `i`.`annee_code`,
+    `comp`.`semestre_code`,
+    `numero_semestre`,
+    `est_premiere_annee`,
+    `cm`.`matiere_code`,
+    `m`.`libelle_matiere`;
+
+--
+-- Final view structure for view `v_synthese_moyennes_annuelles`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_synthese_moyennes_annuelles`*/;
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_synthese_moyennes_annuelles` AS
+SELECT
+    `i`.`id_inscription` AS `id_inscription`,
+    `i`.`code_inscription` AS `inscription_code`,
+    `i`.`etudiant_code` AS `etudiant_code`,
+    `i`.`classe_code` AS `classe_code`,
+    `i`.`annee_code` AS `annee_code`,
+    `i`.`etablissement_code` AS `etablissement_code`,
+    CASE
+        WHEN UPPER(REPLACE(TRIM(COALESCE(`niv`.`slug_niveau`, '')), ' ', '')) IN ('1A', 'L1', '1ERE', '1')
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIERE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIÈRE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ERE%'
+          OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ÈRE%'
+        THEN 1
+        ELSE 0
+    END AS `est_premiere_annee`,
+    GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre1`, 2), 0) AS UNSIGNED)) AS `coef_semestre1`,
+    GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre2`, 2), 0) AS UNSIGNED)) AS `coef_semestre2`,
+    COALESCE(`ex`.`coef_examen`, `cex`.`coef_examen_classe`, 1) AS `coef_examen`,
+    `s1`.`moyenne_s1` AS `moyenne_s1`,
+    `s2`.`moyenne_s2` AS `moyenne_s2`,
+    `ex`.`moyenne_examen` AS `moyenne_examen`,
+    COALESCE(`ex`.`nb_matieres_examen`, 0) AS `nb_matieres_examen`,
+    CASE
+        WHEN `s1`.`moyenne_s1` IS NOT NULL OR `s2`.`moyenne_s2` IS NOT NULL OR `ex`.`moyenne_examen` IS NOT NULL THEN 1
+        ELSE 0
+    END AS `has_notes`,
+    CASE
+        WHEN `s1`.`moyenne_s1` IS NULL AND `s2`.`moyenne_s2` IS NULL AND `ex`.`moyenne_examen` IS NULL THEN NULL
+        WHEN (
+            UPPER(REPLACE(TRIM(COALESCE(`niv`.`slug_niveau`, '')), ' ', '')) IN ('1A', 'L1', '1ERE', '1')
+            OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIERE%'
+            OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%PREMIÈRE%'
+            OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ERE%'
+            OR UPPER(TRIM(COALESCE(`niv`.`libelle_niveau`, ''))) LIKE '%1ÈRE%'
+        ) THEN ROUND(
+            (
+                (COALESCE(`s1`.`moyenne_s1`, 0) * GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre1`, 2), 0) AS UNSIGNED)))
+                + (COALESCE(`s2`.`moyenne_s2`, 0) * GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre2`, 2), 0) AS UNSIGNED)))
+                + (COALESCE(`ex`.`moyenne_examen`, 0) * COALESCE(`ex`.`coef_examen`, `cex`.`coef_examen_classe`, 1))
+            ) / (
+                GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre1`, 2), 0) AS UNSIGNED))
+                + GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre2`, 2), 0) AS UNSIGNED))
+                + COALESCE(`ex`.`coef_examen`, `cex`.`coef_examen_classe`, 1)
+            ),
+            2
+        )
+        ELSE ROUND(
+            (
+                (COALESCE(`s1`.`moyenne_s1`, 0) * GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre1`, 2), 0) AS UNSIGNED)))
+                + (COALESCE(`s2`.`moyenne_s2`, 0) * GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre2`, 2), 0) AS UNSIGNED)))
+            ) / (
+                GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre1`, 2), 0) AS UNSIGNED))
+                + GREATEST(1, CAST(ROUND(COALESCE(`a`.`coef_semestre2`, 2), 0) AS UNSIGNED))
+            ),
+            2
+        )
+    END AS `moyenne_annuelle`
+FROM `inscriptions` `i`
+JOIN `classes` `cl` ON `cl`.`code_classe` = `i`.`classe_code`
+JOIN `niveaux` `niv` ON `niv`.`code_niveau` = `cl`.`niveau_code`
+LEFT JOIN `annees` `a` ON `a`.`code_annee` = `i`.`annee_code`
+LEFT JOIN (
+    SELECT
+        `sm1`.`inscription_code` AS `inscription_code`,
+        ROUND(SUM(`sm1`.`points_matiere`) / NULLIF(SUM(`sm1`.`coefficient_maquette`), 0), 2) AS `moyenne_s1`
+    FROM `v_moyennes_semestres_matieres` `sm1`
+    WHERE `sm1`.`numero_semestre` = 1
+    GROUP BY `sm1`.`inscription_code`
+) `s1` ON `s1`.`inscription_code` = `i`.`code_inscription`
+LEFT JOIN (
+    SELECT
+        `sm2`.`inscription_code` AS `inscription_code`,
+        ROUND(SUM(`sm2`.`points_matiere`) / NULLIF(SUM(`sm2`.`coefficient_maquette`), 0), 2) AS `moyenne_s2`
+    FROM `v_moyennes_semestres_matieres` `sm2`
+    WHERE `sm2`.`numero_semestre` = 2
+    GROUP BY `sm2`.`inscription_code`
+) `s2` ON `s2`.`inscription_code` = `i`.`code_inscription`
+LEFT JOIN `v_moyennes_examen_inscriptions` `ex`
+       ON `ex`.`inscription_code` = `i`.`code_inscription`
+      AND `ex`.`est_premiere_annee` = 1
+      AND `ex`.`numero_semestre` = 2
+LEFT JOIN (
+    SELECT
+        `ex_c`.`classe_code` AS `classe_code`,
+        `ex_c`.`annee_code` AS `annee_code`,
+        MAX(`ex_c`.`coef_examen`) AS `coef_examen_classe`
+    FROM `v_moyennes_examen_inscriptions` `ex_c`
+    WHERE `ex_c`.`est_premiere_annee` = 1
+      AND `ex_c`.`numero_semestre` = 2
+    GROUP BY `ex_c`.`classe_code`, `ex_c`.`annee_code`
+) `cex` ON `cex`.`classe_code` = `i`.`classe_code` AND `cex`.`annee_code` = `i`.`annee_code`
+WHERE (`i`.`statut_inscription` IS NULL OR `i`.`statut_inscription` != 'annule');

@@ -561,132 +561,42 @@ class ModelBulletin extends BaseModel
         }
 
         if ($estDeuxiemeSemestre && !empty($item['classe_code'])) {
-            // Requête globale sur toute l'année académique pour la classe afin de calculer :
-            // Moy. Semestre 1, Moy. Semestre 2, Moy. Examen (en 1A), Moy. Générale Annuelle, Rang Annuel et Min/Max/Moy Classe
+            // Lecture directe via la vue SQL optimisée VIEWS::SYNTHESE_MOYENNES_ANNUELLES
+            // (calcule en 1 requête : Moy. S1, Moy. S2, Moy. Examen 1A, Moy. Générale Annuelle et coefficients)
             $stmtAnnual = $db->prepare("
                 SELECT inscription_code,
-                       semestre_code,
-                       matiere_code,
-                       type_evaluation_code,
-                       valeur_note,
-                       coefficient_composition,
-                       coefficient_maquette
-                FROM " . VIEWS::BULLETIN_NOTES_DETAILS . "
-                WHERE classe_code = ? AND annee_code = ? AND statut_note = '" . STATUTS::ACTIF . "'
-                  AND (statut_composition IS NULL OR LOWER(TRIM(statut_composition)) != '" . STATUTS::ANNULE . "')
+                       coef_semestre1,
+                       coef_semestre2,
+                       coef_examen,
+                       moyenne_s1,
+                       moyenne_s2,
+                       moyenne_examen,
+                       moyenne_annuelle
+                FROM " . VIEWS::SYNTHESE_MOYENNES_ANNUELLES . "
+                WHERE classe_code = ? AND annee_code = ? AND has_notes = 1
             ");
             $stmtAnnual->execute([$item['classe_code'], $item['annee_code'] ?? '']);
             $annualRows = $stmtAnnual->fetchAll(PDO::FETCH_ASSOC);
 
-            $semMatByInsc = [];  // [insc][semCode][matCode] = ['sum_pond' => 0, 'sum_coef' => 0, 'coef_maq' => X]
-            $examMatByInsc = []; // [insc][matCode] = ['sum_pond' => 0, 'sum_coef' => 0, 'coef_maq' => X]
+            $classeMoyennesAnnuelles = [];
 
             foreach ($annualRows as $ar) {
                 $insc = $ar['inscription_code'];
-                $sCode = $ar['semestre_code'];
-                $mCode = $ar['matiere_code'] ?: 'MAT_INCONNUE';
-                $tEval = strtoupper(trim((string)($ar['type_evaluation_code'] ?? '')));
-                $vNote = (float)$ar['valeur_note'];
-                $cComp = (float)($ar['coefficient_composition'] ?? 1);
-                if ($cComp <= 0) $cComp = 1.0;
-                $cMaq = (float)($ar['coefficient_maquette'] ?? 1);
-                if ($cMaq <= 0) $cMaq = 1.0;
+                $mS1 = $ar['moyenne_s1'] !== null ? round((float)$ar['moyenne_s1'], 2) : null;
+                $mS2 = $ar['moyenne_s2'] !== null ? round((float)$ar['moyenne_s2'], 2) : null;
+                $mEx = $ar['moyenne_examen'] !== null ? round((float)$ar['moyenne_examen'], 2) : null;
+                $moyAnn = $ar['moyenne_annuelle'] !== null ? round((float)$ar['moyenne_annuelle'], 2) : 0.0;
 
-                if ($tEval === 'EXAMEN') {
-                    // En 1ère année : un seul examen annuel au Semestre 2, pondéré par le coefficient de chaque matière dans la maquette pédagogique
-                    // Le coefficient de l'examen ($coefExam) est lu directement depuis la composition (compositions.coefficient)
-                    if ($estPremiereAnnee) {
-                        if ($sem2Code === null || $sCode === $sem2Code) {
-                            $coefExam = max(1, (int)round($cComp));
-                            if (!isset($examMatByInsc[$insc][$mCode])) {
-                                $examMatByInsc[$insc][$mCode] = [
-                                    'sum_pond' => 0.0,
-                                    'sum_coef' => 0.0,
-                                    'coef_maq' => $cMaq
-                                ];
-                            }
-                            $examMatByInsc[$insc][$mCode]['sum_pond'] += ($vNote * $cComp);
-                            $examMatByInsc[$insc][$mCode]['sum_coef'] += $cComp;
-                        }
-                        continue;
-                    }
-                }
-
-                if (!isset($semMatByInsc[$insc][$sCode][$mCode])) {
-                    $semMatByInsc[$insc][$sCode][$mCode] = [
-                        'sum_pond' => 0.0,
-                        'sum_coef' => 0.0,
-                        'coef_maq' => $cMaq
-                    ];
-                }
-                $semMatByInsc[$insc][$sCode][$mCode]['sum_pond'] += ($vNote * $cComp);
-                $semMatByInsc[$insc][$sCode][$mCode]['sum_coef'] += $cComp;
-            }
-
-            $allInscCodes = array_unique(array_merge(array_keys($semMatByInsc), array_keys($examMatByInsc)));
-            $classeMoyennesAnnuelles = [];
-
-            foreach ($allInscCodes as $insc) {
-                $mS1 = null;
-                if ($sem1Code !== null && !empty($semMatByInsc[$insc][$sem1Code])) {
-                    $pts = 0.0; $cfs = 0.0;
-                    foreach ($semMatByInsc[$insc][$sem1Code] as $mData) {
-                        if ($mData['sum_coef'] > 0) {
-                            $moyMat = round($mData['sum_pond'] / $mData['sum_coef'], 2);
-                            $pts += round($moyMat * $mData['coef_maq'], 2);
-                            $cfs += $mData['coef_maq'];
-                        }
-                    }
-                    if ($cfs > 0) $mS1 = round($pts / $cfs, 2);
-                }
-
-                $mS2 = null;
-                if ($sem2Code !== null && !empty($semMatByInsc[$insc][$sem2Code])) {
-                    $pts = 0.0; $cfs = 0.0;
-                    foreach ($semMatByInsc[$insc][$sem2Code] as $mData) {
-                        if ($mData['sum_coef'] > 0) {
-                            $moyMat = round($mData['sum_pond'] / $mData['sum_coef'], 2);
-                            $pts += round($moyMat * $mData['coef_maq'], 2);
-                            $cfs += $mData['coef_maq'];
-                        }
-                    }
-                    if ($cfs > 0) $mS2 = round($pts / $cfs, 2);
-                }
-
-                $mEx = null;
-                if (!empty($examMatByInsc[$insc])) {
-                    $ptsEx = 0.0; $cfsEx = 0.0;
-                    foreach ($examMatByInsc[$insc] as $mData) {
-                        if ($mData['sum_coef'] > 0) {
-                            $moyMatEx = round($mData['sum_pond'] / $mData['sum_coef'], 2);
-                            $ptsEx += round($moyMatEx * $mData['coef_maq'], 2);
-                            $cfsEx += $mData['coef_maq'];
-                        }
-                    }
-                    if ($cfsEx > 0) {
-                        $mEx = round($ptsEx / $cfsEx, 2);
-                    }
+                if ($estPremiereAnnee && !empty($ar['coef_examen'])) {
+                    $coefExam = max(1, (int)$ar['coef_examen']);
                 }
 
                 if ($insc === $item['code_inscription']) {
+                    $coefSem1 = max(1, (int)($ar['coef_semestre1'] ?? $coefSem1));
+                    $coefSem2 = max(1, (int)($ar['coef_semestre2'] ?? $coefSem2));
                     $moySem1 = $mS1;
                     $moySem2 = $mS2 ?? $moyenneGenerale;
                     $moyExam = $mEx;
-                }
-
-                // Formules officielles du cahier des charges (coefficients entiers : somme pondérée / somme des coefficients) :
-                // 1ère année : ((moy semestre 1 * coeff) + (moy semestre 2 * coeff) + (moy examen * coeff)) / (coef_sem1 + coef_sem2 + coef_exam)
-                // 2ème année : ((moy semestre 1 * coeff) + (moy semestre 2 * coeff)) / (coef_sem1 + coef_sem2)
-                if ($estPremiereAnnee) {
-                    $totalCoefAnn = $coefSem1 + $coefSem2 + $coefExam;
-                    $moyAnn = $totalCoefAnn > 0
-                        ? round((((float)($mS1 ?? 0) * $coefSem1) + ((float)($mS2 ?? 0) * $coefSem2) + ((float)($mEx ?? 0) * $coefExam)) / $totalCoefAnn, 2)
-                        : 0.0;
-                } else {
-                    $totalCoefAnn = $coefSem1 + $coefSem2;
-                    $moyAnn = $totalCoefAnn > 0
-                        ? round((((float)($mS1 ?? 0) * $coefSem1) + ((float)($mS2 ?? 0) * $coefSem2)) / $totalCoefAnn, 2)
-                        : 0.0;
                 }
 
                 $classeMoyennesAnnuelles[$insc] = $moyAnn;
@@ -1063,6 +973,66 @@ class ModelBulletin extends BaseModel
             'statsClasse' => $statsClasse,
             'anneeLibelle' => $anneeLibelle
         ];
+    }
+
+    /**
+     * Retourne les moyennes d'examen par étudiant d'une classe depuis VIEWS::MOYENNES_EXAMEN_INSCRIPTIONS
+     */
+    public function getMoyennesExamenClasse(string $classeCode, string $anneeCode, ?string $semestreCode = null): array
+    {
+        if (trim($classeCode) === '' || trim($anneeCode) === '') {
+            return [];
+        }
+        try {
+            $sql = "
+                SELECT *
+                FROM " . VIEWS::MOYENNES_EXAMEN_INSCRIPTIONS . "
+                WHERE classe_code = ? AND annee_code = ?
+            ";
+            $params = [$classeCode, $anneeCode];
+            if (!empty($semestreCode)) {
+                $sql .= " AND semestre_code = ?";
+                $params[] = $semestreCode;
+            }
+            $sql .= " ORDER BY moyenne_examen DESC";
+
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelBulletin::getMoyennesExamenClasse error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Retourne le détail par matière des notes d'examen d'un étudiant depuis VIEWS::MOYENNES_EXAMEN_MATIERES
+     */
+    public function getDetailsExamenInscription(string $inscriptionCode, ?string $semestreCode = null): array
+    {
+        if (trim($inscriptionCode) === '') {
+            return [];
+        }
+        try {
+            $sql = "
+                SELECT *
+                FROM " . VIEWS::MOYENNES_EXAMEN_MATIERES . "
+                WHERE inscription_code = ?
+            ";
+            $params = [$inscriptionCode];
+            if (!empty($semestreCode)) {
+                $sql .= " AND semestre_code = ?";
+                $params[] = $semestreCode;
+            }
+            $sql .= " ORDER BY CASE WHEN categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN 1 ELSE 2 END ASC, libelle_matiere ASC";
+
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelBulletin::getDetailsExamenInscription error: " . $e->getMessage());
+            return [];
+        }
     }
 }
 

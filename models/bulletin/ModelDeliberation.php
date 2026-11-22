@@ -152,8 +152,35 @@ class ModelDeliberation extends BaseModel
     }
 
     /**
-     * Calcule et fige officiellement la délibération annuelle de toute une classe (1 seule passe)
-     * Utilise la formule annuelle officielle de ModelBulletin (1A / 2A + barèmes S2) et date PHP.
+     * Charge en 1 seule requête SQL (via VIEWS::SYNTHESE_MOYENNES_ANNUELLES) les moyennes S1, S2, Examen et Annuelle
+     * de tous les étudiants d'une classe, indexées par inscription_code.
+     */
+    public function getSyntheseAnnuelleByClasse(string $classeCode, string $anneeCode): array
+    {
+        if (trim($classeCode) === '' || trim($anneeCode) === '') {
+            return [];
+        }
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT *
+                FROM `" . VIEWS::SYNTHESE_MOYENNES_ANNUELLES . "`
+                WHERE `classe_code` = ? AND `annee_code` = ?
+            ");
+            $stmt->execute([$classeCode, $anneeCode]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $map = [];
+            foreach ($rows as $r) {
+                $map[$r['inscription_code']] = $r;
+            }
+            return $map;
+        } catch (Exception $e) {
+            error_log("ModelDeliberation::getSyntheseAnnuelleByClasse error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Calcule et fige officiellement la délibération annuelle de toute une classe (1 seule requête via VIEWS::SYNTHESE_MOYENNES_ANNUELLES)
      */
     public function delibererClasse(
         string $classeCode,
@@ -166,16 +193,6 @@ class ModelDeliberation extends BaseModel
         if (trim($classeCode) === '' || trim($anneeCode) === '') {
             return ['success' => false, 'message' => 'Classe et année académique requises pour la délibération.'];
         }
-
-        require_once __DIR__ . '/ModelBulletin.php';
-        $modelBulletin = new ModelBulletin();
-
-        // Récupérer le dernier semestre de l'année (S2 / bilan annuel)
-        $semestres = $modelBulletin->getActiveSemestres($anneeCode);
-        if (empty($semestres)) {
-            $semestres = (new ModelSemestre())->getAll($anneeCode);
-        }
-        $lastSemestreCode = !empty($semestres) ? (string)(end($semestres)['code_semestre'] ?? '') : null;
 
         // Récupérer toutes les inscriptions actives de la classe
         $stmtIns = $db->prepare("
@@ -192,11 +209,37 @@ class ModelDeliberation extends BaseModel
             return ['success' => false, 'message' => 'Aucun étudiant inscrit trouvé dans cette classe pour cette année.'];
         }
 
+        $syntheseMap = $this->getSyntheseAnnuelleByClasse($classeCode, $anneeCode);
         $existingMap = $this->getByClasseAndAnnee($classeCode, $anneeCode);
         $modelConfig = new ModelConfiguration();
         $baremesBulletin = $modelConfig->getBaremesBulletin(true);
         $validator = new Validator();
         $now = date('Y-m-d H:i:s');
+        $effectifTotal = count($inscriptions);
+
+        // Pré-calculer les rangs annuels (avec ex-æquo) depuis la synthèse SQL
+        $rankedCodes = [];
+        foreach ($inscriptions as $ins) {
+            $c = (string)$ins['code_inscription'];
+            $syn = $syntheseMap[$c] ?? null;
+            if ($syn && !empty($syn['has_notes']) && $syn['moyenne_annuelle'] !== null) {
+                $rankedCodes[$c] = round((float)$syn['moyenne_annuelle'], 2);
+            }
+        }
+        arsort($rankedCodes);
+        $ranksMap = [];
+        $pos = 0;
+        $curRank = 0;
+        $prevKey = null;
+        foreach ($rankedCodes as $c => $mVal) {
+            $pos++;
+            $k = number_format($mVal, 2, '.', '');
+            if ($prevKey === null || $k !== $prevKey) {
+                $curRank = $pos;
+                $prevKey = $k;
+            }
+            $ranksMap[$c] = $curRank;
+        }
 
         $countSaved = 0;
         $countAdmis = 0;
@@ -238,26 +281,16 @@ class ModelDeliberation extends BaseModel
             ";
             $stmtUpsert = $db->prepare($sqlUpsert);
 
-            $effectifTotal = count($inscriptions);
-
             foreach ($inscriptions as $ins) {
-                $idIns = (int)$ins['id_inscription'];
                 $codeIns = (string)$ins['code_inscription'];
                 $codeEtu = (string)$ins['etudiant_code'];
                 $etabIns = !empty($ins['etablissement_code']) ? (string)$ins['etablissement_code'] : $etabCode;
 
-                $calc = $modelBulletin->calculateBulletinData($idIns, $lastSemestreCode, false);
-
-                $moyS1 = ($calc && isset($calc['moy_semestre1']) && $calc['moy_semestre1'] !== null) ? round((float)$calc['moy_semestre1'], 2) : null;
-                $moyS2 = ($calc && isset($calc['moy_semestre2']) && $calc['moy_semestre2'] !== null) ? round((float)$calc['moy_semestre2'], 2) : null;
-                $moyEx = ($calc && isset($calc['moy_examen']) && $calc['moy_examen'] !== null) ? round((float)$calc['moy_examen'], 2) : null;
-
-                $hasEvaluations = $calc && (
-                    ($calc['totalCoefficients'] ?? 0) > 0
-                    || $moyS1 !== null
-                    || $moyS2 !== null
-                    || $moyEx !== null
-                );
+                $syn = $syntheseMap[$codeIns] ?? null;
+                $moyS1 = ($syn && $syn['moyenne_s1'] !== null) ? round((float)$syn['moyenne_s1'], 2) : null;
+                $moyS2 = ($syn && $syn['moyenne_s2'] !== null) ? round((float)$syn['moyenne_s2'], 2) : null;
+                $moyEx = ($syn && $syn['moyenne_examen'] !== null) ? round((float)$syn['moyenne_examen'], 2) : null;
+                $hasEvaluations = $syn && !empty($syn['has_notes']) && $syn['moyenne_annuelle'] !== null;
 
                 $moyAnn = null;
                 $rangAnn = null;
@@ -267,18 +300,16 @@ class ModelDeliberation extends BaseModel
                 $libelleDecision = 'En attente de notes';
 
                 if ($hasEvaluations) {
-                    $moyAnn = isset($calc['moyenneRecap']) ? round((float)$calc['moyenneRecap'], 2) : round((float)($calc['moyenneGenerale'] ?? 0), 2);
-                    $rangAnn = isset($calc['rangRecap']) && is_numeric($calc['rangRecap'])
-                        ? (int)$calc['rangRecap']
-                        : (isset($calc['rang']) && is_numeric($calc['rang']) ? (int)$calc['rang'] : null);
+                    $moyAnn = round((float)$syn['moyenne_annuelle'], 2);
+                    $rangAnn = $ranksMap[$codeIns] ?? null;
 
                     $evalAnn = $modelConfig->evaluateNote((float)$moyAnn, $baremesBulletin);
                     $mentionFinale = !empty($evalAnn['mention_bulletin']) && $evalAnn['mention_bulletin'] !== '-'
                         ? (string)$evalAnn['mention_bulletin']
-                        : (!empty($calc['mention']) ? (string)$calc['mention'] : '-');
+                        : '-';
                     $codeDist = !empty($evalAnn['code_distinction_sanction'])
                         ? (string)$evalAnn['code_distinction_sanction']
-                        : (!empty($calc['code_distinction_sanction']) ? (string)$calc['code_distinction_sanction'] : 'AUCUN');
+                        : 'AUCUN';
                     $baremeDecision = !empty($evalAnn['appreciation_conseil_s2']) && $evalAnn['appreciation_conseil_s2'] !== '-'
                         ? (string)$evalAnn['appreciation_conseil_s2']
                         : (!empty($evalAnn['appreciation_conseil']) && $evalAnn['appreciation_conseil'] !== '-' ? (string)$evalAnn['appreciation_conseil'] : '');
@@ -287,12 +318,12 @@ class ModelDeliberation extends BaseModel
                         $decisionFinale = 'admis';
                         $libelleDecision = $baremeDecision !== ''
                             ? $baremeDecision
-                            : 'Admis(e) en classe supérieure';
+                            : 'Admis(e) d\'office';
                     } else {
-                        $decisionFinale = 'ajourne';
+                        $decisionFinale = 'redouble';
                         $libelleDecision = $baremeDecision !== ''
                             ? $baremeDecision
-                            : 'Ajourné(e) / Redoublement';
+                            : 'Redoublement (Recalé)';
                     }
                 }
 
@@ -312,9 +343,6 @@ class ModelDeliberation extends BaseModel
                 }
 
                 $codeDelib = $existing['code_deliberation'] ?? $validator->generateCode(TABLES::DELIBERATIONS, 'code_deliberation', 'DEL-', 8);
-                $effectifClasse = !empty($calc['totalElevesClasse']) && is_numeric($calc['totalElevesClasse'])
-                    ? (int)$calc['totalElevesClasse']
-                    : $effectifTotal;
 
                 $stmtUpsert->execute([
                     $codeDelib,
@@ -328,7 +356,7 @@ class ModelDeliberation extends BaseModel
                     $moyEx,
                     $moyAnn,
                     $rangAnn,
-                    $effectifClasse,
+                    $effectifTotal,
                     $mentionFinale,
                     $codeDist,
                     $decisionFinale,
@@ -580,6 +608,8 @@ class ModelDeliberation extends BaseModel
 
         $inscCodes = array_column($inscriptions, 'code_inscription');
         $absencesMap = $this->getAbsencesByInscriptions($inscCodes, $anneeCode);
+        // Lecture en 1 seule requête SQL depuis VIEWS::SYNTHESE_MOYENNES_ANNUELLES si non figé
+        $syntheseMap = !$isFrozen ? $this->getSyntheseAnnuelleByClasse($classeCode, $anneeCode) : [];
 
         $modelConfig = new ModelConfiguration();
         $baremesBulletin = $modelConfig->getBaremesBulletin(true);
@@ -615,28 +645,19 @@ class ModelDeliberation extends BaseModel
                 $codeDist = !empty($existing['code_distinction_sanction']) ? (string)$existing['code_distinction_sanction'] : 'AUCUN';
                 $hasNotes = ($moyAnn !== null);
             } else {
-                // Calcul frais des moyennes annuelles pour la séance en cours
-                $calc = $modelBulletin->calculateBulletinData($idIns, $lastSemestreCode !== '' ? $lastSemestreCode : null, false);
-                $moyS1 = ($calc && isset($calc['moy_semestre1']) && $calc['moy_semestre1'] !== null) ? round((float)$calc['moy_semestre1'], 2) : null;
-                $moyS2 = ($calc && isset($calc['moy_semestre2']) && $calc['moy_semestre2'] !== null) ? round((float)$calc['moy_semestre2'], 2) : null;
-                $moyEx = ($calc && isset($calc['moy_examen']) && $calc['moy_examen'] !== null) ? round((float)$calc['moy_examen'], 2) : null;
-
-                $hasNotes = $calc && (
-                    ($calc['totalCoefficients'] ?? 0) > 0
-                    || $moyS1 !== null
-                    || $moyS2 !== null
-                    || $moyEx !== null
-                );
+                // Lecture directe en batch depuis VIEWS::SYNTHESE_MOYENNES_ANNUELLES (1 requête SQL pour toute la classe)
+                $syn = $syntheseMap[$codeIns] ?? null;
+                $moyS1 = ($syn && $syn['moyenne_s1'] !== null) ? round((float)$syn['moyenne_s1'], 2) : null;
+                $moyS2 = ($syn && $syn['moyenne_s2'] !== null) ? round((float)$syn['moyenne_s2'], 2) : null;
+                $moyEx = ($syn && $syn['moyenne_examen'] !== null) ? round((float)$syn['moyenne_examen'], 2) : null;
+                $hasNotes = $syn && !empty($syn['has_notes']) && $syn['moyenne_annuelle'] !== null;
 
                 if ($hasNotes) {
-                    $moyAnn = isset($calc['moyenneRecap']) ? round((float)$calc['moyenneRecap'], 2) : round((float)($calc['moyenneGenerale'] ?? 0), 2);
-                    $rangAnn = isset($calc['rangRecap']) && is_numeric($calc['rangRecap'])
-                        ? (int)$calc['rangRecap']
-                        : (isset($calc['rang']) && is_numeric($calc['rang']) ? (int)$calc['rang'] : null);
+                    $moyAnn = round((float)$syn['moyenne_annuelle'], 2);
                     $evalAnn = $modelConfig->evaluateNote((float)$moyAnn, $baremesBulletin);
                     $mentionFinale = !empty($evalAnn['mention_bulletin']) && $evalAnn['mention_bulletin'] !== '-'
                         ? (string)$evalAnn['mention_bulletin']
-                        : (!empty($calc['mention']) ? (string)$calc['mention'] : '-');
+                        : '-';
                     $codeDist = !empty($evalAnn['code_distinction_sanction'])
                         ? (string)$evalAnn['code_distinction_sanction']
                         : 'AUCUN';
@@ -812,6 +833,7 @@ class ModelDeliberation extends BaseModel
             }
         }
 
+        $syntheseMap = $this->getSyntheseAnnuelleByClasse($classeCode, $anneeCode);
         $existingMap = $this->getByClasseAndAnnee($classeCode, $anneeCode);
         $modelConfig = new ModelConfiguration();
         $baremesBulletin = $modelConfig->getBaremesBulletin(true);
@@ -819,23 +841,16 @@ class ModelDeliberation extends BaseModel
         $now = date('Y-m-d H:i:s');
         $effectifTotal = count($inscriptions);
 
-        // Pré-calculer les moyennes annuelles de tous les inscrits pour calculer les rangs exacts
+        // Pré-calculer les moyennes annuelles de tous les inscrits via VIEWS::SYNTHESE_MOYENNES_ANNUELLES (1 seule requête)
         $computed = [];
         foreach ($inscriptions as $ins) {
-            $idIns = (int)$ins['id_inscription'];
             $codeIns = (string)$ins['code_inscription'];
-            $calc = $modelBulletin->calculateBulletinData($idIns, $lastSemestreCode, false);
+            $syn = $syntheseMap[$codeIns] ?? null;
 
-            $moyS1 = ($calc && isset($calc['moy_semestre1']) && $calc['moy_semestre1'] !== null) ? round((float)$calc['moy_semestre1'], 2) : null;
-            $moyS2 = ($calc && isset($calc['moy_semestre2']) && $calc['moy_semestre2'] !== null) ? round((float)$calc['moy_semestre2'], 2) : null;
-            $moyEx = ($calc && isset($calc['moy_examen']) && $calc['moy_examen'] !== null) ? round((float)$calc['moy_examen'], 2) : null;
-
-            $hasNotes = $calc && (
-                ($calc['totalCoefficients'] ?? 0) > 0
-                || $moyS1 !== null
-                || $moyS2 !== null
-                || $moyEx !== null
-            );
+            $moyS1 = ($syn && $syn['moyenne_s1'] !== null) ? round((float)$syn['moyenne_s1'], 2) : null;
+            $moyS2 = ($syn && $syn['moyenne_s2'] !== null) ? round((float)$syn['moyenne_s2'], 2) : null;
+            $moyEx = ($syn && $syn['moyenne_examen'] !== null) ? round((float)$syn['moyenne_examen'], 2) : null;
+            $hasNotes = $syn && !empty($syn['has_notes']) && $syn['moyenne_annuelle'] !== null;
 
             $moyAnn = null;
             $mentionFinale = 'Non évalué';
@@ -843,11 +858,11 @@ class ModelDeliberation extends BaseModel
             $baremeDecision = '';
 
             if ($hasNotes) {
-                $moyAnn = isset($calc['moyenneRecap']) ? round((float)$calc['moyenneRecap'], 2) : round((float)($calc['moyenneGenerale'] ?? 0), 2);
+                $moyAnn = round((float)$syn['moyenne_annuelle'], 2);
                 $evalAnn = $modelConfig->evaluateNote((float)$moyAnn, $baremesBulletin);
                 $mentionFinale = !empty($evalAnn['mention_bulletin']) && $evalAnn['mention_bulletin'] !== '-'
                     ? (string)$evalAnn['mention_bulletin']
-                    : (!empty($calc['mention']) ? (string)$calc['mention'] : '-');
+                    : '-';
                 $codeDist = !empty($evalAnn['code_distinction_sanction'])
                     ? (string)$evalAnn['code_distinction_sanction']
                     : 'AUCUN';
