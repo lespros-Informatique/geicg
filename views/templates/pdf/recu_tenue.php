@@ -152,9 +152,9 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
       font-size: 8pt;
     }
     .photo-box {
-      width: 100px;
-      height: 100px;
-      border: 1px solid #CBD5E1;
+      width: 120px;
+      height: 130px;
+      border: 1px solid #49494A;
       object-fit: cover;
     }
     .val-bold {
@@ -247,11 +247,11 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
       </td>
       <td style="width: 18%; text-align: right; vertical-align: top;">
         <?php if (!empty($resolvedPhoto) && file_exists($resolvedPhoto)): ?>
-          <img src="<?= $resolvedPhoto ?>" class="photo-box">
+          <img src="<?= $resolvedPhoto ?>" class="photo-box" style="width: 120px; height: 130px;">
         <?php elseif (file_exists($placeholderPhoto)): ?>
-          <img src="<?= $placeholderPhoto ?>" class="photo-box">
+          <img src="<?= $placeholderPhoto ?>" class="photo-box" style="width: 120px; height: 130px;">
         <?php else: ?>
-          <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 75px; color: #94A3B8; font-size: 7.5pt;">PHOTO</div>
+          <div class="photo-box" style="width: 120px; height: 130px; background: #F1F5F9; text-align: center; line-height: 130px; color: #94A3B8; font-size: 7.5pt;">PHOTO</div>
         <?php endif; ?>
       </td>
     </tr>
@@ -423,11 +423,11 @@ $remisList = !empty($kits_remis) ? $kits_remis : [];
       </td>
       <td style="width: 18%; text-align: right; vertical-align: top;">
         <?php if (!empty($resolvedPhoto) && file_exists($resolvedPhoto)): ?>
-          <img src="<?= $resolvedPhoto ?>" class="photo-box" style="height: 100px; width: 100px;">
+          <img src="<?= $resolvedPhoto ?>" class="photo-box" style="width: 120px; height: 130px;">
         <?php elseif (file_exists($placeholderPhoto)): ?>
-          <img src="<?= $placeholderPhoto ?>" class="photo-box" style="height: 100px; width: 100px;">
+          <img src="<?= $placeholderPhoto ?>" class="photo-box" style="width: 120px; height: 130px;">
         <?php else: ?>
-          <div class="photo-box" style="height: 100px; width: 100px; background: #F1F5F9; text-align: center; line-height: 60px; color: #94A3B8; font-size: 7pt;">PHOTO</div>
+          <div class="photo-box" style="width: 120px; height: 130px; background: #F1F5F9; text-align: center; line-height: 130px; color: #94A3B8; font-size: 7pt;">PHOTO</div>
         <?php endif; ?>
       </td>
     </tr>
