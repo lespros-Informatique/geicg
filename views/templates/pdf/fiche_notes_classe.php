@@ -11,7 +11,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Procès-Verbal de Notes - GROUPE EICG</title>
+  <title>Procès-Verbal de Notes<?= !empty($etablissement['sigle_etablissement']) ? (' - ' . htmlspecialchars($etablissement['sigle_etablissement'])) : '' ?></title>
   <style>
     @page {
       margin-top: 8mm;
@@ -211,7 +211,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <tr>
       <td class="kpi-total" style="width: 25%;">COPIES NOTÉES : <?= $stats['nb_notes'] ?? 0 ?> / <?= $stats['total_etudiants'] ?? count($students ?? []) ?></td>
       <td class="kpi-moyenne" style="width: 25%;">MOYENNE : <?= isset($stats['moyenne_classe']) && $stats['moyenne_classe'] !== null ? number_format((float)$stats['moyenne_classe'], 2, '.', '') . ' / 20' : '-' ?></td>
-      <td class="kpi-reussite" style="width: 25%;">TAUX DE SUCCÈS (≥10) : <?= ($stats['nb_notes'] ?? 0) > 0 ? ($stats['taux_reussite'] . ' %') : '-' ?></td>
+      <td class="kpi-reussite" style="width: 25%;">TAUX DE REUSSITE (≥10) <br> <?= ($stats['nb_notes'] ?? 0) > 0 ? ($stats['taux_reussite'] . ' %') : '-' ?></td>
       <td class="kpi-minmax" style="width: 25%;">NOTE MIN / MAX : <?= isset($stats['note_min']) ? number_format((float)$stats['note_min'], 2, '.', '') : '-' ?> / <?= isset($stats['note_max']) ? number_format((float)$stats['note_max'], 2, '.', '') : '-' ?></td>
     </tr>
   </table>
@@ -220,13 +220,12 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 4%;">N°</th>
-        <th style="width: 14%;">MATRICULE</th>
-        <th style="width: 33%; text-align: left;">NOM & PRÉNOM(S)</th>
-        <th style="width: 11%;">NOTE / 20</th>
+        <th style="width: 5%;">N°</th>
+        <th style="width: 15%;">MATRICULE</th>
+        <th style="width: 38%; text-align: left;">NOM & PRÉNOM(S)</th>
+        <th style="width: 12%;">NOTE / 20</th>
         <th style="width: 11%;">RANG</th>
-        <th style="width: 13%;">MENTION</th>
-        <th style="width: 14%;">OBSERVATIONS</th>
+        <th style="width: 19%;">OBSERVATIONS</th>
       </tr>
     </thead>
     <tbody>
@@ -247,9 +246,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
             <td class="text-center text-bold" style="color: #1E3A5F; font-size: 8.5pt;">
               <?= $st['rang'] ?? '-' ?>
             </td>
-            <td class="text-center">
-              <?= htmlspecialchars($st['mention'] ?? '-') ?>
-            </td>
             <td class="text-center" style="font-size: 7.5pt; color: #475569;">
               <?= htmlspecialchars($st['observations'] ?? '') ?>
             </td>
@@ -257,7 +253,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
         <?php endforeach; ?>
       <?php else: ?>
         <tr>
-          <td colspan="7" class="text-center" style="padding: 20px; color: #64748B; font-style: italic;">
+          <td colspan="6" class="text-center" style="padding: 20px; color: #64748B; font-style: italic;">
             Aucun étudiant inscrit dans cette classe pour cette évaluation.
           </td>
         </tr>
