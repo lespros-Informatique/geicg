@@ -504,11 +504,7 @@ class InscriptionController extends BaseController
         }
 
         $etablissement = $this->getEtablissementConfig();
-        $currentUser = Auth::user();
-        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
-        if (empty($editeurNom)) {
-            $editeurNom = 'Service Inscription & Scolarité';
-        }
+        $editeurNom = Auth::fullName();
 
         $data = [
             'etablissement' => $etablissement,
