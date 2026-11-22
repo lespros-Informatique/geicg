@@ -127,9 +127,10 @@
             <thead>
               <tr style="background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase;">
                 <th>Étudiant</th>
-                <th style="text-align: center;">Matricule</th>
+                <th style="text-align: left;">Matricule</th>
                 <th>Classe</th>
-                <th style="text-align: center;">Kits remis</th>
+                <th style="text-align: left;">Kits remis</th>
+                <th style="text-align: left;">Statut</th>
                 <th style="text-align: center; width: 130px;">Actions</th>
               </tr>
             </thead>

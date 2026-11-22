@@ -825,6 +825,34 @@
           },
           {
             data: null,
+            className: 'text-center',
+            render: function (d, type) {
+              var totalKits = parseInt(d.total_kits, 10) || 0;
+              var totalRetires = parseInt(d.total_retires, 10) || 0;
+              var label, bg, color, border, icon;
+
+              if (totalKits === 0) {
+                label = 'Aucun kit';
+                bg = '#F1F5F9'; color = '#475569'; border = '#CBD5E1'; icon = 'minus-circle';
+              } else if (totalRetires >= totalKits) {
+                label = 'Complet';
+                bg = '#DCFCE7'; color = '#15803D'; border = '#86EFAC'; icon = 'check-circle-2';
+              } else if (totalRetires > 0) {
+                label = 'Partiel';
+                bg = '#FEF3C7'; color = '#B45309'; border = '#FDE68A'; icon = 'clock';
+              } else {
+                label = 'En attente';
+                bg = '#FEE2E2'; color = '#B91C1C'; border = '#FCA5A5'; icon = 'alert-circle';
+              }
+
+              if (type === 'sort' || type === 'filter') return label;
+              return '<span style="display: inline-flex; align-items: center; gap: 5px; background: ' + bg + '; color: ' + color + '; border: 1px solid ' + border + '; border-radius: 999px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; white-space: nowrap;">' +
+                '<i data-lucide="' + icon + '" style="width: 13px; height: 13px;"></i>' + label +
+                '</span>';
+            }
+          },
+          {
+            data: null,
             orderable: false,
             searchable: false,
             className: 'text-center',
