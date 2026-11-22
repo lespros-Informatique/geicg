@@ -306,6 +306,14 @@ class AnneeController extends BaseController
         $annee = $this->model->getAnneeByCodeOrId($code);
 
         if ($annee) {
+            if (($annee['statut_annee'] ?? '') === 'planifie') {
+                $this->json([
+                    'status' => 0,
+                    'message' => "Impossible de sélectionner l'année « {$annee['libelle_annee']} » : elle est encore en préparation (planifiée) et n'a pas été activée."
+                ]);
+                return;
+            }
+
             // Vérification stricte des droits d'accès à l'historique si l'année n'est pas active
             if (!$this->model->canUserAccessAnnee($annee['code_annee'])) {
                 $this->json([

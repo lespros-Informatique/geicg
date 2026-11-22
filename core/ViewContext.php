@@ -190,7 +190,8 @@ class ViewContext
 
         try {
             $dbNav = (new Database())->getCon();
-            $allAnneesNav = $dbNav ? $dbNav->query("SELECT * FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) : [];
+            // Exclure les années encore en préparation ('planifie') du sélecteur de la navbar
+            $allAnneesNav = $dbNav ? $dbNav->query("SELECT * FROM " . TABLES::ANNEES . " WHERE statut_annee != 'planifie' ORDER BY id_annee DESC")->fetchAll(PDO::FETCH_ASSOC) : [];
             if (!empty($allAnneesNav)) {
                 $foundNav = false;
                 foreach ($allAnneesNav as $anNav) {

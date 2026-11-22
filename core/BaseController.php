@@ -32,12 +32,12 @@ abstract class BaseController
         $db = (new Database())->getCon();
         $code = (string)Session::get('annee_active_code', '');
 
-        // Vérifier si l'année en session existe toujours en base
+        // Vérifier si l'année en session existe toujours en base et n'est pas en préparation ('planifie')
         if (!empty($code)) {
-            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
+            $stmtCheck = $db->prepare("SELECT code_annee, libelle_annee, statut_annee FROM " . TABLES::ANNEES . " WHERE code_annee = ? LIMIT 1");
             $stmtCheck->execute([$code]);
             $exists = $stmtCheck->fetch(PDO::FETCH_ASSOC);
-            if (!$exists) {
+            if (!$exists || ($exists['statut_annee'] ?? '') === 'planifie') {
                 Session::remove('annee_active_code');
                 Session::remove('annee_active_libelle');
                 $code = '';
@@ -48,12 +48,9 @@ abstract class BaseController
 
         if (!Session::has('annee_active_code') || empty(Session::get('annee_active_code'))) {
             try {
+                // Zéro fallback arbitraire : seule une année réellement 'actif' peut être initialisée automatiquement
                 $stmt = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " WHERE statut_annee = '" . STATUTS::ACTIF . "' ORDER BY id_annee DESC LIMIT 1");
                 $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
-                if (!$row) {
-                    $stmtFallback = $db->query("SELECT code_annee, libelle_annee FROM " . TABLES::ANNEES . " ORDER BY id_annee DESC LIMIT 1");
-                    $row = $stmtFallback ? $stmtFallback->fetch(PDO::FETCH_ASSOC) : null;
-                }
                 if ($row) {
                     Session::set('annee_active_code', $row['code_annee']);
                     Session::set('annee_active_libelle', $row['libelle_annee']);
