@@ -46,7 +46,6 @@
               <option value="all">Tous les étudiants inscrits</option>
               <option value="sans_photo" selected>Photos Manquantes</option>
               <option value="avec_photo">Photos renseignées (Avec photo)</option>
-              <option value="prises_du_jour">Prises du jour (<?= date('d/m/Y') ?>)</option>
             </select>
           </div>
 
@@ -119,7 +118,7 @@
         </div>
 
         <!-- Prises de la Date (Aujourd'hui) -->
-        <div class="card kpi-card-clickable" id="card-kpi-prises-date" data-filter="prises_du_jour" style="background: linear-gradient(135deg, #FFFFFF 0%, #F0F9FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #BAE6FD; border-left: 4px solid #0284C7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.06); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour afficher les prises de vue du jour">
+        <div class="card" id="card-kpi-prises-date" style="background: linear-gradient(135deg, #FFFFFF 0%, #F0F9FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #BAE6FD; border-left: 4px solid #0284C7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.06); display: flex; align-items: center; gap: 16px; transition: all 0.2s ease;">
           <div style="width: 48px; height: 48px; border-radius: 12px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.12);">
             <i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>
           </div>

@@ -330,9 +330,9 @@ $tauxCouverture = (float)($stats['taux'] ?? 0);
         <th style="width: 5%;">#</th>
         <th style="width: 8%;">Photo</th>
         <th style="width: 17%;">Matricule</th>
-        <th style="width: 32%;">Nom & Prénoms</th>
-        <th style="width: 18%;">Classe</th>
-        <th style="width: 10%;">Date Ins</th>
+        <th style="width: 30%;">Nom & Prénoms</th>
+        <th style="width: 17%;">Classe</th>
+        <th style="width: 13%;">Date Prise Photo</th>
         <th style="width: 10%;">Statut</th>
       </tr>
     </thead>
@@ -354,7 +354,7 @@ $tauxCouverture = (float)($stats['taux'] ?? 0);
                 }
             }
             $hasPhoto = ($photoFullPath !== '');
-            $dateIns = !empty($r['created_at_inscription']) ? date('d/m/Y', strtotime($r['created_at_inscription'])) : '-';
+            $datePhoto = !empty($r['date_photo']) ? date('d/m/Y H:i', strtotime($r['date_photo'])) : '-';
           ?>
           <tr class="<?= $rowClass ?>">
             <td class="text-center" style="font-weight: bold; color: #64748B;"><?= $index + 1 ?></td>
@@ -370,7 +370,7 @@ $tauxCouverture = (float)($stats['taux'] ?? 0);
             <td><span class="badge-code"><?= htmlspecialchars($r['matricule_etudiant'] ?? '-') ?></span></td>
             <td class="text-left text-bold" style="color: #0F172A;"><?= htmlspecialchars($nomComplet) ?></td>
             <td class="text-left" style="font-weight: bold; color: #1E3A5F;"><?= htmlspecialchars($r['libelle_classe'] ?? '-') ?></td>
-            <td class="text-center" style="color: #64748B; font-size: 7.5pt;"><?= $dateIns ?></td>
+            <td class="text-center" style="color: #0369A1; font-weight: bold; font-size: 7.5pt;"><?= $datePhoto ?></td>
             <td class="text-center">
               <?php if ($hasPhoto): ?>
                 <span class="badge-ok">Conforme</span>
