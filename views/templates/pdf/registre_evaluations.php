@@ -234,7 +234,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <!-- EN-TÊTE FIXE POUR MPDF -->
   <htmlpageheader name="pageHeader">
     <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
-      <?= htmlspecialchars($etablissement['libelle_etablissement'] ?? 'GROUPE EICG') ?> &bull; Registre des Évaluations & Sessions de Notes &bull; <?= htmlspecialchars($annee_libelle ?? 'Année Académique Active') ?>
+      <?= htmlspecialchars($etablissement['nom_etablissement'] ?? ($etablissement['sigle_etablissement'] ?? '')) ?> &bull; Registre des Évaluations & Sessions de Notes &bull; <?= htmlspecialchars($annee_libelle ?? '') ?>
     </div>
   </htmlpageheader>
   <sethtmlpageheader name="pageHeader" value="on" show-this-page="0" />
@@ -244,13 +244,12 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document officiel GEICG &bull; Édité le <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
         </td>
         <td style="width: 40%; text-align: right;">
-          Réf: REF-EVAL-<?= date('Ymd-His') ?>
+          REF : <?= date('YmdHis') ?>
         </td>
       </tr>
     </table>
@@ -265,7 +264,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <tr>
       <td>
         <div class="banner-title"><?= !empty($isTeacherOnly) ? 'REGISTRE DES ÉVALUATIONS - MES CLASSES ET MATIÈRES' : 'REGISTRE GÉNÉRAL DES ÉVALUATIONS & SESSIONS DE NOTES' ?></div>
-        <div class="banner-sub">Synthèse officielle du suivi des épreuves, progression de saisie et moyennes des classes</div>
       </td>
     </tr>
   </table>
@@ -301,7 +299,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       </td>
       <td>
         <span class="meta-label">Édité par :</span><br>
-        <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? 'Direction des Études') ?></span>
+        <span class="meta-value"><?= htmlspecialchars($editeur_nom ?? '') ?></span>
       </td>
       <td>
         <span class="meta-label">Date d'édition :</span><br>
@@ -415,14 +413,13 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <!-- BLOC DE SIGNATURE -->
   <table class="signature-table">
     <tr>
+      <td style="width: 52%;"></td>
       <td class="signature-box">
-        <div class="signature-title">L'Enseignant / Responsable de Matière</div>
-        <div class="signature-mention">Nom, Signature et Date</div>
-      </td>
-      <td style="width: 4%;"></td>
-      <td class="signature-box">
-        <div class="signature-title">La Direction des Études & Examens</div>
-        <div class="signature-mention">Visa, Cachet officiel et Date</div>
+        <div class="signature-title"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'La Direction des Études & Examens') ?></div>
+        <?php if (!empty($etablissement['nom_directeur_etudes'])): ?>
+          <div style="font-size: 8pt; font-weight: bold; color: #0F172A; text-align: center; margin-bottom: 6px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes']) ?></div>
+        <?php endif; ?>
+        <div class="signature-mention"><?= htmlspecialchars(!empty($etablissement['mention_cachet_signature']) ? $etablissement['mention_cachet_signature'] : 'Visa, Cachet officiel et Date') ?></div>
       </td>
     </tr>
   </table>
