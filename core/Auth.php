@@ -23,6 +23,23 @@ class Auth
     public static function user(?string $field = null): mixed
     {
         $userData = Session::get(USERS_AUTH, []);
+        if (is_array($userData) && !empty($userData)) {
+            if (!isset($userData['nom_user']) && isset($userData['nom'])) {
+                $userData['nom_user'] = $userData['nom'];
+            }
+            if (!isset($userData['prenom_user']) && isset($userData['prenom'])) {
+                $userData['prenom_user'] = $userData['prenom'];
+            }
+            if (!isset($userData['nom']) && isset($userData['nom_user'])) {
+                $userData['nom'] = $userData['nom_user'];
+            }
+            if (!isset($userData['prenom']) && isset($userData['prenom_user'])) {
+                $userData['prenom'] = $userData['prenom_user'];
+            }
+            if (!isset($userData['email_user']) && isset($userData['email'])) {
+                $userData['email_user'] = $userData['email'];
+            }
+        }
         if ($field === null) {
             return $userData;
         }

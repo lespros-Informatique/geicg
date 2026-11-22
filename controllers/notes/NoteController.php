@@ -246,10 +246,9 @@ class NoteController extends BaseController
         $anneeLibelle = $anneeObj['libelle_annee'] ?? $this->getActiveAnneeLibelle();
         $etablissement = $this->getEtablissementConfig();
 
-        $currentUser = Auth::user();
-        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
-        if (empty($editeurNom)) {
-            $editeurNom = 'Service Examens & Notes';
+        $editeurNom = Auth::fullName();
+        if ($editeurNom === '') {
+            $editeurNom = (string)(Auth::user('email') ?? '-');
         }
 
         $dataDetails = $this->model->getDetailsClasseCompo($classeCode, $compositionCode, $matiereCode, $anneeCode);
@@ -339,10 +338,9 @@ class NoteController extends BaseController
         }
 
         $etablissement = $this->getEtablissementConfig();
-        $currentUser = Auth::user();
-        $editeurNom = trim(($currentUser['prenom_user'] ?? '') . ' ' . ($currentUser['nom_user'] ?? ''));
-        if (empty($editeurNom)) {
-            $editeurNom = !empty($teacherCtx['isTeacherOnly']) ? 'Enseignant' : 'Direction des Études';
+        $editeurNom = Auth::fullName();
+        if ($editeurNom === '') {
+            $editeurNom = (string)(Auth::user('email') ?? '-');
         }
 
         $filtresLabels = [
