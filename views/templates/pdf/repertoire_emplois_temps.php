@@ -307,14 +307,14 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <table class="repertoire-table">
     <thead>
       <tr>
-        <th style="width: 4%; text-align: center;">#</th>
-        <th style="width: 28%;">Classe</th>
-        <th style="width: 24%;">Volume & Créneaux</th>
+        <th style="width: 5%; text-align: center;">#</th>
+        <th style="width: 31%;">Classe</th>
+        <th style="width: 18%; text-align: center;">Volume Horaire</th>
         <?php if (!empty($isTeacherOnly)): ?>
-          <th style="width: 28%; text-align: center;">Matière(s) dispensée(s)</th>
+          <th style="width: 30%; text-align: center;">Matière(s) dispensée(s)</th>
         <?php else: ?>
-          <th style="width: 14%; text-align: center;">Matières</th>
-          <th style="width: 14%; text-align: center;">Enseignants</th>
+          <th style="width: 15%; text-align: center;">Matières</th>
+          <th style="width: 15%; text-align: center;">Enseignants</th>
         <?php endif; ?>
         <th style="width: 16%; text-align: center;">Dernière MàJ</th>
       </tr>
@@ -342,12 +342,8 @@ if (empty($etablissement) || !is_array($etablissement)) {
             <td>
               <strong style="color: #0F172A; font-size: 8pt;"><?= htmlspecialchars($c['libelle_classe'] ?? $c['code_classe'] ?? '-') ?></strong>
             </td>
-            <td>
+            <td class="text-center">
               <span class="badge-volume"><?= $volHoraire ?></span>
-              <br>
-              <span style="color: #475569; font-size: 7pt; font-weight: bold;">
-                <?= (int)($c['nb_creneaux'] ?? 0) ?> créneau(x) &bull; <?= (int)($c['nb_jours'] ?? 0) ?> jour(s)
-              </span>
             </td>
             <?php if (!empty($isTeacherOnly)): ?>
               <td class="text-center">
