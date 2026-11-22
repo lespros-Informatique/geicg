@@ -2363,7 +2363,6 @@
             $('#rec-student-matricule').text(s.matricule_etudiant || '-');
             $('#rec-student-classe').text(s.libelle_classe || '-');
             $('#rec-student-phone').text(s.telephone_etudiant || '-');
-            $('#rec-agent-nom').text(res.agent_nom || 'Administration');
 
             $('#rec-count-deposees').text(res.deposees_count || 0);
             $('#rec-count-manquantes').text(res.manquantes_count || 0);
@@ -2373,13 +2372,13 @@
             if (res.pieces_deposees && res.pieces_deposees.length > 0) {
               res.pieces_deposees.forEach(function (p) {
                 htmlDep += '<tr>' +
-                  '<td style="padding:8px;"><strong>' + escapeHtml(p.libelle_piece) + '</strong></td>' +
-                  '<td style="padding:8px;" class="text-success fw-bold">✓ ' + (p.date_depot || 'Déposé') + '</td>' +
-                  '<td style="padding:8px;">' + escapeHtml(p.observations || '-') + '</td>' +
+                  '<td style="padding:10px; font-size:14px;"><strong>' + escapeHtml(p.libelle_piece) + '</strong></td>' +
+                  '<td style="padding:10px; font-size:14px;" class="text-success fw-bold">✓ ' + (p.date_depot || 'Déposé') + '</td>' +
+                  '<td style="padding:10px; font-size:14px;">' + escapeHtml(p.observations || '-') + '</td>' +
                   '</tr>';
               });
             } else {
-              htmlDep = '<tr><td colspan="3" class="text-muted text-center" style="padding:10px;">Aucune pièce déposée pour le moment.</td></tr>';
+              htmlDep = '<tr><td colspan="3" class="text-muted text-center" style="padding:12px; font-size:14px;">Aucune pièce déposée pour le moment.</td></tr>';
             }
             $('#rec-table-deposees').html(htmlDep);
 
@@ -2387,15 +2386,15 @@
             var htmlManq = '';
             if (res.pieces_manquantes && res.pieces_manquantes.length > 0) {
               res.pieces_manquantes.forEach(function (p) {
-                var badgeSt = p.statut_depot === 'rejete' ? '<span class="badge bg-danger">❌ Rejeté</span>' : '<span class="badge bg-warning text-dark">⏳ En attente</span>';
+                var badgeSt = p.statut_depot === 'rejete' ? '<span class="badge bg-danger" style="font-size:13px;">❌ Rejeté</span>' : '<span class="badge bg-warning text-dark" style="font-size:13px;">⏳ En attente</span>';
                 htmlManq += '<tr>' +
-                  '<td style="padding:8px;"><strong>' + escapeHtml(p.libelle_piece) + '</strong></td>' +
-                  '<td style="padding:8px;">' + badgeSt + '</td>' +
-                  '<td style="padding:8px;">' + escapeHtml(p.observations || 'À fournir impérativement') + '</td>' +
+                  '<td style="padding:10px; font-size:14px;"><strong>' + escapeHtml(p.libelle_piece) + '</strong></td>' +
+                  '<td style="padding:10px; font-size:14px;">' + badgeSt + '</td>' +
+                  '<td style="padding:10px; font-size:14px;">' + escapeHtml(p.observations || 'À fournir impérativement') + '</td>' +
                   '</tr>';
               });
             } else {
-              htmlManq = '<tr><td colspan="3" class="text-success text-center fw-bold" style="padding:10px;">🎉 Dossier complet ! Aucune pièce manquante.</td></tr>';
+              htmlManq = '<tr><td colspan="3" class="text-success text-center fw-bold" style="padding:12px; font-size:14px;">🎉 Dossier complet ! Aucune pièce manquante.</td></tr>';
             }
             $('#rec-table-manquantes').html(htmlManq);
 

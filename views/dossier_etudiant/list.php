@@ -217,13 +217,13 @@
 
         <!-- Titre du Document -->
         <div style="text-align: center; margin-bottom: 22px;">
-          <h3 style="font-size: 18px; font-weight: 900; color: #0F172A; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">RÉCÉPISSÉ DE DÉPÔT DE PIÈCES</h3>
-          <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0;">Bordereau d'émargement du dossier d'inscription</p>
+          <h3 style="font-size: 20px; font-weight: 900; color: #0F172A; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">RÉCÉPISSÉ DE DÉPÔT DE PIÈCES</h3>
+          <p style="font-size: 14px; color: #64748B; margin: 4px 0 0 0;">Bordereau d'émargement du dossier d'inscription</p>
         </div>
 
         <!-- Informations Étudiant -->
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px 20px; margin-bottom: 22px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 15px;">
             <div><strong>Nom & Prénom :</strong> <span id="rec-student-name" style="color: #0F172A; font-weight: 800;">-</span></div>
             <div><strong>Matricule :</strong> <span id="rec-student-matricule" class="font-monospace" style="font-weight: 700; color: #1E3A5F;">-</span></div>
             <div><strong>Classe :</strong> <span id="rec-student-classe" style="font-weight: 700;">-</span></div>
@@ -232,16 +232,16 @@
         </div>
 
         <!-- Table 1 : Pièces Déposées -->
-        <div style="margin-bottom: 18px;">
-          <div style="font-size: 12px; font-weight: 800; color: #16A34A; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> Pièces Réceptionnées & Déposées (<span id="rec-count-deposees">0</span>)
+        <div style="margin-bottom: 22px;">
+          <div style="font-size: 14px; font-weight: 800; color: #16A34A; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 7px;">
+            <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Pièces Réceptionnées & Déposées (<span id="rec-count-deposees">0</span>)
           </div>
-          <table class="table table-bordered table-sm" style="font-size: 12px; margin-bottom: 0; width: 100%; border-collapse: collapse;">
+          <table class="table table-bordered table-sm" style="font-size: 14px; margin-bottom: 0; width: 100%; border-collapse: collapse;">
             <thead style="background: #F0FDF4; color: #166534;">
               <tr>
-                <th style="width: 45%; padding: 8px;">Intitulé du document</th>
-                <th style="width: 25%; padding: 8px;">Date de dépôt</th>
-                <th style="width: 30%; padding: 8px;">Observations / Remarques</th>
+                <th style="width: 45%; padding: 10px; font-size: 13px;">Intitulé du document</th>
+                <th style="width: 25%; padding: 10px; font-size: 13px;">Date de dépôt</th>
+                <th style="width: 30%; padding: 10px; font-size: 13px;">Observations / Remarques</th>
               </tr>
             </thead>
             <tbody id="rec-table-deposees">
@@ -252,40 +252,21 @@
 
         <!-- Table 2 : Pièces Restant à Fournir -->
         <div style="margin-bottom: 22px;">
-          <div style="font-size: 12px; font-weight: 800; color: #EA580C; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i> Pièces Restant à Fournir / En Attente (<span id="rec-count-manquantes">0</span>)
+          <div style="font-size: 14px; font-weight: 800; color: #EA580C; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 7px;">
+            <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i> Pièces Restant à Fournir / En Attente (<span id="rec-count-manquantes">0</span>)
           </div>
-          <table class="table table-bordered table-sm" style="font-size: 12px; margin-bottom: 0; width: 100%; border-collapse: collapse;">
+          <table class="table table-bordered table-sm" style="font-size: 14px; margin-bottom: 0; width: 100%; border-collapse: collapse;">
             <thead style="background: #FFF7ED; color: #9A3412;">
               <tr>
-                <th style="width: 45%; padding: 8px;">Intitulé du document</th>
-                <th style="width: 25%; padding: 8px;">Statut actuel</th>
-                <th style="width: 30%; padding: 8px;">Observations</th>
+                <th style="width: 45%; padding: 10px; font-size: 13px;">Intitulé du document</th>
+                <th style="width: 25%; padding: 10px; font-size: 13px;">Statut actuel</th>
+                <th style="width: 30%; padding: 10px; font-size: 13px;">Observations</th>
               </tr>
             </thead>
             <tbody id="rec-table-manquantes">
               <!-- Rempli en JS -->
             </tbody>
           </table>
-        </div>
-
-        <!-- Taux de Complétude & Signatures -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding-top: 16px; border-top: 1px dashed #CBD5E1;">
-          <div style="font-size: 11.5px; color: #475569;">
-            <div><strong>Agent de Saisie :</strong> <span id="rec-agent-nom">Administration</span></div>
-            <div style="margin-top: 4px;">N.B. : Ce document atteste de la réception effective des pièces mentionnées.</div>
-          </div>
-          
-          <div style="display: flex; gap: 50px;">
-            <div style="text-align: center; min-width: 140px;">
-              <div style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 40px;">Signature de l'Élève</div>
-              <div style="border-top: 1px solid #94A3B8; font-size: 10px; color: #94A3B8; padding-top: 4px;">Lu et approuvé</div>
-            </div>
-            <div style="text-align: center; min-width: 160px;">
-              <div style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 40px;">Cachet & Signature Agent</div>
-              <div style="border-top: 1px solid #94A3B8; font-size: 10px; color: #94A3B8; padding-top: 4px;"><?= htmlspecialchars($etablissementConfig['titre_service_scolarite'] ?? 'Visa de l\'Administration') ?></div>
-            </div>
-          </div>
         </div>
 
       </div>
