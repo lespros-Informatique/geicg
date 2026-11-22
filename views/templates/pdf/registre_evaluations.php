@@ -205,21 +205,37 @@ if (empty($etablissement) || !is_array($etablissement)) {
       margin-top: 14px;
     }
     .signature-box {
-      width: 48%;
+      width: 34%;
       vertical-align: top;
-      border: 0.5px solid #CBD5E1;
       background-color: #FAFAFA;
-      padding: 6px 10px;
+      padding: 8px 12px;
+      text-align: center;
+    }
+    .signature-date {
+      font-size: 7.5pt;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 5px;
     }
     .signature-title {
-      font-size: 8pt;
+      font-size: 10pt;
       font-weight: bold;
       color: #1E3A5F;
       text-transform: uppercase;
       text-align: center;
       border-bottom: 0.5px solid #CBD5E1;
-      padding-bottom: 3px;
-      margin-bottom: 22px;
+      padding-bottom: 4px;
+      margin-bottom: 0;
+    }
+    .signature-space {
+      height: 38px;
+    }
+    .signature-name {
+      font-size: 8.5pt;
+      font-weight: bold;
+      color: #0F172A;
+      text-align: center;
+      margin-bottom: 2px;
     }
     .signature-mention {
       font-size: 7pt;
@@ -413,11 +429,15 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <!-- BLOC DE SIGNATURE -->
   <table class="signature-table">
     <tr>
-      <td style="width: 52%;"></td>
+      <td style="width: 66%;"></td>
       <td class="signature-box">
+        <?php if (!empty($etablissement['ville_signature']) || !empty($etablissement['ville_etablissement'])): ?>
+          <div class="signature-date">Fait à <?= htmlspecialchars($etablissement['ville_signature'] ?: $etablissement['ville_etablissement']) ?>, le <?= date('d/m/Y') ?></div>
+        <?php endif; ?>
         <div class="signature-title"><?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : 'La Direction des Études & Examens') ?></div>
+        <div class="signature-space">&nbsp;</div>
         <?php if (!empty($etablissement['nom_directeur_etudes'])): ?>
-          <div style="font-size: 8pt; font-weight: bold; color: #0F172A; text-align: center; margin-bottom: 6px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes']) ?></div>
+          <div class="signature-name"><?= htmlspecialchars($etablissement['nom_directeur_etudes']) ?></div>
         <?php endif; ?>
         <div class="signature-mention"><?= htmlspecialchars(!empty($etablissement['mention_cachet_signature']) ? $etablissement['mention_cachet_signature'] : 'Visa, Cachet officiel et Date') ?></div>
       </td>
