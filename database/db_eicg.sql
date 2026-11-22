@@ -43,6 +43,7 @@ CREATE TABLE `absences` (
   `justifiee` enum('oui', 'non') NOT NULL DEFAULT 'non',
   `motif` text,
   `annee_code` varchar(50) NOT NULL,
+  `semestre_code` varchar(50) DEFAULT NULL,
   `etablissement_code` varchar(50) NOT NULL,
   `created_at_absence` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_absence`),
@@ -52,6 +53,7 @@ CREATE TABLE `absences` (
   KEY `idx_absences_matiere_code` (`matiere_code`),
   KEY `idx_absences_date_absence` (`date_absence`),
   KEY `idx_absences_annee_code` (`annee_code`),
+  KEY `idx_absences_semestre_code` (`semestre_code`),
   KEY `idx_absences_etablissement_code` (`etablissement_code`),
   KEY `idx_abs_insc_date` (`inscription_code`, `date_absence`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
@@ -4604,6 +4606,7 @@ SET @saved_cs_client = @@character_set_client;
  1 AS `motif`,
  1 AS `motif_absence`,
  1 AS `annee_code`,
+ 1 AS `semestre_code`,
  1 AS `etablissement_code`,
  1 AS `created_at_absence`,
  1 AS `inscription_annee_code`,
@@ -4620,7 +4623,8 @@ SET @saved_cs_client = @@character_set_client;
  1 AS `niveau_code`,
  1 AS `libelle_filiere`,
  1 AS `libelle_niveau`,
- 1 AS `libelle_matiere`*/
+ 1 AS `libelle_matiere`,
+ 1 AS `libelle_semestre`*/
 ;
 SET character_set_client = @saved_cs_client;
 --
@@ -5211,7 +5215,7 @@ SET character_set_client = @saved_cs_client;
 ;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`admin`@`localhost` SQL SECURITY INVOKER */
-/*!50001 VIEW `v_absences_completes` AS select `abs`.`id_absence` AS `id_absence`,`abs`.`code_absence` AS `code_absence`,`abs`.`inscription_code` AS `inscription_code`,`abs`.`emploi_code` AS `emploi_code`,`abs`.`matiere_code` AS `matiere_code`,`abs`.`date_absence` AS `date_absence`,`abs`.`duree_heures` AS `duree_heures`,`abs`.`justifiee` AS `justifiee`,`abs`.`motif` AS `motif`,`abs`.`motif` AS `motif_absence`,`abs`.`annee_code` AS `annee_code`,`abs`.`etablissement_code` AS `etablissement_code`,`abs`.`created_at_absence` AS `created_at_absence`,`ins`.`annee_code` AS `inscription_annee_code`,`ins`.`classe_code` AS `classe_code`,`e`.`nom_etudiant` AS `etu_nom`,`e`.`prenom_etudiant` AS `etu_prenom`,concat(coalesce(`e`.`nom_etudiant`,''),' ',coalesce(`e`.`prenom_etudiant`,'')) AS `nom_etudiant`,`e`.`matricule_etudiant` AS `matricule_etudiant`,`e`.`telephone_etudiant` AS `telephone_etudiant`,`e`.`email_etudiant` AS `email_etudiant`,`e`.`code_etudiant` AS `code_etudiant`,`cl`.`code_classe` AS `code_classe`,`cl`.`libelle_classe` AS `libelle_classe`,`cl`.`niveau_code` AS `niveau_code`,`f`.`libelle_filiere` AS `libelle_filiere`,`n`.`libelle_niveau` AS `libelle_niveau`,`m`.`libelle_matiere` AS `libelle_matiere` from ((((((`absences` `abs` left join `inscriptions` `ins` on((`ins`.`code_inscription` = `abs`.`inscription_code`))) left join `etudiants` `e` on((`e`.`code_etudiant` = `ins`.`etudiant_code`))) left join `classes` `cl` on((`cl`.`code_classe` = `ins`.`classe_code`))) left join `filieres` `f` on((`f`.`code_filiere` = `cl`.`filiere_code`))) left join `niveaux` `n` on((`n`.`code_niveau` = `cl`.`niveau_code`))) left join `matieres` `m` on((`m`.`code_matiere` = `abs`.`matiere_code`))) */
+/*!50001 VIEW `v_absences_completes` AS select `abs`.`id_absence` AS `id_absence`,`abs`.`code_absence` AS `code_absence`,`abs`.`inscription_code` AS `inscription_code`,`abs`.`emploi_code` AS `emploi_code`,`abs`.`matiere_code` AS `matiere_code`,`abs`.`date_absence` AS `date_absence`,`abs`.`duree_heures` AS `duree_heures`,`abs`.`justifiee` AS `justifiee`,`abs`.`motif` AS `motif`,`abs`.`motif` AS `motif_absence`,`abs`.`annee_code` AS `annee_code`,`abs`.`semestre_code` AS `semestre_code`,`abs`.`etablissement_code` AS `etablissement_code`,`abs`.`created_at_absence` AS `created_at_absence`,`ins`.`annee_code` AS `inscription_annee_code`,`ins`.`classe_code` AS `classe_code`,`e`.`nom_etudiant` AS `etu_nom`,`e`.`prenom_etudiant` AS `etu_prenom`,concat(coalesce(`e`.`nom_etudiant`,''),' ',coalesce(`e`.`prenom_etudiant`,'')) AS `nom_etudiant`,`e`.`matricule_etudiant` AS `matricule_etudiant`,`e`.`telephone_etudiant` AS `telephone_etudiant`,`e`.`email_etudiant` AS `email_etudiant`,`e`.`code_etudiant` AS `code_etudiant`,`cl`.`code_classe` AS `code_classe`,`cl`.`libelle_classe` AS `libelle_classe`,`cl`.`niveau_code` AS `niveau_code`,`f`.`libelle_filiere` AS `libelle_filiere`,`n`.`libelle_niveau` AS `libelle_niveau`,`m`.`libelle_matiere` AS `libelle_matiere`,`sem`.`libelle_semestre` AS `libelle_semestre` from (((((((`absences` `abs` left join `inscriptions` `ins` on((`ins`.`code_inscription` = `abs`.`inscription_code`))) left join `etudiants` `e` on((`e`.`code_etudiant` = `ins`.`etudiant_code`))) left join `classes` `cl` on((`cl`.`code_classe` = `ins`.`classe_code`))) left join `filieres` `f` on((`f`.`code_filiere` = `cl`.`filiere_code`))) left join `niveaux` `n` on((`n`.`code_niveau` = `cl`.`niveau_code`))) left join `matieres` `m` on((`m`.`code_matiere` = `abs`.`matiere_code`))) left join `semestres` `sem` on(((`sem`.`code_semestre` = `abs`.`semestre_code`) and (`sem`.`annee_code` = `abs`.`annee_code`)))) */
 ;
 /*!50001 SET character_set_client      = @saved_cs_client */
 ;

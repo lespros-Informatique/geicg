@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$isJustifie = (($item['justifie'] ?? '') == '1' || strtolower($item['justifie'] ?? '') === 'oui' || ($item['statut_absence'] ?? '') === 'justifie');
+$justVal = strtolower((string)($item['justifiee'] ?? ($item['justifie'] ?? '')));
+$isJustifie = ($justVal === '1' || $justVal === 'oui' || ($item['statut_absence'] ?? '') === 'justifie');
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -40,6 +41,7 @@ $isJustifie = (($item['justifie'] ?? '') == '1' || strtolower($item['justifie'] 
             <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classe & Matière</span>
             <div style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($item['libelle_classe'] ?? '-') ?></div>
             <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Cours : <?= htmlspecialchars($item['libelle_matiere'] ?? 'Non spécifiée') ?></div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Semestre : <strong><?= htmlspecialchars($item['libelle_semestre'] ?? ($item['semestre_code'] ?? '-')) ?></strong></div>
           </div>
 
           <div>
@@ -47,7 +49,7 @@ $isJustifie = (($item['justifie'] ?? '') == '1' || strtolower($item['justifie'] 
             <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 4px;">
               <?= !empty($item['date_absence']) ? date('d/m/Y', strtotime($item['date_absence'])) : '-' ?>
             </div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Volume : <?= (int)($item['heures_absence'] ?? 2) ?> heure(s)</div>
+            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Volume : <?= htmlspecialchars((string)($item['duree_heures'] ?? ($item['heures_absence'] ?? 0))) ?> heure(s)</div>
           </div>
 
           <div>

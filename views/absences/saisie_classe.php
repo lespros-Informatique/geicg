@@ -1,6 +1,8 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $matieres = $matieres ?? [];
+$semestres = $semestres ?? [];
+$selectedSemestreCode = $selectedSemestreCode ?? '';
 $selectedDate = $selectedDate ?? date('Y-m-d');
 $existingAbsences = $existingAbsences ?? [];
 ?>
@@ -37,6 +39,17 @@ $existingAbsences = $existingAbsences ?? [];
               </select>
             </div>
             <div>
+              <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: block;">Semestre <span style="color:#EF4444;">*</span></label>
+              <select name="semestre_code" class="form-control select2" required style="width: 100%;">
+                <option value="">-- Choisir un semestre --</option>
+                <?php foreach ($semestres as $s): ?>
+                  <option value="<?= htmlspecialchars($s['code_semestre']) ?>" <?= ($selectedSemestreCode === $s['code_semestre']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($s['libelle_semestre']) ?><?= (($s['statut_semestre'] ?? '') === STATUTS::ACTIF) ? ' (Actif)' : '' ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div>
               <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 6px; display: block;">Date du Cours / Séance <span style="color:#EF4444;">*</span></label>
               <input type="date" name="date_absence" value="<?= htmlspecialchars($selectedDate) ?>" class="form-control" required style="border-radius: 8px;">
             </div>
@@ -63,6 +76,7 @@ $existingAbsences = $existingAbsences ?? [];
       <?php if (!empty($selectedClasseCode)): ?>
         <form id="form-save-batch-absences">
           <input type="hidden" name="classe_code" value="<?= htmlspecialchars($selectedClasseCode) ?>">
+          <input type="hidden" name="semestre_code" value="<?= htmlspecialchars($selectedSemestreCode) ?>">
           <input type="hidden" name="date_absence" value="<?= htmlspecialchars($selectedDate) ?>">
           <input type="hidden" name="matiere_code" value="<?= htmlspecialchars($selectedMatiereCode) ?>">
           <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">

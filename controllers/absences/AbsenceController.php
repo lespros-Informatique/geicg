@@ -26,9 +26,12 @@ class AbsenceController extends BaseController
         }
 
         $classes = !empty($selectedAnneeCode) ? (new ModelClasse())->getAll($selectedAnneeCode) : [];
+        $semestres = (new ModelSemestre())->getAll();
+        usort($semestres, static fn($a, $b) => ((int)($a['id_semestre'] ?? 0)) <=> ((int)($b['id_semestre'] ?? 0)));
 
         $this->loadView('../views/absences/list.php', [
             'annees' => $annees,
+            'semestres' => $semestres,
             'niveaux' => $niveaux,
             'classes' => $classes,
             'selectedAnneeCode' => $selectedAnneeCode
@@ -47,7 +50,8 @@ class AbsenceController extends BaseController
 
         $niveauCode = $_GET['niveau_code'] ?? null;
         $classeCode = $_GET['classe_code'] ?? null;
-        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode);
+        $semestreCode = $_GET['semestre_code'] ?? null;
+        $items = $this->model->getAll($anneeCode, $niveauCode, $classeCode, $semestreCode);
         $data = [];
         foreach ($items as $i) {
             $id = $i['id_absence'];
@@ -84,12 +88,22 @@ class AbsenceController extends BaseController
         }
         $data['inscription_code'] = $inscCode;
 
-        $this->validateForeignKeys([
+        $semestreCode = trim((string)($data['semestre_code'] ?? ''));
+        if ($semestreCode === '') {
+            $semestreCode = $this->model->resolveSemestreCodeForDate($anneeCode, $data['date_absence'] ?? null) ?: '';
+        }
+        $data['semestre_code'] = $semestreCode !== '' ? $semestreCode : null;
+
+        $fkChecks = [
             'annee_code' => $anneeCode,
             'etablissement_code' => $etabCode,
             'user_code' => $userCode,
             'inscription_code' => $inscCode
-        ]);
+        ];
+        if ($semestreCode !== '') {
+            $fkChecks['semestre_code'] = $semestreCode;
+        }
+        $this->validateForeignKeys($fkChecks);
 
         if (empty($data['code_absence'])) {
             $data['code_absence'] = $this->validator->generateCode(TABLES::ABSENCES, 'code_absence', 'ABS-', 8);
@@ -141,6 +155,16 @@ class AbsenceController extends BaseController
             $data['inscription_code'] = $inscCode;
         }
 
+        if (isset($data['semestre_code'])) {
+            $semestreCode = trim((string)$data['semestre_code']);
+            if ($semestreCode !== '') {
+                $this->validateForeignKeys(['semestre_code' => $semestreCode]);
+                $data['semestre_code'] = $semestreCode;
+            } else {
+                $data['semestre_code'] = null;
+            }
+        }
+
         if (isset($data['motif_absence']) && !isset($data['motif'])) {
             $data['motif'] = $data['motif_absence'];
         }
@@ -187,7 +211,7 @@ class AbsenceController extends BaseController
         } catch (Exception $e) {
             redirect('absence/list');
         }
-        $deps = $this->model->getFormDataDependencies();
+        $deps = $this->model->getFormDataDependencies($item['annee_code'] ?? null);
         $this->loadView('../views/absences/edit.php', array_merge([
             'item' => $item, 
             'encryptedId' => $encryptedId
@@ -247,10 +271,24 @@ class AbsenceController extends BaseController
         }
         $classes = (new ModelClasse())->getAll($anneeCode);
         $matieres = (new ModelMatiere())->getAll();
+        $semestres = (new ModelSemestre())->getAll($anneeCode);
+        usort($semestres, static fn($a, $b) => ((int)($a['id_semestre'] ?? 0)) <=> ((int)($b['id_semestre'] ?? 0)));
+
+        $activeSemestreCode = '';
+        foreach ($semestres as $sem) {
+            if (($sem['statut_semestre'] ?? '') === STATUTS::ACTIF) {
+                $activeSemestreCode = (string)$sem['code_semestre'];
+                break;
+            }
+        }
+        if ($activeSemestreCode === '' && !empty($semestres)) {
+            $activeSemestreCode = (string)($semestres[0]['code_semestre'] ?? '');
+        }
         
         $selectedClasseCode = $_GET['classe_code'] ?? '';
         $selectedDate = $_GET['date_absence'] ?? date('Y-m-d');
         $selectedMatiereCode = $_GET['matiere_code'] ?? '';
+        $selectedSemestreCode = $_GET['semestre_code'] ?? $activeSemestreCode;
 
         $etudiants = [];
         $existingAbsences = [];
@@ -265,9 +303,11 @@ class AbsenceController extends BaseController
         $this->loadView('../views/absences/saisie_classe.php', [
             'classes' => $classes,
             'matieres' => $matieres,
+            'semestres' => $semestres,
             'selectedClasseCode' => $selectedClasseCode,
             'selectedDate' => $selectedDate,
             'selectedMatiereCode' => $selectedMatiereCode,
+            'selectedSemestreCode' => $selectedSemestreCode,
             'etudiants' => $etudiants,
             'existingAbsences' => $existingAbsences
         ]);
@@ -297,6 +337,7 @@ class AbsenceController extends BaseController
         $classeCode = $this->post('classe_code');
         $dateAbsence = $this->post('date_absence');
         $matiereCode = $this->post('matiere_code') ?: null;
+        $semestreCode = trim((string)($this->post('semestre_code') ?? '')) ?: null;
         $dureeHeures = (float)($this->post('duree_heures') ?? 2);
         $absencesData = $_POST['absences'] ?? [];
 
@@ -308,12 +349,16 @@ class AbsenceController extends BaseController
         }
         $etabCode = $this->getActiveEtablissementCode();
 
-        $this->validateForeignKeys([
+        $fkChecks = [
             'annee_code' => $anneeCode,
             'etablissement_code' => $etabCode,
             'user_code' => $userCode,
             'classe_code' => $classeCode
-        ]);
+        ];
+        if (!empty($semestreCode)) {
+            $fkChecks['semestre_code'] = $semestreCode;
+        }
+        $this->validateForeignKeys($fkChecks);
 
         try {
             $this->model->saveBatchAbsences(
@@ -323,7 +368,8 @@ class AbsenceController extends BaseController
                 $dureeHeures,
                 $absencesData,
                 $anneeCode,
-                $etabCode
+                $etabCode,
+                $semestreCode
             );
             $nbAbs = is_array($absencesData) ? count($absencesData) : 0;
             $this->logAction(
@@ -335,6 +381,7 @@ class AbsenceController extends BaseController
                     'classe_code' => $classeCode,
                     'date_absence' => $dateAbsence,
                     'matiere_code' => $matiereCode,
+                    'semestre_code' => $semestreCode,
                     'duree_heures' => $dureeHeures,
                     'nb_lignes' => $nbAbs
                 ],

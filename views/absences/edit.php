@@ -1,6 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $matieres = $matieres ?? [];
+$semestres = $semestres ?? [];
 $etudiantsDetails = $etudiantsDetails ?? [];
 
 // Structurer les étudiants uniquement par classe
@@ -22,6 +23,7 @@ foreach ($etudiantsDetails as $e) {
 
 $selectedClasseCode = $item['classe_code'] ?? '';
 $selectedEtudiantCode = $item['etudiant_code'] ?? '';
+$selectedSemestreCode = $item['semestre_code'] ?? ($activeSemestreCode ?? '');
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -68,7 +70,19 @@ $selectedEtudiantCode = $item['etudiant_code'] ?? '';
             </div>
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">3. Matière manquée</label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">3. Semestre <span style="color: #EF4444;">*</span></label>
+              <select class="form-control select2" id="sel_sem_ab" style="width: 100%;" name="semestre_code" required>
+                <option value="">-- Sélectionner un semestre --</option>
+                <?php foreach($semestres as $s): ?>
+                  <option value="<?= htmlspecialchars($s['code_semestre']) ?>" <?= ($selectedSemestreCode === $s['code_semestre']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($s['libelle_semestre']) ?><?= (($s['statut_semestre'] ?? '') === STATUTS::ACTIF) ? ' (Actif)' : '' ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
+            <div class="form-group" style="width: 100%; box-sizing: border-box;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">4. Matière manquée</label>
               <select class="form-control select2" id="sel_mat_ab" style="width: 100%;" name="matiere_code">
                 <option value="">-- Toutes les matières / Non spécifié --</option>
                 <?php foreach($matieres as $m): ?>
@@ -78,17 +92,17 @@ $selectedEtudiantCode = $item['etudiant_code'] ?? '';
             </div>
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">4. Date du cours <span style="color: #EF4444;">*</span></label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">5. Date du cours <span style="color: #EF4444;">*</span></label>
               <input type="date" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="date_absence" value="<?= htmlspecialchars($item['date_absence'] ?? date('Y-m-d')) ?>" required>
             </div>
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">5. Volume d'heures manquées <span style="color: #EF4444;">*</span></label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">6. Volume d'heures manquées <span style="color: #EF4444;">*</span></label>
               <input type="number" step="0.5" min="0.5" max="8" class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-weight: 700;" name="duree_heures" value="<?= htmlspecialchars($item['duree_heures'] ?? '2') ?>" placeholder="Ex: 2" required>
             </div>
 
             <div class="form-group" style="width: 100%; box-sizing: border-box;">
-              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">6. Justifiée ?</label>
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">7. Justifiée ?</label>
               <select class="form-control" style="width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A;" name="justifiee">
                 <option value="non" <?= (($item['justifiee'] ?? 'non') === 'non') ? 'selected' : '' ?>>Non justifiée</option>
                 <option value="oui" <?= (($item['justifiee'] ?? '') === 'oui') ? 'selected' : '' ?>>Justifiée</option>

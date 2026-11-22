@@ -6,7 +6,7 @@ class ModelAbsence extends BaseModel
     protected string $primaryKey = 'id_absence';
     protected ?string $createdAtField = 'created_at_absence';
 
-    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null): array
+    public function getAll(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $semestreCode = null): array
     {
         if (empty($anneeCode)) {
             return [];
@@ -18,6 +18,10 @@ class ModelAbsence extends BaseModel
         $conditions[] = "(annee_code = ? OR inscription_annee_code = ?)";
         $params[] = $anneeCode;
         $params[] = $anneeCode;
+        if (!empty($semestreCode)) {
+            $conditions[] = "semestre_code = ?";
+            $params[] = $semestreCode;
+        }
         if (!empty($niveauCode)) {
             $conditions[] = "niveau_code = ?";
             $params[] = $niveauCode;
@@ -40,14 +44,70 @@ class ModelAbsence extends BaseModel
         }
     }
 
+    public function resolveSemestreCodeForDate(string $anneeCode, ?string $dateAbsence = null): ?string
+    {
+        if (empty($anneeCode)) {
+            return null;
+        }
+
+        try {
+            $db = $this->getCon();
+            if (!empty($dateAbsence)) {
+                $stmtDate = $db->prepare("
+                    SELECT code_semestre
+                    FROM " . TABLES::SEMESTRES . "
+                    WHERE annee_code = ?
+                      AND date_debut_semestre IS NOT NULL
+                      AND date_fin_semestre IS NOT NULL
+                      AND ? BETWEEN date_debut_semestre AND date_fin_semestre
+                    ORDER BY id_semestre ASC
+                    LIMIT 1
+                ");
+                $stmtDate->execute([$anneeCode, $dateAbsence]);
+                $matched = $stmtDate->fetchColumn();
+                if ($matched) {
+                    return (string)$matched;
+                }
+            }
+
+            $stmtActive = $db->prepare("
+                SELECT code_semestre
+                FROM " . TABLES::SEMESTRES . "
+                WHERE annee_code = ?
+                ORDER BY (statut_semestre = '" . STATUTS::ACTIF . "') DESC, id_semestre DESC
+                LIMIT 1
+            ");
+            $stmtActive->execute([$anneeCode]);
+            $fallback = $stmtActive->fetchColumn();
+            return $fallback ? (string)$fallback : null;
+        } catch (Exception $e) {
+            error_log("ModelAbsence::resolveSemestreCodeForDate: " . $e->getMessage());
+            return null;
+        }
+    }
+
     public function getFormDataDependencies(?string $anneeCode = null): array
     {
         require_once __DIR__ . '/../classes/ModelClasse.php';
         require_once __DIR__ . '/../matieres/ModelMatiere.php';
+        require_once __DIR__ . '/../semestres/ModelSemestre.php';
 
         $targetYear = $anneeCode ?? Session::get('annee_active_code', '');
         $classes = (new ModelClasse())->getAll($targetYear);
         $matieres = (new ModelMatiere())->getAll();
+        $semestres = (new ModelSemestre())->getAll(!empty($targetYear) && $targetYear !== 'ALL' ? $targetYear : null);
+        usort($semestres, static fn($a, $b) => ((int)($a['id_semestre'] ?? 0)) <=> ((int)($b['id_semestre'] ?? 0)));
+
+        $activeSemestreCode = '';
+        foreach ($semestres as $sem) {
+            if (($sem['statut_semestre'] ?? '') === STATUTS::ACTIF) {
+                $activeSemestreCode = (string)$sem['code_semestre'];
+                break;
+            }
+        }
+        if ($activeSemestreCode === '' && !empty($semestres)) {
+            $activeSemestreCode = (string)($semestres[0]['code_semestre'] ?? '');
+        }
 
         $params = [];
         $yearCondition = '';
@@ -72,6 +132,8 @@ class ModelAbsence extends BaseModel
         return [
             'classes' => $classes,
             'matieres' => $matieres,
+            'semestres' => $semestres,
+            'activeSemestreCode' => $activeSemestreCode,
             'etudiantsDetails' => $etudiantsDetails
         ];
     }
@@ -168,13 +230,17 @@ class ModelAbsence extends BaseModel
         float $dureeHeures,
         array $absencesData,
         string $anneeCode,
-        string $etabCode
+        string $etabCode,
+        ?string $semestreCode = null
     ): bool {
         $db = $this->getCon();
         $db->beginTransaction();
 
         try {
             $matCodeNorm = $matiereCode ?? '';
+            $semestreCodeNorm = !empty($semestreCode)
+                ? trim($semestreCode)
+                : $this->resolveSemestreCodeForDate($anneeCode, $dateAbsence);
             $now = date('Y-m-d H:i:s');
 
             // 1. Pré-chargement en 1 requête des inscriptions de la classe
@@ -245,14 +311,14 @@ class ModelAbsence extends BaseModel
 
             $stmtUpd = $db->prepare("
                 UPDATE " . TABLES::ABSENCES . " 
-                SET duree_heures = ?, justifiee = ?, motif = ?
+                SET duree_heures = ?, justifiee = ?, motif = ?, semestre_code = ?
                 WHERE id_absence = ?
             ");
             $stmtIns = $db->prepare("
                 INSERT INTO " . TABLES::ABSENCES . " (
                     code_absence, inscription_code, emploi_code, matiere_code, date_absence, 
-                    duree_heures, justifiee, motif, annee_code, etablissement_code, created_at_absence
-                ) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?)
+                    duree_heures, justifiee, motif, annee_code, semestre_code, etablissement_code, created_at_absence
+                ) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmtDel = $db->prepare("DELETE FROM " . TABLES::ABSENCES . " WHERE id_absence = ?");
 
@@ -271,7 +337,7 @@ class ModelAbsence extends BaseModel
 
                 if ($isAbsent) {
                     if ($existingId) {
-                        $stmtUpd->execute([$dureeHeures, $justifiee, $motif, $existingId]);
+                        $stmtUpd->execute([$dureeHeures, $justifiee, $motif, $semestreCodeNorm, $existingId]);
                     } else {
                         do {
                             $codeAbs = 'ABS-' . strtoupper(bin2hex(random_bytes(6)));
@@ -287,6 +353,7 @@ class ModelAbsence extends BaseModel
                             $justifiee,
                             $motif,
                             $anneeCode,
+                            $semestreCodeNorm,
                             $etabCode,
                             $now
                         ]);

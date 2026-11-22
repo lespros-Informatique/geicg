@@ -1,6 +1,7 @@
 <?php require_once __DIR__ . '/../../public/inc/header.php'; ?>
 <?php
 $niveaux = $niveaux ?? [];
+$semestres = $semestres ?? [];
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -37,6 +38,17 @@ $niveaux = $niveaux ?? [];
             </select>
           </div>
           <div>
+            <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Semestre</label>
+            <select id="filter-semestre" class="form-control select2" style="width: 100%;">
+              <option value="">-- Tous les semestres --</option>
+              <?php foreach ($semestres as $s): ?>
+                <option value="<?= htmlspecialchars($s['code_semestre']) ?>" data-annee="<?= htmlspecialchars($s['annee_code'] ?? '') ?>">
+                  <?= htmlspecialchars($s['libelle_semestre']) ?><?= (($s['statut_semestre'] ?? '') === STATUTS::ACTIF) ? ' (Actif)' : '' ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau d'Études</label>
             <select id="filter-niveau" class="form-control select2" style="width: 100%;">
               <option value="">-- Tous les niveaux --</option>
@@ -64,6 +76,7 @@ $niveaux = $niveaux ?? [];
               <tr style="background: #F8FAFC; text-align: left; color: #64748B;">
                 <th style="padding: 12px; width: 50px;">#</th>
                 <th style="padding: 12px;">Dossier / Élève</th>
+                <th style="padding: 12px;">Semestre</th>
                 <th style="padding: 12px;">Matière Manquée</th>
                 <th style="padding: 12px;">Date Absence</th>
                 <th style="padding: 12px;">Volume (h)</th>

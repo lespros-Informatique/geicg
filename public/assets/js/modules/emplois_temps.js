@@ -898,8 +898,26 @@
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
-    $('#filter-annee, #filter-niveau, #filter-classe').select2({ width: '100%' });
+    $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe').select2({ width: '100%' });
   }
+
+  function syncSemestreFilterByAnnee() {
+    var anneeCode = $('#filter-annee').val();
+    $('#filter-semestre option').each(function() {
+      var optAnnee = $(this).data('annee');
+      if (!anneeCode || !optAnnee || optAnnee === anneeCode || $(this).val() === '') {
+        $(this).prop('disabled', false);
+      } else {
+        $(this).prop('disabled', true);
+      }
+    });
+    if ($('#filter-semestre option:selected').prop('disabled')) {
+      $('#filter-semestre').val('').trigger('change.select2');
+    } else if ($.fn.select2) {
+      $('#filter-semestre').select2({ width: '100%' });
+    }
+  }
+  syncSemestreFilterByAnnee();
 
   // Filtrage en cascade Niveau -> Classe
   $('#filter-niveau').on('change', function() {
@@ -920,7 +938,12 @@
     table.ajax.reload();
   });
 
-  $('#filter-classe, #filter-annee').on('change', function() {
+  $('#filter-annee').on('change', function() {
+    syncSemestreFilterByAnnee();
+    table.ajax.reload();
+  });
+
+  $('#filter-classe, #filter-semestre').on('change', function() {
     table.ajax.reload();
   });
 
@@ -930,6 +953,7 @@
       type: 'GET',
       data: function(d) {
         d.annee_code = $('#filter-annee').val();
+        d.semestre_code = $('#filter-semestre').val();
         d.niveau_code = $('#filter-niveau').val();
         d.classe_code = $('#filter-classe').val();
       }
@@ -944,6 +968,11 @@
         var name = (d && d.trim()) ? d : (r.etudiant_code || r.inscription_code || '-');
         var mat = r.matricule_etudiant ? ' <small style="color:#64748B;">(' + r.matricule_etudiant + ')</small>' : '';
         return '<strong>' + name + '</strong>' + mat;
+      }},
+      { data: 'libelle_semestre', defaultContent: '-', width: '120px', render: function(d, t, r) {
+        var label = d || r.semestre_code || '';
+        if (!label) return '<span style="color:#94A3B8;">-</span>';
+        return '<span class="badge" style="background:#EFF6FF; color:#1E3A5F; font-weight:700; font-size:12px; padding:4px 10px; border-radius:6px; border:1px solid #BFDBFE;">' + label + '</span>';
       }},
       { data: 'libelle_matiere', defaultContent: '', render: function(d, t, r) { return d || r.matiere_code || '-'; } },
       { data: 'date_absence', defaultContent: '-', width: '110px', render: function(d) {
@@ -1024,7 +1053,7 @@
   var selectedEtudCode = cfg.selectedEtudiantCode || '';
 
   if ($.fn.select2) {
-    $('#sel_classe_ab, #sel_mat_ab').select2({ width: '100%' });
+    $('#sel_classe_ab, #sel_mat_ab, #sel_sem_ab').select2({ width: '100%' });
   }
 
   function loadStudentsForClasse(classeCode, keepSelected) {
