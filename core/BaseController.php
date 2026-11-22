@@ -909,15 +909,16 @@ abstract class BaseController
         int $windowSeconds = 900,
         ?string $identifier = null,
         bool $recordHit = true,
-        ?string $customMessage = null
+        ?string $customMessage = null,
+        bool $scopeByIp = true
     ): array {
         if (!class_exists('RateLimiter')) {
             return ['allowed' => true, 'attempts' => 0, 'remaining' => $maxAttempts, 'retry_after' => 0];
         }
 
         $res = $recordHit
-            ? RateLimiter::attempt($action, $maxAttempts, $windowSeconds, $identifier)
-            : RateLimiter::check($action, $maxAttempts, $windowSeconds, $identifier);
+            ? RateLimiter::attempt($action, $maxAttempts, $windowSeconds, $identifier, null, $scopeByIp)
+            : RateLimiter::check($action, $maxAttempts, $windowSeconds, $identifier, $scopeByIp);
 
         if (!headers_sent()) {
             header('X-RateLimit-Limit: ' . $maxAttempts);
@@ -959,21 +960,21 @@ abstract class BaseController
     /**
      * Incrémente manuellement le compteur de tentatives échouées (ex: mauvais mot de passe)
      */
-    protected function hitRateLimit(string $action, int $maxAttempts = 5, int $windowSeconds = 900, ?string $identifier = null): array
+    protected function hitRateLimit(string $action, int $maxAttempts = 5, int $windowSeconds = 900, ?string $identifier = null, bool $scopeByIp = true): array
     {
         if (!class_exists('RateLimiter')) {
             return ['allowed' => true, 'attempts' => 0, 'remaining' => $maxAttempts, 'retry_after' => 0];
         }
-        return RateLimiter::hit($action, $maxAttempts, $windowSeconds, $identifier);
+        return RateLimiter::hit($action, $maxAttempts, $windowSeconds, $identifier, null, $scopeByIp);
     }
 
     /**
      * Réinitialise le compteur de tentatives après succès (ex: connexion réussie)
      */
-    protected function clearRateLimit(string $action, ?string $identifier = null): void
+    protected function clearRateLimit(string $action, ?string $identifier = null, bool $scopeByIp = true): void
     {
         if (class_exists('RateLimiter')) {
-            RateLimiter::clear($action, $identifier);
+            RateLimiter::clear($action, $identifier, $scopeByIp);
         }
     }
 }

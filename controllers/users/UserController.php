@@ -402,6 +402,11 @@ class UserController extends BaseController
         }
 
         $this->requirePost(false);
+
+        // 1. Vérification stricte par IP dès l'entrée (5 échecs max / 15 min) :
+        //    empêche tout contournement en changeant d'identifiant après verrouillage.
+        $this->enforceRateLimit('login_ip', 5, 900, null, false, 'Trop de tentatives de connexion depuis cette adresse. Veuillez réessayer dans {wait}.');
+
         $notEmpty = Validator::validateRequiredFields($_POST);
 
         if ($notEmpty === true) {
@@ -409,18 +414,27 @@ class UserController extends BaseController
             $password = $this->post('password');
             $loginNorm = mb_strtolower($login);
 
-            // Protection Rate Limiting sur la connexion (5 échecs / 15 min par IP+identifiant, 15 échecs / 15 min par IP)
-            $this->enforceRateLimit('login_ip', 15, 900, null, false, 'Trop de tentatives de connexion depuis cette adresse. Veuillez réessayer dans {wait}.');
-            $this->enforceRateLimit('login', 5, 900, $loginNorm, false, 'Trop de tentatives de connexion pour ce compte. Veuillez réessayer dans {wait}.');
+            // 2. Vérification par couple IP + identifiant saisi (5 échecs max / 15 min)
+            $this->enforceRateLimit('login', 5, 900, $loginNorm, false, 'Trop de tentatives de connexion pour cet identifiant. Veuillez réessayer dans {wait}.');
 
             // Recherche utilisateur via ModelUser
             $user = $this->model->findUserByLogin($login);
+            $userCode = ($user && !empty($user['code_user'])) ? (string)$user['code_user'] : null;
+
+            // 3. Vérification canonique par compte utilisateur (indépendante de l'alias email/tél/matricule et de l'IP)
+            //    Exécutée AVANT password_verify() : même avec le bon mot de passe, un compte verrouillé reste bloqué.
+            if ($userCode !== null) {
+                $this->enforceRateLimit('login_account', 5, 900, $userCode, false, 'Trop de tentatives de connexion pour ce compte. Veuillez réessayer dans {wait}.', false);
+            }
 
             if ($user && password_verify($password, $user['password_user'] ?? '')) {
                 if ($user['statut_user'] === STATUTS::ACTIF) {
-                    // Réinitialisation des compteurs Rate Limit après succès
-                    $this->clearRateLimit('login', $loginNorm);
+                    // Réinitialisation des compteurs Rate Limit après succès authentifié
                     $this->clearRateLimit('login_ip', null);
+                    $this->clearRateLimit('login', $loginNorm);
+                    if ($userCode !== null) {
+                        $this->clearRateLimit('login_account', $userCode, false);
+                    }
 
                     $userRoles = $this->model->getUserRoles($user['code_user']);
                     $roleCodes = !empty($userRoles) ? array_column($userRoles, 'role_code') : [ROLES::USER];
@@ -495,19 +509,44 @@ class UserController extends BaseController
                     $this->success($welcomeMsg, ['redirect' => url()]);
                     return;
                 } else {
+                    $this->hitRateLimit('login_ip', 5, 900, null);
                     $this->hitRateLimit('login', 5, 900, $loginNorm);
-                    $this->hitRateLimit('login_ip', 15, 900, null);
+                    if ($userCode !== null) {
+                        $this->hitRateLimit('login_account', 5, 900, $userCode, false);
+                    }
                     $this->error('Ce compte utilisateur est inactif ou suspendu. Veuillez contacter l\'administrateur.');
                     return;
                 }
             }
 
-            $hitRes = $this->hitRateLimit('login', 5, 900, $loginNorm);
-            $this->hitRateLimit('login_ip', 15, 900, null);
-            $remaining = (int)($hitRes['remaining'] ?? 0);
+            $hitIp = $this->hitRateLimit('login_ip', 5, 900, null);
+            $hitLogin = $this->hitRateLimit('login', 5, 900, $loginNorm);
+            $hitAccount = ($userCode !== null)
+                ? $this->hitRateLimit('login_account', 5, 900, $userCode, false)
+                : null;
+
+            $remaining = min(
+                (int)($hitIp['remaining'] ?? 5),
+                (int)($hitLogin['remaining'] ?? 5),
+                $hitAccount !== null ? (int)($hitAccount['remaining'] ?? 5) : 5
+            );
+            $retryAfter = max(
+                (int)($hitIp['retry_after'] ?? 0),
+                (int)($hitLogin['retry_after'] ?? 0),
+                $hitAccount !== null ? (int)($hitAccount['retry_after'] ?? 0) : 0
+            );
+
             if ($remaining <= 0) {
-                $waitTxt = RateLimiter::formatRemainingTime((int)($hitRes['retry_after'] ?? 900));
-                $this->error("Identifiant ou mot de passe incorrect. Trop d'échecs consécutifs : compte temporairement bloqué pour {$waitTxt}.");
+                $waitSec = $retryAfter > 0 ? $retryAfter : 900;
+                $waitTxt = RateLimiter::formatRemainingTime($waitSec);
+                AuditLogger::log(
+                    AuditLogger::ACTION_RATE_LIMIT,
+                    'security_rate_limit',
+                    'login',
+                    "Verrouillage Rate Limit activé après 5 échecs de connexion pour IP " . RateLimiter::getClientIp(),
+                    ['action' => 'login', 'ip' => RateLimiter::getClientIp(), 'retry_after' => $waitSec]
+                );
+                $this->error("Identifiant ou mot de passe incorrect. Trop d'échecs consécutifs : accès temporairement bloqué pour {$waitTxt}.");
                 return;
             }
             $this->error("Identifiant ou mot de passe incorrect. ({$remaining} tentative" . ($remaining > 1 ? 's' : '') . " restante" . ($remaining > 1 ? 's' : '') . ")");
@@ -669,7 +708,9 @@ class UserController extends BaseController
         if ($this->model->updatePassword($hash, $userId)) {
             $this->model->markPasswordResetUsed((int)$resetRow['id_reset'], $userCode);
             $this->clearRateLimit('reset_password', null);
+            $this->clearRateLimit('login_ip', null);
             $this->clearRateLimit('login', mb_strtolower((string)($resetRow['email_user'] ?? '')));
+            $this->clearRateLimit('login_account', $userCode, false);
 
             AuditLogger::log(
                 AuditLogger::ACTION_UPDATE,
