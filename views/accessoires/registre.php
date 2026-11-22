@@ -11,17 +11,17 @@
           <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
             <i data-lucide="package-check" style="width: 26px; height: 26px; color: #15803D;"></i> Registre de Retrait des Kits Étudiants
           </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Suivi exclusif des retraits, émargement au guichet et impression des bons de décharge</p>
+          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Suivi des retraits des kits</p>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;" class="no-print">
           <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::MANAGE_REMISE_KITS, PERMISSIONS::VIEW_REMISE_KITS]))): ?>
-          <a href="<?= url('accessoire_inscription/imprimerRegistrePdf') ?>" id="btn-print-registre" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #CBD5E1; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le registre d'émargement des kits en PDF">
+          <a href="<?= url('accessoire_inscription/imprimerRegistrePdf') ?>" id="btn-print-registre" target="_blank" class="btn btn-outline-secondary" style="border: 1.5px solid #D9E2EE; color: #334155; background: #FFFFFF; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; border-radius: 8px; padding: 10px 18px;" title="Générer & Imprimer le registre d'émargement des kits en PDF">
             <i data-lucide="printer" style="width: 18px; height: 18px;"></i> Imprimer
           </a>
           <?php endif; ?>
-          <button type="button" id="btn-open-attrib-modal" class="btn btn-success" style="background: #15803D; border: none; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(21,128,61,0.2);">
+          <!-- <button type="button" id="btn-open-attrib-modal" class="btn btn-success" style="background: #15803D; border: none; font-weight: 700; border-radius: 8px; padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(21,128,61,0.2);">
             <i data-lucide="package-plus" style="width: 18px; height: 18px;"></i> Attribuer un Kit
-          </button>
+          </button> -->
         </div>
       </div>
 
@@ -63,13 +63,6 @@
               <option value="en_attente">⏳ Avec des kits en attente</option>
               <option value="retire">✅ Kits entièrement remis</option>
             </select>
-          </div>
-
-          <!-- Bouton Actualiser -->
-          <div>
-            <button type="button" id="btn-refresh" class="btn btn-light w-100" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 15px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #334155; cursor: pointer; height: 38px;">
-              <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Actualiser
-            </button>
           </div>
 
         </div>
