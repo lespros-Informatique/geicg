@@ -2021,19 +2021,50 @@
         },
         {
           data: null,
+          className: 'text-center',
+          render: function(d, type) {
+            var label, bg, color, border, icon;
+            if (d.est_complet) {
+              label = 'Complet';
+              bg = '#DCFCE7'; color = '#15803D'; border = '#86EFAC'; icon = 'check-circle-2';
+            } else if ((parseInt(d.rejetees_count, 10) || 0) > 0) {
+              label = 'Rejeté (' + d.rejetees_count + ')';
+              bg = '#FEE2E2'; color = '#B91C1C'; border = '#FCA5A5'; icon = 'x-circle';
+            } else if ((parseInt(d.total_pieces, 10) || 0) === 0) {
+              label = 'Non défini';
+              bg = '#F1F5F9'; color = '#475569'; border = '#CBD5E1'; icon = 'minus-circle';
+            } else {
+              label = 'Incomplet';
+              bg = '#FEF3C7'; color = '#B45309'; border = '#FDE68A'; icon = 'alert-circle';
+            }
+            if (type === 'sort' || type === 'filter') return label;
+            return '<span style="display: inline-flex; align-items: center; gap: 5px; background: ' + bg + '; color: ' + color + '; border: 1px solid ' + border + '; border-radius: 999px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; white-space: nowrap;">' +
+                   '<i data-lucide="' + icon + '" style="width: 13px; height: 13px;"></i>' + label +
+                   '</span>';
+          }
+        },
+        {
+          data: null,
           orderable: false,
           className: 'text-center',
           render: function(d) {
+            var isComplet = !!d.est_complet;
+            var quickValidateBtn = isComplet
+              ? '<button type="button" class="btn-action-icon btn-quick-validate" disabled aria-disabled="true" style="background: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; opacity: 0.65; cursor: not-allowed;" title="Dossier déjà complet">' +
+                  '<i data-lucide="check-check"></i>' +
+                '</button>'
+              : '<button type="button" class="btn-action-icon btn-quick-validate" style="background: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7;" title="Tout valider en 1 clic">' +
+                  '<i data-lucide="check-check"></i>' +
+                '</button>';
+
             return '<div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">' +
                      '<button type="button" class="btn-action-icon btn-open-dossier" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;" title="Gérer les pièces et les scans">' +
                        '<i data-lucide="folder-open"></i>' +
                      '</button>' +
                      '<button type="button" class="btn-action-icon btn-print-recepisse-row" style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1;" title="Imprimer le récépissé de dépôt">' +
-                       '<i data-lucide="printer"></i>' +
+                       '<i data-lucide="eye"></i>' +
                      '</button>' +
-                     '<button type="button" class="btn-action-icon btn-quick-validate" style="background: #F0FDF4; color: #16A34A; border: 1px solid #DCFCE7;" title="Tout valider en 1 clic">' +
-                       '<i data-lucide="check-check"></i>' +
-                     '</button>' +
+                     quickValidateBtn +
                    '</div>';
           }
         }
@@ -2106,7 +2137,9 @@
 
   // Action Tout valider rapide
   $('#table-dossiers').on('click', '.btn-quick-validate', function() {
+    if ($(this).prop('disabled')) return;
     var rowData = table.row($(this).closest('tr')).data();
+    if (!rowData || rowData.est_complet) return;
     validateAllStudentPieces(rowData.code_inscription, rowData.code_etudiant);
   });
 

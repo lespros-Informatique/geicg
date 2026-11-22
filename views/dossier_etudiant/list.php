@@ -128,6 +128,7 @@
                 <th style="padding: 12px; text-align: center;">Matricule</th>
                 <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px; text-align: center;">Pièces Déposées</th>
+                <th style="padding: 12px; text-align: center;">Statut</th>
                 <th style="padding: 12px; text-align: center; width: 120px;">Actions</th>
               </tr>
             </thead>
