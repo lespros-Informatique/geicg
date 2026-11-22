@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../public/inc/header.php';
 $loginLogo = $loginLogo ?? '';
 ?>
 
-<div class="app-layout auth-layout">
+<div class="app-layout auth-layout auth-layout-campus">
   <main class="auth-content">
     <div class="auth-card">
       <div class="auth-header">

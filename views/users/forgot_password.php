@@ -6,7 +6,7 @@ $sigleEtab = !empty($etablissement['sigle_etablissement']) ? $etablissement['sig
 $nomEtab = !empty($etablissement['nom_etablissement']) ? $etablissement['nom_etablissement'] : $sigleEtab;
 ?>
 
-<div class="app-layout auth-layout">
+<div class="app-layout auth-layout auth-layout-campus">
   <main class="auth-content">
     <div class="auth-card">
       <div class="auth-header">
