@@ -170,6 +170,112 @@ class ModelDossierEtudiant extends BaseModel
     }
 
     /**
+     * Valide ou met à jour en LOT plusieurs pièces d'un dossier étudiant dans une seule transaction
+     * (validation FK unique + 1 seul SELECT de contrôle des pièces + 1 requête préparée, zéro N+1).
+     */
+    public function saveStatutPiecesBatch(
+        string $inscriptionCode,
+        string $etudiantCode,
+        array $pieceCodes,
+        string $statut,
+        ?string $observations = null,
+        ?string $userCode = null
+    ): int {
+        $codes = array_values(array_unique(array_filter(array_map('trim', $pieceCodes))));
+        if (empty($inscriptionCode) || empty($codes)) {
+            return 0;
+        }
+
+        $db = $this->getCon();
+        $etabCode = Session::get('etablissement_active_code') ?? '';
+        if (empty($etabCode)) {
+            try {
+                $stmtEtab = $db->query("SELECT code_etablissement FROM " . TABLES::ETABLISSEMENTS . " ORDER BY id_etablissement DESC LIMIT 1");
+                $etabCode = $stmtEtab ? (string)$stmtEtab->fetchColumn() : '';
+            } catch (Exception $e) {
+                $etabCode = '';
+            }
+        }
+
+        // 1. Validation en 1 seule requête de tous les codes de pièces
+        $ph = implode(',', array_fill(0, count($codes), '?'));
+        $stmtPieces = $db->prepare("SELECT code_piece_fournir FROM " . TABLES::PIECES_FOURNIR . " WHERE code_piece_fournir IN ({$ph})");
+        $stmtPieces->execute($codes);
+        $validPieces = $stmtPieces->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        if (empty($validPieces)) {
+            return 0;
+        }
+
+        // 2. Validation unique des clés étrangères communes (inscription, étudiant, établissement + 1ère pièce validée)
+        $fkErr = ForeignKeyValidator::validate($db, 'dossier_etudiant', [
+            'inscription_code' => $inscriptionCode,
+            'etudiant_code' => $etudiantCode,
+            'piece_code' => $validPieces[0],
+            'etablissement_code' => $etabCode
+        ]);
+        if ($fkErr !== null) {
+            $this->lastError = $fkErr;
+            error_log('[ModelDossierEtudiant::saveStatutPiecesBatch] FK Error: ' . $fkErr);
+            return 0;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $dateDepot = ($statut === 'depose') ? $now : null;
+
+        $sql = "
+            INSERT INTO " . TABLES::DOSSIER_ETUDIANT . " (
+                code_dossier_etudiant, inscription_code, etudiant_code, piece_code,
+                statut_depot, date_depot, fichier_joint, observations, user_code, etablissement_code, created_at_dossier_etudiant
+            ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                statut_depot = VALUES(statut_depot),
+                date_depot = CASE WHEN VALUES(statut_depot) = 'depose' THEN COALESCE(date_depot, VALUES(date_depot)) ELSE date_depot END,
+                observations = VALUES(observations),
+                user_code = VALUES(user_code),
+                etablissement_code = VALUES(etablissement_code),
+                updated_at_dossier_etudiant = VALUES(created_at_dossier_etudiant)
+        ";
+
+        try {
+            $db->beginTransaction();
+            $stmt = $db->prepare($sql);
+            $count = 0;
+            $usedCodes = [];
+
+            foreach ($validPieces as $pCode) {
+                do {
+                    $codeDossier = 'DOS-' . strtoupper(bin2hex(random_bytes(6)));
+                } while (isset($usedCodes[$codeDossier]));
+                $usedCodes[$codeDossier] = true;
+
+                if ($stmt->execute([
+                    $codeDossier,
+                    $inscriptionCode,
+                    $etudiantCode,
+                    $pCode,
+                    $statut,
+                    $dateDepot,
+                    $observations,
+                    $userCode,
+                    $etabCode,
+                    $now
+                ])) {
+                    $count++;
+                }
+            }
+
+            $db->commit();
+            return $count;
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            error_log("ModelDossierEtudiant::saveStatutPiecesBatch error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
      * Récupère la liste des étudiants/inscriptions avec filtres pour le tableau de suivi des dossiers
      */
     public function getInscriptionsForDossiers(?string $anneeCode = null, ?string $classeCode = null): array

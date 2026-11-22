@@ -178,7 +178,7 @@ class ModelEtudiant extends BaseModel
                 i.statut_inscription,
                 i.montant_scolarite_inscription,
                 i.created_at_inscription,
-                (SELECT COUNT(*) FROM " . TABLES::PAIEMENTS . " p WHERE p.inscription_code = i.code_inscription AND p.statut_paiement != '" . STATUTS::ANNULE . "') AS total_paiements_count,
+                COALESCE(bpi.nb_versements, 0) AS total_paiements_count,
                 a.code_annee,
                 a.libelle_annee,
                 cl.code_classe,
@@ -194,6 +194,7 @@ class ModelEtudiant extends BaseModel
                 n.slug_niveau
             FROM " . TABLES::ETUDIANTS . " e
             JOIN " . TABLES::INSCRIPTIONS . " i ON i.etudiant_code = e.code_etudiant
+            LEFT JOIN " . VIEWS::BILAN_PAIEMENTS_INSCRIPTIONS . " bpi ON bpi.inscription_code = i.code_inscription
             JOIN " . TABLES::ANNEES . " a ON a.code_annee = i.annee_code
             JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
             LEFT JOIN " . TABLES::CYCLES . " cyc ON cyc.code_cycle = cl.cycle_code

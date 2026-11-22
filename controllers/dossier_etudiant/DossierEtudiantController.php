@@ -340,11 +340,15 @@ class DossierEtudiantController extends BaseController
             return;
         }
 
-        $count = 0;
-        foreach ($items as $item) {
-            $ok = $this->model->saveStatutPiece($inscriptionCode, $etudiantCode, $item['piece_code'], 'depose', 'Tout déposé en 1 clic', $userCode);
-            if ($ok) $count++;
-        }
+        $pieceCodes = array_values(array_filter(array_column($items, 'piece_code')));
+        $count = $this->model->saveStatutPiecesBatch(
+            $inscriptionCode,
+            $etudiantCode,
+            $pieceCodes,
+            'depose',
+            'Tout déposé en 1 clic',
+            $userCode
+        );
 
         if ($count > 0) {
             $this->success("{$count} pièce(s) marquée(s) comme DÉPOSÉES avec succès !");

@@ -1005,12 +1005,58 @@ class ModelAccessoire extends BaseModel
         return $res ?: null;
     }
 
+    /**
+     * Vérifie en 1 seule requête SQL (IN (...)) quels kits sont déjà attribués à l'étudiant cette année.
+     * Retourne une map [accessoire_code => libelle_accessoire].
+     */
+    public function getAlreadyAttributedKitsBatch(string $etudiantCode, string $insCode, array $accCodes, ?string $anneeCode = null): array
+    {
+        $codes = array_values(array_unique(array_filter(array_map('trim', $accCodes))));
+        if (empty($codes)) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($codes), '?'));
+        $stmt = $this->getCon()->prepare("
+            SELECT DISTINCT ai.accessoire_code, COALESCE(a.libelle_accessoire, ai.accessoire_code) AS libelle_accessoire
+            FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+            LEFT JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+            JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = ai.inscription_code
+            WHERE (i.etudiant_code = ? OR ai.inscription_code = ?)
+              AND i.statut_inscription != '" . STATUTS::ANNULE . "'
+              AND ai.accessoire_code IN ({$ph})
+              AND (ai.annee_code = ? OR ? = '')
+              AND (ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "' OR ai.statut_accessoire_inscription IS NULL)
+        ");
+        $params = array_merge([$etudiantCode, $insCode], $codes, [$anneeCode ?: '', $anneeCode ?: '']);
+        $stmt->execute($params);
+        $map = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $map[$r['accessoire_code']] = $r['libelle_accessoire'];
+        }
+        return $map;
+    }
+
+    /**
+     * Valide en 1 seule requête l'existence d'un lot de codes d'accessoires.
+     */
+    public function getValidAccessoireCodes(array $accCodes): array
+    {
+        $codes = array_values(array_unique(array_filter(array_map('trim', $accCodes))));
+        if (empty($codes)) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($codes), '?'));
+        $stmt = $this->getCon()->prepare("SELECT code_accessoire FROM " . TABLES::ACCESSOIRES . " WHERE code_accessoire IN ({$ph})");
+        $stmt->execute($codes);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    }
+
     public function insertAccessoireInscription(array $data): bool
     {
         $stmt = $this->getCon()->prepare("
             INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
             (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, date_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
-            VALUES (?, ?, ?, ?, 'actif', ?, ?, ?, ?, NOW())
+            VALUES (?, ?, ?, ?, 'actif', ?, ?, ?, ?, ?)
         ");
         return $stmt->execute([
             $data['code_accessoire_inscription'],
@@ -1020,7 +1066,62 @@ class ModelAccessoire extends BaseModel
             $data['etat_retrait'] ?? 'en_attente',
             $data['date_retrait'] ?? null,
             $data['user_code'] ?? null,
-            $data['etablissement_code'] ?? null
+            $data['etablissement_code'] ?? null,
+            date('Y-m-d H:i:s')
         ]);
+    }
+
+    /**
+     * Insère en lot plusieurs attributions de kits dans une seule transaction avec 1 requête préparée.
+     */
+    public function insertAccessoiresInscriptionBatch(array $rows): int
+    {
+        if (empty($rows)) {
+            return 0;
+        }
+        $db = $this->getCon();
+        $now = date('Y-m-d H:i:s');
+        $sql = "
+            INSERT INTO " . TABLES::ACCESSOIRE_INSCRIPTION . "
+            (code_accessoire_inscription, inscription_code, accessoire_code, annee_code, statut_accessoire_inscription, etat_retrait, date_retrait, user_code, etablissement_code, created_at_accessoire_inscription)
+            VALUES (?, ?, ?, ?, 'actif', ?, ?, ?, ?, ?)
+        ";
+        try {
+            $db->beginTransaction();
+            $stmt = $db->prepare($sql);
+            $count = 0;
+            $usedCodes = [];
+            foreach ($rows as $data) {
+                $codeAccIns = !empty($data['code_accessoire_inscription']) ? (string)$data['code_accessoire_inscription'] : '';
+                if ($codeAccIns === '' || isset($usedCodes[$codeAccIns])) {
+                    do {
+                        $codeAccIns = 'ACI-' . strtoupper(bin2hex(random_bytes(6)));
+                    } while (isset($usedCodes[$codeAccIns]));
+                }
+                $usedCodes[$codeAccIns] = true;
+
+                if ($stmt->execute([
+                    $codeAccIns,
+                    $data['inscription_code'],
+                    $data['accessoire_code'],
+                    $data['annee_code'],
+                    $data['etat_retrait'] ?? 'en_attente',
+                    $data['date_retrait'] ?? null,
+                    $data['user_code'] ?? null,
+                    $data['etablissement_code'] ?? null,
+                    $now
+                ])) {
+                    $count++;
+                }
+            }
+            $db->commit();
+            return $count;
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            error_log("ModelAccessoire::insertAccessoiresInscriptionBatch error: " . $e->getMessage());
+            return 0;
+        }
     }
 }

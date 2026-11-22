@@ -171,15 +171,78 @@ class ModelAbsence extends BaseModel
         string $etabCode
     ): bool {
         $db = $this->getCon();
-        $validator = new Validator();
         $db->beginTransaction();
 
         try {
             $matCodeNorm = $matiereCode ?? '';
-            $stmtCheck = $db->prepare("
-                SELECT id_absence FROM " . TABLES::ABSENCES . " 
-                WHERE inscription_code = ? AND date_absence = ? AND (matiere_code = ? OR (matiere_code = '' AND ? = ''))
-            ");
+            $now = date('Y-m-d H:i:s');
+
+            // 1. Pré-chargement en 1 requête des inscriptions de la classe
+            $inscriptionsByEtudiant = [];
+            if (!empty($classeCode)) {
+                foreach ($this->getStudentsByClasse($classeCode, $anneeCode) as $st) {
+                    $inscriptionsByEtudiant[$st['code_etudiant']] = $st['code_inscription'];
+                }
+            }
+
+            // Compléter en 1 seule requête batch les éventuels étudiants absents du pré-chargement classe
+            $missingEtudiants = [];
+            foreach (array_keys($absencesData) as $etuCode) {
+                if (!isset($inscriptionsByEtudiant[$etuCode])) {
+                    $missingEtudiants[] = (string)$etuCode;
+                }
+            }
+            if (!empty($missingEtudiants)) {
+                $phEtu = implode(',', array_fill(0, count($missingEtudiants), '?'));
+                $sqlMiss = "
+                    SELECT etudiant_code, code_inscription
+                    FROM " . TABLES::INSCRIPTIONS . "
+                    WHERE etudiant_code IN ({$phEtu})
+                      AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)
+                ";
+                $missParams = $missingEtudiants;
+                if (!empty($classeCode)) {
+                    $sqlMiss .= " AND classe_code = ?";
+                    $missParams[] = $classeCode;
+                }
+                if (!empty($anneeCode)) {
+                    $sqlMiss .= " AND annee_code = ?";
+                    $missParams[] = $anneeCode;
+                }
+                $sqlMiss .= " ORDER BY id_inscription ASC";
+                $stmtMiss = $db->prepare($sqlMiss);
+                $stmtMiss->execute($missParams);
+                foreach ($stmtMiss->fetchAll(PDO::FETCH_ASSOC) ?: [] as $mr) {
+                    $inscriptionsByEtudiant[$mr['etudiant_code']] = $mr['code_inscription'];
+                }
+            }
+
+            // Collecter tous les codes d'inscription concernés par le lot
+            $targetInscCodes = [];
+            foreach (array_keys($absencesData) as $etuCode) {
+                if (!empty($inscriptionsByEtudiant[$etuCode])) {
+                    $targetInscCodes[] = $inscriptionsByEtudiant[$etuCode];
+                }
+            }
+            $targetInscCodes = array_values(array_unique($targetInscCodes));
+
+            // 2. Pré-chargement en 1 seule requête des absences déjà enregistrées pour (date, matière) — zéro SELECT en boucle !
+            $existingByInsc = [];
+            if (!empty($targetInscCodes)) {
+                $phInsc = implode(',', array_fill(0, count($targetInscCodes), '?'));
+                $stmtPreload = $db->prepare("
+                    SELECT id_absence, inscription_code
+                    FROM " . TABLES::ABSENCES . "
+                    WHERE inscription_code IN ({$phInsc})
+                      AND date_absence = ?
+                      AND (matiere_code = ? OR (matiere_code = '' AND ? = ''))
+                ");
+                $stmtPreload->execute(array_merge($targetInscCodes, [$dateAbsence, $matCodeNorm, $matCodeNorm]));
+                foreach ($stmtPreload->fetchAll(PDO::FETCH_ASSOC) ?: [] as $exRow) {
+                    $existingByInsc[$exRow['inscription_code']] = (int)$exRow['id_absence'];
+                }
+            }
+
             $stmtUpd = $db->prepare("
                 UPDATE " . TABLES::ABSENCES . " 
                 SET duree_heures = ?, justifiee = ?, motif = ?
@@ -189,37 +252,32 @@ class ModelAbsence extends BaseModel
                 INSERT INTO " . TABLES::ABSENCES . " (
                     code_absence, inscription_code, emploi_code, matiere_code, date_absence, 
                     duree_heures, justifiee, motif, annee_code, etablissement_code, created_at_absence
-                ) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, NOW())
+                ) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmtDel = $db->prepare("DELETE FROM " . TABLES::ABSENCES . " WHERE id_absence = ?");
 
-            // Pré-chargement en 1 seule requête des inscriptions de la classe
-            $inscriptionsByEtudiant = [];
-            if (!empty($classeCode)) {
-                foreach ($this->getStudentsByClasse($classeCode, $anneeCode) as $st) {
-                    $inscriptionsByEtudiant[$st['code_etudiant']] = $st['code_inscription'];
-                }
-            }
-
+            $usedCodes = [];
             foreach ($absencesData as $etudiantCode => $info) {
                 $isAbsent = !empty($info['is_absent']);
                 $justifiee = !empty($info['justifiee']) ? $info['justifiee'] : 'non';
                 $motif = trim($info['motif'] ?? ($info['motif_absence'] ?? ''));
 
-                $inscCode = $inscriptionsByEtudiant[$etudiantCode]
-                    ?? $this->getInscriptionCodeByEtudiant($etudiantCode, $classeCode, $anneeCode);
+                $inscCode = $inscriptionsByEtudiant[$etudiantCode] ?? null;
                 if (empty($inscCode)) {
                     continue;
                 }
 
-                $stmtCheck->execute([$inscCode, $dateAbsence, $matCodeNorm, $matCodeNorm]);
-                $existingId = $stmtCheck->fetchColumn();
+                $existingId = $existingByInsc[$inscCode] ?? null;
 
                 if ($isAbsent) {
                     if ($existingId) {
                         $stmtUpd->execute([$dureeHeures, $justifiee, $motif, $existingId]);
                     } else {
-                        $codeAbs = $validator->generateCode(TABLES::ABSENCES, 'code_absence', 'ABS-', 8);
+                        do {
+                            $codeAbs = 'ABS-' . strtoupper(bin2hex(random_bytes(6)));
+                        } while (isset($usedCodes[$codeAbs]));
+                        $usedCodes[$codeAbs] = true;
+
                         $stmtIns->execute([
                             $codeAbs,
                             $inscCode,
@@ -229,7 +287,8 @@ class ModelAbsence extends BaseModel
                             $justifiee,
                             $motif,
                             $anneeCode,
-                            $etabCode
+                            $etabCode,
+                            $now
                         ]);
                     }
                 } else {

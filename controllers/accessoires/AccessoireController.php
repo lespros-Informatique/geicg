@@ -812,14 +812,15 @@ class AccessoireController extends BaseController
             return;
         }
 
-        // VÉRIFICATION D'UNICITÉ : Ne pas attribuer un kit déjà existant pour cet étudiant cette année
+        // VÉRIFICATION D'UNICITÉ EN LOT (1 seule requête au lieu de N requêtes)
+        $accessoireCodes = array_values(array_unique(array_filter(array_map('trim', $accessoireCodes))));
+        $alreadyMap = $this->model->getAlreadyAttributedKitsBatch($etudiantCode, $insCode, $accessoireCodes, $anneeCode);
+
         $toInsert = [];
         $duplicates = [];
-
         foreach ($accessoireCodes as $accCode) {
-            $existing = $this->model->checkKitAlreadyAttributed($etudiantCode, $insCode, $accCode, $anneeCode);
-            if ($existing) {
-                $duplicates[] = $existing['libelle_accessoire'] ?? $accCode;
+            if (isset($alreadyMap[$accCode])) {
+                $duplicates[] = $alreadyMap[$accCode];
             } else {
                 $toInsert[] = $accCode;
             }
@@ -831,20 +832,23 @@ class AccessoireController extends BaseController
             return;
         }
 
+        // Validation en 1 requête des codes d'accessoires + validation unique des clés étrangères communes
+        $validAccCodes = $this->model->getValidAccessoireCodes($toInsert);
+        if (count($validAccCodes) !== count($toInsert)) {
+            $this->error("Un ou plusieurs accessoires sélectionnés sont invalides ou introuvables.");
+            return;
+        }
+        $this->validateForeignKeys([
+            'inscription_code' => $insCode,
+            'accessoire_code' => $validAccCodes[0],
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode
+        ]);
+
         $dateRetrait = ($etatRetrait === 'retire') ? date('Y-m-d H:i:s') : null;
-
-        $count = 0;
-        foreach ($toInsert as $accCode) {
-            $this->validateForeignKeys([
-                'inscription_code' => $insCode,
-                'accessoire_code' => $accCode,
-                'annee_code' => $anneeCode,
-                'etablissement_code' => $etabCode
-            ]);
-
-            $codeAccIns = $this->validator->generateCode(TABLES::ACCESSOIRE_INSCRIPTION, 'code_accessoire_inscription', 'ACI-', 8);
-            $ok = $this->model->insertAccessoireInscription([
-                'code_accessoire_inscription' => $codeAccIns,
+        $batchRows = [];
+        foreach ($validAccCodes as $accCode) {
+            $batchRows[] = [
                 'inscription_code' => $insCode,
                 'accessoire_code' => $accCode,
                 'annee_code' => $anneeCode,
@@ -852,9 +856,10 @@ class AccessoireController extends BaseController
                 'date_retrait' => $dateRetrait,
                 'user_code' => $userCode,
                 'etablissement_code' => $etabCode
-            ]);
-            if ($ok) $count++;
+            ];
         }
+
+        $count = $this->model->insertAccessoiresInscriptionBatch($batchRows);
 
         if ($count > 0) {
             $msg = "{$count} nouveau(x) kit(s) attribué(s) avec succès !";
