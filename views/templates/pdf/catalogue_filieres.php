@@ -252,13 +252,13 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document généré par le Système GEICG &bull; <?= date('d/m/Y H:i:s') ?>
+          
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
         </td>
         <td style="width: 40%; text-align: right;">
-          Réf: REF-FIL-<?= date('Ymd-His') ?>
+         REF : <?= date('YmdHis') ?>
         </td>
       </tr>
     </table>
@@ -448,7 +448,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
           <?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'La Direction Générale') ?>
         </div>
         <div style="font-size: 8pt; font-weight: bold; color: #334155; margin-bottom: 18px;">
-          <?= htmlspecialchars($etablissement['nom_directeur_general'] ?? 'La Direction Générale') ?>
+          <?= htmlspecialchars($etablissement['nom_directeur_general'] ?? '') ?>
         </div>
         <div style="font-size: 6.5pt; color: #64748B; font-style: italic;">
           <?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Approbation & Cachet de l\'Établissement') ?>

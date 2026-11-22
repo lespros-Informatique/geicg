@@ -278,13 +278,13 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document généré par le Système GEICG &bull; <?= date('d/m/Y H:i:s') ?>
+         
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
         </td>
         <td style="width: 40%; text-align: right;">
-          Réf: REF-SAL-<?= date('Ymd-His') ?>
+        REF : <?= date('YmdHis') ?>
         </td>
       </tr>
     </table>

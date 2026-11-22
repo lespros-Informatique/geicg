@@ -411,8 +411,8 @@ if (empty($etablissement) || !is_array($etablissement)) {
   <?php
     $sigFinTitre = trim((string)($etablissement['titre_service_finance'] ?? ''));
     $sigFinNom = trim((string)($etablissement['nom_responsable_finance'] ?? ''));
-    $sigDirGenTitre = trim((string)($etablissement['titre_direction_generale'] ?? ''));
-    $sigDirGenNom = trim((string)($etablissement['nom_directeur_general'] ?? ''));
+    $sigDirPedTitre = trim((string)($etablissement['titre_direction_pedagogique'] ?? ''));
+    $sigDirPedNom = trim((string)($etablissement['nom_directeur_etudes'] ?? ''));
     $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
     $sigVille = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
   ?>
@@ -459,16 +459,16 @@ if (empty($etablissement) || !is_array($etablissement)) {
           <?php endif; ?>
           <tr>
             <td style="text-align: center; font-size: 9pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
-              <?= htmlspecialchars($sigDirGenTitre) ?>
+              <?= htmlspecialchars($sigDirPedTitre) ?>
             </td>
           </tr>
           <tr>
             <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
           </tr>
-          <?php if ($sigDirGenNom !== ''): ?>
+          <?php if ($sigDirPedNom !== ''): ?>
           <tr>
             <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #0F172A;">
-              <?= htmlspecialchars($sigDirGenNom) ?>
+              <?= htmlspecialchars($sigDirPedNom) ?>
             </td>
           </tr>
           <?php endif; ?>
