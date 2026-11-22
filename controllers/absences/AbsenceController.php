@@ -26,12 +26,26 @@ class AbsenceController extends BaseController
         }
 
         $classes = !empty($selectedAnneeCode) ? (new ModelClasse())->getAll($selectedAnneeCode) : [];
-        $semestres = (new ModelSemestre())->getAll();
-        usort($semestres, static fn($a, $b) => ((int)($a['id_semestre'] ?? 0)) <=> ((int)($b['id_semestre'] ?? 0)));
+        $modelSemestre = new ModelSemestre();
+        $allSemestres = $modelSemestre->getAll();
+        usort($allSemestres, static fn($a, $b) => ((int)($a['id_semestre'] ?? 0)) <=> ((int)($b['id_semestre'] ?? 0)));
+
+        $semestresByAnnee = [];
+        foreach ($allSemestres as $sem) {
+            $ac = (string)($sem['annee_code'] ?? '');
+            if ($ac === '') continue;
+            $semestresByAnnee[$ac][] = [
+                'code_semestre' => $sem['code_semestre'],
+                'libelle_semestre' => $sem['libelle_semestre'],
+                'statut_semestre' => $sem['statut_semestre'] ?? ''
+            ];
+        }
+        $semestres = !empty($selectedAnneeCode) ? ($semestresByAnnee[$selectedAnneeCode] ?? []) : [];
 
         $this->loadView('../views/absences/list.php', [
             'annees' => $annees,
             'semestres' => $semestres,
+            'semestresByAnnee' => $semestresByAnnee,
             'niveaux' => $niveaux,
             'classes' => $classes,
             'selectedAnneeCode' => $selectedAnneeCode

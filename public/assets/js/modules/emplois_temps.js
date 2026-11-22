@@ -895,29 +895,26 @@
     if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
   } catch (e) {}
   var csrfToken = cfg.csrfToken || '';
+  var semestresByAnnee = cfg.semestresByAnnee || {};
 
   if (window.lucide) lucide.createIcons();
   if ($.fn.select2) {
     $('#filter-annee, #filter-semestre, #filter-niveau, #filter-classe').select2({ width: '100%' });
   }
 
-  function syncSemestreFilterByAnnee() {
-    var anneeCode = $('#filter-annee').val();
-    $('#filter-semestre option').each(function() {
-      var optAnnee = $(this).data('annee');
-      if (!anneeCode || !optAnnee || optAnnee === anneeCode || $(this).val() === '') {
-        $(this).prop('disabled', false);
-      } else {
-        $(this).prop('disabled', true);
-      }
+  function rebuildSemestreFilterForAnnee(anneeCode) {
+    var $sem = $('#filter-semestre');
+    var list = (anneeCode && semestresByAnnee[anneeCode]) ? semestresByAnnee[anneeCode] : [];
+    $sem.empty().append('<option value="">-- Tous les semestres --</option>');
+    $.each(list, function(i, s) {
+      var suffix = s.statut_semestre === 'actif' ? ' (Actif)' : (s.statut_semestre === 'cloture' ? ' (Clôturé)' : '');
+      $sem.append($('<option>', {
+        value: s.code_semestre,
+        text: (s.libelle_semestre || s.code_semestre) + suffix
+      }));
     });
-    if ($('#filter-semestre option:selected').prop('disabled')) {
-      $('#filter-semestre').val('').trigger('change.select2');
-    } else if ($.fn.select2) {
-      $('#filter-semestre').select2({ width: '100%' });
-    }
+    $sem.val('').trigger('change.select2');
   }
-  syncSemestreFilterByAnnee();
 
   // Filtrage en cascade Niveau -> Classe
   $('#filter-niveau').on('change', function() {
@@ -939,7 +936,7 @@
   });
 
   $('#filter-annee').on('change', function() {
-    syncSemestreFilterByAnnee();
+    rebuildSemestreFilterForAnnee($(this).val());
     table.ajax.reload();
   });
 

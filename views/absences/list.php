@@ -23,9 +23,9 @@ $semestres = $semestres ?? [];
         </div>
       </div>
 
-      <!-- Filtres Multi-Critères (Année, Niveau & Classe Select2) -->
+      <!-- Filtres Multi-Critères (Année, Semestre, Niveau & Classe Select2) -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 16px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: center;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: center;">
           <div>
             <label style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Année Académique</label>
             <select id="filter-annee" class="form-control select2" style="width: 100%;">
@@ -42,8 +42,12 @@ $semestres = $semestres ?? [];
             <select id="filter-semestre" class="form-control select2" style="width: 100%;">
               <option value="">-- Tous les semestres --</option>
               <?php foreach ($semestres as $s): ?>
-                <option value="<?= htmlspecialchars($s['code_semestre']) ?>" data-annee="<?= htmlspecialchars($s['annee_code'] ?? '') ?>">
-                  <?= htmlspecialchars($s['libelle_semestre']) ?><?= (($s['statut_semestre'] ?? '') === STATUTS::ACTIF) ? ' (Actif)' : '' ?>
+                <?php
+                  $stSem = $s['statut_semestre'] ?? '';
+                  $suffixSem = $stSem === STATUTS::ACTIF ? ' (Actif)' : ($stSem === STATUTS::CLOTURE ? ' (Clôturé)' : '');
+                ?>
+                <option value="<?= htmlspecialchars($s['code_semestre']) ?>">
+                  <?= htmlspecialchars($s['libelle_semestre']) ?><?= $suffixSem ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -93,7 +97,8 @@ $semestres = $semestres ?? [];
 </div>
 <script type="application/json" id="absences-list-config">
 <?= json_encode([
-    'csrfToken' => Validator::generateCsrfToken()
+    'csrfToken' => Validator::generateCsrfToken(),
+    'semestresByAnnee' => $semestresByAnnee ?? []
 ]) ?>
 </script>
 <?php
