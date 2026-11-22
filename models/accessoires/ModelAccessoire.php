@@ -888,6 +888,12 @@ class ModelAccessoire extends BaseModel
         $stmtRet->execute($params);
         $retire = (int)($stmtRet->fetchColumn() ?: 0);
 
+        $today = date('Y-m-d');
+        $todayFr = date('d/m/Y');
+        $stmtJour = $db->prepare("SELECT COUNT(*)" . $baseJoin . " AND ai.etat_retrait = 'retire' AND DATE(ai.date_retrait) = ?" . $whereAnnee);
+        $stmtJour->execute(array_merge([$today], $params));
+        $retraitsDuJour = (int)($stmtJour->fetchColumn() ?: 0);
+
         $totalTypes = (int)$db->query("SELECT COUNT(*) FROM " . TABLES::ACCESSOIRES . " WHERE statut_accessoire = '" . STATUTS::ACTIF . "'")->fetchColumn();
         $taux = $total > 0 ? round(($retire / $total) * 100) : 0;
 
@@ -896,6 +902,9 @@ class ModelAccessoire extends BaseModel
             'en_attente' => $enAttente,
             'retires' => $retire,
             'retire' => $retire,
+            'retraits_du_jour' => $retraitsDuJour,
+            'date_reference' => $today,
+            'date_reference_fr' => $todayFr,
             'taux_retrait' => $taux,
             'taux' => $taux,
             'total_types' => $totalTypes

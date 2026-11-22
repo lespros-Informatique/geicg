@@ -931,6 +931,10 @@
           $('#kpi-total-kits').text(s.total || 0);
           $('#kpi-en-attente').text(s.en_attente || 0);
           $('#kpi-retires').text(s.retires || (s.retire || 0));
+          $('#kpi-retraits-jour').text(s.retraits_du_jour || 0);
+          if (s.date_reference_fr) {
+            $('#kpi-retraits-jour-sub').text('Remis le ' + s.date_reference_fr);
+          }
           $('#kpi-taux').text((s.taux_retrait || (s.taux || 0)) + '%');
         }
       });

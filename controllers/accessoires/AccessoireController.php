@@ -151,6 +151,9 @@ class AccessoireController extends BaseController
                     'en_attente' => 0,
                     'retires' => 0,
                     'retire' => 0,
+                    'retraits_du_jour' => 0,
+                    'date_reference' => date('Y-m-d'),
+                    'date_reference_fr' => date('d/m/Y'),
                     'taux_retrait' => 0,
                     'taux' => 0,
                     'total_types' => count($accessoires)

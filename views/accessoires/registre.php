@@ -69,7 +69,7 @@
       </div>
 
       <!-- KPI Cards Interactifs -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
         
         <div class="card kpi-card-clickable" data-status="all" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: transform 0.2s;" title="Cliquez pour filtrer toutes les attributions">
           <div style="width: 48px; height: 48px; border-radius: 12px; background: #EFF6FF; color: #1E3A5F; display: flex; align-items: center; justify-content: center;">
@@ -98,6 +98,17 @@
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #16A34A; text-transform: uppercase;">Kits remis</div>
             <div style="font-size: 22px; font-weight: 900; color: #15803D; margin-top: 2px;" id="kpi-retires"><?= $stats['retires'] ?? ($stats['retire'] ?? 0) ?></div>
+          </div>
+        </div>
+
+        <div class="card" id="card-kpi-retraits-jour" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #BAE6FD; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #0369A1; text-transform: uppercase;">Retraits du Jour</div>
+            <div style="font-size: 22px; font-weight: 900; color: #0369A1; margin-top: 2px;" id="kpi-retraits-jour"><?= (int)($stats['retraits_du_jour'] ?? 0) ?></div>
+            <div style="font-size: 11px; color: #075985; margin-top: 2px;" id="kpi-retraits-jour-sub">Remis le <?= htmlspecialchars($stats['date_reference_fr'] ?? date('d/m/Y')) ?></div>
           </div>
         </div>
 
