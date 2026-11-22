@@ -2946,6 +2946,22 @@ VALUES (
     'SCOLAIRITE',
     'actif',
     '2026-11-22 02:00:00'
+  ),
+  (
+    191,
+    'VIEW_DELIBERATIONS',
+    'Consulter les Délibérations & Décisions Annuelles',
+    'PEDAGOGIE',
+    'actif',
+    '2026-11-22 13:55:00'
+  ),
+  (
+    192,
+    'MANAGE_DELIBERATIONS',
+    'Valider, Figer & Ajuster les Délibérations Annuelles',
+    'PEDAGOGIE',
+    'actif',
+    '2026-11-22 13:55:00'
   );
 /*!40000 ALTER TABLE `permissions` ENABLE KEYS */
 ;
@@ -3756,7 +3772,17 @@ VALUES (1347, 'all_control', 'ANNULER_INSCRIPTION'),
   (397, 'ROLE_SUPERADMIN', 'VIEW_USERS'),
   (1616, 'ROLE_SUPERADMIN', 'REPRENDRE_PHOTO_INSCRIPTION'),
   (1617, 'all_control', 'REPRENDRE_PHOTO_INSCRIPTION'),
-  (1618, 'ROLE_DIR_ETUDES', 'REPRENDRE_PHOTO_INSCRIPTION');
+  (1618, 'ROLE_DIR_ETUDES', 'REPRENDRE_PHOTO_INSCRIPTION'),
+  (1619, 'ROLE_SUPERADMIN', 'VIEW_DELIBERATIONS'),
+  (1620, 'all_control', 'VIEW_DELIBERATIONS'),
+  (1621, 'ROLE_DIR_GENERAL', 'VIEW_DELIBERATIONS'),
+  (1622, 'ROLE_DIR_ETUDES', 'VIEW_DELIBERATIONS'),
+  (1623, 'ROLE_CHEF_DEP', 'VIEW_DELIBERATIONS'),
+  (1624, 'ROLE_SCOLARITE', 'VIEW_DELIBERATIONS'),
+  (1625, 'ROLE_SUPERADMIN', 'MANAGE_DELIBERATIONS'),
+  (1626, 'all_control', 'MANAGE_DELIBERATIONS'),
+  (1627, 'ROLE_DIR_GENERAL', 'MANAGE_DELIBERATIONS'),
+  (1628, 'ROLE_DIR_ETUDES', 'MANAGE_DELIBERATIONS');
 /*!40000 ALTER TABLE `role_permissions` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -5762,5 +5788,47 @@ CREATE TABLE `rate_limits` (
   KEY `idx_rate_limits_action` (`action_name`),
   KEY `idx_rate_limits_ip` (`ip_address`),
   KEY `idx_rate_limits_locked_until` (`locked_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+
+--
+-- Table structure for table `deliberations`
+--
+
+DROP TABLE IF EXISTS `deliberations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `deliberations` (
+  `id_deliberation` int NOT NULL AUTO_INCREMENT,
+  `code_deliberation` varchar(50) NOT NULL,
+  `inscription_code` varchar(50) NOT NULL,
+  `etudiant_code` varchar(50) NOT NULL,
+  `classe_code` varchar(50) NOT NULL,
+  `annee_code` varchar(50) NOT NULL,
+  `etablissement_code` varchar(50) NOT NULL,
+  `moyenne_s1` decimal(5,2) DEFAULT NULL,
+  `moyenne_s2` decimal(5,2) DEFAULT NULL,
+  `moyenne_examen` decimal(5,2) DEFAULT NULL,
+  `moyenne_annuelle` decimal(5,2) DEFAULT NULL,
+  `rang_annuel` int DEFAULT NULL,
+  `effectif_classe` int DEFAULT NULL,
+  `mention_finale` varchar(100) DEFAULT NULL,
+  `code_distinction_sanction` varchar(50) DEFAULT NULL,
+  `decision_finale` enum('admis','ajourne','redouble','exclu','en_attente') NOT NULL DEFAULT 'en_attente',
+  `libelle_decision` varchar(150) DEFAULT NULL,
+  `est_rachete` tinyint(1) NOT NULL DEFAULT '0',
+  `observation_jury` text,
+  `statut_deliberation` enum('provisoire','valide') NOT NULL DEFAULT 'valide',
+  `user_code` varchar(50) DEFAULT NULL,
+  `date_deliberation` datetime NOT NULL,
+  `updated_at_deliberation` datetime DEFAULT NULL,
+  PRIMARY KEY (`id_deliberation`),
+  UNIQUE KEY `uq_code_deliberation` (`code_deliberation`),
+  UNIQUE KEY `uq_deliberation_inscription` (`inscription_code`),
+  KEY `idx_delib_annee_classe` (`annee_code`, `classe_code`),
+  KEY `idx_delib_etudiant` (`etudiant_code`),
+  KEY `idx_delib_decision` (`decision_finale`),
+  KEY `idx_delib_statut` (`statut_deliberation`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

@@ -11,6 +11,24 @@ $selectedSemestreCode = $selectedSemestreCode ?? '';
 $selectedSemestreLibelle = $selectedSemestreLibelle ?? ($selectedSemestreCode ?: '-');
 $encryptedClasseCode = $encryptedClasseCode ?? '';
 $anneeLibelle = $anneeLibelle ?? '-';
+$deliberationsMap = $deliberationsMap ?? [];
+$deliberationSummary = $deliberationSummary ?? [
+  'is_delibere' => false,
+  'has_provisoire' => false,
+  'total_deliberes' => 0,
+  'total_valides' => 0,
+  'nb_admis' => 0,
+  'nb_ajournes' => 0,
+  'nb_redoublants' => 0,
+  'nb_exclus' => 0,
+  'nb_en_attente' => 0,
+  'nb_rachetes' => 0,
+  'last_date_deliberation' => null,
+  'delibere_par_nom' => ''
+];
+$isFinalSemestre = !empty($isFinalSemestre);
+$canManageDeliberations = !empty($canManageDeliberations);
+$canWriteYear = !empty($canWriteYear);
 $etab = !empty($etablissement) && is_array($etablissement) ? $etablissement : ($etablissementConfig ?? []);
 $nomEtab = $etab['nom_etablissement'] ?? ($globalEtablissementNom ?? '');
 $titreDirPed = $etab['titre_direction_pedagogique'] ?? 'Le Directeur des Études';
@@ -97,6 +115,92 @@ $mentionCachet = $etab['mention_cachet_signature'] ?? 'Signature & Cachet';
         </form>
       </div>
 
+      <!-- Statut & Actions de Délibération Annuelle Officielle (non imprimable) -->
+      <?php if (!empty($selectedClasseCode) && !empty($classeInfo)):
+        $isDelibValidee = !empty($deliberationSummary['is_delibere']);
+        $isDelibProvisoire = !$isDelibValidee && !empty($deliberationSummary['has_provisoire']);
+        $dateDelibFmt = !empty($deliberationSummary['last_date_deliberation'])
+          ? date('d/m/Y à H:i', strtotime($deliberationSummary['last_date_deliberation']))
+          : '';
+        $nbNonAdmisDelib = (int)($deliberationSummary['nb_ajournes'] ?? 0)
+          + (int)($deliberationSummary['nb_redoublants'] ?? 0)
+          + (int)($deliberationSummary['nb_exclus'] ?? 0);
+        $bannerBg = $isDelibValidee ? '#F0FDF4' : ($isDelibProvisoire ? '#FFFBEB' : '#F8FAFC');
+        $bannerBorder = $isDelibValidee ? '#86EFAC' : ($isDelibProvisoire ? '#FDE68A' : '#E2E8F0');
+        $badgeBg = $isDelibValidee ? '#15803D' : ($isDelibProvisoire ? '#B45309' : '#475569');
+      ?>
+      <div class="card no-print" id="deliberation-status-card" style="background: <?= $bannerBg ?>; border-radius: 12px; padding: 16px 20px; border: 1px solid <?= $bannerBorder ?>; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 260px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: <?= $badgeBg ?>; color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="<?= $isDelibValidee ? 'shield-check' : ($isDelibProvisoire ? 'unlock' : 'scale') ?>" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 14px; color: #0F172A;">Délibération Annuelle de la Classe</strong>
+                <?php if ($isDelibValidee): ?>
+                  <span style="font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: #DCFCE7; color: #166534; border: 1px solid #86EFAC;">
+                    Validée &amp; Figée
+                  </span>
+                <?php elseif ($isDelibProvisoire): ?>
+                  <span style="font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;">
+                    Provisoire (Réouverte)
+                  </span>
+                <?php else: ?>
+                  <span style="font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: #E2E8F0; color: #334155;">
+                    Non délibérée (Calcul en direct)
+                  </span>
+                <?php endif; ?>
+              </div>
+              <div style="font-size: 12.5px; color: #475569; margin-top: 4px; line-height: 1.45;">
+                <?php if ($isDelibValidee): ?>
+                  Les décisions annuelles officielles sont enregistrées et réutilisées directement (réinscription, fiche étudiant, bulletins S2) sans recalcul.
+                  <?php if ($dateDelibFmt !== ''): ?>
+                    <br><span style="color: #166534; font-weight: 600;">Validée le <?= htmlspecialchars($dateDelibFmt) ?><?= !empty($deliberationSummary['delibere_par_nom']) ? (' par ' . htmlspecialchars($deliberationSummary['delibere_par_nom'])) : '' ?></span>
+                  <?php endif; ?>
+                  <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; font-size: 12px; font-weight: 700;">
+                    <span style="color: #15803D;">Admis : <?= (int)($deliberationSummary['nb_admis'] ?? 0) ?></span>
+                    <span style="color: #991B1B;">Ajournés / Autres : <?= $nbNonAdmisDelib ?></span>
+                    <?php if (!empty($deliberationSummary['nb_rachetes'])): ?>
+                      <span style="color: #B45309;">Dont rachetés : <?= (int)$deliberationSummary['nb_rachetes'] ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($deliberationSummary['nb_en_attente'])): ?>
+                      <span style="color: #64748B;">En attente : <?= (int)$deliberationSummary['nb_en_attente'] ?></span>
+                    <?php endif; ?>
+                  </div>
+                <?php elseif ($isDelibProvisoire): ?>
+                  La délibération de cette classe est actuellement en mode provisoire. Revalidez-la pour figer à nouveau les décisions annuelles officielles.
+                <?php else: ?>
+                  Validez la délibération en fin d'année pour calculer une seule fois les moyennes annuelles et figer officiellement les décisions du conseil de classe (avec possibilité d'ajuster les rachats).
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+
+          <?php if ($canManageDeliberations && $canWriteYear && !empty($pvRows)): ?>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <?php if (!$isDelibValidee): ?>
+                <button type="button" id="btn-valider-deliberation" data-mode="validate" class="btn btn-success" style="background: #15803D; border-color: #15803D; color: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 9px 16px; display: inline-flex; align-items: center; gap: 7px; cursor: pointer;">
+                  <i data-lucide="check-circle-2" style="width: 17px; height: 17px;"></i> Valider &amp; Figer la Délibération Annuelle
+                </button>
+              <?php else: ?>
+                <button type="button" id="btn-valider-deliberation" data-mode="recalculate" class="btn btn-outline-primary" style="border-color: #1E3A5F; color: #1E3A5F; background: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <i data-lucide="refresh-cw" style="width: 15px; height: 15px;"></i> Recalculer &amp; Mettre à jour
+                </button>
+                <button type="button" id="btn-reouvrir-deliberation" class="btn btn-outline-warning" style="border-color: #D97706; color: #B45309; background: #FFFFFF; font-weight: 700; border-radius: 8px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <i data-lucide="unlock" style="width: 15px; height: 15px;"></i> Rouvrir (Provisoire)
+                </button>
+              <?php endif; ?>
+            </div>
+          <?php elseif ($canManageDeliberations && !$canWriteYear): ?>
+            <span style="font-size: 12px; font-weight: 700; color: #64748B; background: #F1F5F9; padding: 6px 12px; border-radius: 8px; border: 1px solid #CBD5E1; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Année clôturée (lecture seule)
+            </span>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endif; ?>
+
       <!-- PV  ET IMPRIMABLE -->
       <div class="card pv-container" style="background: #FFFFFF; border-radius: 12px; padding: 32px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box;">
         
@@ -174,13 +278,41 @@ $mentionCachet = $etab['mention_cachet_signature'] ?? 'Signature & Cachet';
                 </tr>
               <?php else: ?>
                 <?php foreach ($pvRows as $row): 
+                  $inscCodeRow = $row['inscription_code'] ?? '';
+                  $delibRow = ($inscCodeRow !== '' && isset($deliberationsMap[$inscCodeRow])) ? $deliberationsMap[$inscCodeRow] : null;
+                  $hasValidatedDelib = ($delibRow !== null && (($delibRow['statut_deliberation'] ?? '') === STATUTS::VALIDE));
+
                   $isNonEval = ($row['decision'] === 'Non éval.' || (float)($row['total_coef'] ?? 0) <= 0);
                   $isAdmis = (!$isNonEval && $row['decision'] === 'Admis(e)');
                   $isTop3 = ($row['rang'] !== null && (int)$row['rang'] <= 3);
                   $moyBg = $isNonEval ? '#F8FAFC' : ($isAdmis ? '#F0FDF4' : '#FEF2F2');
                   $moyColor = $isNonEval ? '#64748B' : ($isAdmis ? '#15803D' : '#991B1B');
+
+                  $displayDecision = $row['decision'];
                   $decBg = $isNonEval ? '#F1F5F9' : ($isAdmis ? '#DCFCE7' : '#FEE2E2');
                   $decColor = $isNonEval ? '#475569' : ($isAdmis ? '#166534' : '#991B1B');
+                  $isRacheteRow = false;
+                  $obsJuryRow = '';
+
+                  if ($isFinalSemestre && $hasValidatedDelib) {
+                    $decCode = $delibRow['decision_finale'] ?? 'en_attente';
+                    $displayDecision = !empty($delibRow['libelle_decision']) ? $delibRow['libelle_decision'] : ModelDeliberation::defaultLabelForDecision($decCode, !empty($delibRow['est_rachete']));
+                    $isRacheteRow = !empty($delibRow['est_rachete']);
+                    $obsJuryRow = (string)($delibRow['observation_jury'] ?? '');
+                    if ($decCode === 'admis') {
+                      $decBg = '#DCFCE7';
+                      $decColor = '#166534';
+                    } elseif ($decCode === 'en_attente') {
+                      $decBg = '#F1F5F9';
+                      $decColor = '#475569';
+                    } elseif ($decCode === 'redouble') {
+                      $decBg = '#FEF3C7';
+                      $decColor = '#92400E';
+                    } else {
+                      $decBg = '#FEE2E2';
+                      $decColor = '#991B1B';
+                    }
+                  }
                 ?>
                   <tr style="border-bottom: 1px solid #E2E8F0; <?= $isTop3 ? 'background: #F8FAFC;' : '' ?>">
                     <td style="padding: 8px; border: 1px solid #CBD5E1; text-align: center; font-weight: 800; color: #1E3A5F;">
@@ -210,9 +342,40 @@ $mentionCachet = $etab['mention_cachet_signature'] ?? 'Signature & Cachet';
                       <?= $isNonEval ? '-' : number_format($row['moyenne_generale'], 2) ?>
                     </td>
                     <td style="padding: 8px; border: 1px solid #CBD5E1; text-align: center; font-weight: 700; font-size: 11px;">
-                      <span style="display: inline-block; padding: 3px 8px; border-radius: 4px; background: <?= $decBg ?>; color: <?= $decColor ?>;">
-                        <?= htmlspecialchars($row['decision']) ?>
-                      </span>
+                      <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 3px;">
+                        <div style="display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center;">
+                          <span style="display: inline-block; padding: 3px 8px; border-radius: 4px; background: <?= $decBg ?>; color: <?= $decColor ?>;" <?= $obsJuryRow !== '' ? ('title="Observation jury : ' . htmlspecialchars($obsJuryRow) . '"') : '' ?>>
+                            <?= htmlspecialchars($displayDecision) ?>
+                          </span>
+                          <?php if ($canManageDeliberations && $canWriteYear && $delibRow !== null): ?>
+                            <button type="button"
+                              class="btn-edit-decision-jury no-print"
+                              title="Ajuster la décision officielle du jury (rachat, redoublement, observation)"
+                              data-inscription="<?= htmlspecialchars($inscCodeRow) ?>"
+                              data-etudiant="<?= htmlspecialchars($row['nom_prenom']) ?>"
+                              data-matricule="<?= htmlspecialchars($row['matricule'] ?: '-') ?>"
+                              data-decision="<?= htmlspecialchars($delibRow['decision_finale'] ?? 'en_attente') ?>"
+                              data-libelle="<?= htmlspecialchars($delibRow['libelle_decision'] ?? '') ?>"
+                              data-rachete="<?= !empty($delibRow['est_rachete']) ? '1' : '0' ?>"
+                              data-observation="<?= htmlspecialchars($delibRow['observation_jury'] ?? '') ?>"
+                              data-moy-s1="<?= $delibRow['moyenne_s1'] !== null ? number_format((float)$delibRow['moyenne_s1'], 2) : '-' ?>"
+                              data-moy-s2="<?= $delibRow['moyenne_s2'] !== null ? number_format((float)$delibRow['moyenne_s2'], 2) : '-' ?>"
+                              data-moy-exam="<?= $delibRow['moyenne_examen'] !== null ? number_format((float)$delibRow['moyenne_examen'], 2) : '-' ?>"
+                              data-moy-ann="<?= $delibRow['moyenne_annuelle'] !== null ? number_format((float)$delibRow['moyenne_annuelle'], 2) : '-' ?>"
+                              style="background: #F8FAFC; border: 1px solid #CBD5E1; color: #334155; border-radius: 5px; width: 24px; height: 24px; padding: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                              <i data-lucide="gavel" style="width: 13px; height: 13px;"></i>
+                            </button>
+                          <?php endif; ?>
+                        </div>
+                        <?php if ($isRacheteRow): ?>
+                          <span style="display: inline-block; padding: 1px 6px; border-radius: 4px; background: #FEF3C7; color: #92400E; font-size: 10px; font-weight: 800;">Racheté jury</span>
+                        <?php endif; ?>
+                        <?php if (!$isFinalSemestre && $hasValidatedDelib): ?>
+                          <span class="no-print" style="font-size: 10px; color: #475569; font-weight: 600;">
+                            Annuel : <?= htmlspecialchars($delibRow['libelle_decision'] ?: $delibRow['decision_finale']) ?><?= !empty($delibRow['est_rachete']) ? ' (Racheté)' : '' ?>
+                          </span>
+                        <?php endif; ?>
+                      </div>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -254,4 +417,98 @@ $mentionCachet = $etab['mention_cachet_signature'] ?? 'Signature & Cachet';
   </main>
 </div>
 
-<?php require_once __DIR__ . '/../../public/inc/footer-link.php'; ?>
+<?php if ($canManageDeliberations && $canWriteYear): ?>
+<!-- Modal Ajustement Décision Individuelle du Jury (non imprimable) -->
+<div id="modal-decision-jury" class="no-print" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); z-index: 9999; justify-content: center; align-items: center; padding: 16px;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 560px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.28); overflow: hidden;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 9px; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="gavel" style="width: 18px; height: 18px; color: #FFFFFF;"></i>
+        </div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 800; margin: 0; color: #FFFFFF;">Décision Officielle du Jury</h3>
+          <div id="jury-modal-student-label" style="font-size: 12px; color: #CBD5E1; margin-top: 2px;">Étudiant</div>
+        </div>
+      </div>
+      <button type="button" class="btn-close-modal-jury" style="background: rgba(255,255,255,0.12); border: none; color: #FFFFFF; width: 30px; height: 30px; border-radius: 8px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">&times;</button>
+    </div>
+
+    <form id="form-decision-jury" style="padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;">
+      <input type="hidden" name="inscription_code" id="jury-inscription-code" value="">
+
+      <!-- Rappel des moyennes figées -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 12px; text-align: center;">
+        <div>
+          <div style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase;">Moy. S1</div>
+          <div id="jury-moy-s1" style="font-size: 13px; font-weight: 800; color: #0F172A;">-</div>
+        </div>
+        <div>
+          <div style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase;">Moy. S2</div>
+          <div id="jury-moy-s2" style="font-size: 13px; font-weight: 800; color: #0F172A;">-</div>
+        </div>
+        <div>
+          <div style="font-size: 10px; font-weight: 700; color: #64748B; text-transform: uppercase;">Examen</div>
+          <div id="jury-moy-exam" style="font-size: 13px; font-weight: 800; color: #0F172A;">-</div>
+        </div>
+        <div>
+          <div style="font-size: 10px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Annuelle</div>
+          <div id="jury-moy-ann" style="font-size: 14px; font-weight: 900; color: #1E3A5F;">-</div>
+        </div>
+      </div>
+
+      <div>
+        <label for="jury-decision-finale" style="font-size: 12px; font-weight: 700; color: #0F172A; display: block; margin-bottom: 5px;">Décision finale <span style="color:#EF4444;">*</span></label>
+        <select name="decision_finale" id="jury-decision-finale" class="form-control" required style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #CBD5E1;">
+          <option value="admis">Admis(e) — Passage en classe supérieure</option>
+          <option value="ajourne">Ajourné(e)</option>
+          <option value="redouble">Redoublement</option>
+          <option value="exclu">Exclu(e)</option>
+          <option value="en_attente">En attente</option>
+        </select>
+      </div>
+
+      <div id="jury-rachat-wrapper" style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 10px 12px;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; font-size: 12.5px; font-weight: 700; color: #92400E;">
+          <input type="checkbox" name="est_rachete" id="jury-est-rachete" value="1" style="width: 16px; height: 16px;">
+          Admis(e) par rachat exceptionnel du jury
+        </label>
+      </div>
+
+      <div>
+        <label for="jury-libelle-decision" style="font-size: 12px; font-weight: 700; color: #0F172A; display: block; margin-bottom: 5px;">Libellé officiel affiché (PV, Bulletin S2, Fiche)</label>
+        <input type="text" name="libelle_decision" id="jury-libelle-decision" class="form-control" maxlength="150" placeholder="Ex : Admis(e) par rachat du jury" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #CBD5E1;">
+      </div>
+
+      <div>
+        <label for="jury-observation" style="font-size: 12px; font-weight: 700; color: #0F172A; display: block; margin-bottom: 5px;">Observation / Motif du jury (optionnel)</label>
+        <textarea name="observation_jury" id="jury-observation" rows="3" class="form-control" placeholder="Ex : Assiduité exemplaire et progression constante au S2..." style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #CBD5E1; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E2E8F0; padding-top: 14px; margin-top: 4px;">
+        <button type="button" class="btn btn-outline-secondary btn-close-modal-jury" style="border-radius: 8px; padding: 8px 18px; font-weight: 700; cursor: pointer;">Annuler</button>
+        <button type="submit" id="btn-submit-decision-jury" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; color: #FFFFFF; border-radius: 8px; padding: 8px 20px; font-weight: 700; cursor: pointer;">Enregistrer la Décision</button>
+      </div>
+    </form>
+  </div>
+</div>
+<?php endif; ?>
+
+<script type="application/json" id="pv-deliberation-config">
+<?= json_encode([
+  'racine' => RACINE,
+  'csrfToken' => Validator::generateCsrfToken(),
+  'classeCode' => $selectedClasseCode,
+  'classeLibelle' => $classeInfo['libelle_classe'] ?? $selectedClasseCode,
+  'anneeCode' => $selectedAnneeCode,
+  'anneeLibelle' => $anneeLibelle,
+  'validerUrl' => url('bulletin/validerDeliberation'),
+  'modifierUrl' => url('bulletin/modifierDecisionJury'),
+  'reouvrirUrl' => url('bulletin/reouvrirDeliberation')
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
+</script>
+
+<?php
+ViewContext::setScripts(['public/assets/js/modules/notes.js']);
+require_once __DIR__ . '/../../public/inc/footer-link.php';
+?>

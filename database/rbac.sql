@@ -157,7 +157,9 @@ INSERT INTO `permissions` (`id_permission`, `code_permission`, `libelle_permissi
 (187, 'CANCEL_CAISSE_ANNEXE', 'Annuler un Encaissement de la Caisse Annexe', 'FINANCE', 'actif', '2026-11-19 00:42:16'),
 (188, 'MANAGE_ARRIERES', 'Gérer & Encaisser les Arriérés Années Antérieures', 'FINANCE', 'actif', '2026-11-19 00:42:16'),
 (189, 'VIEW_ARRIERES', 'Consulter les Arriérés Années Antérieures', 'FINANCE', 'actif', '2026-11-19 00:42:16'),
-(190, 'REPRENDRE_PHOTO_INSCRIPTION', 'Reprendre / Modifier la Photo d\'Identité d\'un Étudiant', 'SCOLAIRITE', 'actif', '2026-11-22 02:00:00');
+(190, 'REPRENDRE_PHOTO_INSCRIPTION', 'Reprendre / Modifier la Photo d\'Identité d\'un Étudiant', 'SCOLAIRITE', 'actif', '2026-11-22 02:00:00'),
+(191, 'VIEW_DELIBERATIONS', 'Consulter les Délibérations & Décisions Annuelles', 'PEDAGOGIE', 'actif', '2026-11-22 13:55:00'),
+(192, 'MANAGE_DELIBERATIONS', 'Valider, Figer & Ajuster les Délibérations Annuelles', 'PEDAGOGIE', 'actif', '2026-11-22 13:55:00');
 
 -- --------------------------------------------------------
 -- 2. Structure & Données : `roles`
@@ -665,7 +667,17 @@ INSERT INTO `role_permissions` (`id`, `role_code`, `permission_code`) VALUES
 (1615, 'ROLE_CAISSIER', 'VIEW_ARRIERES'),
 (1616, 'ROLE_SUPERADMIN', 'REPRENDRE_PHOTO_INSCRIPTION'),
 (1617, 'all_control', 'REPRENDRE_PHOTO_INSCRIPTION'),
-(1618, 'ROLE_DIR_ETUDES', 'REPRENDRE_PHOTO_INSCRIPTION');
+(1618, 'ROLE_DIR_ETUDES', 'REPRENDRE_PHOTO_INSCRIPTION'),
+(1619, 'ROLE_SUPERADMIN', 'VIEW_DELIBERATIONS'),
+(1620, 'all_control', 'VIEW_DELIBERATIONS'),
+(1621, 'ROLE_DIR_GENERAL', 'VIEW_DELIBERATIONS'),
+(1622, 'ROLE_DIR_ETUDES', 'VIEW_DELIBERATIONS'),
+(1623, 'ROLE_CHEF_DEP', 'VIEW_DELIBERATIONS'),
+(1624, 'ROLE_SCOLARITE', 'VIEW_DELIBERATIONS'),
+(1625, 'ROLE_SUPERADMIN', 'MANAGE_DELIBERATIONS'),
+(1626, 'all_control', 'MANAGE_DELIBERATIONS'),
+(1627, 'ROLE_DIR_GENERAL', 'MANAGE_DELIBERATIONS'),
+(1628, 'ROLE_DIR_ETUDES', 'MANAGE_DELIBERATIONS');
 
 SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

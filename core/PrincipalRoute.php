@@ -60,6 +60,7 @@ require_once __DIR__ . '/../models/absences/ModelAbsence.php';
 require_once __DIR__ . '/../models/notes/ModelNote.php';
 require_once __DIR__ . '/../models/compositions/ModelComposition.php';
 require_once __DIR__ . '/../models/maquettes/ModelMaquette.php';
+require_once __DIR__ . '/../models/bulletin/ModelDeliberation.php';
 
 
 // Médias & Communication Models

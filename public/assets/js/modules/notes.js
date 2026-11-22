@@ -1947,5 +1947,265 @@ $(document).ready(function () {
     }
   }
 
+  // =========================================================================
+  // 6. VUE : PV DE CLASSE & DÉLIBÉRATION ANNUELLE (Exécuté si #pv-deliberation-config présent)
+  // =========================================================================
+  if ($('#pv-deliberation-config').length) {
+    (function () {
+      var delibCfg = {};
+      try {
+        delibCfg = JSON.parse(document.getElementById('pv-deliberation-config').textContent || '{}');
+      } catch (e) {
+        delibCfg = {};
+      }
+
+      if ($.fn.select2 && $('#filter-pv-form .select2').length) {
+        $('#filter-pv-form .select2').select2({ width: '100%' });
+      }
+
+      function notifySuccess(msg) {
+        if (window.GEICG && typeof window.GEICG.toast === 'function') {
+          window.GEICG.toast(msg, 'success');
+        } else if (window.toastr && typeof window.toastr.success === 'function') {
+          window.toastr.success(msg);
+        }
+      }
+
+      function notifyError(msg) {
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: msg || 'Une erreur est survenue.',
+            confirmButtonColor: '#1E3A5F',
+            didOpen: function () {
+              var c = document.querySelector('.swal2-container');
+              if (c) c.style.zIndex = '10050';
+            }
+          });
+        } else if (window.toastr && typeof window.toastr.error === 'function') {
+          window.toastr.error(msg || 'Une erreur est survenue.');
+        }
+      }
+
+      function confirmAction(opts, onConfirm) {
+        if (window.Swal) {
+          Swal.fire({
+            icon: opts.icon || 'question',
+            title: opts.title || 'Confirmation',
+            html: opts.html || opts.text || '',
+            showCancelButton: true,
+            confirmButtonText: opts.confirmText || 'Confirmer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: opts.confirmColor || '#15803D',
+            cancelButtonColor: '#64748B',
+            reverseButtons: true,
+            didOpen: function () {
+              var c = document.querySelector('.swal2-container');
+              if (c) c.style.zIndex = '10050';
+            }
+          }).then(function (result) {
+            if (result.isConfirmed && typeof onConfirm === 'function') {
+              onConfirm();
+            }
+          });
+        } else if (typeof onConfirm === 'function') {
+          onConfirm();
+        }
+      }
+
+      function defaultLibelleForDecision(code, rachete) {
+        if (code === 'admis') return rachete ? 'Admis(e) par rachat du jury' : 'Admis(e) en classe supérieure';
+        if (code === 'redouble') return 'Redoublement';
+        if (code === 'exclu') return 'Exclu(e)';
+        if (code === 'ajourne') return 'Ajourné(e) / Redoublement';
+        return 'En attente';
+      }
+
+      // 1) Valider & Figer (ou Recalculer) la délibération annuelle de la classe
+      $(document).on('click', '#btn-valider-deliberation', function () {
+        var $btn = $(this);
+        var mode = $btn.data('mode') || 'validate';
+        var isRecalc = (mode === 'recalculate');
+
+        confirmAction({
+          icon: isRecalc ? 'warning' : 'question',
+          title: isRecalc ? 'Recalculer & Mettre à jour la délibération ?' : 'Valider & Figer la délibération annuelle ?',
+          html: isRecalc
+            ? 'Les moyennes annuelles et rangs de la classe <strong>' + $('<div>').text(delibCfg.classeLibelle || '').html() + '</strong> seront recalculés à partir des notes actuelles.<br><small style="color:#64748B;">Les rachats et décisions individuelles du jury déjà saisis seront préservés.</small>'
+            : 'Cette action calcule les moyennes annuelles de <strong>' + $('<div>').text(delibCfg.classeLibelle || '').html() + '</strong> (' + $('<div>').text(delibCfg.anneeLibelle || '').html() + ') et fige officiellement les décisions finales.<br><small style="color:#64748B;">Les réinscriptions, fiches étudiants et bulletins S2 liront directement ces décisions sans recalcul.</small>',
+          confirmText: isRecalc ? 'Oui, recalculer' : 'Oui, valider & figer',
+          confirmColor: isRecalc ? '#1E3A5F' : '#15803D'
+        }, function () {
+          var originalHtml = $btn.html();
+          $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Traitement en cours...');
+
+          $.ajax({
+            url: delibCfg.validerUrl,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+              csrf_token: delibCfg.csrfToken,
+              classe_code: delibCfg.classeCode,
+              annee_code: delibCfg.anneeCode,
+              preserve_manual: '1'
+            },
+            success: function (res) {
+              if (res && parseInt(res.status, 10) === 1) {
+                notifySuccess(res.message || 'Délibération validée avec succès.');
+                window.location.reload();
+              } else {
+                $btn.prop('disabled', false).html(originalHtml);
+                if (window.lucide) lucide.createIcons();
+                notifyError((res && res.message) ? res.message : 'Échec de la validation.');
+              }
+            },
+            error: function (xhr) {
+              $btn.prop('disabled', false).html(originalHtml);
+              if (window.lucide) lucide.createIcons();
+              var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur réseau lors de la délibération.';
+              notifyError(msg);
+            }
+          });
+        });
+      });
+
+      // 2) Rouvrir (statut provisoire) la délibération de la classe
+      $(document).on('click', '#btn-reouvrir-deliberation', function () {
+        var $btn = $(this);
+        confirmAction({
+          icon: 'warning',
+          title: 'Rouvrir la délibération en provisoire ?',
+          html: 'Les décisions figées de la classe <strong>' + $('<div>').text(delibCfg.classeLibelle || '').html() + '</strong> repasseront en statut <strong>provisoire</strong> (recalcul dynamique rétabli jusqu\'à la prochaine validation).',
+          confirmText: 'Oui, rouvrir',
+          confirmColor: '#D97706'
+        }, function () {
+          var originalHtml = $btn.html();
+          $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Réouverture...');
+
+          $.ajax({
+            url: delibCfg.reouvrirUrl,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+              csrf_token: delibCfg.csrfToken,
+              classe_code: delibCfg.classeCode,
+              annee_code: delibCfg.anneeCode
+            },
+            success: function (res) {
+              if (res && parseInt(res.status, 10) === 1) {
+                notifySuccess(res.message || 'Délibération réouverte.');
+                window.location.reload();
+              } else {
+                $btn.prop('disabled', false).html(originalHtml);
+                if (window.lucide) lucide.createIcons();
+                notifyError((res && res.message) ? res.message : 'Échec de la réouverture.');
+              }
+            },
+            error: function (xhr) {
+              $btn.prop('disabled', false).html(originalHtml);
+              if (window.lucide) lucide.createIcons();
+              var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur réseau lors de la réouverture.';
+              notifyError(msg);
+            }
+          });
+        });
+      });
+
+      // 3) Modal d'ajustement individuel du jury (rachat, redoublement, exclusion, observation)
+      var $modalJury = $('#modal-decision-jury');
+      var $selDecision = $('#jury-decision-finale');
+      var $chkRachete = $('#jury-est-rachete');
+      var $wrapRachat = $('#jury-rachat-wrapper');
+      var $inpLibelle = $('#jury-libelle-decision');
+
+      function syncRachatVisibility(autoUpdateLibelle) {
+        var dec = $selDecision.val();
+        if (dec === 'admis') {
+          $wrapRachat.show();
+        } else {
+          $chkRachete.prop('checked', false);
+          $wrapRachat.hide();
+        }
+        if (autoUpdateLibelle) {
+          $inpLibelle.val(defaultLibelleForDecision(dec, $chkRachete.is(':checked')));
+        }
+      }
+
+      $(document).on('click', '.btn-edit-decision-jury', function () {
+        var $b = $(this);
+        $('#jury-inscription-code').val($b.attr('data-inscription') || '');
+        $('#jury-modal-student-label').text(($b.attr('data-etudiant') || '') + ' • ' + ($b.attr('data-matricule') || '-'));
+        $('#jury-moy-s1').text($b.attr('data-moy-s1') || '-');
+        $('#jury-moy-s2').text($b.attr('data-moy-s2') || '-');
+        $('#jury-moy-exam').text($b.attr('data-moy-exam') || '-');
+        $('#jury-moy-ann').text($b.attr('data-moy-ann') || '-');
+
+        $selDecision.val($b.attr('data-decision') || 'en_attente');
+        $chkRachete.prop('checked', ($b.attr('data-rachete') === '1'));
+        $inpLibelle.val($b.attr('data-libelle') || '');
+        $('#jury-observation').val($b.attr('data-observation') || '');
+
+        syncRachatVisibility(false);
+        $modalJury.css('display', 'flex');
+        if (window.lucide) lucide.createIcons();
+      });
+
+      $selDecision.on('change', function () {
+        syncRachatVisibility(true);
+      });
+
+      $chkRachete.on('change', function () {
+        syncRachatVisibility(true);
+      });
+
+      $(document).on('click', '.btn-close-modal-jury', function () {
+        $modalJury.hide();
+      });
+
+      $modalJury.on('click', function (e) {
+        if (e.target === this) {
+          $modalJury.hide();
+        }
+      });
+
+      $('#form-decision-jury').on('submit', function (e) {
+        e.preventDefault();
+        var $btnSubmit = $('#btn-submit-decision-jury');
+        var originalText = $btnSubmit.text();
+        $btnSubmit.prop('disabled', true).text('Enregistrement...');
+
+        $.ajax({
+          url: delibCfg.modifierUrl,
+          type: 'POST',
+          dataType: 'json',
+          data: {
+            csrf_token: delibCfg.csrfToken,
+            inscription_code: $('#jury-inscription-code').val(),
+            decision_finale: $selDecision.val(),
+            libelle_decision: $inpLibelle.val(),
+            est_rachete: $chkRachete.is(':checked') ? '1' : '0',
+            observation_jury: $('#jury-observation').val()
+          },
+          success: function (res) {
+            if (res && parseInt(res.status, 10) === 1) {
+              $modalJury.hide();
+              notifySuccess(res.message || 'Décision du jury enregistrée.');
+              window.location.reload();
+            } else {
+              $btnSubmit.prop('disabled', false).text(originalText);
+              notifyError((res && res.message) ? res.message : 'Erreur lors de la sauvegarde.');
+            }
+          },
+          error: function (xhr) {
+            $btnSubmit.prop('disabled', false).text(originalText);
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur réseau lors de la sauvegarde.';
+            notifyError(msg);
+          }
+        });
+      });
+    })();
+  }
+
   if (window.lucide) lucide.createIcons();
 });

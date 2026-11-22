@@ -117,6 +117,7 @@ class TABLES
     public const COMPOSITION_MATIERES = 'composition_matieres';
     public const COMPOSITION_NIVEAU_FILIERE = 'composition_niveau_filiere';
     public const BULLETINS = 'bulletins';
+    public const DELIBERATIONS = 'deliberations';
     public const V_SESSIONS_EVALUATIONS = 'v_sessions_evaluations';
     public const V_BULLETIN_INSCRIPTIONS_SYNTHESE = 'v_bulletin_inscriptions_synthese';
 
@@ -261,11 +262,13 @@ class PERMISSIONS
     public const GENERATE_BULLETINS               = 'GENERATE_BULLETINS';
     public const LOCK_NOTES                       = 'LOCK_NOTES';
     public const MANAGE_AFFECTATIONS              = 'MANAGE_AFFECTATIONS';
+    public const MANAGE_DELIBERATIONS             = 'MANAGE_DELIBERATIONS';
     public const MANAGE_EMPLOI_TEMPS              = 'MANAGE_EMPLOI_TEMPS';
     public const MANAGE_ENSEIGNANTS               = 'MANAGE_ENSEIGNANTS';
     public const MANAGE_EXAMENS                   = 'MANAGE_EXAMENS';
     public const VIEW_AFFECTATIONS                = 'VIEW_AFFECTATIONS';
     public const VIEW_BULLETINS                   = 'VIEW_BULLETINS';
+    public const VIEW_DELIBERATIONS               = 'VIEW_DELIBERATIONS';
     public const VIEW_EMPLOI_TEMPS                = 'VIEW_EMPLOI_TEMPS';
     public const VIEW_ENSEIGNANTS                 = 'VIEW_ENSEIGNANTS';
     public const VIEW_EXAMENS                     = 'VIEW_EXAMENS';
@@ -349,6 +352,10 @@ class STATUTS
 
     // COMPOSITIONS / EXAMENS
     public const COMPOSITIONS = [self::PROGRAMME, self::EN_COURS, self::TERMINE, self::ANNULE];
+
+    // DÉLIBÉRATIONS ANNUELLES
+    public const DECISIONS_DELIBERATION = ['admis', 'ajourne', 'redouble', 'exclu', 'en_attente'];
+    public const STATUTS_DELIBERATION   = ['provisoire', 'valide'];
 
     // ABSENCES
     public const ABSENCES = [self::JUSTIFIE, self::NON_JUSTIFIE];

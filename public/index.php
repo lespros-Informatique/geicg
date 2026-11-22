@@ -564,6 +564,9 @@ $route->addRoute('/bulletin/imprimerBulletinPdf/{param}', [$bulletinController, 
 $route->addRoute('/bulletin/imprimerClasseBulletinsPdf', [$bulletinController, 'imprimerClasseBulletinsPdf']);
 $route->addRoute('/bulletin/imprimerPvPdf/{param}', [$bulletinController, 'imprimerPvPdf']);
 $route->addRoute('/bulletin/imprimerPvPdf', [$bulletinController, 'imprimerPvPdf']);
+$route->addRoute('/bulletin/validerDeliberation', [$bulletinController, 'validerDeliberation']);
+$route->addRoute('/bulletin/modifierDecisionJury', [$bulletinController, 'modifierDecisionJury']);
+$route->addRoute('/bulletin/reouvrirDeliberation', [$bulletinController, 'reouvrirDeliberation']);
 $route->addRoute('/bulletin/formulaire', [$bulletinController, 'formulaire']);
 
 // Module: evenement (EvenementController)

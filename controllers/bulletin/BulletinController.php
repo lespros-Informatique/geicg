@@ -540,7 +540,12 @@ class BulletinController extends BaseController
     public function pvClasse($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
+        $this->requirePermission([
+            PERMISSIONS::VIEW_BULLETINS,
+            PERMISSIONS::VIEW_NOTES,
+            PERMISSIONS::VIEW_DELIBERATIONS,
+            PERMISSIONS::MANAGE_DELIBERATIONS
+        ]);
 
         $ctx = $this->resolvePvContext($param, true);
         if ($ctx === null) {
@@ -548,25 +553,55 @@ class BulletinController extends BaseController
         }
 
         $selectedClasseCode = $ctx['selectedClasseCode'];
+        $selectedAnneeCode = $ctx['anneeCode'] ?? '';
+        $selectedSemestreCode = $ctx['selectedSemestreCode'];
+        $semestres = $ctx['semestres'];
         $encryptedClasseCode = !empty($selectedClasseCode) ? $this->validator->crypter($selectedClasseCode) : '';
+
+        $delibModel = new ModelDeliberation();
+        $deliberationsMap = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
+            ? $delibModel->getByClasseAndAnnee($selectedClasseCode, $selectedAnneeCode)
+            : [];
+        $deliberationSummary = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
+            ? $delibModel->getClasseDeliberationSummary($selectedClasseCode, $selectedAnneeCode)
+            : $delibModel->getClasseDeliberationSummary('', '');
+
+        $lastSem = !empty($semestres) ? end($semestres) : null;
+        $isFinalSemestre = empty($semestres)
+            || ($selectedSemestreCode === ($lastSem['code_semestre'] ?? ''))
+            || $this->model->isDeuxiemeSemestre($selectedSemestreCode, $semestres);
+
+        $canManageDeliberations = Auth::can(PERMISSIONS::MANAGE_DELIBERATIONS) && empty($ctx['isTeacherOnly']);
+        $canWriteYear = !empty($selectedAnneeCode) && $this->canWriteAcademicYear($selectedAnneeCode);
 
         $this->loadView('../views/bulletin/pv_classe.php', array_merge($ctx['pvData'], [
             'etablissement' => $this->getEtablissementConfig(),
             'classes' => $ctx['classes'],
-            'semestres' => $ctx['semestres'],
-            'selectedAnneeCode' => $ctx['anneeCode'] ?? '',
+            'semestres' => $semestres,
+            'selectedAnneeCode' => $selectedAnneeCode,
             'selectedClasseCode' => $selectedClasseCode,
-            'selectedSemestreCode' => $ctx['selectedSemestreCode'],
+            'selectedSemestreCode' => $selectedSemestreCode,
             'selectedSemestreLibelle' => $ctx['selectedSemestreLibelle'],
             'encryptedClasseCode' => $encryptedClasseCode,
-            'isTeacherOnly' => $ctx['isTeacherOnly']
+            'isTeacherOnly' => $ctx['isTeacherOnly'],
+            'deliberationsMap' => $deliberationsMap,
+            'deliberationSummary' => $deliberationSummary,
+            'isFinalSemestre' => $isFinalSemestre,
+            'canManageDeliberations' => $canManageDeliberations,
+            'canWriteYear' => $canWriteYear
         ]));
     }
 
     public function imprimerPvPdf($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::VIEW_NOTES]);
+        $this->requirePermission([
+            PERMISSIONS::VIEW_BULLETINS,
+            PERMISSIONS::GENERATE_BULLETINS,
+            PERMISSIONS::VIEW_NOTES,
+            PERMISSIONS::VIEW_DELIBERATIONS,
+            PERMISSIONS::MANAGE_DELIBERATIONS
+        ]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $ctx = $this->resolvePvContext($param, false);
@@ -575,8 +610,10 @@ class BulletinController extends BaseController
         }
 
         $selectedClasseCode = $ctx['selectedClasseCode'];
+        $selectedAnneeCode = $ctx['anneeCode'] ?? '';
         $selectedSemestreCode = $ctx['selectedSemestreCode'];
         $selectedSemestreLibelle = $ctx['selectedSemestreLibelle'];
+        $semestres = $ctx['semestres'];
         $pvData = $ctx['pvData'];
 
         if (empty($pvData['classeInfo'])) {
@@ -584,11 +621,26 @@ class BulletinController extends BaseController
             return;
         }
 
+        $delibModel = new ModelDeliberation();
+        $deliberationsMap = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
+            ? $delibModel->getByClasseAndAnnee($selectedClasseCode, $selectedAnneeCode)
+            : [];
+        $deliberationSummary = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
+            ? $delibModel->getClasseDeliberationSummary($selectedClasseCode, $selectedAnneeCode)
+            : $delibModel->getClasseDeliberationSummary('', '');
+        $lastSem = !empty($semestres) ? end($semestres) : null;
+        $isFinalSemestre = empty($semestres)
+            || ($selectedSemestreCode === ($lastSem['code_semestre'] ?? ''))
+            || $this->model->isDeuxiemeSemestre($selectedSemestreCode, $semestres);
+
         $dataView = array_merge($pvData, [
             'etablissement' => $this->getEtablissementConfig(),
             'selectedClasseCode' => $selectedClasseCode,
             'selectedSemestreCode' => $selectedSemestreCode,
-            'selectedSemestreLibelle' => $selectedSemestreLibelle
+            'selectedSemestreLibelle' => $selectedSemestreLibelle,
+            'deliberationsMap' => $deliberationsMap,
+            'deliberationSummary' => $deliberationSummary,
+            'isFinalSemestre' => $isFinalSemestre
         ]);
 
         $html = PdfService::renderTemplate('pv_classe_pdf.php', $dataView);
@@ -767,5 +819,194 @@ class BulletinController extends BaseController
             'margin_top' => 8,
             'margin_bottom' => 8
         ]);
+    }
+
+    /**
+     * Valide et fige officiellement la délibération annuelle de toute une classe
+     */
+    public function validerDeliberation()
+    {
+        $this->requireAuth();
+        $this->requirePost(true);
+        $this->requirePermission(PERMISSIONS::MANAGE_DELIBERATIONS);
+
+        $teacherCtx = $this->getTeacherContext();
+        if (!empty($teacherCtx['isTeacherOnly'])) {
+            $this->error("Accès refusé : seuls les membres autorisés de la direction / du jury peuvent valider une délibération.");
+            return;
+        }
+
+        $classeCode = trim((string)($_POST['classe_code'] ?? ''));
+        $anneeCode = trim((string)($_POST['annee_code'] ?? ''));
+        if ($anneeCode === '') {
+            $anneeCode = (string)($this->resolveTargetAcademicYear(null) ?? '');
+        }
+        $preserveManual = !isset($_POST['preserve_manual']) || (string)$_POST['preserve_manual'] !== '0';
+
+        if ($classeCode === '' || $anneeCode === '') {
+            $this->error("Veuillez sélectionner une classe et une année académique valides.");
+            return;
+        }
+
+        $this->requireAcademicYearWriteAccess($anneeCode);
+
+        $delibModel = new ModelDeliberation();
+        $res = $delibModel->delibererClasse(
+            $classeCode,
+            $anneeCode,
+            (string)Auth::code(),
+            (string)Session::get('etablissement_code', ''),
+            $preserveManual
+        );
+
+        if (empty($res['success'])) {
+            $this->error($res['message'] ?? "Impossible de valider la délibération.");
+            return;
+        }
+
+        $this->logAction(
+            AuditLogger::ACTION_UPDATE,
+            'deliberations',
+            $classeCode,
+            "Validation officielle de la délibération annuelle pour la classe {$classeCode} ({$anneeCode}) : " . ($res['count_saved'] ?? 0) . " étudiant(s) figé(s).",
+            [
+                'classe_code' => $classeCode,
+                'annee_code' => $anneeCode,
+                'count_saved' => $res['count_saved'] ?? 0,
+                'count_admis' => $res['count_admis'] ?? 0,
+                'count_ajournes' => $res['count_ajournes'] ?? 0,
+                'preserve_manual' => $preserveManual
+            ]
+        );
+
+        $this->success($res['message'], [
+            'summary' => $delibModel->getClasseDeliberationSummary($classeCode, $anneeCode)
+        ]);
+    }
+
+    /**
+     * Modifie manuellement la décision officielle du jury pour un étudiant (rachat, redoublement, exclusion, observation)
+     */
+    public function modifierDecisionJury()
+    {
+        $this->requireAuth();
+        $this->requirePost(true);
+        $this->requirePermission(PERMISSIONS::MANAGE_DELIBERATIONS);
+
+        $teacherCtx = $this->getTeacherContext();
+        if (!empty($teacherCtx['isTeacherOnly'])) {
+            $this->error("Accès refusé : seuls les membres autorisés de la direction / du jury peuvent modifier une décision.");
+            return;
+        }
+
+        $inscriptionCode = trim((string)($_POST['inscription_code'] ?? ''));
+        $decisionFinale = trim((string)($_POST['decision_finale'] ?? ''));
+        $libelleDecision = trim((string)($_POST['libelle_decision'] ?? ''));
+        $estRachete = (!empty($_POST['est_rachete']) && (string)$_POST['est_rachete'] !== '0') ? 1 : 0;
+        $observationJury = isset($_POST['observation_jury']) ? trim((string)$_POST['observation_jury']) : null;
+
+        if ($inscriptionCode === '') {
+            $this->error("Code d'inscription manquant.");
+            return;
+        }
+
+        if (!in_array($decisionFinale, STATUTS::DECISIONS_DELIBERATION, true)) {
+            $this->error("Décision du jury non valide.");
+            return;
+        }
+
+        // Un rachat implique logiquement une décision 'admis'
+        if ($decisionFinale !== 'admis') {
+            $estRachete = 0;
+        }
+
+        $delibModel = new ModelDeliberation();
+        $existing = $delibModel->getByInscription($inscriptionCode);
+        if (!$existing) {
+            $this->error("Veuillez d'abord valider la délibération annuelle de la classe avant d'ajuster une décision individuelle.");
+            return;
+        }
+
+        $this->requireAcademicYearWriteAccess((string)$existing['annee_code']);
+
+        $ok = $delibModel->updateDecisionIndividuelle(
+            $inscriptionCode,
+            $decisionFinale,
+            $libelleDecision,
+            $estRachete,
+            $observationJury,
+            (string)Auth::code()
+        );
+
+        if (!$ok) {
+            $this->error("Erreur lors de l'enregistrement de la décision du jury.");
+            return;
+        }
+
+        $this->logAction(
+            AuditLogger::ACTION_UPDATE,
+            'deliberations',
+            $inscriptionCode,
+            "Décision individuelle du jury mise à jour pour {$inscriptionCode} : {$decisionFinale}" . ($estRachete ? " (racheté)" : ""),
+            [
+                'inscription_code' => $inscriptionCode,
+                'classe_code' => $existing['classe_code'],
+                'annee_code' => $existing['annee_code'],
+                'decision_finale' => $decisionFinale,
+                'libelle_decision' => $libelleDecision,
+                'est_rachete' => $estRachete,
+                'observation_jury' => $observationJury
+            ]
+        );
+
+        $this->success("Décision officielle du jury enregistrée avec succès.", [
+            'deliberation' => $delibModel->getByInscription($inscriptionCode)
+        ]);
+    }
+
+    /**
+     * Réouvre la délibération annuelle d'une classe en statut 'provisoire' (avant clôture de l'année)
+     */
+    public function reouvrirDeliberation()
+    {
+        $this->requireAuth();
+        $this->requirePost(true);
+        $this->requirePermission(PERMISSIONS::MANAGE_DELIBERATIONS);
+
+        $teacherCtx = $this->getTeacherContext();
+        if (!empty($teacherCtx['isTeacherOnly'])) {
+            $this->error("Accès refusé : seuls les membres autorisés de la direction / du jury peuvent rouvrir une délibération.");
+            return;
+        }
+
+        $classeCode = trim((string)($_POST['classe_code'] ?? ''));
+        $anneeCode = trim((string)($_POST['annee_code'] ?? ''));
+        if ($anneeCode === '') {
+            $anneeCode = (string)($this->resolveTargetAcademicYear(null) ?? '');
+        }
+
+        if ($classeCode === '' || $anneeCode === '') {
+            $this->error("Classe et année académique requises.");
+            return;
+        }
+
+        $this->requireAcademicYearWriteAccess($anneeCode);
+
+        $delibModel = new ModelDeliberation();
+        $ok = $delibModel->reouvrirClasse($classeCode, $anneeCode, (string)Auth::code());
+        if (!$ok) {
+            $this->error("Impossible de rouvrir la délibération de cette classe.");
+            return;
+        }
+
+        $this->logAction(
+            AuditLogger::ACTION_UPDATE,
+            'deliberations',
+            $classeCode,
+            "Réouverture (statut provisoire) de la délibération annuelle pour la classe {$classeCode} ({$anneeCode}).",
+            ['classe_code' => $classeCode, 'annee_code' => $anneeCode]
+        );
+
+        $this->success("Délibération repassée en statut provisoire. Les décisions figées ne sont plus actives tant que la classe n'est pas revalidée.");
     }
 }

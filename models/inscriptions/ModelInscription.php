@@ -601,35 +601,56 @@ class ModelInscription extends BaseModel
             $prevPaye = (float)($rowP['total_paye'] ?? 0);
             $prevSolde = max(0, $prevDue - $prevPaye);
 
-            // Bilan Académique & Décision du Conseil selon le bulletin de la session passée
+            // Bilan Académique & Décision du Conseil : lecture prioritaire de la délibération figée (sans recalcul)
             $decisionConseil = 'Autorisé(e) à se réinscrire';
             $decisionBadge = 'info';
 
-            if (!empty($prevIns['id_inscription'])) {
+            if (!empty($prevIns['code_inscription'])) {
                 try {
-                    require_once __DIR__ . '/../bulletin/ModelBulletin.php';
-                    $modelBulletin = new ModelBulletin();
-                    $bulletinData = $modelBulletin->calculateBulletinData((int)$prevIns['id_inscription']);
-                    if ($bulletinData && isset($bulletinData['moyenneGenerale'])) {
-                        $mg = (float)$bulletinData['moyenneGenerale'];
-                        $hasNotes = ($mg > 0 || !empty($bulletinData['notesDetails']) || ($bulletinData['totalCoefficients'] ?? 0) > 0);
-                        if ($hasNotes) {
-                            $moyenneN1 = $mg;
-                            $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : ($mg >= 10 ? 'Passable' : 'Ajourné(e)');
-                            if ($mg >= 10) {
-                                $decisionConseil = 'Admis(e) en classe supérieure';
-                                $decisionBadge = 'success';
+                    $delib = class_exists('ModelDeliberation')
+                        ? (new ModelDeliberation())->getValidatedByInscription((string)$prevIns['code_inscription'])
+                        : null;
+
+                    if ($delib) {
+                        $moyenneN1 = $delib['moyenne_annuelle'] !== null ? (float)$delib['moyenne_annuelle'] : null;
+                        $mentionN1 = !empty($delib['mention_finale']) ? (string)$delib['mention_finale'] : ($moyenneN1 !== null ? ($moyenneN1 >= 10 ? 'Passable' : 'Ajourné(e)') : 'Non évalué');
+                        $decisionFinale = (string)($delib['decision_finale'] ?? 'en_attente');
+                        $decisionConseil = !empty($delib['libelle_decision'])
+                            ? (string)$delib['libelle_decision']
+                            : ModelDeliberation::defaultLabelForDecision($decisionFinale, !empty($delib['est_rachete']));
+                        $decisionBadge = ModelDeliberation::badgeTypeForDecision($decisionFinale);
+                    } elseif (!empty($prevIns['id_inscription'])) {
+                        // Repli dynamique uniquement si la classe n'a pas encore été délibérée (sur le dernier semestre S2)
+                        require_once __DIR__ . '/../bulletin/ModelBulletin.php';
+                        $modelBulletin = new ModelBulletin();
+                        $semestresPrev = $modelBulletin->getActiveSemestres($prevIns['annee_code'] ?? null);
+                        $lastSemPrev = !empty($semestresPrev) ? (end($semestresPrev)['code_semestre'] ?? null) : null;
+                        $bulletinData = $modelBulletin->calculateBulletinData((int)$prevIns['id_inscription'], $lastSemPrev);
+                        if ($bulletinData && (isset($bulletinData['moyenneRecap']) || isset($bulletinData['moyenneGenerale']))) {
+                            $mg = (float)($bulletinData['moyenneRecap'] ?? $bulletinData['moyenneGenerale']);
+                            $hasNotes = ($mg > 0 || !empty($bulletinData['notesDetails']) || !empty($bulletinData['matieresNotes']) || ($bulletinData['totalCoefficients'] ?? 0) > 0);
+                            if ($hasNotes) {
+                                $moyenneN1 = $mg;
+                                $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : ($mg >= 10 ? 'Passable' : 'Ajourné(e)');
+                                if ($mg >= 10) {
+                                    $decisionConseil = !empty($bulletinData['decision']) && $bulletinData['decision'] !== 'En attente'
+                                        ? $bulletinData['decision']
+                                        : 'Admis(e) en classe supérieure';
+                                    $decisionBadge = 'success';
+                                } else {
+                                    $decisionConseil = !empty($bulletinData['decision']) && $bulletinData['decision'] !== 'En attente'
+                                        ? $bulletinData['decision']
+                                        : 'Ajourné(e) / Redoublement';
+                                    $decisionBadge = 'warning';
+                                }
                             } else {
-                                $decisionConseil = 'Ajourné(e) / Redoublement';
-                                $decisionBadge = 'warning';
+                                $decisionConseil = 'Autorisé(e) à se réinscrire (Sans notes)';
+                                $decisionBadge = 'info';
                             }
-                        } else {
-                            $decisionConseil = 'Autorisé(e) à se réinscrire (Sans notes)';
-                            $decisionBadge = 'info';
                         }
                     }
                 } catch (Exception $e) {
-                    error_log("ModelInscription::getStudentProfileForReinscription bulletin: " . $e->getMessage());
+                    error_log("ModelInscription::getStudentProfileForReinscription deliberation/bulletin: " . $e->getMessage());
                 }
             }
 

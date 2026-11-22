@@ -910,35 +910,49 @@ class ModelEtudiant extends BaseModel
         }
         $soldeN1 = max(0, $totalScolariteN1 - $totalPayeN1);
 
-        // 7. Bilan Académique & Décision du Jury / Conseil
+        // 7. Bilan Académique & Décision du Jury / Conseil (lecture prioritaire de la délibération figée)
         $moyenneN1 = null;
         $mentionN1 = 'Non évalué';
         $decisionN1 = 'Autorisé(e) à se réinscrire';
         $decisionBadge = 'info'; // success | warning | danger | info
 
-        if (!empty($inscription['id_inscription'])) {
+        if (!empty($inscription['code_inscription'])) {
             try {
-                require_once __DIR__ . '/../bulletin/ModelBulletin.php';
-                $modelBulletin = new ModelBulletin();
-                $semestresInsc = $modelBulletin->getActiveSemestres($inscription['annee_code'] ?? null);
-                $lastSemCode = !empty($semestresInsc) ? (end($semestresInsc)['code_semestre'] ?? null) : null;
-                $bulletinData = $modelBulletin->calculateBulletinData((int)$inscription['id_inscription'], $lastSemCode);
-                if ($bulletinData && (isset($bulletinData['moyenneRecap']) || isset($bulletinData['moyenneGenerale']))) {
-                    $mg = (float)($bulletinData['moyenneRecap'] ?? $bulletinData['moyenneGenerale']);
-                    if ($mg > 0 || !empty($bulletinData['notesDetails']) || !empty($bulletinData['matieresNotes'])) {
-                        $moyenneN1 = $mg;
-                        $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : '-';
-                        $decisionN1 = !empty($bulletinData['decision']) ? $bulletinData['decision'] : 'Autorisé(e) à se réinscrire';
-                        $codeDistN1 = strtoupper((string)($bulletinData['code_distinction_sanction'] ?? 'AUCUN'));
-                        if (!in_array($codeDistN1, ['AVERTISSEMENT', 'BLAME'], true) && $mg >= 10) {
-                            $decisionBadge = 'success';
-                        } else {
-                            $decisionBadge = 'warning';
+                $delib = class_exists('ModelDeliberation')
+                    ? (new ModelDeliberation())->getValidatedByInscription((string)$inscription['code_inscription'])
+                    : null;
+
+                if ($delib) {
+                    $moyenneN1 = $delib['moyenne_annuelle'] !== null ? (float)$delib['moyenne_annuelle'] : null;
+                    $mentionN1 = !empty($delib['mention_finale']) ? (string)$delib['mention_finale'] : '-';
+                    $decCode = (string)($delib['decision_finale'] ?? 'en_attente');
+                    $decisionN1 = !empty($delib['libelle_decision'])
+                        ? (string)$delib['libelle_decision']
+                        : ModelDeliberation::defaultLabelForDecision($decCode, !empty($delib['est_rachete']));
+                    $decisionBadge = ModelDeliberation::badgeTypeForDecision($decCode);
+                } elseif (!empty($inscription['id_inscription'])) {
+                    require_once __DIR__ . '/../bulletin/ModelBulletin.php';
+                    $modelBulletin = new ModelBulletin();
+                    $semestresInsc = $modelBulletin->getActiveSemestres($inscription['annee_code'] ?? null);
+                    $lastSemCode = !empty($semestresInsc) ? (end($semestresInsc)['code_semestre'] ?? null) : null;
+                    $bulletinData = $modelBulletin->calculateBulletinData((int)$inscription['id_inscription'], $lastSemCode);
+                    if ($bulletinData && (isset($bulletinData['moyenneRecap']) || isset($bulletinData['moyenneGenerale']))) {
+                        $mg = (float)($bulletinData['moyenneRecap'] ?? $bulletinData['moyenneGenerale']);
+                        if ($mg > 0 || !empty($bulletinData['notesDetails']) || !empty($bulletinData['matieresNotes'])) {
+                            $moyenneN1 = $mg;
+                            $mentionN1 = !empty($bulletinData['mention']) ? $bulletinData['mention'] : '-';
+                            $decisionN1 = !empty($bulletinData['decision']) ? $bulletinData['decision'] : 'Autorisé(e) à se réinscrire';
+                            $codeDistN1 = strtoupper((string)($bulletinData['code_distinction_sanction'] ?? 'AUCUN'));
+                            if (!in_array($codeDistN1, ['AVERTISSEMENT', 'BLAME'], true) && $mg >= 10) {
+                                $decisionBadge = 'success';
+                            } else {
+                                $decisionBadge = 'warning';
+                            }
                         }
                     }
                 }
             } catch (Exception $e) {
-                error_log("ModelEtudiant::getStudentFicheData bulletin: " . $e->getMessage());
+                error_log("ModelEtudiant::getStudentFicheData deliberation/bulletin: " . $e->getMessage());
             }
         }
 

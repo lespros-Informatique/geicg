@@ -215,7 +215,7 @@ class ModelBulletin extends BaseModel
         return false;
     }
 
-    public function calculateBulletinData(int $id, ?string $selectedSemestreCode = null): ?array
+    public function calculateBulletinData(int $id, ?string $selectedSemestreCode = null, bool $useFrozenDeliberation = true): ?array
     {
         $db = $this->getCon();
         $stmt = $db->prepare("SELECT * FROM " . VIEWS::INSCRIPTIONS_COMPLETES . " WHERE id_inscription = ? AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL) LIMIT 1");
@@ -722,6 +722,20 @@ class ModelBulletin extends BaseModel
                     : $evalAnn['appreciation_conseil'];
                 $codeDistinctionSanction = $evalAnn['code_distinction_sanction'];
             }
+
+            // Si une délibération annuelle officielle (validée) existe, priorité absolue à la décision du jury
+            $deliberationOfficielle = null;
+            if ($useFrozenDeliberation && class_exists('ModelDeliberation') && !empty($item['code_inscription'])) {
+                $deliberationOfficielle = (new ModelDeliberation())->getValidatedByInscription((string)$item['code_inscription']);
+                if ($deliberationOfficielle) {
+                    if (!empty($deliberationOfficielle['libelle_decision'])) {
+                        $decision = (string)$deliberationOfficielle['libelle_decision'];
+                    }
+                    if (!empty($deliberationOfficielle['code_distinction_sanction'])) {
+                        $codeDistinctionSanction = (string)$deliberationOfficielle['code_distinction_sanction'];
+                    }
+                }
+            }
         }
 
         return [
@@ -739,6 +753,7 @@ class ModelBulletin extends BaseModel
             'moyenneGenerale' => $moyenneGenerale,
             'mention' => $mention,
             'decision' => $decision,
+            'deliberation_officielle' => $deliberationOfficielle ?? null,
             'code_distinction_sanction' => $codeDistinctionSanction,
             'rang' => $rang,
             'rangFr' => $rangFr,
