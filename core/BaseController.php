@@ -897,4 +897,83 @@ abstract class BaseController
 
         return true;
     }
+
+    /**
+     * Applique une limitation de débit (Rate Limiting) sur une action.
+     * - $recordHit = true : vérifie et incrémente immédiatement (idéal pour mot de passe oublié, reset, API).
+     * - $recordHit = false : vérifie seulement si l'IP/identifiant est bloqué (idéal pour login où on appelle hitRateLimit() sur échec).
+     */
+    protected function enforceRateLimit(
+        string $action,
+        int $maxAttempts = 5,
+        int $windowSeconds = 900,
+        ?string $identifier = null,
+        bool $recordHit = true,
+        ?string $customMessage = null
+    ): array {
+        if (!class_exists('RateLimiter')) {
+            return ['allowed' => true, 'attempts' => 0, 'remaining' => $maxAttempts, 'retry_after' => 0];
+        }
+
+        $res = $recordHit
+            ? RateLimiter::attempt($action, $maxAttempts, $windowSeconds, $identifier)
+            : RateLimiter::check($action, $maxAttempts, $windowSeconds, $identifier);
+
+        if (!headers_sent()) {
+            header('X-RateLimit-Limit: ' . $maxAttempts);
+            header('X-RateLimit-Remaining: ' . (int)($res['remaining'] ?? 0));
+        }
+
+        if (empty($res['allowed'])) {
+            $retryAfter = max(1, (int)($res['retry_after'] ?? $windowSeconds));
+            $waitTxt = RateLimiter::formatRemainingTime($retryAfter);
+            $msg = $customMessage
+                ? str_replace('{wait}', $waitTxt, $customMessage)
+                : "Trop de tentatives détectées. Veuillez patienter {$waitTxt} avant de réessayer.";
+
+            AuditLogger::log(
+                AuditLogger::ACTION_RATE_LIMIT,
+                'security_rate_limit',
+                $action,
+                "Blocage Rate Limit ({$action}) pour IP " . RateLimiter::getClientIp() . " ({$res['attempts']}/{$maxAttempts})",
+                ['action' => $action, 'ip' => RateLimiter::getClientIp(), 'retry_after' => $retryAfter]
+            );
+
+            if (!headers_sent()) {
+                http_response_code(429);
+                header('Retry-After: ' . $retryAfter);
+                header('Content-Type: application/json; charset=utf-8');
+            }
+            echo json_encode([
+                'status'      => 0,
+                'success'     => false,
+                'message'     => $msg,
+                'retry_after' => $retryAfter,
+            ]);
+            exit;
+        }
+
+        return $res;
+    }
+
+    /**
+     * Incrémente manuellement le compteur de tentatives échouées (ex: mauvais mot de passe)
+     */
+    protected function hitRateLimit(string $action, int $maxAttempts = 5, int $windowSeconds = 900, ?string $identifier = null): array
+    {
+        if (!class_exists('RateLimiter')) {
+            return ['allowed' => true, 'attempts' => 0, 'remaining' => $maxAttempts, 'retry_after' => 0];
+        }
+        return RateLimiter::hit($action, $maxAttempts, $windowSeconds, $identifier);
+    }
+
+    /**
+     * Réinitialise le compteur de tentatives après succès (ex: connexion réussie)
+     */
+    protected function clearRateLimit(string $action, ?string $identifier = null): void
+    {
+        if (class_exists('RateLimiter')) {
+            RateLimiter::clear($action, $identifier);
+        }
+    }
 }

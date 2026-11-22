@@ -60,6 +60,7 @@ class TABLES
     public const FONCTIONS = 'fonctions';
     public const USERS = 'users';
     public const PASSWORD_RESETS = 'password_resets';
+    public const RATE_LIMITS = 'rate_limits';
     public const ROLES = 'roles';
     public const PERMISSIONS = 'permissions';
     public const ROLE_PERMISSIONS = 'role_permissions';

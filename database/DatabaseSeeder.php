@@ -342,6 +342,7 @@ class DatabaseSeeder
             'evenements',
             'user_annee_acces',
             'password_resets',
+            'rate_limits',
         ];
         if ($includeYears) {
             $tablesToClear[] = 'annees';

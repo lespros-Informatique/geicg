@@ -407,12 +407,21 @@ class UserController extends BaseController
         if ($notEmpty === true) {
             $login = trim($this->post('login'));
             $password = $this->post('password');
+            $loginNorm = mb_strtolower($login);
+
+            // Protection Rate Limiting sur la connexion (5 échecs / 15 min par IP+identifiant, 15 échecs / 15 min par IP)
+            $this->enforceRateLimit('login_ip', 15, 900, null, false, 'Trop de tentatives de connexion depuis cette adresse. Veuillez réessayer dans {wait}.');
+            $this->enforceRateLimit('login', 5, 900, $loginNorm, false, 'Trop de tentatives de connexion pour ce compte. Veuillez réessayer dans {wait}.');
 
             // Recherche utilisateur via ModelUser
             $user = $this->model->findUserByLogin($login);
 
             if ($user && password_verify($password, $user['password_user'] ?? '')) {
                 if ($user['statut_user'] === STATUTS::ACTIF) {
+                    // Réinitialisation des compteurs Rate Limit après succès
+                    $this->clearRateLimit('login', $loginNorm);
+                    $this->clearRateLimit('login_ip', null);
+
                     $userRoles = $this->model->getUserRoles($user['code_user']);
                     $roleCodes = !empty($userRoles) ? array_column($userRoles, 'role_code') : [ROLES::USER];
                     $roleCode = !empty($roleCodes) ? $roleCodes[0] : ROLES::USER;
@@ -486,12 +495,22 @@ class UserController extends BaseController
                     $this->success($welcomeMsg, ['redirect' => url()]);
                     return;
                 } else {
+                    $this->hitRateLimit('login', 5, 900, $loginNorm);
+                    $this->hitRateLimit('login_ip', 15, 900, null);
                     $this->error('Ce compte utilisateur est inactif ou suspendu. Veuillez contacter l\'administrateur.');
                     return;
                 }
             }
 
-            $this->error('Identifiant ou mot de passe incorrect.');
+            $hitRes = $this->hitRateLimit('login', 5, 900, $loginNorm);
+            $this->hitRateLimit('login_ip', 15, 900, null);
+            $remaining = (int)($hitRes['remaining'] ?? 0);
+            if ($remaining <= 0) {
+                $waitTxt = RateLimiter::formatRemainingTime((int)($hitRes['retry_after'] ?? 900));
+                $this->error("Identifiant ou mot de passe incorrect. Trop d'échecs consécutifs : compte temporairement bloqué pour {$waitTxt}.");
+                return;
+            }
+            $this->error("Identifiant ou mot de passe incorrect. ({$remaining} tentative" . ($remaining > 1 ? 's' : '') . " restante" . ($remaining > 1 ? 's' : '') . ")");
             return;
         } else {
             $this->error('Veuillez renseigner tous les champs !');
@@ -526,6 +545,10 @@ class UserController extends BaseController
             $this->error('Veuillez saisir votre adresse e-mail ou votre numéro de téléphone.');
             return;
         }
+
+        // Protection Rate Limiting anti-spam SMTP (3 demandes max / 15 min par IP et par identifiant)
+        $this->enforceRateLimit('forgot_password_ip', 3, 900, null, true, 'Trop de demandes de réinitialisation. Veuillez patienter {wait} avant de réessayer.');
+        $this->enforceRateLimit('forgot_password_id', 3, 900, mb_strtolower($identifiant), true, 'Une demande de réinitialisation a déjà été envoyée plusieurs fois pour cet identifiant. Veuillez patienter {wait}.');
 
         $genericSuccessMsg = "Si un compte actif est associé à cet identifiant, un e-mail contenant les instructions de réinitialisation vient d'être envoyé.";
         $user = $this->model->findUserByLogin($identifiant);
@@ -605,6 +628,9 @@ class UserController extends BaseController
 
         $this->requirePost(true);
 
+        // Protection Rate Limiting anti-brute-force sur la réinitialisation (5 tentatives / 15 min par IP)
+        $this->enforceRateLimit('reset_password', 5, 900, null, true, 'Trop de tentatives de réinitialisation. Veuillez réessayer dans {wait}.');
+
         $token = trim((string)($this->post('token') ?: ($tokenParam ?? '')));
         $newPassword = (string)$this->post('new_password');
         $confirmPassword = (string)$this->post('confirm_password');
@@ -642,6 +668,8 @@ class UserController extends BaseController
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         if ($this->model->updatePassword($hash, $userId)) {
             $this->model->markPasswordResetUsed((int)$resetRow['id_reset'], $userCode);
+            $this->clearRateLimit('reset_password', null);
+            $this->clearRateLimit('login', mb_strtolower((string)($resetRow['email_user'] ?? '')));
 
             AuditLogger::log(
                 AuditLogger::ACTION_UPDATE,
@@ -707,13 +735,18 @@ class UserController extends BaseController
             return;
         }
 
+        // Protection Rate Limiting sur la modification du mot de passe (5 échecs / 15 min par utilisateur)
+        $this->enforceRateLimit('edit_password', 5, 900, (string)$userId, false, 'Trop de tentatives de modification de mot de passe. Veuillez réessayer dans {wait}.');
+
         if (!password_verify($oldPassword, $user['password_user'] ?? '')) {
+            $this->hitRateLimit('edit_password', 5, 900, (string)$userId);
             $this->error('Votre mot de passe actuel est incorrect !');
             return;
         }
 
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         if ($this->model->updatePassword($hash, (int)$userId)) {
+            $this->clearRateLimit('edit_password', (string)$userId);
             $this->logAction(
                 AuditLogger::ACTION_UPDATE,
                 'user',

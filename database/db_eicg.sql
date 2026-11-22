@@ -5726,3 +5726,28 @@ CREATE TABLE `password_resets` (
   KEY `idx_password_resets_expires_at` (`expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+
+--
+-- Table structure for table `rate_limits`
+--
+
+DROP TABLE IF EXISTS `rate_limits`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `rate_limits` (
+  `id_rate_limit` int NOT NULL AUTO_INCREMENT,
+  `rate_key` varchar(191) NOT NULL,
+  `action_name` varchar(64) NOT NULL,
+  `ip_address` varchar(45) NOT NULL,
+  `attempts` int NOT NULL DEFAULT '1',
+  `window_start` datetime NOT NULL,
+  `locked_until` datetime DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_rate_limit`),
+  UNIQUE KEY `uq_rate_limits_key` (`rate_key`),
+  KEY `idx_rate_limits_action` (`action_name`),
+  KEY `idx_rate_limits_ip` (`ip_address`),
+  KEY `idx_rate_limits_locked_until` (`locked_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;

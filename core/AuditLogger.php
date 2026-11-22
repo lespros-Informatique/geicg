@@ -17,6 +17,7 @@ class AuditLogger
     public const ACTION_DELETE     = 'SUPPRESSION';
     public const ACTION_PRINT      = 'IMPRESSION';
     public const ACTION_VIEW       = 'CONSULTATION';
+    public const ACTION_RATE_LIMIT = 'RATE_LIMIT';
 
     /**
      * Enregistre une action dans la table de log
