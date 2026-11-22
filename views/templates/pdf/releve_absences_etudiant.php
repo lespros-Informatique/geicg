@@ -112,6 +112,7 @@ if ($resolvedStudentPhoto === '') {
       background-color: #F8FAFC;
     }
     .meta-box-table td {
+      height: 44px;
       padding: 5px 8px;
       font-size: 9pt;
       vertical-align: middle;
@@ -220,7 +221,7 @@ if ($resolvedStudentPhoto === '') {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 8pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 42%; text-align: left;">
-          <?= htmlspecialchars(!empty($etablissement['texte_pied_page']) ? $etablissement['texte_pied_page'] : trim('Document officiel ' . ($etablissement['sigle_etablissement'] ?? ''))) ?>
+        
         </td>
         <td style="width: 16%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
@@ -265,9 +266,7 @@ if ($resolvedStudentPhoto === '') {
             <td>
               <span class="meta-label">Classe :</span>
               <span class="meta-value"><?= htmlspecialchars($etudiant['libelle_classe'] ?? '-') ?></span>
-              <?php if (!empty($etudiant['libelle_niveau'])): ?>
-                <span style="color: #475569;">(<?= htmlspecialchars($etudiant['libelle_niveau']) ?>)</span>
-              <?php endif; ?>
+              
             </td>
             <td>
               <span class="meta-label">Filière :</span>
@@ -282,7 +281,7 @@ if ($resolvedStudentPhoto === '') {
             <td>
               <span class="meta-label">Édité par :</span>
               <span class="meta-value"><?= htmlspecialchars(!empty($editeur_nom) ? $editeur_nom : '-') ?></span>
-              <span style="color: #64748B; font-size: 8pt;">(<?= date('d/m/Y H:i') ?>)</span>
+              <span style="color: #64748B; font-size: 8pt;"></span>
             </td>
           </tr>
         </table>
@@ -400,7 +399,7 @@ if ($resolvedStudentPhoto === '') {
         <table style="width: 100%; border-collapse: collapse;">
           <?php if (!empty($sigVille)): ?>
           <tr>
-            <td style="text-align: center; font-size: 9pt; color: #475569; padding: 0 8px 3px 8px;">
+            <td style="text-align: center; font-size: 9pt; color: #475569; ">
               Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
             </td>
           </tr>
@@ -411,7 +410,7 @@ if ($resolvedStudentPhoto === '') {
             </td>
           </tr>
           <tr>
-            <td height="46" style="height: 46px; text-align: center; vertical-align: middle;">&nbsp;</td>
+            <td  style="text-align: center; vertical-align: middle;">&nbsp;</td>
           </tr>
           <?php if ($sigDirPedNom !== ''): ?>
           <tr>
@@ -421,7 +420,7 @@ if ($resolvedStudentPhoto === '') {
           </tr>
           <?php endif; ?>
           <tr>
-            <td style="text-align: center; font-size: 8.5pt; font-style: italic; color: #64748B; padding: 0 8px 4px 8px;">
+            <td style="text-align: center; font-size: 8.5pt; font-style: italic; color: #64748B; ">
               <?= htmlspecialchars($sigMention) ?>
             </td>
           </tr>
