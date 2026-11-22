@@ -614,7 +614,13 @@
         el.setAttribute('role', 'status');
         el.setAttribute('aria-live', 'polite');
         el.setAttribute('aria-label', 'Chargement en cours');
-        el.innerHTML = '<div class="geicg-loader-box"><div class="geicg-loader-spinner" aria-hidden="true"></div><div class="geicg-loader-text">Chargement...</div></div>';
+        el.innerHTML = '<div class="geicg-loader-rect">' +
+          '<svg class="geicg-rect-svg" viewBox="0 0 220 82" preserveAspectRatio="none" aria-hidden="true">' +
+          '<rect class="geicg-rect-track" x="2" y="2" width="216" height="78" rx="12" ry="12" pathLength="100" />' +
+          '<rect class="geicg-rect-runner" x="2" y="2" width="216" height="78" rx="12" ry="12" pathLength="100" />' +
+          '</svg>' +
+          '<div class="geicg-loader-content"><span class="geicg-loader-brand">GEICG</span><span class="geicg-loader-text">Chargement...</span></div>' +
+          '</div>';
         document.body.insertBefore(el, document.body.firstChild);
       }
       return el;
