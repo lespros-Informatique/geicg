@@ -569,6 +569,14 @@ $route->addRoute('/bulletin/modifierDecisionJury', [$bulletinController, 'modifi
 $route->addRoute('/bulletin/reouvrirDeliberation', [$bulletinController, 'reouvrirDeliberation']);
 $route->addRoute('/bulletin/formulaire', [$bulletinController, 'formulaire']);
 
+// Module: deliberation (Conseil de Classe & Délibération Annuelle)
+$route->addRoute('/deliberation/conseil', [$bulletinController, 'deliberationConseil']);
+$route->addRoute('/deliberation/conseil/{param}', [$bulletinController, 'deliberationConseil']);
+$route->addRoute('/deliberation/enregistrer', [$bulletinController, 'enregistrerDeliberation']);
+$route->addRoute('/deliberation/reouvrir', [$bulletinController, 'reouvrirDeliberation']);
+$route->addRoute('/deliberation/imprimerPvPdf', [$bulletinController, 'imprimerDeliberationPdf']);
+$route->addRoute('/deliberation/imprimerPvPdf/{param}', [$bulletinController, 'imprimerDeliberationPdf']);
+
 // Module: evenement (EvenementController)
 $route->addRoute('/evenement/list', [$evenementController, 'list']);
 $route->addRoute('/evenement/apiList', [$evenementController, 'apiList']);

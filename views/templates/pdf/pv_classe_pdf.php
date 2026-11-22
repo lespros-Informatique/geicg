@@ -7,9 +7,6 @@ $selectedClasseCode = $selectedClasseCode ?? '';
 $selectedSemestreCode = $selectedSemestreCode ?? '';
 $selectedSemestreLibelle = $selectedSemestreLibelle ?? $selectedSemestreCode;
 $anneeLibelle = $anneeLibelle ?? '-';
-$deliberationsMap = $deliberationsMap ?? [];
-$deliberationSummary = $deliberationSummary ?? [];
-$isFinalSemestre = !empty($isFinalSemestre);
 
 if (empty($etablissement) || !is_array($etablissement)) {
     if (class_exists('ModelConfiguration')) {
@@ -236,8 +233,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
       <td><span class="meta-label">Moyenne Classe :</span> <span class="meta-value"><?= number_format((float)($statsClasse['moyenneGeneraleClasse'] ?? 0), 2) ?> /20</span></td>
       <td><span class="meta-label">Plus Forte Moyenne :</span> <span class="meta-value" style="color: #15803D;"><?= number_format((float)($statsClasse['moyenneMax'] ?? 0), 2) ?> /20</span></td>
       <td><span class="meta-label">Plus Faible Moyenne :</span> <span class="meta-value" style="color: #B91C1C;"><?= number_format((float)($statsClasse['moyenneMin'] ?? 0), 2) ?> /20</span></td>
-      <td><span class="meta-label">Nombre de Matières :</span> <span class="meta-value"><?= count($matieres) ?> matière(s)</span></td>
-      <td><span class="meta-label">Délibération Annuelle :</span> <span class="meta-value" style="color: <?= !empty($deliberationSummary['is_delibere']) ? '#15803D' : '#64748B' ?>;"><?= !empty($deliberationSummary['is_delibere']) ? ('Validée' . (!empty($deliberationSummary['last_date_deliberation']) ? (' (' . date('d/m/Y', strtotime($deliberationSummary['last_date_deliberation'])) . ')') : '')) : 'Provisoire / Non figée' ?></span></td>
+      <td colspan="2"><span class="meta-label">Nombre de Matières :</span> <span class="meta-value"><?= count($matieres) ?> matière(s)</span></td>
     </tr>
   </table>
 
@@ -268,30 +264,10 @@ if (empty($etablissement) || !is_array($etablissement)) {
         </tr>
       <?php else: ?>
         <?php foreach ($pvRows as $r): 
-          $inscCodePdf = $r['inscription_code'] ?? '';
-          $delibPdf = ($isFinalSemestre && $inscCodePdf !== '' && isset($deliberationsMap[$inscCodePdf]) && (($deliberationsMap[$inscCodePdf]['statut_deliberation'] ?? '') === STATUTS::VALIDE))
-            ? $deliberationsMap[$inscCodePdf]
-            : null;
           $isNonEval = ($r['decision'] === 'Non éval.' || (float)($r['total_coef'] ?? 0) <= 0);
           $isAdmis = (!$isNonEval && $r['decision'] === 'Admis(e)');
-          $decisionTextPdf = $r['decision'];
           $decisionClass = $isNonEval ? 'noneval-cell' : ($isAdmis ? 'admis-cell' : 'ajourne-cell');
           $moyColorPdf = $isNonEval ? '#64748B' : ($isAdmis ? '#15803D' : '#991B1B');
-
-          if ($delibPdf !== null) {
-            $decCodePdf = $delibPdf['decision_finale'] ?? 'en_attente';
-            $decisionTextPdf = !empty($delibPdf['libelle_decision']) ? $delibPdf['libelle_decision'] : ModelDeliberation::defaultLabelForDecision($decCodePdf, !empty($delibPdf['est_rachete']));
-            if (!empty($delibPdf['est_rachete']) && stripos($decisionTextPdf, 'rachat') === false) {
-              $decisionTextPdf .= ' (Racheté)';
-            }
-            if ($decCodePdf === 'admis') {
-              $decisionClass = 'admis-cell';
-            } elseif ($decCodePdf === 'en_attente') {
-              $decisionClass = 'noneval-cell';
-            } else {
-              $decisionClass = 'ajourne-cell';
-            }
-          }
         ?>
           <tr>
             <td style="text-align: center; font-weight: bold; color: #1E3A5F;">
@@ -321,7 +297,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
               <?= $isNonEval ? '-' : number_format($r['moyenne_generale'], 2) ?>
             </td>
             <td class="<?= $decisionClass ?>">
-              <?= htmlspecialchars($decisionTextPdf) ?>
+              <?= htmlspecialchars($r['decision']) ?>
             </td>
           </tr>
         <?php endforeach; ?>

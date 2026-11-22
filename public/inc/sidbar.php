@@ -263,8 +263,13 @@
                 <a href="<?= url('bulletin/list') ?>" class="nav-item sub <?= $isActiveRoute(['/bulletin/list', RACINE . 'bulletin/'], 'pvClasse') ?>" data-title="Bulletins Semestriels">
                     <i data-lucide="file-text"></i> <span>Bulletins Semestriels</span>
                 </a>
-                <a href="<?= url('bulletin/pvClasse') ?>" class="nav-item sub <?= $isActiveRoute('/bulletin/pvClasse') ?>" data-title="PV de Délibération">
-                    <i data-lucide="file-spreadsheet"></i> <span>PV de Délibération</span>
+                <a href="<?= url('bulletin/pvClasse') ?>" class="nav-item sub <?= $isActiveRoute('/bulletin/pvClasse') ?>" data-title="PV de Notes par Classe">
+                    <i data-lucide="file-spreadsheet"></i> <span>PV de Notes par Classe</span>
+                </a>
+                <?php endif; ?>
+                <?php if ($canAccess([PERMISSIONS::VIEW_DELIBERATIONS, PERMISSIONS::MANAGE_DELIBERATIONS])): ?>
+                <a href="<?= url('deliberation/conseil') ?>" class="nav-item sub <?= $isActiveRoute('/deliberation/') ?>" data-title="Délibération du Conseil">
+                    <i data-lucide="gavel"></i> <span>Délibération du Conseil</span>
                 </a>
                 <?php endif; ?>
             </div>

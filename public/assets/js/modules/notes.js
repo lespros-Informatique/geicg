@@ -1948,19 +1948,40 @@ $(document).ready(function () {
   }
 
   // =========================================================================
-  // 6. VUE : PV DE CLASSE & DÉLIBÉRATION ANNUELLE (Exécuté si #pv-deliberation-config présent)
+  // 6. VUE : CONSEIL DE CLASSE & DÉLIBÉRATION ANNUELLE (Exécuté si #deliberation-conseil-config présent)
   // =========================================================================
-  if ($('#pv-deliberation-config').length) {
+  if ($('#deliberation-conseil-config').length) {
     (function () {
       var delibCfg = {};
       try {
-        delibCfg = JSON.parse(document.getElementById('pv-deliberation-config').textContent || '{}');
+        delibCfg = JSON.parse(document.getElementById('deliberation-conseil-config').textContent || '{}');
       } catch (e) {
         delibCfg = {};
       }
 
-      if ($.fn.select2 && $('#filter-pv-form .select2').length) {
-        $('#filter-pv-form .select2').select2({ width: '100%' });
+      if ($.fn.select2 && $('#filter-delib-form .select2').length) {
+        $('#filter-delib-form .select2').select2({ width: '100%' });
+      }
+
+      // Changement d'année recharge les classes de l'année sélectionnée
+      $('#delib-filter-annee').on('change', function () {
+        var annee = $(this).val();
+        if (annee) {
+          window.location.href = delibCfg.racine + 'deliberation/conseil?annee_code=' + encodeURIComponent(annee);
+        }
+      });
+
+      var activeFilter = 'all';
+      var isDirty = false;
+
+      function markDirty() {
+        if (!delibCfg.isEditable) return;
+        isDirty = true;
+        $('#delib-dirty-badge').show();
+      }
+
+      function escapeHtml(str) {
+        return $('<div>').text(str || '').html();
       }
 
       function notifySuccess(msg) {
@@ -1988,99 +2009,297 @@ $(document).ready(function () {
         }
       }
 
-      function confirmAction(opts, onConfirm) {
+      function getGraceRange() {
+        var minVal = parseFloat($('#delib-grace-min').val());
+        var maxVal = parseFloat($('#delib-grace-max').val());
+        if (isNaN(minVal)) minVal = 9.0;
+        if (isNaN(maxVal)) maxVal = 9.99;
+        if (minVal > maxVal) {
+          var tmp = minVal;
+          minVal = maxVal;
+          maxVal = tmp;
+        }
+        return { min: minVal, max: maxVal };
+      }
+
+      function isInGraceZone($row, range) {
+        if ($row.attr('data-has-notes') !== '1') return false;
+        var moy = parseFloat($row.attr('data-moy'));
+        if (isNaN(moy)) return false;
+        return (moy >= range.min && moy <= range.max);
+      }
+
+      function refreshDeliberationUI() {
+        var range = getGraceRange();
+        var search = ($('#delib-search-input').val() || '').trim().toLowerCase();
+
+        var counts = {
+          all: 0,
+          grace_zone: 0,
+          admis_office: 0,
+          admis_grace: 0,
+          redouble: 0,
+          exclu: 0,
+          en_attente: 0
+        };
+        var visibleCount = 0;
+
+        $('#table-deliberation-conseil tbody tr.delib-student-row').each(function () {
+          var $row = $(this);
+          var choice = $row.attr('data-choice') || 'en_attente';
+          var hasNotes = ($row.attr('data-has-notes') === '1');
+          var moy = parseFloat($row.attr('data-moy'));
+          var inGrace = isInGraceZone($row, range);
+
+          counts.all++;
+          if (counts.hasOwnProperty(choice)) counts[choice]++;
+          if (inGrace) counts.grace_zone++;
+
+          // Surlignage dynamique de la zone de grâce & pastille moyenne/proposition
+          $row.toggleClass('delib-row-grace-zone', inGrace);
+          if (hasNotes && !isNaN(moy) && moy < 10) {
+            var $moyBadge = $row.find('.delib-moy-badge');
+            var $autoBadge = $row.find('.delib-auto-badge');
+            if (inGrace) {
+              $moyBadge.css({ background: '#FEF3C7', color: '#92400E' });
+              $autoBadge
+                .text('Zone de grâce')
+                .css({ background: '#FEF3C7', color: '#92400E', borderColor: '#F59E0B' });
+            } else {
+              $moyBadge.css({ background: '#FEE2E2', color: '#991B1B' });
+              $autoBadge
+                .text('Recalé')
+                .css({ background: '#FEF2F2', color: '#991B1B', borderColor: '#FECACA' });
+            }
+          }
+
+          // Filtrage par pill + recherche
+          var matchFilter = (activeFilter === 'all')
+            || (activeFilter === 'grace_zone' && inGrace)
+            || (activeFilter === choice);
+          var hay = ($row.attr('data-etudiant') || '');
+          var matchSearch = (!search || hay.indexOf(search) !== -1);
+
+          if (matchFilter && matchSearch) {
+            $row.show();
+            visibleCount++;
+          } else {
+            $row.hide();
+          }
+        });
+
+        // Mise à jour des KPI temps réel
+        var totalAdmis = counts.admis_office + counts.admis_grace;
+        var taux = counts.all > 0 ? ((totalAdmis / counts.all) * 100) : 0;
+
+        $('#kpi-delib-total').text(counts.all);
+        $('#kpi-delib-admis-office').text(counts.admis_office);
+        $('#kpi-delib-admis-grace').text(counts.admis_grace);
+        $('#kpi-delib-redouble').text(counts.redouble);
+        $('#kpi-delib-autres').text(counts.exclu + counts.en_attente);
+        $('#kpi-delib-taux').text(taux.toFixed(1) + ' %');
+
+        // Mise à jour des compteurs de filtres
+        $('#pill-count-all').text(counts.all);
+        $('#pill-count-grace_zone').text(counts.grace_zone);
+        $('#pill-count-admis_office').text(counts.admis_office);
+        $('#pill-count-admis_grace').text(counts.admis_grace);
+        $('#pill-count-redouble').text(counts.redouble);
+        $('#pill-count-exclu').text(counts.exclu);
+        $('#pill-count-en_attente').text(counts.en_attente);
+
+        if (counts.all > 0 && visibleCount === 0) {
+          $('#delib-empty-filter-msg').show();
+        } else {
+          $('#delib-empty-filter-msg').hide();
+        }
+      }
+
+      // 1) Clic 1-clic sur la décision individuelle d'un étudiant
+      $(document).on('click', '.delib-choice-btn', function () {
+        if (!delibCfg.isEditable) return;
+        var $btn = $(this);
+        var choice = $btn.attr('data-choice');
+        var $row = $btn.closest('tr.delib-student-row');
+        $row.find('.delib-choice-btn').removeClass('active');
+        $btn.addClass('active');
+        $row.attr('data-choice', choice);
+        markDirty();
+        refreshDeliberationUI();
+      });
+
+      $(document).on('input', '.delib-obs-input', function () {
+        markDirty();
+      });
+
+      // 2) Réglage live de la plage Zone de Grâce + Recherche + Pills filtres
+      $('#delib-grace-min, #delib-grace-max, #delib-search-input').on('input change', function () {
+        refreshDeliberationUI();
+      });
+
+      $(document).on('click', '.delib-filter-pill', function () {
+        $('.delib-filter-pill').removeClass('active');
+        $(this).addClass('active');
+        activeFilter = $(this).attr('data-filter') || 'all';
+        refreshDeliberationUI();
+      });
+
+      // 3) Appliquer les propositions automatiques sur toute la classe
+      $(document).on('click', '#btn-apply-auto-proposals', function () {
+        if (!delibCfg.isEditable) return;
+        var applyAll = function () {
+          $('#table-deliberation-conseil tbody tr.delib-student-row').each(function () {
+            var $row = $(this);
+            var autoChoice = $row.attr('data-auto-choice') || 'en_attente';
+            $row.attr('data-choice', autoChoice);
+            $row.find('.delib-choice-btn').removeClass('active');
+            $row.find('.delib-choice-btn[data-choice="' + autoChoice + '"]').addClass('active');
+          });
+          markDirty();
+          refreshDeliberationUI();
+          notifySuccess('Propositions automatiques appliquées. Vous pouvez ajuster les cas particuliers (grâces, exclusions) avant de valider.');
+        };
+
         if (window.Swal) {
           Swal.fire({
-            icon: opts.icon || 'question',
-            title: opts.title || 'Confirmation',
-            html: opts.html || opts.text || '',
+            icon: 'question',
+            title: 'Appliquer les propositions automatiques ?',
+            text: 'Tous les étudiants >= 10 passeront en "Admis d\'office", ceux < 10 en "Redoublement" et ceux sans notes en "En attente".',
             showCancelButton: true,
-            confirmButtonText: opts.confirmText || 'Confirmer',
+            confirmButtonText: 'Appliquer',
             cancelButtonText: 'Annuler',
-            confirmButtonColor: opts.confirmColor || '#15803D',
+            confirmButtonColor: '#1E3A5F',
             cancelButtonColor: '#64748B',
             reverseButtons: true,
             didOpen: function () {
               var c = document.querySelector('.swal2-container');
               if (c) c.style.zIndex = '10050';
             }
-          }).then(function (result) {
-            if (result.isConfirmed && typeof onConfirm === 'function') {
-              onConfirm();
-            }
+          }).then(function (r) {
+            if (r.isConfirmed) applyAll();
           });
-        } else if (typeof onConfirm === 'function') {
-          onConfirm();
+        } else {
+          applyAll();
         }
-      }
-
-      function defaultLibelleForDecision(code, rachete) {
-        if (code === 'admis') return rachete ? 'Admis(e) par rachat du jury' : 'Admis(e) en classe supérieure';
-        if (code === 'redouble') return 'Redoublement';
-        if (code === 'exclu') return 'Exclu(e)';
-        if (code === 'ajourne') return 'Ajourné(e) / Redoublement';
-        return 'En attente';
-      }
-
-      // 1) Valider & Figer (ou Recalculer) la délibération annuelle de la classe
-      $(document).on('click', '#btn-valider-deliberation', function () {
-        var $btn = $(this);
-        var mode = $btn.data('mode') || 'validate';
-        var isRecalc = (mode === 'recalculate');
-
-        confirmAction({
-          icon: isRecalc ? 'warning' : 'question',
-          title: isRecalc ? 'Recalculer & Mettre à jour la délibération ?' : 'Valider & Figer la délibération annuelle ?',
-          html: isRecalc
-            ? 'Les moyennes annuelles et rangs de la classe <strong>' + $('<div>').text(delibCfg.classeLibelle || '').html() + '</strong> seront recalculés à partir des notes actuelles.<br><small style="color:#64748B;">Les rachats et décisions individuelles du jury déjà saisis seront préservés.</small>'
-            : 'Cette action calcule les moyennes annuelles de <strong>' + $('<div>').text(delibCfg.classeLibelle || '').html() + '</strong> (' + $('<div>').text(delibCfg.anneeLibelle || '').html() + ') et fige officiellement les décisions finales.<br><small style="color:#64748B;">Les réinscriptions, fiches étudiants et bulletins S2 liront directement ces décisions sans recalcul.</small>',
-          confirmText: isRecalc ? 'Oui, recalculer' : 'Oui, valider & figer',
-          confirmColor: isRecalc ? '#1E3A5F' : '#15803D'
-        }, function () {
-          var originalHtml = $btn.html();
-          $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Traitement en cours...');
-
-          $.ajax({
-            url: delibCfg.validerUrl,
-            type: 'POST',
-            dataType: 'json',
-            data: {
-              csrf_token: delibCfg.csrfToken,
-              classe_code: delibCfg.classeCode,
-              annee_code: delibCfg.anneeCode,
-              preserve_manual: '1'
-            },
-            success: function (res) {
-              if (res && parseInt(res.status, 10) === 1) {
-                notifySuccess(res.message || 'Délibération validée avec succès.');
-                window.location.reload();
-              } else {
-                $btn.prop('disabled', false).html(originalHtml);
-                if (window.lucide) lucide.createIcons();
-                notifyError((res && res.message) ? res.message : 'Échec de la validation.');
-              }
-            },
-            error: function (xhr) {
-              $btn.prop('disabled', false).html(originalHtml);
-              if (window.lucide) lucide.createIcons();
-              var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur réseau lors de la délibération.';
-              notifyError(msg);
-            }
-          });
-        });
       });
 
-      // 2) Rouvrir (statut provisoire) la délibération de la classe
-      $(document).on('click', '#btn-reouvrir-deliberation', function () {
+      function collectDecisionsPayload() {
+        var list = [];
+        $('#table-deliberation-conseil tbody tr.delib-student-row').each(function () {
+          var $row = $(this);
+          list.push({
+            inscription_code: $row.attr('data-inscription') || '',
+            decision_choice: $row.attr('data-choice') || 'en_attente',
+            observation_jury: ($row.find('.delib-obs-input').val() || '').trim()
+          });
+        });
+        return list;
+      }
+
+      function submitDeliberation(mode, $btn) {
+        var payload = collectDecisionsPayload();
+        var origHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Enregistrement...');
+
+        $.ajax({
+          url: delibCfg.enregistrerUrl,
+          type: 'POST',
+          dataType: 'json',
+          data: {
+            csrf_token: delibCfg.csrfToken,
+            classe_code: delibCfg.classeCode,
+            annee_code: delibCfg.anneeCode,
+            mode: mode,
+            decisions: JSON.stringify(payload)
+          },
+          success: function (res) {
+            if (res && parseInt(res.status, 10) === 1) {
+              isDirty = false;
+              notifySuccess(res.message || 'Délibération enregistrée.');
+              window.location.reload();
+            } else {
+              $btn.prop('disabled', false).html(origHtml);
+              if (window.lucide) lucide.createIcons();
+              notifyError((res && res.message) ? res.message : 'Erreur lors de l\'enregistrement.');
+            }
+          },
+          error: function (xhr) {
+            $btn.prop('disabled', false).html(origHtml);
+            if (window.lucide) lucide.createIcons();
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur réseau lors de l\'enregistrement.';
+            notifyError(msg);
+          }
+        });
+      }
+
+      // 4) Enregistrer en brouillon (statut 'provisoire')
+      $(document).on('click', '#btn-save-draft-delib', function () {
+        submitDeliberation('provisoire', $(this));
+      });
+
+      // 5) Clôturer & Valider officiellement (statut 'valide') avec récapitulatif complet
+      $(document).on('click', '#btn-validate-delib', function () {
         var $btn = $(this);
-        confirmAction({
-          icon: 'warning',
-          title: 'Rouvrir la délibération en provisoire ?',
-          html: 'Les décisions figées de la classe <strong>' + $('<div>').text(delibCfg.classeLibelle || '').html() + '</strong> repasseront en statut <strong>provisoire</strong> (recalcul dynamique rétabli jusqu\'à la prochaine validation).',
-          confirmText: 'Oui, rouvrir',
-          confirmColor: '#D97706'
-        }, function () {
-          var originalHtml = $btn.html();
+        var payload = collectDecisionsPayload();
+        var c = { admis_office: 0, admis_grace: 0, redouble: 0, exclu: 0, en_attente: 0 };
+        var graceSansMotif = 0;
+
+        payload.forEach(function (item) {
+          if (c.hasOwnProperty(item.decision_choice)) c[item.decision_choice]++;
+          if (item.decision_choice === 'admis_grace' && !item.observation_jury) {
+            graceSansMotif++;
+          }
+        });
+
+        var recapHtml =
+          '<div style="text-align:left; font-size:13px; line-height:1.6;">' +
+          '<p style="margin:0 0 8px 0;">Classe : <strong>' + escapeHtml(delibCfg.classeLibelle) + '</strong> (' + escapeHtml(delibCfg.anneeLibelle) + ')</p>' +
+          '<ul style="margin:0 0 10px 18px; padding:0;">' +
+          '<li><strong style="color:#15803D;">' + c.admis_office + '</strong> Admis d\'office</li>' +
+          '<li><strong style="color:#B45309;">' + c.admis_grace + '</strong> Admis par grâce (Rachat)</li>' +
+          '<li><strong style="color:#B91C1C;">' + c.redouble + '</strong> Redoublement (Recalé)</li>' +
+          '<li><strong style="color:#0F172A;">' + c.exclu + '</strong> Exclu(s)</li>' +
+          '<li><strong style="color:#475569;">' + c.en_attente + '</strong> En attente</li>' +
+          '</ul>';
+
+        if (c.en_attente > 0) {
+          recapHtml += '<div style="background:#FEF3C7; color:#92400E; padding:8px 10px; border-radius:6px; font-size:12px; margin-bottom:6px;">Attention : <strong>' + c.en_attente + '</strong> étudiant(s) sont encore « En attente ».</div>';
+        }
+        if (graceSansMotif > 0) {
+          recapHtml += '<div style="background:#EFF6FF; color:#1E40AF; padding:8px 10px; border-radius:6px; font-size:12px; margin-bottom:6px;">Info : <strong>' + graceSansMotif + '</strong> grâce(s) n\'ont pas de motif saisi dans la colonne Observation.</div>';
+        }
+        recapHtml += '<small style="color:#64748B;">Une fois clôturée, ces décisions seront figées et utilisées partout sans recalcul.</small></div>';
+
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'question',
+            title: 'Clôturer & Valider la délibération ?',
+            html: recapHtml,
+            showCancelButton: true,
+            confirmButtonText: 'Oui, clôturer & figer',
+            cancelButtonText: 'Revenir à la séance',
+            confirmButtonColor: '#15803D',
+            cancelButtonColor: '#64748B',
+            reverseButtons: true,
+            didOpen: function () {
+              var el = document.querySelector('.swal2-container');
+              if (el) el.style.zIndex = '10050';
+            }
+          }).then(function (result) {
+            if (result.isConfirmed) {
+              submitDeliberation('valide', $btn);
+            }
+          });
+        } else {
+          submitDeliberation('valide', $btn);
+        }
+      });
+
+      // 6) Rouvrir la séance en statut provisoire
+      $(document).on('click', '#btn-reopen-delib', function () {
+        var $btn = $(this);
+        var doReopen = function () {
+          var origHtml = $btn.html();
           $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Réouverture...');
 
           $.ajax({
@@ -2094,116 +2313,56 @@ $(document).ready(function () {
             },
             success: function (res) {
               if (res && parseInt(res.status, 10) === 1) {
-                notifySuccess(res.message || 'Délibération réouverte.');
+                notifySuccess(res.message || 'Séance réouverte en mode brouillon.');
                 window.location.reload();
               } else {
-                $btn.prop('disabled', false).html(originalHtml);
+                $btn.prop('disabled', false).html(origHtml);
                 if (window.lucide) lucide.createIcons();
-                notifyError((res && res.message) ? res.message : 'Échec de la réouverture.');
+                notifyError((res && res.message) ? res.message : 'Erreur lors de la réouverture.');
               }
             },
             error: function (xhr) {
-              $btn.prop('disabled', false).html(originalHtml);
+              $btn.prop('disabled', false).html(origHtml);
               if (window.lucide) lucide.createIcons();
               var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur réseau lors de la réouverture.';
               notifyError(msg);
             }
           });
-        });
-      });
+        };
 
-      // 3) Modal d'ajustement individuel du jury (rachat, redoublement, exclusion, observation)
-      var $modalJury = $('#modal-decision-jury');
-      var $selDecision = $('#jury-decision-finale');
-      var $chkRachete = $('#jury-est-rachete');
-      var $wrapRachat = $('#jury-rachat-wrapper');
-      var $inpLibelle = $('#jury-libelle-decision');
-
-      function syncRachatVisibility(autoUpdateLibelle) {
-        var dec = $selDecision.val();
-        if (dec === 'admis') {
-          $wrapRachat.show();
-        } else {
-          $chkRachete.prop('checked', false);
-          $wrapRachat.hide();
-        }
-        if (autoUpdateLibelle) {
-          $inpLibelle.val(defaultLibelleForDecision(dec, $chkRachete.is(':checked')));
-        }
-      }
-
-      $(document).on('click', '.btn-edit-decision-jury', function () {
-        var $b = $(this);
-        $('#jury-inscription-code').val($b.attr('data-inscription') || '');
-        $('#jury-modal-student-label').text(($b.attr('data-etudiant') || '') + ' • ' + ($b.attr('data-matricule') || '-'));
-        $('#jury-moy-s1').text($b.attr('data-moy-s1') || '-');
-        $('#jury-moy-s2').text($b.attr('data-moy-s2') || '-');
-        $('#jury-moy-exam').text($b.attr('data-moy-exam') || '-');
-        $('#jury-moy-ann').text($b.attr('data-moy-ann') || '-');
-
-        $selDecision.val($b.attr('data-decision') || 'en_attente');
-        $chkRachete.prop('checked', ($b.attr('data-rachete') === '1'));
-        $inpLibelle.val($b.attr('data-libelle') || '');
-        $('#jury-observation').val($b.attr('data-observation') || '');
-
-        syncRachatVisibility(false);
-        $modalJury.css('display', 'flex');
-        if (window.lucide) lucide.createIcons();
-      });
-
-      $selDecision.on('change', function () {
-        syncRachatVisibility(true);
-      });
-
-      $chkRachete.on('change', function () {
-        syncRachatVisibility(true);
-      });
-
-      $(document).on('click', '.btn-close-modal-jury', function () {
-        $modalJury.hide();
-      });
-
-      $modalJury.on('click', function (e) {
-        if (e.target === this) {
-          $modalJury.hide();
-        }
-      });
-
-      $('#form-decision-jury').on('submit', function (e) {
-        e.preventDefault();
-        var $btnSubmit = $('#btn-submit-decision-jury');
-        var originalText = $btnSubmit.text();
-        $btnSubmit.prop('disabled', true).text('Enregistrement...');
-
-        $.ajax({
-          url: delibCfg.modifierUrl,
-          type: 'POST',
-          dataType: 'json',
-          data: {
-            csrf_token: delibCfg.csrfToken,
-            inscription_code: $('#jury-inscription-code').val(),
-            decision_finale: $selDecision.val(),
-            libelle_decision: $inpLibelle.val(),
-            est_rachete: $chkRachete.is(':checked') ? '1' : '0',
-            observation_jury: $('#jury-observation').val()
-          },
-          success: function (res) {
-            if (res && parseInt(res.status, 10) === 1) {
-              $modalJury.hide();
-              notifySuccess(res.message || 'Décision du jury enregistrée.');
-              window.location.reload();
-            } else {
-              $btnSubmit.prop('disabled', false).text(originalText);
-              notifyError((res && res.message) ? res.message : 'Erreur lors de la sauvegarde.');
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Rouvrir la séance de délibération ?',
+            html: 'La classe <strong>' + escapeHtml(delibCfg.classeLibelle) + '</strong> repassera en statut <strong>brouillon (provisoire)</strong> afin de modifier des cas individuels.',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, rouvrir',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#D97706',
+            cancelButtonColor: '#64748B',
+            reverseButtons: true,
+            didOpen: function () {
+              var el = document.querySelector('.swal2-container');
+              if (el) el.style.zIndex = '10050';
             }
-          },
-          error: function (xhr) {
-            $btnSubmit.prop('disabled', false).text(originalText);
-            var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erreur réseau lors de la sauvegarde.';
-            notifyError(msg);
-          }
-        });
+          }).then(function (r) {
+            if (r.isConfirmed) doReopen();
+          });
+        } else {
+          doReopen();
+        }
       });
+
+      // Avertissement navigateur si modifications non sauvegardées
+      window.addEventListener('beforeunload', function (e) {
+        if (isDirty) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
+
+      // Initialisation immédiate des KPI, filtres et surlignages Zone de Grâce
+      refreshDeliberationUI();
     })();
   }
 

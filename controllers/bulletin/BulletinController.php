@@ -540,12 +540,7 @@ class BulletinController extends BaseController
     public function pvClasse($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission([
-            PERMISSIONS::VIEW_BULLETINS,
-            PERMISSIONS::VIEW_NOTES,
-            PERMISSIONS::VIEW_DELIBERATIONS,
-            PERMISSIONS::MANAGE_DELIBERATIONS
-        ]);
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::VIEW_NOTES]);
 
         $ctx = $this->resolvePvContext($param, true);
         if ($ctx === null) {
@@ -554,54 +549,27 @@ class BulletinController extends BaseController
 
         $selectedClasseCode = $ctx['selectedClasseCode'];
         $selectedAnneeCode = $ctx['anneeCode'] ?? '';
-        $selectedSemestreCode = $ctx['selectedSemestreCode'];
-        $semestres = $ctx['semestres'];
         $encryptedClasseCode = !empty($selectedClasseCode) ? $this->validator->crypter($selectedClasseCode) : '';
-
-        $delibModel = new ModelDeliberation();
-        $deliberationsMap = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
-            ? $delibModel->getByClasseAndAnnee($selectedClasseCode, $selectedAnneeCode)
-            : [];
-        $deliberationSummary = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
-            ? $delibModel->getClasseDeliberationSummary($selectedClasseCode, $selectedAnneeCode)
-            : $delibModel->getClasseDeliberationSummary('', '');
-
-        $lastSem = !empty($semestres) ? end($semestres) : null;
-        $isFinalSemestre = empty($semestres)
-            || ($selectedSemestreCode === ($lastSem['code_semestre'] ?? ''))
-            || $this->model->isDeuxiemeSemestre($selectedSemestreCode, $semestres);
-
-        $canManageDeliberations = Auth::can(PERMISSIONS::MANAGE_DELIBERATIONS) && empty($ctx['isTeacherOnly']);
-        $canWriteYear = !empty($selectedAnneeCode) && $this->canWriteAcademicYear($selectedAnneeCode);
+        $canAccessDeliberations = Auth::can([PERMISSIONS::VIEW_DELIBERATIONS, PERMISSIONS::MANAGE_DELIBERATIONS]) && empty($ctx['isTeacherOnly']);
 
         $this->loadView('../views/bulletin/pv_classe.php', array_merge($ctx['pvData'], [
             'etablissement' => $this->getEtablissementConfig(),
             'classes' => $ctx['classes'],
-            'semestres' => $semestres,
+            'semestres' => $ctx['semestres'],
             'selectedAnneeCode' => $selectedAnneeCode,
             'selectedClasseCode' => $selectedClasseCode,
-            'selectedSemestreCode' => $selectedSemestreCode,
+            'selectedSemestreCode' => $ctx['selectedSemestreCode'],
             'selectedSemestreLibelle' => $ctx['selectedSemestreLibelle'],
             'encryptedClasseCode' => $encryptedClasseCode,
             'isTeacherOnly' => $ctx['isTeacherOnly'],
-            'deliberationsMap' => $deliberationsMap,
-            'deliberationSummary' => $deliberationSummary,
-            'isFinalSemestre' => $isFinalSemestre,
-            'canManageDeliberations' => $canManageDeliberations,
-            'canWriteYear' => $canWriteYear
+            'canAccessDeliberations' => $canAccessDeliberations
         ]));
     }
 
     public function imprimerPvPdf($param = null)
     {
         $this->requireAuth();
-        $this->requirePermission([
-            PERMISSIONS::VIEW_BULLETINS,
-            PERMISSIONS::GENERATE_BULLETINS,
-            PERMISSIONS::VIEW_NOTES,
-            PERMISSIONS::VIEW_DELIBERATIONS,
-            PERMISSIONS::MANAGE_DELIBERATIONS
-        ]);
+        $this->requirePermission([PERMISSIONS::VIEW_BULLETINS, PERMISSIONS::GENERATE_BULLETINS, PERMISSIONS::VIEW_NOTES]);
         require_once __DIR__ . '/../../core/PdfService.php';
 
         $ctx = $this->resolvePvContext($param, false);
@@ -610,10 +578,8 @@ class BulletinController extends BaseController
         }
 
         $selectedClasseCode = $ctx['selectedClasseCode'];
-        $selectedAnneeCode = $ctx['anneeCode'] ?? '';
         $selectedSemestreCode = $ctx['selectedSemestreCode'];
         $selectedSemestreLibelle = $ctx['selectedSemestreLibelle'];
-        $semestres = $ctx['semestres'];
         $pvData = $ctx['pvData'];
 
         if (empty($pvData['classeInfo'])) {
@@ -621,26 +587,11 @@ class BulletinController extends BaseController
             return;
         }
 
-        $delibModel = new ModelDeliberation();
-        $deliberationsMap = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
-            ? $delibModel->getByClasseAndAnnee($selectedClasseCode, $selectedAnneeCode)
-            : [];
-        $deliberationSummary = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
-            ? $delibModel->getClasseDeliberationSummary($selectedClasseCode, $selectedAnneeCode)
-            : $delibModel->getClasseDeliberationSummary('', '');
-        $lastSem = !empty($semestres) ? end($semestres) : null;
-        $isFinalSemestre = empty($semestres)
-            || ($selectedSemestreCode === ($lastSem['code_semestre'] ?? ''))
-            || $this->model->isDeuxiemeSemestre($selectedSemestreCode, $semestres);
-
         $dataView = array_merge($pvData, [
             'etablissement' => $this->getEtablissementConfig(),
             'selectedClasseCode' => $selectedClasseCode,
             'selectedSemestreCode' => $selectedSemestreCode,
-            'selectedSemestreLibelle' => $selectedSemestreLibelle,
-            'deliberationsMap' => $deliberationsMap,
-            'deliberationSummary' => $deliberationSummary,
-            'isFinalSemestre' => $isFinalSemestre
+            'selectedSemestreLibelle' => $selectedSemestreLibelle
         ]);
 
         $html = PdfService::renderTemplate('pv_classe_pdf.php', $dataView);
@@ -1008,5 +959,247 @@ class BulletinController extends BaseController
         );
 
         $this->success("Délibération repassée en statut provisoire. Les décisions figées ne sont plus actives tant que la classe n'est pas revalidée.");
+    }
+
+    /**
+     * Espace dédié : Conseil de Classe & Délibération Annuelle (étude individuelle cas par cas)
+     */
+    public function deliberationConseil($param = null)
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_DELIBERATIONS, PERMISSIONS::MANAGE_DELIBERATIONS]);
+
+        $annees = $this->getAccessibleAnnees();
+        $requestedAnnee = $_GET['annee_code'] ?? null;
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($requestedAnnee);
+
+        $teacherCtx = $this->getTeacherContext();
+        $isTeacherOnly = !empty($teacherCtx['isTeacherOnly']);
+
+        $classes = !empty($selectedAnneeCode)
+            ? $this->getAccessibleClassesForPv($selectedAnneeCode, $teacherCtx)
+            : [];
+
+        $selectedClasseCode = trim((string)($_GET['classe_code'] ?? ''));
+        if ($selectedClasseCode === '' && !empty($param)) {
+            try {
+                $dec = $this->validator->decrypter($param);
+                $selectedClasseCode = (!empty($dec) && $dec !== false) ? (string)$dec : (string)$param;
+            } catch (Exception $e) {
+                $selectedClasseCode = (string)$param;
+            }
+        }
+
+        $allowedCodes = array_column($classes, 'code_classe');
+        if ($selectedClasseCode !== '' && !in_array($selectedClasseCode, $allowedCodes, true)) {
+            if ($isTeacherOnly) {
+                $this->renderForbidden("Accès refusé : vous n'êtes pas autorisé à consulter la délibération de cette classe.");
+                return;
+            }
+            if (empty($requestedAnnee)) {
+                $clsRow = (new ModelClasse())->getClasseWithDetails($selectedClasseCode);
+                if (!empty($clsRow['annee_code']) && $this->canAccessAcademicYear($clsRow['annee_code'])) {
+                    $selectedAnneeCode = $clsRow['annee_code'];
+                    $classes = $this->getAccessibleClassesForPv($selectedAnneeCode, $teacherCtx);
+                    $allowedCodes = array_column($classes, 'code_classe');
+                } else {
+                    $selectedClasseCode = $classes[0]['code_classe'] ?? '';
+                }
+            } else {
+                $selectedClasseCode = $classes[0]['code_classe'] ?? '';
+            }
+        } elseif ($selectedClasseCode === '' && !empty($classes)) {
+            $selectedClasseCode = $classes[0]['code_classe'] ?? '';
+        }
+
+        $delibModel = new ModelDeliberation();
+        $conseilData = (!empty($selectedClasseCode) && !empty($selectedAnneeCode))
+            ? $delibModel->getConseilClasseData($selectedClasseCode, $selectedAnneeCode)
+            : $delibModel->getConseilClasseData('', '');
+
+        // Ajouter l'identifiant d'inscription chiffré pour ouvrir le bulletin détaillé d'un étudiant en 1 clic
+        foreach ($conseilData['rows'] as &$r) {
+            $r['encrypted_id_inscription'] = !empty($r['id_inscription'])
+                ? $this->validator->crypter((string)$r['id_inscription'])
+                : '';
+        }
+        unset($r);
+
+        $encryptedClasseCode = !empty($selectedClasseCode) ? $this->validator->crypter($selectedClasseCode) : '';
+        $canManageDeliberations = Auth::can(PERMISSIONS::MANAGE_DELIBERATIONS) && !$isTeacherOnly;
+        $canWriteYear = !empty($selectedAnneeCode) && $this->canWriteAcademicYear($selectedAnneeCode);
+
+        $this->loadView('../views/bulletin/deliberation_conseil.php', [
+            'etablissement' => $this->getEtablissementConfig(),
+            'annees' => $annees,
+            'classes' => $classes,
+            'selectedAnneeCode' => $selectedAnneeCode ?? '',
+            'selectedClasseCode' => $selectedClasseCode,
+            'encryptedClasseCode' => $encryptedClasseCode,
+            'classeInfo' => $conseilData['classeInfo'],
+            'anneeLibelle' => $conseilData['anneeLibelle'],
+            'estPremiereAnnee' => $conseilData['est_premiere_annee'],
+            'lastSemestreCode' => $conseilData['lastSemestreCode'],
+            'summary' => $conseilData['summary'],
+            'rows' => $conseilData['rows'],
+            'canManageDeliberations' => $canManageDeliberations,
+            'canWriteYear' => $canWriteYear
+        ]);
+    }
+
+    /**
+     * Enregistre les décisions individuelles du Conseil (mode 'provisoire' = brouillon, mode 'valide' = clôture officielle)
+     */
+    public function enregistrerDeliberation()
+    {
+        $this->requireAuth();
+        $this->requirePost(true);
+        $this->requirePermission(PERMISSIONS::MANAGE_DELIBERATIONS);
+
+        $teacherCtx = $this->getTeacherContext();
+        if (!empty($teacherCtx['isTeacherOnly'])) {
+            $this->error("Accès refusé : seuls les membres autorisés du conseil / de la direction peuvent enregistrer une délibération.");
+            return;
+        }
+
+        $classeCode = trim((string)($_POST['classe_code'] ?? ''));
+        $anneeCode = trim((string)($_POST['annee_code'] ?? ''));
+        if ($anneeCode === '') {
+            $anneeCode = (string)($this->resolveTargetAcademicYear(null) ?? '');
+        }
+        $mode = trim((string)($_POST['mode'] ?? 'provisoire'));
+        if (!in_array($mode, ['provisoire', STATUTS::VALIDE], true)) {
+            $mode = 'provisoire';
+        }
+
+        if ($classeCode === '' || $anneeCode === '') {
+            $this->error("Classe et année académique requises.");
+            return;
+        }
+
+        $this->requireAcademicYearWriteAccess($anneeCode);
+
+        $rawDecisions = $_POST['decisions'] ?? '[]';
+        $decisionsInput = is_string($rawDecisions) ? json_decode($rawDecisions, true) : $rawDecisions;
+        if (!is_array($decisionsInput)) {
+            $this->error("Format des décisions invalide.");
+            return;
+        }
+
+        $delibModel = new ModelDeliberation();
+        $res = $delibModel->saveSessionDeliberation(
+            $classeCode,
+            $anneeCode,
+            $decisionsInput,
+            $mode,
+            (string)Auth::code(),
+            (string)Session::get('etablissement_code', '')
+        );
+
+        if (empty($res['success'])) {
+            $this->error($res['message'] ?? "Erreur lors de l'enregistrement de la délibération.");
+            return;
+        }
+
+        $actionLabel = ($mode === STATUTS::VALIDE)
+            ? "Clôture et validation officielle de la délibération du conseil"
+            : "Enregistrement en brouillon de la délibération du conseil";
+
+        $this->logAction(
+            AuditLogger::ACTION_UPDATE,
+            'deliberations',
+            $classeCode,
+            "{$actionLabel} pour la classe {$classeCode} ({$anneeCode})",
+            [
+                'classe_code' => $classeCode,
+                'annee_code' => $anneeCode,
+                'mode' => $mode,
+                'counts' => $res['counts'] ?? []
+            ]
+        );
+
+        $this->success($res['message'], [
+            'statut_deliberation' => $res['statut_deliberation'],
+            'counts' => $res['counts'] ?? [],
+            'summary' => $delibModel->getClasseDeliberationSummary($classeCode, $anneeCode)
+        ]);
+    }
+
+    /**
+     * Génère le PV Officiel de Délibération Annuelle du Conseil en PDF (A4 Paysage)
+     */
+    public function imprimerDeliberationPdf($param = null)
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_DELIBERATIONS, PERMISSIONS::MANAGE_DELIBERATIONS]);
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        $selectedAnneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if (empty($selectedAnneeCode)) {
+            $this->renderNotFound("Accès refusé : aucune année académique active autorisée.");
+            return;
+        }
+
+        $selectedClasseCode = trim((string)($_GET['classe_code'] ?? ''));
+        if ($selectedClasseCode === '' && !empty($param)) {
+            try {
+                $dec = $this->validator->decrypter($param);
+                $selectedClasseCode = (!empty($dec) && $dec !== false) ? (string)$dec : (string)$param;
+            } catch (Exception $e) {
+                $selectedClasseCode = (string)$param;
+            }
+        }
+
+        $teacherCtx = $this->getTeacherContext();
+        if (!empty($teacherCtx['isTeacherOnly'])) {
+            $allowed = array_column($this->getAccessibleClassesForPv($selectedAnneeCode, $teacherCtx), 'code_classe');
+            if (!in_array($selectedClasseCode, $allowed, true)) {
+                $this->renderForbidden("Accès refusé à cette classe.");
+                return;
+            }
+        }
+
+        $delibModel = new ModelDeliberation();
+        $conseilData = $delibModel->getConseilClasseData($selectedClasseCode, $selectedAnneeCode);
+        if (empty($conseilData['classeInfo'])) {
+            $this->renderNotFound("Classe introuvable pour l'impression du PV de délibération annuelle.");
+            return;
+        }
+
+        $dataView = array_merge($conseilData, [
+            'etablissement' => $this->getEtablissementConfig(),
+            'selectedClasseCode' => $selectedClasseCode,
+            'selectedAnneeCode' => $selectedAnneeCode
+        ]);
+
+        $html = PdfService::renderTemplate('pv_deliberation_annuelle_pdf.php', $dataView);
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'deliberations',
+            $selectedClasseCode,
+            "Impression du PV Officiel de Délibération Annuelle pour la classe {$selectedClasseCode} ({$selectedAnneeCode})",
+            ['classe_code' => $selectedClasseCode, 'annee_code' => $selectedAnneeCode]
+        );
+
+        if (isset($_GET['html'])) {
+            echo $html;
+            return;
+        }
+
+        $className = preg_replace('/[^A-Za-z0-9_\-]/', '_', $conseilData['classeInfo']['libelle_classe'] ?? 'Classe');
+        $filename = 'PV_Deliberation_Annuelle_' . $className . '_' . date('Ymd_His') . '.pdf';
+
+        PdfService::generate($html, $filename, [
+            'orientation' => 'L',
+            'format' => 'A4',
+            'title' => 'PV de Délibération Annuelle - ' . ($conseilData['classeInfo']['libelle_classe'] ?? ''),
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8,
+            'watermark_logo' => true,
+            'watermark_alpha' => 0.05
+        ]);
     }
 }
