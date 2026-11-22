@@ -269,13 +269,13 @@ if (empty($etablissement) || !is_array($etablissement)) {
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document généré par le Système GEICG &bull; <?= date('d/m/Y H:i:s') ?>
+          
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
         </td>
         <td style="width: 40%; text-align: right;">
-          Réf: REF-SCOL-<?= date('Ymd-His') ?>
+          REF : <?= date('YmdHis') ?>
         </td>
       </tr>
     </table>
@@ -362,13 +362,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
         <div style="font-size: 7.2pt; font-weight: bold; color: #0369A1; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px;">Tarifs Privés (Non Affectés)</div>
         <div style="font-size: 6.2pt; color: #075985; margin-top: 1px;">Inscriptions directes privées</div>
       </td>
-    </tr>
-  </table>
-
-  <!-- SECTION : GRILLE TARIFAIRE DES FRAIS DE SCOLARITÉ -->
-  <table class="section-header-table">
-    <tr>
-      <td>GRILLE TARIFAIRE DES FRAIS DE SCOLARITÉ</td>
     </tr>
   </table>
 
