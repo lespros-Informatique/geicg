@@ -493,19 +493,77 @@ if (empty($etablissement) || !is_array($etablissement)) {
     </tbody>
   </table>
 
-  <!-- BLOC DE SIGNATURES -->
-  <table class="signature-table">
+  <!-- BLOC DE SIGNATURES OFFICIELLES -->
+  <?php
+    $sigDirPedTitre = trim((string)($etablissement['titre_direction_pedagogique'] ?? ''));
+    $sigDirPedNom = trim((string)($etablissement['nom_directeur_etudes'] ?? ''));
+    $sigDirGenTitre = trim((string)($etablissement['titre_direction_generale'] ?? ''));
+    $sigDirGenNom = trim((string)($etablissement['nom_directeur_general'] ?? ''));
+    $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
+    $sigVille = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
+  ?>
+  <table class="signature-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
     <tr>
-      <td class="signature-box">
-        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_pedagogique'] ?? 'La Direction des Études & Pédagogie') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_etudes'] ?? '') ?></div>
-        <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?></div>
+      <td style="width: 46%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <?php if (!empty($sigVille)): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; color: #475569; padding: 0 8px 3px 8px;">&nbsp;</td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 9pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              <?= htmlspecialchars($sigDirPedTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php if ($sigDirPedNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #0F172A;">
+              <?= htmlspecialchars($sigDirPedNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-style: italic; color: #64748B; padding: 0 8px 4px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
-      <td style="width: 4%;"></td>
-      <td class="signature-box">
-        <div class="signature-title"><?= htmlspecialchars($etablissement['titre_direction_generale'] ?? 'La Direction Générale') ?></div>
-        <div style="font-weight: bold; font-size: 7.5pt; color: #1E293B; margin-top: 2px; margin-bottom: 22px;"><?= htmlspecialchars($etablissement['nom_directeur_general'] ?? '') ?></div>
-        <div class="signature-mention"><?= htmlspecialchars($etablissement['mention_cachet_signature'] ?? 'Cachet & Signature autorisée') ?></div>
+      <td style="width: 8%;"></td>
+      <td style="width: 46%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <?php if (!empty($sigVille)): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; color: #475569; padding: 0 8px 3px 8px;">
+              Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 9pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              <?= htmlspecialchars($sigDirGenTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php if ($sigDirGenNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #0F172A;">
+              <?= htmlspecialchars($sigDirGenNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-style: italic; color: #64748B; padding: 0 8px 4px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

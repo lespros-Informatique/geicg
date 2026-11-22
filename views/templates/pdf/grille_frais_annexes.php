@@ -459,19 +459,77 @@ if (empty($etablissement) || !is_array($etablissement)) {
     </tbody>
   </table>
 
-  <!-- BLOC DE SIGNATURE ET VISA -->
-  <table class="signature-table">
+  <!-- BLOC DE SIGNATURES OFFICIELLES -->
+  <?php
+    $sigFinTitre = trim((string)($etablissement['titre_service_finance'] ?? ''));
+    $sigFinNom = trim((string)($etablissement['nom_responsable_finance'] ?? ''));
+    $sigDirPedTitre = trim((string)($etablissement['titre_direction_pedagogique'] ?? ''));
+    $sigDirPedNom = trim((string)($etablissement['nom_directeur_etudes'] ?? ''));
+    $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
+    $sigVille = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
+  ?>
+  <table class="signature-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
     <tr>
-      <td class="signature-box">
-        <div class="signature-title">Le Service Comptabilité & Caisse</div>
-        <div style="height: 38px;"></div>
-        <div class="signature-mention">Date, Cachet & Signature</div>
+      <td style="width: 46%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <?php if (!empty($sigVille)): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; color: #475569; padding: 0 8px 3px 8px;">&nbsp;</td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 9pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              <?= htmlspecialchars($sigFinTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php if ($sigFinNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #0F172A;">
+              <?= htmlspecialchars($sigFinNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-style: italic; color: #64748B; padding: 0 8px 4px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
-      <td style="width: 4%;"></td>
-      <td class="signature-box">
-        <div class="signature-title">La Direction des Études & Scolarité</div>
-        <div style="height: 38px;"></div>
-        <div class="signature-mention">Visa & Approbation</div>
+      <td style="width: 8%;"></td>
+      <td style="width: 46%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <?php if (!empty($sigVille)): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; color: #475569; padding: 0 8px 3px 8px;">
+              Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 9pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              <?= htmlspecialchars($sigDirPedTitre) ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php if ($sigDirPedNom !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #0F172A;">
+              <?= htmlspecialchars($sigDirPedNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-style: italic; color: #64748B; padding: 0 8px 4px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

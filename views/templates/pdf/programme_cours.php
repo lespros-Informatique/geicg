@@ -382,22 +382,50 @@ $items = $items ?? [];
   <?php endif; ?>
 
   <!-- BAS DE PAGE & SIGNATURES -->
-  <table class="footer-table">
+  <?php
+    $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
+    $sigleDoc = trim((string)($etablissement['sigle_etablissement'] ?? ''));
+  ?>
+  <table class="footer-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
     <tr>
       <td style="width: 55%; vertical-align: bottom;">
         <div style="font-size: 7.5pt; color: #64748B;">
-          Document édité le <?= date('d/m/Y à H:i') ?> via GEICG.<br>
+          Document édité le <?= date('d/m/Y à H:i') ?><?= $sigleDoc !== '' ? (' via ' . htmlspecialchars($sigleDoc)) : '' ?>.<br>
           Planning conforme aux emplois du temps officiels validés.
         </div>
       </td>
-      <td style="width: 45%;" class="signature-box">
-        <?php if (!empty($villeSignature)): ?>
-          <div style="font-size: 8pt; margin-bottom: 2px;">
-            Fait à <?= htmlspecialchars($villeSignature) ?>, le <?= date('d/m/Y') ?>
-          </div>
-        <?php endif; ?>
-        <div class="signature-title"><?= htmlspecialchars($dirTitre) ?></div>
-        <div class="signature-name"><?= htmlspecialchars($dirNom) ?></div>
+      <td style="width: 45%; vertical-align: top; padding: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <?php if (!empty($villeSignature)): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8.5pt; color: #475569; padding: 0 8px 3px 8px;">
+              Fait à <?= htmlspecialchars($villeSignature) ?>, le <?= date('d/m/Y') ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <tr>
+            <td style="text-align: center; font-size: 9pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              <?= htmlspecialchars($dirTitre ?? '') ?>
+            </td>
+          </tr>
+          <tr>
+            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
+          </tr>
+          <?php if (!empty($dirNom)): ?>
+          <tr>
+            <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #0F172A;">
+              <?= htmlspecialchars($dirNom) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+          <?php if ($sigMention !== ''): ?>
+          <tr>
+            <td style="text-align: center; font-size: 8pt; font-style: italic; color: #64748B; padding: 0 8px 4px 8px;">
+              <?= htmlspecialchars($sigMention) ?>
+            </td>
+          </tr>
+          <?php endif; ?>
+        </table>
       </td>
     </tr>
   </table>
