@@ -158,6 +158,31 @@ class ModelNote extends BaseModel
                 $info['matiere_code'] = $matiereCode;
             }
 
+            // Résolution dynamique de l'enseignant de la matière via emplois_temps -> users
+            $info['nom_enseignant'] = '';
+            if (!empty($classeCode) && !empty($matiereCode)) {
+                $targetAnnee = !empty($anneeCode) ? $anneeCode : ($info['annee_code'] ?? '');
+                $sqlEns = "
+                    SELECT GROUP_CONCAT(DISTINCT TRIM(CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, ''))) SEPARATOR ', ') AS nom_enseignant
+                    FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                    INNER JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
+                    WHERE edt.classe_code = ?
+                      AND edt.matiere_code = ?
+                      AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+                ";
+                $ensParams = [$classeCode, $matiereCode];
+                if (!empty($targetAnnee)) {
+                    $sqlEns .= " AND (edt.annee_code = ? OR edt.annee_code = '' OR edt.annee_code IS NULL)";
+                    $ensParams[] = $targetAnnee;
+                }
+                $stmtEns = $db->prepare($sqlEns);
+                $stmtEns->execute($ensParams);
+                $nomEns = trim((string)($stmtEns->fetchColumn() ?: ''));
+                if ($nomEns !== '') {
+                    $info['nom_enseignant'] = $nomEns;
+                }
+            }
+
             $compMatId = !empty($matiereCode) ? $this->findCompositionMatiereId($compositionCode, $classeCode, $matiereCode) : null;
 
             $stmtStudents = $db->prepare("
