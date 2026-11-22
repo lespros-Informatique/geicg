@@ -856,7 +856,18 @@
             orderable: false,
             searchable: false,
             className: 'text-center',
-            render: function () {
+            render: function (d) {
+              var totalKits = parseInt(d.total_kits, 10) || 0;
+              var totalRetires = parseInt(d.total_retires, 10) || 0;
+              var isComplet = (totalKits > 0 && totalRetires >= totalKits);
+              var quickValidateBtn = isComplet
+                ? '<button type="button" class="btn-action-icon btn-quick-validate-all-kits" disabled aria-disabled="true" style="background: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; opacity: 0.65; cursor: not-allowed;" title="Kits déjà entièrement remis">' +
+                  '<i data-lucide="check-check"></i>' +
+                  '</button>'
+                : '<button type="button" class="btn-action-icon btn-quick-validate-all-kits" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;" title="Tout marquer comme remis en 1 clic">' +
+                  '<i data-lucide="check-check"></i>' +
+                  '</button>';
+
               return '<div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">' +
                 '<button type="button" class="btn-action-icon btn-open-student-kit" style="background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0;" title="Gérer et émarger les fournitures de cet élève">' +
                 '<i data-lucide="package-check"></i>' +
@@ -864,9 +875,7 @@
                 '<button type="button" class="btn-action-icon btn-print-bon-row" style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1;" title="Imprimer le Reçu de Tenue (Bon de Remise)">' +
                 '<i data-lucide="printer"></i>' +
                 '</button>' +
-                '<button type="button" class="btn-action-icon btn-quick-validate-all-kits" style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE;" title="Tout marquer comme remis en 1 clic">' +
-                '<i data-lucide="check-check"></i>' +
-                '</button>' +
+                quickValidateBtn +
                 '</div>';
             }
           }
@@ -955,14 +964,21 @@
 
     // Tout marquer comme remis pour l'étudiant
     $('#table-distributions').on('click', '.btn-quick-validate-all-kits', function () {
+      if ($(this).prop('disabled')) return;
       var rowData = table.row($(this).closest('tr')).data();
+      if (!rowData) return;
+      var totalKits = parseInt(rowData.total_kits, 10) || 0;
+      var totalRetires = parseInt(rowData.total_retires, 10) || 0;
+      if (totalKits > 0 && totalRetires >= totalKits) return;
       validateAllKitsForStudent(rowData.code_inscription);
     });
 
     $('#btn-tout-valider-kit-modal').on('click', function () {
-      if (currentStudentData) {
-        validateAllKitsForStudent(currentStudentData.code_inscription);
-      }
+      if ($(this).prop('disabled') || !currentStudentData) return;
+      var totalKits = parseInt(currentStudentData.total_kits, 10) || 0;
+      var totalRetires = parseInt(currentStudentData.total_retires, 10) || 0;
+      if (totalKits > 0 && totalRetires >= totalKits) return;
+      validateAllKitsForStudent(currentStudentData.code_inscription);
     });
 
     // Fermeture des modals
@@ -991,14 +1007,17 @@
         background: (pourcentage >= 100 && totalKits > 0) ? '#16A34A' : '#EA580C'
       });
 
+      var isStudentComplet = (totalKits > 0 && totalRetires >= totalKits);
       var $btnToutValider = $('#btn-tout-valider-kit-modal');
-      if (totalKits > 0 && totalRetires >= totalKits) {
+      if (isStudentComplet) {
         $btnToutValider.prop('disabled', true)
-          .css({ background: '#DCFCE7', color: '#15803D', border: '1px solid #BBF7D0', cursor: 'default' })
+          .attr('aria-disabled', 'true')
+          .css({ background: '#F1F5F9', color: '#94A3B8', border: '1px solid #E2E8F0', opacity: '0.7', cursor: 'not-allowed' })
           .html('<i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i> Tout est Remis');
       } else {
         $btnToutValider.prop('disabled', totalKits === 0)
-          .css({ background: '#15803D', color: '#FFFFFF', border: 'none', cursor: totalKits === 0 ? 'not-allowed' : 'pointer' })
+          .removeAttr('aria-disabled')
+          .css({ background: '#15803D', color: '#FFFFFF', border: 'none', opacity: totalKits === 0 ? '0.65' : '1', cursor: totalKits === 0 ? 'not-allowed' : 'pointer' })
           .html('<i data-lucide="check-check" style="width: 16px; height: 16px;"></i> Tout Marquer Remis');
       }
 
@@ -1013,11 +1032,14 @@
           var iconCol = isRetire ? '#15803D' : '#EA580C';
           var statusIcon = isRetire ? 'check-circle-2' : 'clock';
           var btnClass = isRetire ? 'btn-outline-secondary' : 'btn-success';
-          var btnStyle = isRetire
-            ? 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; white-space: nowrap; cursor: pointer;'
-            : 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #15803D; color: #FFFFFF; border: none; white-space: nowrap; cursor: pointer;';
-          var btnText = isRetire ? 'Annuler la remise' : 'Marquer comme Remis';
-          var iconName = isRetire ? 'rotate-ccw' : 'check';
+          var btnDisabledAttr = isStudentComplet ? ' disabled aria-disabled="true"' : '';
+          var btnStyle = isStudentComplet
+            ? 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; opacity: 0.7; white-space: nowrap; cursor: not-allowed;'
+            : (isRetire
+              ? 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; color: #475569; border: 1px solid #CBD5E1; white-space: nowrap; cursor: pointer;'
+              : 'font-weight: 700; border-radius: 8px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; background: #15803D; color: #FFFFFF; border: none; white-space: nowrap; cursor: pointer;');
+          var btnText = isStudentComplet ? 'Remis' : (isRetire ? 'Annuler la remise' : 'Marquer comme Remis');
+          var iconName = isStudentComplet ? 'check-circle-2' : (isRetire ? 'rotate-ccw' : 'check');
           var dateText = item.date_retrait_formatee
             ? ('<span style="display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; color: #15803D; background: #DCFCE7; padding: 2px 8px; border-radius: 999px; margin-left: 8px;">Remis le ' + escapeHtml(item.date_retrait_formatee) + '</span>')
             : '<span style="display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; color: #EA580C; background: #FFEDD5; padding: 2px 8px; border-radius: 999px; margin-left: 8px;">En attente de retrait</span>';
@@ -1033,7 +1055,7 @@
               '</div>' +
             '</div>' +
             '<div style="flex-shrink: 0;">' +
-              '<button type="button" class="btn btn-sm ' + btnClass + ' btn-toggle-item-modal" data-id="' + item.id_accessoire_inscription + '" style="' + btnStyle + '">' +
+              '<button type="button" class="btn btn-sm ' + btnClass + ' btn-toggle-item-modal" data-id="' + item.id_accessoire_inscription + '"' + btnDisabledAttr + ' style="' + btnStyle + '">' +
                 '<i data-lucide="' + iconName + '" style="width: 15px; height: 15px;"></i> ' + btnText +
               '</button>' +
             '</div>' +
@@ -1050,6 +1072,12 @@
 
     // Action toggle item unitaire dans le modal
     $(document).on('click', '.btn-toggle-item-modal', function () {
+      if ($(this).prop('disabled')) return;
+      if (currentStudentData) {
+        var tk = parseInt(currentStudentData.total_kits, 10) || 0;
+        var tr = parseInt(currentStudentData.total_retires, 10) || 0;
+        if (tk > 0 && tr >= tk) return;
+      }
       var id = $(this).data('id');
       var $btn = $(this);
       $btn.prop('disabled', true);
