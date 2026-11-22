@@ -326,8 +326,11 @@
     <?php extract(ViewContext::headerData()); ?>
 </head>
 <body>
-    <div id="geicg-page-progress" class="no-print is-active" aria-hidden="true">
-        <div id="geicg-page-progress-bar" style="width: 24%;"></div>
+    <div id="geicg-page-loader" class="no-print is-active" role="status" aria-live="polite" aria-label="Chargement en cours">
+        <div class="geicg-loader-box">
+            <div class="geicg-loader-spinner" aria-hidden="true"></div>
+            <div class="geicg-loader-text">Chargement...</div>
+        </div>
     </div>
     <input type="hidden" id="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
     <div class="js-toast-container"></div>

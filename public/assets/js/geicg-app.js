@@ -600,102 +600,54 @@
     });
   };
 
-  // 14. Barre de progression globale de chargement de page (Top Progress Bar)
-  GEICG.progress = (function() {
-    var progressValue = 0;
-    var isRunning = false;
-    var trickleTimer = null;
-    var hideTimer = null;
+  // 14. Overlay / Spinner global de chargement de page (GEICG)
+  GEICG.loader = (function() {
     var failsafeTimer = null;
-    var ajaxDelayTimer = null;
+    var domFallbackTimer = null;
 
-    function getElements() {
-      var wrap = document.getElementById('geicg-page-progress');
-      var bar = document.getElementById('geicg-page-progress-bar');
-      if (!wrap && document.body) {
-        wrap = document.createElement('div');
-        wrap.id = 'geicg-page-progress';
-        wrap.className = 'no-print';
-        wrap.setAttribute('aria-hidden', 'true');
-        bar = document.createElement('div');
-        bar.id = 'geicg-page-progress-bar';
-        wrap.appendChild(bar);
-        document.body.insertBefore(wrap, document.body.firstChild);
+    function getEl() {
+      var el = document.getElementById('geicg-page-loader');
+      if (!el && document.body) {
+        el = document.createElement('div');
+        el.id = 'geicg-page-loader';
+        el.className = 'no-print';
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        el.setAttribute('aria-label', 'Chargement en cours');
+        el.innerHTML = '<div class="geicg-loader-box"><div class="geicg-loader-spinner" aria-hidden="true"></div><div class="geicg-loader-text">Chargement...</div></div>';
+        document.body.insertBefore(el, document.body.firstChild);
       }
-      return { wrap: wrap, bar: bar };
+      return el;
     }
 
     function clearTimers() {
-      if (trickleTimer) { clearInterval(trickleTimer); trickleTimer = null; }
-      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       if (failsafeTimer) { clearTimeout(failsafeTimer); failsafeTimer = null; }
-      if (ajaxDelayTimer) { clearTimeout(ajaxDelayTimer); ajaxDelayTimer = null; }
+      if (domFallbackTimer) { clearTimeout(domFallbackTimer); domFallbackTimer = null; }
     }
 
-    function set(val) {
-      progressValue = Math.max(0, Math.min(100, val));
-      var els = getElements();
-      if (!els.wrap || !els.bar) return;
-      els.wrap.classList.add('is-active');
-      els.bar.style.width = progressValue + '%';
-    }
-
-    function start(initial) {
+    function show(message) {
       clearTimers();
-      isRunning = true;
-      var startPct = (typeof initial === 'number') ? initial : Math.max(progressValue, 18);
-      set(startPct);
-
-      trickleTimer = setInterval(function() {
-        if (!isRunning) return;
-        var inc = 0;
-        if (progressValue < 40) inc = 8;
-        else if (progressValue < 70) inc = 4;
-        else if (progressValue < 88) inc = 1.5;
-        else if (progressValue < 94) inc = 0.5;
-        if (inc > 0) set(progressValue + inc);
-      }, 220);
-
-      // Sécurité anti-blocage (ex: téléchargement de fichier sans déchargement de page)
-      failsafeTimer = setTimeout(function() {
-        done();
-      }, 12000);
-    }
-
-    function done() {
-      if (!isRunning && progressValue === 0) {
-        var elsInit = getElements();
-        if (elsInit.wrap && !elsInit.wrap.classList.contains('is-active')) return;
+      var el = getEl();
+      if (!el) return;
+      if (message) {
+        var txt = el.querySelector('.geicg-loader-text');
+        if (txt) txt.textContent = message;
       }
-      clearTimers();
-      isRunning = false;
-      set(100);
-      hideTimer = setTimeout(function() {
-        var els = getElements();
-        if (els.wrap && els.bar) {
-          els.wrap.classList.remove('is-active');
-          setTimeout(function() {
-            if (!isRunning) {
-              progressValue = 0;
-              els.bar.style.transition = 'none';
-              els.bar.style.width = '0%';
-              // Forcer le reflow avant de réactiver la transition
-              void els.bar.offsetWidth;
-              els.bar.style.transition = '';
-            }
-          }, 260);
-        }
-      }, 180);
+      el.classList.add('is-active');
+      // Sécurité anti-blocage (10s max)
+      failsafeTimer = setTimeout(function() {
+        hide();
+      }, 10000);
     }
 
-    function reset() {
+    function hide() {
       clearTimers();
-      isRunning = false;
-      progressValue = 0;
-      var els = getElements();
-      if (els.wrap && els.bar) {
-        els.wrap.classList.remove('is-active');
-        els.bar.style.width = '0%';
+      var el = getEl();
+      if (!el) return;
+      el.classList.remove('is-active');
+      var txt = el.querySelector('.geicg-loader-text');
+      if (txt && txt.textContent !== 'Chargement...') {
+        setTimeout(function() { txt.textContent = 'Chargement...'; }, 240);
       }
     }
 
@@ -715,12 +667,10 @@
       try {
         var dest = new URL(anchor.href, window.location.href);
         if (dest.origin !== window.location.origin) return false;
-        // Ignorer les liens d'impression / export PDF ou fichiers directs
         var p = (dest.pathname + dest.search).toLowerCase();
         if (p.indexOf('imprimer') !== -1 || p.indexOf('pdf') !== -1 || p.indexOf('export') !== -1 || p.indexOf('download') !== -1) {
           return false;
         }
-        // Ignorer un lien vers exactement la même URL + hash
         if (dest.pathname === window.location.pathname && dest.search === window.location.search && dest.hash) {
           return false;
         }
@@ -731,68 +681,48 @@
     }
 
     function init() {
-      // Progression initiale de chargement de la page courante
       if (document.readyState === 'complete') {
-        done();
+        hide();
       } else {
-        start(28);
+        // Masquer proprement au chargement complet (avec repli 2s après DOMContentLoaded si un CDN externe est lent)
         document.addEventListener('DOMContentLoaded', function() {
-          if (isRunning && progressValue < 72) set(72);
+          domFallbackTimer = setTimeout(function() {
+            hide();
+          }, 2000);
         });
         window.addEventListener('load', function() {
-          done();
+          hide();
         });
       }
 
       // Compatibilité retour/avance navigateur (bfcache)
-      window.addEventListener('pageshow', function(e) {
-        if (e.persisted) reset();
-        else if (document.readyState === 'complete') done();
+      window.addEventListener('pageshow', function() {
+        hide();
       });
 
-      // Déclenchement immédiat au clic sur les liens internes (sidebar, navbar, boutons)
+      // Déclenchement au clic sur tout lien de navigation interne
       document.addEventListener('click', function(e) {
         var anchor = e.target && e.target.closest ? e.target.closest('a[href]') : null;
         if (isNavigableLink(anchor, e)) {
-          start(22);
+          show();
         }
       });
 
-      // Déclenchement sur déchargement réel (soumission de formulaire classique, redirection)
+      // Déclenchement sur déchargement effectif de la page
       window.addEventListener('beforeunload', function() {
-        start(30);
+        show();
       });
-
-      // Intégration discrète avec les requêtes AJAX jQuery (avec seuil 120ms anti-scintillement)
-      if ($) {
-        $(document).on('ajaxStart.geicgProgress', function() {
-          if (isRunning) return;
-          if (ajaxDelayTimer) clearTimeout(ajaxDelayTimer);
-          ajaxDelayTimer = setTimeout(function() {
-            start(20);
-          }, 120);
-        });
-        $(document).on('ajaxStop.geicgProgress', function() {
-          if (ajaxDelayTimer) {
-            clearTimeout(ajaxDelayTimer);
-            ajaxDelayTimer = null;
-          }
-          if (isRunning) done();
-        });
-      }
     }
 
     return {
       init: init,
-      start: start,
-      set: set,
-      done: done,
-      reset: reset
+      show: show,
+      hide: hide
     };
   })();
 
-  // Démarrage immédiat de la barre de progression dès l'exécution du script
-  GEICG.progress.init();
+  // Démarrage immédiat du gestionnaire d'overlay
+  GEICG.loader.init();
 
   // Auto-démarrage au chargement du DOM
   $(document).ready(function() {
