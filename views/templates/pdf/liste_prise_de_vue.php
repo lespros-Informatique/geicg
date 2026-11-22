@@ -265,13 +265,12 @@ $tauxCouverture = (float)($stats['taux'] ?? 0);
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document officiel GEICG &bull; Édité le <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
         </td>
         <td style="width: 40%; text-align: right;">
-          Réf: REF-PHOTO-<?= date('Ymd-His') ?>
+          REF : <?= date('YmdHis') ?>
         </td>
       </tr>
     </table>
@@ -373,9 +372,9 @@ $tauxCouverture = (float)($stats['taux'] ?? 0);
             <td class="text-center" style="color: #0369A1; font-weight: bold; font-size: 7.5pt;"><?= $datePhoto ?></td>
             <td class="text-center">
               <?php if ($hasPhoto): ?>
-                <span class="badge-ok">Conforme</span>
+                <span class="badge-ok">OK</span>
               <?php else: ?>
-                <span class="badge-missing">Manquante</span>
+                <span class="badge-missing">NON</span>
               <?php endif; ?>
             </td>
           </tr>
@@ -390,26 +389,7 @@ $tauxCouverture = (float)($stats['taux'] ?? 0);
     </tbody>
   </table>
 
-  <!-- BLOC SIGNATURES CONFORME RÈGLE 9 -->
-  <table class="signature-table">
-    <tr>
-      <td class="signature-box" style="width: 48%;">
-        <div class="signature-title">L'Opérateur de Prise de Vue</div>
-        <div style="height: 40px;"></div>
-        <div class="signature-mention"><?= htmlspecialchars($editeur_nom) ?></div>
-      </td>
-      <td style="width: 4%;"></td>
-      <td class="signature-box" style="width: 48%;">
-        <div class="signature-title"><?= htmlspecialchars($titreDirection) ?></div>
-        <div style="text-align: center; font-size: 7.5pt; color: #475569; margin-bottom: 2px;">
-          Fait à <?= htmlspecialchars($villeSignature) ?>, le <?= date('d/m/Y') ?>
-        </div>
-        <div style="height: 35px;"></div>
-        <div class="signature-mention"><?= htmlspecialchars($nomSignataire) ?></div>
-      </td>
-    </tr>
-  </table>
-
+ 
 </body>
 </html>
 
