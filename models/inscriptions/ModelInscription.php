@@ -290,6 +290,9 @@ class ModelInscription extends BaseModel
                 $sql .= " AND (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '') AND (e.photo_etudiant IS NULL OR TRIM(e.photo_etudiant) = '')";
             } elseif ($filterPhoto === 'avec_photo') {
                 $sql .= " AND ((i.photo_inscription IS NOT NULL AND TRIM(i.photo_inscription) != '') OR (e.photo_etudiant IS NOT NULL AND TRIM(e.photo_etudiant) != ''))";
+            } elseif ($filterPhoto === 'prises_du_jour') {
+                $sql .= " AND DATE(i.date_photo) = ?";
+                $params[] = date('Y-m-d');
             }
 
             $sql .= " GROUP BY i.code_inscription ORDER BY cl.libelle_classe ASC, e.nom_etudiant ASC";
@@ -309,6 +312,8 @@ class ModelInscription extends BaseModel
     public function getPriseDeVueStats(string $anneeCode = '', string $filiereCode = '', string $classeCode = ''): array
     {
         $db = $this->getCon();
+        $today = date('Y-m-d');
+        $todayFr = date('d/m/Y');
         try {
             $sql = "
                 SELECT 
@@ -322,13 +327,17 @@ class ModelInscription extends BaseModel
                         WHEN (i.photo_inscription IS NULL OR TRIM(i.photo_inscription) = '') 
                          AND (e.photo_etudiant IS NULL OR TRIM(e.photo_etudiant) = '') 
                         THEN i.id_inscription 
-                    END) AS sans_photo
+                    END) AS sans_photo,
+                    COUNT(DISTINCT CASE 
+                        WHEN DATE(i.date_photo) = ?
+                        THEN i.id_inscription 
+                    END) AS prises_du_jour
                 FROM " . TABLES::INSCRIPTIONS . " i
                 JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
                 JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = i.classe_code
                 WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'
             ";
-            $params = [];
+            $params = [$today];
             if (!empty($anneeCode)) {
                 $sql .= " AND i.annee_code = ?";
                 $params[] = $anneeCode;
@@ -349,17 +358,29 @@ class ModelInscription extends BaseModel
             $total = (int)($res['total'] ?? 0);
             $avecPhoto = (int)($res['avec_photo'] ?? 0);
             $sansPhoto = (int)($res['sans_photo'] ?? 0);
+            $prisesDuJour = (int)($res['prises_du_jour'] ?? 0);
             $taux = ($total > 0) ? round(($avecPhoto / $total) * 100, 1) : 0.0;
 
             return [
                 'total' => $total,
                 'avec_photo' => $avecPhoto,
                 'sans_photo' => $sansPhoto,
+                'prises_du_jour' => $prisesDuJour,
+                'date_reference' => $today,
+                'date_reference_fr' => $todayFr,
                 'taux' => $taux
             ];
         } catch (Exception $e) {
             error_log("ModelInscription::getPriseDeVueStats error: " . $e->getMessage());
-            return ['total' => 0, 'avec_photo' => 0, 'sans_photo' => 0, 'taux' => 0.0];
+            return [
+                'total' => 0,
+                'avec_photo' => 0,
+                'sans_photo' => 0,
+                'prises_du_jour' => 0,
+                'date_reference' => $today,
+                'date_reference_fr' => $todayFr,
+                'taux' => 0.0
+            ];
         }
     }
 

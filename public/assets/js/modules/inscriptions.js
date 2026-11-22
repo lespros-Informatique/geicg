@@ -1190,6 +1190,19 @@
           }
         },
         {
+          data: 'date_photo', render: function (d) {
+            if (!d) return '<span style="color:#94A3B8; font-size:12.5px;">-</span>';
+            var parts = String(d).trim().split(' ');
+            var dp = parts[0].split('-');
+            if (dp.length === 3) {
+              var dateFr = dp[2] + '/' + dp[1] + '/' + dp[0];
+              var heure = (parts[1] && parts[1].length >= 5) ? (' <span style="color:#64748B; font-size:11.5px;">' + parts[1].substring(0, 5) + '</span>') : '';
+              return '<span style="color:#0369A1; font-weight:700; font-size:12.5px;">' + dateFr + '</span>';
+            }
+            return d;
+          }
+        },
+        {
           data: null, orderable: false, width: '70px', render: function (d) {
             if (d.has_photo && !pdvConfig.canRetakePhoto) {
               return '<span title="Permission requise pour reprendre la photo" style="color:#94A3B8; display:inline-flex; align-items:center; justify-content:center;"><i data-lucide="lock" style="width:15px;height:15px;"></i></span>';
@@ -1246,6 +1259,10 @@
         $('#kpi-total-inscrits').text(s.total || 0);
         $('#kpi-avec-photo').text(s.avec_photo || 0);
         $('#kpi-sans-photo').text(s.sans_photo || 0);
+        $('#kpi-prises-date').text(s.prises_du_jour || 0);
+        if (s.date_reference_fr) {
+          $('#kpi-prises-date-sub').text('Photos prises le ' + s.date_reference_fr);
+        }
         var tauxVal = (typeof s.taux !== 'undefined') ? (parseFloat(s.taux).toFixed(1).replace('.', ',') + '%') : '0,0%';
         $('#kpi-taux-couverture').text(tauxVal);
       }

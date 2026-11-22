@@ -46,6 +46,7 @@
               <option value="all">Tous les étudiants inscrits</option>
               <option value="sans_photo" selected>Photos Manquantes</option>
               <option value="avec_photo">Photos renseignées (Avec photo)</option>
+              <option value="prises_du_jour">Prises du jour (<?= date('d/m/Y') ?>)</option>
             </select>
           </div>
 
@@ -79,7 +80,7 @@
       </div>
 
       <!-- CARTES KPI STATISTIQUES (PRISE DE VUE) -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;" class="no-print">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;" class="no-print">
         
         <!-- Total Inscrits -->
         <div class="card kpi-card-clickable" id="card-kpi-total" data-filter="all" style="background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; border-left: 4px solid #1E3A5F; box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour afficher tous les étudiants">
@@ -117,6 +118,18 @@
           </div>
         </div>
 
+        <!-- Prises de la Date (Aujourd'hui) -->
+        <div class="card kpi-card-clickable" id="card-kpi-prises-date" data-filter="prises_du_jour" style="background: linear-gradient(135deg, #FFFFFF 0%, #F0F9FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #BAE6FD; border-left: 4px solid #0284C7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.06); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s ease;" title="Cliquer pour afficher les prises de vue du jour">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.12);">
+            <i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #0369A1; text-transform: uppercase; letter-spacing: 0.5px;">Prises du Jour</div>
+            <div style="font-size: 24px; font-weight: 900; color: #0369A1; line-height: 1.2;" id="kpi-prises-date"><?= (int)($stats['prises_du_jour'] ?? 0) ?></div>
+            <div style="font-size: 11.5px; color: #075985; margin-top: 2px;" id="kpi-prises-date-sub">Photos prises le <?= htmlspecialchars($stats['date_reference_fr'] ?? date('d/m/Y')) ?></div>
+          </div>
+        </div>
+
         <!-- Taux de Couverture -->
         <div class="card" id="card-kpi-taux" style="background: linear-gradient(135deg, #FFFFFF 0%, #EEF2FF 100%); border-radius: 12px; padding: 18px 20px; border: 1px solid #E0E7FF; border-left: 4px solid #4F46E5; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.05); display: flex; align-items: center; gap: 16px; transition: all 0.2s ease;">
           <div style="width: 48px; height: 48px; border-radius: 12px; background: #E0E7FF; color: #4338CA; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(67, 56, 202, 0.12);">
@@ -142,6 +155,7 @@
                 <th style="padding: 12px;">Nom & Prénoms</th>
                 <th style="padding: 12px;">Classe</th>
                 <th style="padding: 12px;">Date Ins</th>
+                <th style="padding: 12px;">Enr. Photo</th>
                 <th style="padding: 12px; text-align: center; width: 70px;">Action</th>
               </tr>
             </thead>

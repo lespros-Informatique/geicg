@@ -595,6 +595,8 @@ class InscriptionController extends BaseController
             $photoLabel = 'Photos Manquantes (Sans photo)';
         } elseif ($filterPhoto === 'avec_photo') {
             $photoLabel = 'Photos Enregistrées (Avec photo)';
+        } elseif ($filterPhoto === 'prises_du_jour') {
+            $photoLabel = 'Prises de vue du ' . date('d/m/Y');
         }
 
         $currentUser = Auth::user();
