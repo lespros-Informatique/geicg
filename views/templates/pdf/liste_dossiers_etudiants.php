@@ -263,13 +263,12 @@ $tauxGlobal = (float)($kpis['taux_global'] ?? 0);
     <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
-          Document officiel GEICG &bull; Édité le <?= date('d/m/Y H:i:s') ?>
         </td>
         <td style="width: 20%; text-align: center; font-weight: bold;">
           Page {PAGENO} / {nbpg}
         </td>
         <td style="width: 40%; text-align: right;">
-          Réf: REF-DOSSIERS-<?= date('Ymd-His') ?>
+          REF : <?= date('YmdHis') ?>
         </td>
       </tr>
     </table>
@@ -346,7 +345,7 @@ $tauxGlobal = (float)($kpis['taux_global'] ?? 0);
             <td class="text-left text-bold" style="color: #0F172A;"><?= htmlspecialchars($nomComplet) ?></td>
             <td class="text-left" style="font-weight: bold; color: #1E3A5F;"><?= htmlspecialchars($r['classe'] ?? '-') ?></td>
             <td class="text-center" style="font-weight: bold; color: #334155;">
-              <?= (int)$r['deposees_count'] ?> / <?= (int)$r['total_pieces'] ?> (<?= (int)$r['pourcentage'] ?>%)
+              <?= (int)$r['deposees_count'] ?> / <?= (int)$r['total_pieces'] ?>
             </td>
             <td class="text-center">
               <?php if ($estComplet): ?>
@@ -365,26 +364,6 @@ $tauxGlobal = (float)($kpis['taux_global'] ?? 0);
         </tr>
       <?php endif; ?>
     </tbody>
-  </table>
-
-  <!-- BLOC SIGNATURES CONFORME RÈGLE 9 -->
-  <table class="signature-table">
-    <tr>
-      <td class="signature-box" style="width: 48%;">
-        <div class="signature-title">L'Agent de Réception des Pièces</div>
-        <div style="height: 40px;"></div>
-        <div class="signature-mention"><?= htmlspecialchars($editeur_nom) ?></div>
-      </td>
-      <td style="width: 4%;"></td>
-      <td class="signature-box" style="width: 48%;">
-        <div class="signature-title"><?= htmlspecialchars($titreDirection) ?></div>
-        <div style="text-align: center; font-size: 7.5pt; color: #475569; margin-bottom: 2px;">
-          Fait à <?= htmlspecialchars($villeSignature) ?>, le <?= date('d/m/Y') ?>
-        </div>
-        <div style="height: 35px;"></div>
-        <div class="signature-mention"><?= htmlspecialchars($nomSignataire) ?></div>
-      </td>
-    </tr>
   </table>
 
 </body>
