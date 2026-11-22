@@ -354,10 +354,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
               <?php else: ?>
                 <strong style="color: #1E3A5F; font-size: 7.5pt;"><?= (int)($c['nb_matieres'] ?? 0) ?> matière(s) &bull; <?= (int)($c['nb_profs'] ?? 0) ?> prof(s)</strong>
               <?php endif; ?>
-              <br>
-              <span style="color: #475569; font-size: 7pt; font-style: italic;">
-                <?= htmlspecialchars(!empty($c['matieres_noms']) ? $c['matieres_noms'] : 'Aucune matière') ?>
-              </span>
             </td>
             <td class="text-center">
               <?php if ($isComplet): ?>
