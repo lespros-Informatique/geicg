@@ -21,9 +21,9 @@ if (empty($etablissement) || !is_array($etablissement)) {
     }
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
-      font-size: 8.5pt;
+      font-size: 10pt;
       color: #1E293B;
-      line-height: 1.25;
+      line-height: 1.3;
     }
 
     /* En-tête */
@@ -70,33 +70,33 @@ if (empty($etablissement) || !is_array($etablissement)) {
       background-color: #1E3A5F;
     }
     .banner-table td {
-      padding: 5px 8px;
+      padding: 6px 10px;
       text-align: center;
       color: #FFFFFF;
     }
     .banner-title {
-      font-size: 11pt;
+      font-size: 13pt;
       font-weight: bold;
       letter-spacing: 0.8px;
       text-transform: uppercase;
     }
     .banner-sub {
-      font-size: 7.5pt;
+      font-size: 9pt;
       color: #E2E8F0;
-      margin-top: 1px;
+      margin-top: 2px;
     }
 
     /* Cartouche Métadonnées */
     .meta-box-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       border: 1px solid #CBD5E1;
       background-color: #F8FAFC;
     }
     .meta-box-table td {
-      padding: 3.5px 6px;
-      font-size: 8pt;
+      padding: 5px 8px;
+      font-size: 9.5pt;
       vertical-align: middle;
       border: 0.5px solid #E2E8F0;
     }
@@ -113,22 +113,22 @@ if (empty($etablissement) || !is_array($etablissement)) {
     .repertoire-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 4px;
+      margin-top: 6px;
     }
     .repertoire-table th {
       background-color: #1E3A5F;
       color: #FFFFFF;
       font-weight: bold;
-      font-size: 7.5pt;
+      font-size: 9.5pt;
       text-transform: uppercase;
-      padding: 4px 6px;
+      padding: 6px 8px;
       border: 0.5px solid #0F2744;
       text-align: left;
     }
     .repertoire-table td {
-      padding: 3.5px 6px;
+      padding: 5.5px 8px;
       border: 0.5px solid #CBD5E1;
-      font-size: 7.5pt;
+      font-size: 9.5pt;
       vertical-align: middle;
     }
     .row-even {
@@ -159,10 +159,10 @@ if (empty($etablissement) || !is_array($etablissement)) {
     .badge-volume {
       color: #1E40AF;
       font-weight: bold;
-      font-size: 7.5pt;
+      font-size: 9.5pt;
       background-color: #EFF6FF;
       border: 0.5px solid #BFDBFE;
-      padding: 1.5px 6px;
+      padding: 2px 8px;
       border-radius: 3px;
       display: inline-block;
     }
@@ -222,7 +222,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 
   <!-- EN-TÊTE FIXE POUR MPDF -->
   <htmlpageheader name="pageHeader">
-    <div style="font-size: 7.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
+    <div style="font-size: 8.5pt; color: #94A3B8; text-align: right; border-bottom: 0.5px solid #E2E8F0; padding-bottom: 2px;">
       <?= htmlspecialchars($etablissement['nom_etablissement'] ?? ($etablissement['sigle_etablissement'] ?? '')) ?> &bull; <?= !empty($isTeacherOnly) ? 'Mon Emploi du Temps' : 'Répertoire des Emplois du Temps' ?> &bull; <?= htmlspecialchars($annee_libelle ?? '') ?>
     </div>
   </htmlpageheader>
@@ -230,7 +230,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
 
   <!-- PIED DE PAGE FIXE POUR MPDF -->
   <htmlpagefooter name="pageFooter">
-    <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 7.5pt; color: #64748B; padding-top: 4px;">
+    <table style="width: 100%; border-top: 0.5px solid #CBD5E1; font-size: 8.5pt; color: #64748B; padding-top: 4px;">
       <tr>
         <td style="width: 40%; text-align: left;">
       
@@ -340,24 +340,24 @@ if (empty($etablissement) || !is_array($etablissement)) {
               <?= $idx + 1 ?>
             </td>
             <td>
-              <strong style="color: #0F172A; font-size: 8pt;"><?= htmlspecialchars($c['libelle_classe'] ?? $c['code_classe'] ?? '-') ?></strong>
+              <strong style="color: #0F172A; font-size: 10pt;"><?= htmlspecialchars($c['libelle_classe'] ?? $c['code_classe'] ?? '-') ?></strong>
             </td>
             <td class="text-center">
               <span class="badge-volume"><?= $volHoraire ?></span>
             </td>
             <?php if (!empty($isTeacherOnly)): ?>
               <td class="text-center">
-                <strong style="color: #1E3A5F; font-size: 7.5pt;"><?= (int)($c['nb_matieres'] ?? 0) ?> matière(s) assignée(s)</strong>
+                <strong style="color: #1E3A5F; font-size: 9.5pt;"><?= (int)($c['nb_matieres'] ?? 0) ?> matière(s) assignée(s)</strong>
               </td>
             <?php else: ?>
               <td class="text-center">
-                <strong style="color: #1E3A5F; font-size: 7.5pt;"><?= (int)($c['nb_matieres'] ?? 0) ?> matière(s)</strong>
+                <strong style="color: #1E3A5F; font-size: 9.5pt;"><?= (int)($c['nb_matieres'] ?? 0) ?> matière(s)</strong>
               </td>
               <td class="text-center">
-                <strong style="color: #1E3A5F; font-size: 7.5pt;"><?= (int)($c['nb_profs'] ?? 0) ?> enseignant(s)</strong>
+                <strong style="color: #1E3A5F; font-size: 9.5pt;"><?= (int)($c['nb_profs'] ?? 0) ?> enseignant(s)</strong>
               </td>
             <?php endif; ?>
-            <td class="text-center" style="font-size: 7pt; color: #64748B;">
+            <td class="text-center" style="font-size: 9pt; color: #64748B;">
               <?= !empty($c['last_update']) ? date('d/m/Y H:i', strtotime($c['last_update'])) : '-' ?>
             </td>
           </tr>
@@ -375,7 +375,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
   ?>
   <?php if (!empty($isTeacherOnly)): ?>
     <?php if (!empty($sigVille)): ?>
-      <div style="text-align: right; font-size: 7.5pt; color: #475569; margin-top: 10px; margin-bottom: 4px;">
+      <div style="text-align: right; font-size: 9pt; color: #475569; margin-top: 12px; margin-bottom: 4px;">
         Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
       </div>
     <?php endif; ?>
@@ -384,7 +384,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
         <td style="width: 48%; vertical-align: top; padding: 0;">
           <table style="width: 100%; border-collapse: collapse; border: 0.5px solid #CBD5E1; background-color: #FAFAFA;">
             <tr>
-              <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 5px 8px;">
+              <td style="text-align: center; font-size: 10pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 6px 8px;">
                 L'Enseignant(e)
               </td>
             </tr>
@@ -393,11 +393,11 @@ if (empty($etablissement) || !is_array($etablissement)) {
             </tr>
             <?php if ($sigDirPedNom !== ''): ?>
             <tr>
-              <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">&nbsp;</td>
+              <td style="text-align: center; font-size: 10.5pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">&nbsp;</td>
             </tr>
             <?php endif; ?>
             <tr>
-              <td style="text-align: center; font-size: 7pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
+              <td style="text-align: center; font-size: 8.5pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
                 <?= htmlspecialchars($sigMention) ?>
               </td>
             </tr>
@@ -407,7 +407,7 @@ if (empty($etablissement) || !is_array($etablissement)) {
         <td style="width: 48%; vertical-align: top; padding: 0;">
           <table style="width: 100%; border-collapse: collapse; border: 0.5px solid #CBD5E1; background-color: #FAFAFA;">
             <tr>
-              <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 5px 8px;">
+              <td style="text-align: center; font-size: 10pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase; border-bottom: 0.5px solid #CBD5E1; padding: 6px 8px;">
                 <?= htmlspecialchars($sigDirPedTitre) ?>
               </td>
             </tr>
@@ -416,13 +416,13 @@ if (empty($etablissement) || !is_array($etablissement)) {
             </tr>
             <?php if ($sigDirPedNom !== ''): ?>
             <tr>
-              <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">
+              <td style="text-align: center; font-size: 10.5pt; font-weight: bold; color: #0F172A; padding: 0 8px 2px 8px;">
                 <?= htmlspecialchars($sigDirPedNom) ?>
               </td>
             </tr>
             <?php endif; ?>
             <tr>
-              <td style="text-align: center; font-size: 7pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
+              <td style="text-align: center; font-size: 8.5pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
                 <?= htmlspecialchars($sigMention) ?>
               </td>
             </tr>
@@ -431,35 +431,35 @@ if (empty($etablissement) || !is_array($etablissement)) {
       </tr>
     </table>
   <?php else: ?>
-    <table class="signature-table" style="width: 100%; border-collapse: collapse; margin-top: 14px;">
+    <table class="signature-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
       <tr>
-        <td style="width: 64%;"></td>
-        <td style="width: 36%; vertical-align: top; padding: 0;">
-          <table style="width: 100%; border-collapse: collapse; ">
+        <td style="width: 60%;"></td>
+        <td style="width: 40%; vertical-align: top; padding: 0;">
+          <table style="width: 100%; border-collapse: collapse;">
             <?php if (!empty($sigVille)): ?>
             <tr>
-              <td style="text-align: center; font-size: 7.5pt; color: #475569; padding: 0px 8px 2px 8px;">
+              <td style="text-align: center; font-size: 9pt; color: #475569; padding: 0px 8px 3px 8px;">
                 Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
               </td>
             </tr>
             <?php endif; ?>
             <tr>
-              <td style="text-align: center; font-size: 8pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
+              <td style="text-align: center; font-size: 10pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
                 <?= htmlspecialchars($sigDirPedTitre) ?>
               </td>
             </tr>
             <tr>
-              <td height="44" style="height: 3px; text-align: center; vertical-align: middle;">&nbsp;</td>
+              <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
             </tr>
             <?php if ($sigDirPedNom !== ''): ?>
             <tr>
-              <td style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #0F172A; ">
+              <td style="text-align: center; font-size: 10.5pt; font-weight: bold; color: #0F172A;">
                 <?= htmlspecialchars($sigDirPedNom) ?>
               </td>
             </tr>
             <?php endif; ?>
             <tr>
-              <td style="text-align: center; font-size: 7pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
+              <td style="text-align: center; font-size: 8.5pt; font-style: italic; color: #64748B; padding: 0 8px 6px 8px;">
                 <?= htmlspecialchars($sigMention) ?>
               </td>
             </tr>
