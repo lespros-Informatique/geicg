@@ -219,11 +219,6 @@
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #CBD5E1; padding-bottom: 16px; margin-bottom: 20px;">
           <div style="display: flex; align-items: center; gap: 14px;">
             <img id="rec-etab-logo" src="<?= asset('images/logo-placeholder.png') ?>" style="max-height: 55px; max-width: 140px; object-fit: contain;" onerror="this.style.display='none'">
-            <div>
-              <div id="rec-etab-nom" style="font-size: 16px; font-weight: 900; color: #1E3A5F; text-transform: uppercase;"><?= htmlspecialchars($etablissementConfig['nom_etablissement'] ?? 'ÉTABLISSEMENT GEICG') ?></div>
-              <div id="rec-etab-adresse" style="font-size: 11px; color: #64748B;"><?= htmlspecialchars($etablissementConfig['adresse_etablissement'] ?? 'Bouaké quartier Kennedy, route ancien ADDR') ?></div>
-              <div id="rec-etab-tel" style="font-size: 11px; color: #64748B;">Contacts : <?= htmlspecialchars(!empty($etablissementConfig['contacts_formatted']) ? $etablissementConfig['contacts_formatted'] : '27 31 62 40 57 / 07 79 37 37 38') ?></div>
-            </div>
           </div>
           <div style="text-align: right;">
             <span class="badge bg-dark" style="font-size: 11px; padding: 6px 12px; text-transform: uppercase; background: #0F172A; color: #FFF; border-radius: 6px;" id="rec-annee">ANNÉE -</span>

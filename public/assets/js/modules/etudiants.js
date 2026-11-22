@@ -2367,9 +2367,6 @@
             $('#rec-date-emission').text(res.date_emission || '-');
             $('#rec-agent-nom').text(res.agent_nom || 'Administration');
 
-            if (s.nom_etablissement) $('#rec-etab-nom').text(s.nom_etablissement);
-            if (s.adresse_etablissement) $('#rec-etab-adresse').text((s.adresse_etablissement || '') + ' ' + (s.ville_etablissement || ''));
-            if (s.telephone_etablissement) $('#rec-etab-tel').text('Tél : ' + s.telephone_etablissement);
             if (s.logo_etablissement) $('#rec-etab-logo').attr('src', window.RACINE + s.logo_etablissement).show();
 
             $('#rec-count-deposees').text(res.deposees_count || 0);
