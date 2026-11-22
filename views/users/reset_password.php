@@ -98,7 +98,7 @@ $resetUserName = $resetUserName ?? '';
 
 <script type="application/json" id="reset-password-config">
 <?= json_encode([
-    'actionUrl' => url('user/reinitialiserMotDePasse'),
+    'actionUrl' => url('user/reset-password'),
     'loginUrl'  => url('user/connexion')
 ]) ?>
 </script>

@@ -545,7 +545,7 @@ class UserController extends BaseController
                     ? $etabCfg['sigle_etablissement']
                     : (!empty($etabCfg['nom_etablissement']) ? $etabCfg['nom_etablissement'] : 'GEICG');
 
-                $resetUrl = url('user/reinitialiserMotDePasse/' . $rawToken);
+                $resetUrl = url('user/reset-password/' . $rawToken);
                 $nomComplet = trim(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? ''));
 
                 $mailRes = MailerService::sendTemplate(
