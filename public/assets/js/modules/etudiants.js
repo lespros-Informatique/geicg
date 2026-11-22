@@ -2195,12 +2195,24 @@
       $('#modal-student-info').text('Matricule : ' + (d.matricule || '-') + ' | Classe : ' + (d.classe || '-'));
       $('#modal-completion-text').text(d.deposees_count + ' / ' + d.total_pieces + ' Pièce(s) Déposée(s) (' + d.pourcentage + '%)');
 
+      var $btnToutValiderModal = $('#btn-tout-valider-modal');
+      if (d.est_complet) {
+        $btnToutValiderModal.prop('disabled', true)
+          .attr('aria-disabled', 'true')
+          .css({ opacity: '0.65', cursor: 'not-allowed' });
+      } else {
+        $btnToutValiderModal.prop('disabled', false)
+          .removeAttr('aria-disabled')
+          .css({ opacity: '1', cursor: 'pointer' });
+      }
+
       var html = '';
       if (d.dossier_items && d.dossier_items.length > 0) {
         d.dossier_items.forEach(function (item) {
           var st = item.statut_depot || 'en_attente';
-          var borderCol = st === 'depose' ? '#16A34A' : (st === 'rejete' ? '#DC2626' : (st === 'non_requis' ? '#64748B' : '#EA580C'));
-          var bgCol = st === 'depose' ? '#F0FDF4' : (st === 'rejete' ? '#FEF2F2' : (st === 'non_requis' ? '#F8FAFC' : '#FFF7ED'));
+          var isDepose = (st === 'depose');
+          var borderCol = isDepose ? '#16A34A' : (st === 'rejete' ? '#DC2626' : (st === 'non_requis' ? '#64748B' : '#EA580C'));
+          var bgCol = isDepose ? '#F0FDF4' : (st === 'rejete' ? '#FEF2F2' : (st === 'non_requis' ? '#F8FAFC' : '#FFF7ED'));
 
           var fileHtml = '';
           if (item.fichier_joint) {
@@ -2209,8 +2221,16 @@
           }
 
           var dateDepotText = item.date_depot ? ('<span style="font-size: 11px; font-weight: 600; color: #15803D; margin-left: 6px;">(Déposé le ' + item.date_depot + ')</span>') : '';
+          var selectDisabledAttr = isDepose ? ' disabled aria-disabled="true"' : '';
+          var selectStyle = isDepose
+            ? 'font-weight: 700; border-radius: 8px; min-width: 140px; background: #F1F5F9; color: #64748B; opacity: 0.75; cursor: not-allowed;'
+            : 'font-weight: 700; border-radius: 8px; min-width: 140px;';
+          var saveBtnDisabledAttr = isDepose ? ' disabled aria-disabled="true"' : '';
+          var saveBtnStyle = isDepose
+            ? 'font-weight: 700; border-radius: 6px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; background: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; opacity: 0.7; cursor: not-allowed;'
+            : 'font-weight: 700; border-radius: 6px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;';
 
-          html += '<form class="piece-card-form" style="background: ' + bgCol + '; border-left: 5px solid ' + borderCol + '; padding: 16px; border-radius: 12px; border-top: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">' +
+          html += '<form class="piece-card-form" data-locked="' + (isDepose ? '1' : '0') + '" style="background: ' + bgCol + '; border-left: 5px solid ' + borderCol + '; padding: 16px; border-radius: 12px; border-top: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">' +
             '<input type="hidden" name="inscription_code" value="' + d.code_inscription + '">' +
             '<input type="hidden" name="etudiant_code" value="' + d.code_etudiant + '">' +
             '<input type="hidden" name="piece_code" value="' + item.piece_code + '">' +
@@ -2222,7 +2242,7 @@
             fileHtml +
             '</div>' +
             '<div>' +
-            '<select name="statut" class="form-select form-select-sm select-statut-piece" style="font-weight: 700; border-radius: 8px; min-width: 140px;">' +
+            '<select name="statut" class="form-select form-select-sm select-statut-piece"' + selectDisabledAttr + ' style="' + selectStyle + '">' +
             '<option value="depose" ' + (st === 'depose' ? 'selected' : '') + '>✅ Déposé</option>' +
             '<option value="en_attente" ' + (st === 'en_attente' ? 'selected' : '') + '>⏳ En attente</option>' +
             '<option value="rejete" ' + (st === 'rejete' ? 'selected' : '') + '>❌ Rejeté</option>' +
@@ -2239,7 +2259,7 @@
             '<input type="file" name="fichier_joint" class="form-control form-control-sm" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" title="Joindre un scan numérisé (PDF/Image)" style="font-size: 11px; border-radius: 6px;">' +
             '</div>' +
             '<div>' +
-            '<button type="submit" class="btn btn-sm btn-primary btn-save-piece" style="font-weight: 700; border-radius: 6px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="check" style="width: 14px; height: 14px;"></i> Enregistrer</button>' +
+            '<button type="submit" class="btn btn-sm btn-primary btn-save-piece"' + saveBtnDisabledAttr + ' style="' + saveBtnStyle + '"' + (isDepose ? ' title="Pièce déjà déposée"' : '') + '><i data-lucide="check" style="width: 14px; height: 14px;"></i> Enregistrer</button>' +
             '</div>' +
             '</div>' +
             '</form>';
@@ -2257,7 +2277,12 @@
     $(document).on('submit', '.piece-card-form', function (e) {
       e.preventDefault();
       var form = this;
-      var $btn = $(form).find('.btn-save-piece');
+      var $form = $(form);
+      var $btn = $form.find('.btn-save-piece');
+      if ($form.attr('data-locked') === '1' || $btn.prop('disabled')) return;
+
+      var $select = $form.find('.select-statut-piece');
+      var selectedStatut = $select.val();
       var formData = new FormData(form);
 
       $btn.prop('disabled', true).html('<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i>');
@@ -2270,13 +2295,50 @@
         contentType: false,
         dataType: 'json',
         success: function (res) {
-          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 14px; height: 14px;"></i> Enregistré !');
           if (res.status === 1 || res.success) {
             if (typeof showToast === 'function') showToast(res.message || 'Pièce mise à jour avec succès', 'success');
             else if (window.toastr) toastr.success(res.message || 'Pièce mise à jour avec succès');
-            setTimeout(function () { $btn.html('<i data-lucide="check" style="width: 14px; height: 14px;"></i> Enregistrer'); }, 1500);
-            table.ajax.reload(null, false);
+
+            if (selectedStatut === 'depose') {
+              $form.attr('data-locked', '1');
+              $select.prop('disabled', true).attr('aria-disabled', 'true').css({
+                background: '#F1F5F9',
+                color: '#64748B',
+                opacity: '0.75',
+                cursor: 'not-allowed'
+              });
+              $btn.prop('disabled', true).attr('aria-disabled', 'true').attr('title', 'Pièce déjà déposée').css({
+                background: '#F1F5F9',
+                color: '#94A3B8',
+                border: '1px solid #E2E8F0',
+                opacity: '0.7',
+                cursor: 'not-allowed'
+              }).html('<i data-lucide="check" style="width: 14px; height: 14px;"></i> Enregistrer');
+              if (window.lucide) lucide.createIcons();
+            } else {
+              $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 14px; height: 14px;"></i> Enregistré !');
+              setTimeout(function () {
+                $btn.html('<i data-lucide="check" style="width: 14px; height: 14px;"></i> Enregistrer');
+                if (window.lucide) lucide.createIcons();
+              }, 1500);
+            }
+
+            table.ajax.reload(function () {
+              if (currentStudentData) {
+                var updated = table.rows().data().toArray().find(function (r) {
+                  return r.code_inscription === currentStudentData.code_inscription;
+                });
+                if (updated) {
+                  currentStudentData = updated;
+                  $('#modal-completion-text').text(updated.deposees_count + ' / ' + updated.total_pieces + ' Pièce(s) Déposée(s) (' + updated.pourcentage + '%)');
+                  if (updated.est_complet) {
+                    $('#btn-tout-valider-modal').prop('disabled', true).attr('aria-disabled', 'true').css({ opacity: '0.65', cursor: 'not-allowed' });
+                  }
+                }
+              }
+            }, false);
           } else {
+            $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 14px; height: 14px;"></i> Enregistrer');
             var err = res.message || 'Erreur lors de l\'enregistrement';
             if (typeof showToast === 'function') showToast(err, 'error');
             else if (window.toastr) toastr.error(err);
