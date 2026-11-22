@@ -294,6 +294,11 @@ $pctJustifie = $annuelHeures > 0 ? min(100, round(($annuelJustHeures / $annuelHe
                 Injustifiées : <?= htmlspecialchars($fmtHeures($annuelInjustHeures)) ?>
               </span>
             <?php endif; ?>
+            <?php if (Auth::can(PERMISSIONS::VIEW_ABSENCES) && $encryptedId !== ''): ?>
+              <a href="<?= url('absence/imprimerHistoriqueEtudiant/' . $encryptedId) ?>" target="_blank" style="background: #FFFFFF; color: #1E3A5F; border: 1.5px solid #CBD5E1; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px; border-radius: 8px; padding: 6px 13px; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.04);" title="Imprimer l'historique des absences de l'étudiant en PDF">
+                <i data-lucide="printer" style="width: 15px; height: 15px;"></i> Imprimer
+              </a>
+            <?php endif; ?>
           </div>
         </div>
 

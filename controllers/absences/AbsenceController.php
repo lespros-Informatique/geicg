@@ -186,6 +186,81 @@ class AbsenceController extends BaseController
         ]);
     }
 
+    public function imprimerHistoriqueEtudiant($details)
+    {
+        $this->requireAuth();
+        $this->requirePermission(PERMISSIONS::VIEW_ABSENCES);
+
+        require_once __DIR__ . '/../../core/PdfService.php';
+
+        try {
+            $id = $this->validator->decrypter($details);
+            $item = $this->model->getByIdWithDetails($id);
+            if (!$item) {
+                redirect('absence/list');
+            }
+        } catch (Exception $e) {
+            redirect('absence/list');
+        }
+
+        $targetAnnee = !empty($item['annee_code'])
+            ? (string)$item['annee_code']
+            : (!empty($item['inscription_annee_code']) ? (string)$item['inscription_annee_code'] : null);
+        $anneeCode = $this->resolveTargetAcademicYear($targetAnnee);
+        if (empty($anneeCode)) {
+            $this->error("Accès non autorisé aux absences de cette année académique.");
+            return;
+        }
+
+        $etablissement = $this->getEtablissementConfig();
+        $context = $this->model->getStudentAbsenceContext(
+            (string)($item['inscription_code'] ?? ''),
+            $anneeCode,
+            null
+        );
+
+        $editeurNom = Auth::fullName();
+        $anneeLibelle = !empty($item['libelle_annee']) ? (string)$item['libelle_annee'] : $this->getActiveAnneeLibelle();
+
+        $data = [
+            'etablissement' => $etablissement,
+            'etudiant' => $item,
+            'annee_libelle' => $anneeLibelle,
+            'editeur_nom' => $editeurNom,
+            'historique' => $context['history'],
+            'stats' => $context['stats']
+        ];
+
+        $html = PdfService::renderTemplate('releve_absences_etudiant.php', $data);
+
+        $nomComplet = trim((string)($item['nom_etudiant'] ?? ''));
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'absences',
+            (string)($item['inscription_code'] ?? $item['id_absence']),
+            "Impression de l'historique des absences de " . ($nomComplet !== '' ? $nomComplet : ($item['code_etudiant'] ?? '')),
+            [
+                'inscription_code' => $item['inscription_code'] ?? '',
+                'annee_code' => $anneeCode,
+                'nb_absences' => count($context['history'])
+            ]
+        );
+
+        $cleanNom = preg_replace('/[^A-Za-z0-9_\-]/', '_', $nomComplet !== '' ? $nomComplet : ($item['matricule_etudiant'] ?? 'Etudiant'));
+        $sigle = trim((string)($etablissement['sigle_etablissement'] ?? ''));
+        $filename = 'Historique_Absences_' . $cleanNom . '_' . date('Ymd_His') . '.pdf';
+
+        PdfService::generate($html, $filename, [
+            'orientation' => 'P',
+            'format' => 'A4',
+            'title' => 'Historique des Absences - ' . $nomComplet . ($sigle !== '' ? ' - ' . $sigle : ''),
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 8,
+            'margin_bottom' => 10
+        ]);
+    }
+
     public function add()
     {
         $this->requirePost(false);

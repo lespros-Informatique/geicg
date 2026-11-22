@@ -506,6 +506,7 @@ $route->addRoute('/emploi/imprimerPdf', [$emploiController, 'imprimerPdf']);
 $route->addRoute('/absence/list', [$absenceController, 'list']);
 $route->addRoute('/absence/apiList', [$absenceController, 'apiList']);
 $route->addRoute('/absence/imprimerPdf', [$absenceController, 'imprimerPdf']);
+$route->addRoute('/absence/imprimerHistoriqueEtudiant/{param}', [$absenceController, 'imprimerHistoriqueEtudiant']);
 $route->addRoute('/absence/saisieClasse', [$absenceController, 'saisieClasse']);
 $route->addRoute('/absence/saveBatch', [$absenceController, 'saveBatch']);
 $route->addRoute('/absence/add', [$absenceController, 'add']);
