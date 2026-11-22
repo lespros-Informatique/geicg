@@ -271,7 +271,7 @@ class EnseignantController extends BaseController
                     ['code_user' => $codeUser, 'mode' => 'existant', 'ensData' => $data],
                     $etabCode
                 );
-                $this->success("L'employé <strong>{$userRow['nom_user']} {$userRow['prenom_user']}</strong> a été configuré comme enseignant avec succès !", [
+                $this->success("L'employé {$userRow['nom_user']} {$userRow['prenom_user']} a été configuré comme enseignant avec succès !", [
                     'redirect' => url('enseignant/list')
                 ]);
             } else {
@@ -329,13 +329,12 @@ class EnseignantController extends BaseController
             );
 
             // Envoi automatique de l'e-mail de bienvenue avec les identifiants (modèle welcome_credentials)
-            $mailStatusMsg = '';
             if (!empty($email)) {
                 $etabCfg = $this->getEtablissementConfig();
                 $sigleEtab = !empty($etabCfg['sigle_etablissement']) ? $etabCfg['sigle_etablissement'] : (!empty($etabCfg['nom_etablissement']) ? $etabCfg['nom_etablissement'] : 'GEICG');
                 $gradeLabel = !empty($ensData['grade_enseignant']) ? ('Enseignant — ' . $ensData['grade_enseignant']) : 'Enseignant';
 
-                $mailRes = MailerService::sendTemplate(
+                MailerService::sendTemplate(
                     $email,
                     'Vos Identifiants d\'Accès - ' . $sigleEtab,
                     'welcome_credentials',
@@ -347,16 +346,9 @@ class EnseignantController extends BaseController
                         'loginUrl'     => url('user/connexion')
                     ]
                 );
-                if (!empty($mailRes['status'])) {
-                    $mailStatusMsg = " Un e-mail contenant les identifiants a été envoyé à <strong>{$email}</strong>.";
-                } else {
-                    $mailStatusMsg = " (Attention : l'envoi de l'e-mail a échoué, veuillez communiquer les identifiants manuellement).";
-                }
             }
 
-            $idDisplay = $email ?: ($telephone ?: $codeUser);
-            $this->success("Enseignant et compte utilisateur créés avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe : <strong style='color:#15803D;'>{$rawPassword}</strong>{$mailStatusMsg}", [
-                'password' => $rawPassword,
+            $this->success("Enseignant et compte utilisateur créés avec succès !", [
                 'redirect' => url('enseignant/list')
             ]);
         } else {

@@ -159,10 +159,8 @@ class UserController extends BaseController
                 );
             }
 
-            $idDisplay = $email ?: ($telephone ?: $nom);
-            $this->success("Utilisateur créé avec succès ! Identifiant : <strong>{$idDisplay}</strong> | Mot de passe généré : <strong style='color:#15803D;'>{$rawPassword}</strong>", [
-                'redirect' => url('user/list'),
-                'password' => $rawPassword
+            $this->success("Utilisateur créé avec succès !", [
+                'redirect' => url('user/list')
             ]);
         } else {
             $this->error('Erreur lors de la création de l\'utilisateur.');
