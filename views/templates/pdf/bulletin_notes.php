@@ -661,12 +661,12 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
 
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="text-align: center; font-weight: bold; text-decoration: underline; font-size: 8.6pt; padding-top: 5px; padding-bottom: 3px;">
+              <td style="text-align: center; font-weight: bold; text-decoration: underline; font-size: 8.9pt; padding-top: 5px; padding-bottom: 3px;">
                 MENTIONS DU CONSEIL DE CLASSE
               </td>
             </tr>
             <tr>
-              <td style="text-align: center; font-weight: bold; font-size: 8.6pt; padding-bottom: 2px;">
+              <td style="text-align: center; font-weight: bold; font-size: 10pt; padding-bottom: 2px;">
                 Distinctions
               </td>
             </tr>
@@ -691,7 +691,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
               </td>
             </tr>
             <tr>
-              <td style="text-align: center; font-weight: bold; font-size: 8.6pt; padding-top: 4px; padding-bottom: 2px;">
+              <td style="text-align: center; font-weight: bold; font-size: 10pt; padding-top: 4px; padding-bottom: 2px;">
                 Sanctions
               </td>
             </tr>
@@ -729,7 +729,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
               <!-- CAS A : BULLETIN DU PREMIER SEMESTRE (1ère Année & 2ème Année) -->
               <table class="recap-stats-table">
                 <tr>
-                  <td colspan="2" style="text-align: center; font-weight: bold; font-size: 11.5pt; text-decoration: underline; padding-top: 2px; padding-bottom: 6px;">
+                  <td colspan="2" style="text-align: center; font-weight: bold; font-size: 11.9pt; text-decoration: underline; padding-top: 2px; padding-bottom: 6px;">
                     RECAPITULATIF SEMESTRE
                   </td>
                 </tr>
@@ -742,7 +742,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
                 </tr>
                 <tr>
                   <td colspan="2" style="text-align: center; padding-top: 5px; padding-bottom: 4px; font-size: 10pt;">
-                    <strong>Rang : <?= htmlspecialchars($rangRecapTxt) ?></strong> &nbsp;/<?= htmlspecialchars($totalElevesClasse) ?> Etudiants
+                    <strong>Rang : <?= htmlspecialchars($rangRecapTxt) ?></strong> 
                   </td>
                 </tr>
                 <tr>
@@ -757,7 +757,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
               <!-- CAS B : BULLETIN DU DEUXIÈME SEMESTRE (RECAPITULATIF ANNUEL) -->
               <table class="recap-stats-table">
                 <tr>
-                  <td colspan="2" style="text-align: center; font-weight: bold; font-size: 11.5pt; text-decoration: underline; padding-top: 2px; padding-bottom: 5px;">
+                  <td colspan="2" style="text-align: center; font-weight: bold; font-size: 11.9pt; text-decoration: underline; padding-top: 2px; padding-bottom: 5px;">
                     RECAPITULATIF ANNUEL
                   </td>
                 </tr>
@@ -791,7 +791,7 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
                 <?php endif; ?>
                 <tr>
                   <td colspan="2" style="text-align: center; padding-top: 5px; padding-bottom: 3px; font-size: 10pt;">
-                    <strong>Rang : <?= htmlspecialchars($rangRecapTxt) ?></strong> &nbsp;/<?= htmlspecialchars($totalElevesClasse) ?> Etudiants
+                    <strong>Rang : <?= htmlspecialchars($rangRecapTxt) ?></strong> 
                   </td>
                 </tr>
                 <tr>
