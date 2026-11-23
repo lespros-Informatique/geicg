@@ -575,6 +575,128 @@ $(document).ready(function() {
     });
   }
 
+  // =========================================================================
+  // 3. SECTION : DÉTAILS D'UN ENSEIGNANT (views/enseignants/details.php)
+  // =========================================================================
+  if ($('#enseignants-details-config').length) {
+    (function() {
+      var cfg = {};
+      try {
+        var cfgEl = document.getElementById('enseignants-details-config');
+        if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+      } catch (e) {}
+
+      var detRacine = cfg.racine || window.RACINE || '/';
+      var detCsrf = cfg.csrfToken || '';
+      var ensId = cfg.enseignantId || 0;
+      var isActif = !!cfg.isActif;
+      var nomComplet = cfg.nomComplet || '';
+
+      function notify(msg, type) {
+        if (typeof window.showToast === 'function') {
+          window.showToast(msg, type || 'info');
+        } else if (window.toastr) {
+          if (type === 'error') toastr.error(msg);
+          else toastr.success(msg);
+        }
+      }
+
+      // Filtrage combiné jour + recherche sur l'emploi du temps hebdomadaire
+      function filterEnsPlanning() {
+        var selectedJour = ($('#filter-ens-jour').val() || '').toLowerCase();
+        var q = ($('#search-ens-planning').val() || '').toLowerCase().trim();
+        var visible = 0;
+
+        $('#table-ens-planning tbody tr.ens-planning-row').each(function() {
+          var rowJour = String($(this).data('jour') || '').toLowerCase();
+          var text = $(this).text().toLowerCase();
+          var show = (!selectedJour || rowJour === selectedJour) && (!q || text.indexOf(q) !== -1);
+          $(this).toggle(show);
+          if (show) visible++;
+        });
+        $('#count-visible-ens-planning').text(visible);
+
+        $('.ens-day-pill').each(function() {
+          var isActivePill = selectedJour !== '' && String($(this).data('jour') || '').toLowerCase() === selectedJour;
+          $(this).css('box-shadow', isActivePill ? '0 0 0 2px #1E3A5F' : 'none');
+        });
+      }
+
+      $('#filter-ens-jour').on('change', filterEnsPlanning);
+      $('#search-ens-planning').on('input', filterEnsPlanning);
+
+      $('.ens-day-pill').on('click', function() {
+        var clickedJour = String($(this).data('jour') || '').toLowerCase();
+        var currentJour = ($('#filter-ens-jour').val() || '').toLowerCase();
+        var nextJour = (currentJour === clickedJour) ? '' : clickedJour;
+        $('#filter-ens-jour').val(nextJour).trigger('change');
+      });
+
+      // Recherche en direct sur la synthèse des cours
+      $('#search-ens-cours').on('input', function() {
+        var q = ($(this).val() || '').toLowerCase().trim();
+        var visible = 0;
+        $('#table-ens-cours tbody tr.ens-cours-row').each(function() {
+          var text = $(this).text().toLowerCase();
+          var show = (!q || text.indexOf(q) !== -1);
+          $(this).toggle(show);
+          if (show) visible++;
+        });
+        $('#count-visible-ens-cours').text(visible);
+      });
+
+      // Bascule rapide de statut (Activer / Désactiver)
+      $('#btn-toggle-statut-ens-detail').on('click', function() {
+        if (!ensId) return;
+        var actionLabel = isActif ? 'désactiver' : 'activer';
+        var confirmTitle = isActif ? 'Désactiver cet enseignant ?' : 'Activer cet enseignant ?';
+        var confirmText = 'Voulez-vous vraiment ' + actionLabel + ' le profil enseignant de « ' + nomComplet + ' » ?';
+
+        function executeToggle() {
+          $.ajax({
+            url: detRacine + 'enseignant/changer',
+            type: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            data: {
+              id: ensId,
+              id_enseignant: ensId,
+              csrf_token: detCsrf
+            },
+            dataType: 'json',
+            success: function(res) {
+              if (res && (res.status === 1 || res.success)) {
+                notify(res.message || 'Statut mis à jour avec succès', 'success');
+                setTimeout(function() { window.location.reload(); }, 600);
+              } else {
+                notify((res && res.message) || 'Erreur lors du changement de statut', 'error');
+              }
+            },
+            error: function() {
+              notify('Erreur réseau ou serveur', 'error');
+            }
+          });
+        }
+
+        if (window.Swal) {
+          Swal.fire({
+            title: confirmTitle,
+            text: confirmText,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: isActif ? '#D97706' : '#16A34A',
+            cancelButtonColor: '#64748B',
+            confirmButtonText: isActif ? 'Oui, désactiver' : 'Oui, activer',
+            cancelButtonText: 'Annuler'
+          }).then(function(result) {
+            if (result.isConfirmed) executeToggle();
+          });
+        } else if (window.confirm(confirmText)) {
+          executeToggle();
+        }
+      });
+    })();
+  }
+
   if (window.lucide) lucide.createIcons();
 });
 

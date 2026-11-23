@@ -426,7 +426,7 @@ class EnseignantController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_ENSEIGNANTS);
-        $id = $this->post('id');
+        $id = $this->post('id') ?: $this->post('id_enseignant');
         if ($id && ($ens = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
                 $this->logAction(
@@ -450,21 +450,72 @@ class EnseignantController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_ENSEIGNANTS);
         try {
-            $id = $this->validator->decrypter($details);
-            if (!$id || !is_numeric($id)) $id = is_numeric($details) ? (int)$details : 0;
+            $item = null;
+            if (is_numeric($details)) {
+                $item = $this->model->getById((int)$details);
+            }
+            if (!$item) {
+                $decrypted = $this->validator->decrypter($details);
+                if (is_numeric($decrypted) && (int)$decrypted > 0) {
+                    $item = $this->model->getById((int)$decrypted);
+                } elseif (is_string($decrypted) && $decrypted !== '') {
+                    $item = $this->model->getByCode($decrypted);
+                }
+            }
+            if (!$item && is_string($details) && $details !== '') {
+                $item = $this->model->getByCode($details);
+            }
+            if (!$item) {
+                redirect('enseignant/list');
+                return;
+            }
 
-            $item = $this->model->getById((int)$id);
-            if (!$item) { redirect('enseignant/list'); }
+            $codeEns = (string)$item['code_enseignant'];
+            $anneeCode = $this->getActiveAnneeCode();
+            $anneeLibelle = $this->getActiveAnneeLibelle();
 
-            $cours = $this->model->getCoursForEnseignant($item['code_enseignant']);
-            $encryptedId = $this->validator->crypter($id);
+            $cours = $this->model->getCoursForEnseignant($codeEns, $anneeCode);
+            foreach ($cours as &$c) {
+                $c['encrypted_classe_id'] = !empty($c['id_classe'])
+                    ? $this->validator->crypter((int)$c['id_classe'])
+                    : '';
+                $c['encrypted_matiere_id'] = !empty($c['id_matiere'])
+                    ? $this->validator->crypter((int)$c['id_matiere'])
+                    : '';
+            }
+            unset($c);
+
+            $planning = $this->model->getPlanningForEnseignant($codeEns, $anneeCode);
+            foreach ($planning as &$p) {
+                $p['encrypted_classe_id'] = !empty($p['id_classe'])
+                    ? $this->validator->crypter((int)$p['id_classe'])
+                    : '';
+                $p['encrypted_matiere_id'] = !empty($p['id_matiere'])
+                    ? $this->validator->crypter((int)$p['id_matiere'])
+                    : '';
+                $p['encrypted_salle_id'] = !empty($p['id_salle'])
+                    ? $this->validator->crypter((int)$p['id_salle'])
+                    : '';
+            }
+            unset($p);
+
+            $stats = $this->model->getStatsForEnseignant($codeEns, $anneeCode);
+            $encryptedId = $this->validator->crypter((int)$item['id_enseignant']);
+            $encryptedUserId = !empty($item['id_user']) ? $this->validator->crypter((int)$item['id_user']) : '';
         } catch (Exception $e) {
+            error_log("EnseignantController::details error: " . $e->getMessage());
             redirect('enseignant/list');
+            return;
         }
         $this->loadView('../views/enseignants/details.php', [
-            'item' => $item, 
-            'cours' => $cours,
-            'encryptedId' => $encryptedId
+            'item'            => $item,
+            'cours'           => $cours,
+            'planning'        => $planning,
+            'stats'           => $stats,
+            'anneeCode'       => $anneeCode,
+            'anneeLibelle'    => $anneeLibelle,
+            'encryptedId'     => $encryptedId,
+            'encryptedUserId' => $encryptedUserId
         ]);
     }
 

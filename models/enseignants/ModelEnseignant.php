@@ -78,6 +78,7 @@ class ModelEnseignant extends BaseModel
                    u.photo_user,
                    u.matricule_user,
                    u.statut_user,
+                   u.last_connexion,
                    u.nom_user AS nom_enseignant,
                    u.prenom_user AS prenom_enseignant,
                    u.email_user AS email_enseignant,
@@ -119,6 +120,7 @@ class ModelEnseignant extends BaseModel
                    u.photo_user,
                    u.matricule_user,
                    u.statut_user,
+                   u.last_connexion,
                    u.nom_user AS nom_enseignant,
                    u.prenom_user AS prenom_enseignant,
                    u.email_user AS email_enseignant,
@@ -151,6 +153,7 @@ class ModelEnseignant extends BaseModel
                    u.photo_user,
                    u.matricule_user,
                    u.statut_user,
+                   u.last_connexion,
                    u.nom_user AS nom_enseignant,
                    u.prenom_user AS prenom_enseignant,
                    u.email_user AS email_enseignant,
@@ -184,6 +187,7 @@ class ModelEnseignant extends BaseModel
                    u.photo_user,
                    u.matricule_user,
                    u.statut_user,
+                   u.last_connexion,
                    u.nom_user AS nom_enseignant,
                    u.prenom_user AS prenom_enseignant,
                    u.email_user AS email_enseignant,
@@ -223,22 +227,43 @@ class ModelEnseignant extends BaseModel
     }
 
     /**
-     * Récupère les cours / matières planifiés pour un enseignant
+     * Récupère les cours / matières planifiés regroupés par classe et matière pour un enseignant
      */
     public function getCoursForEnseignant(string $codeEnseignant, ?string $anneeCode = null): array
     {
         try {
-            $targetAnnee = $anneeCode ?: (string)Session::get('annee_active_code', '');
+            $targetAnnee = $anneeCode !== null ? $anneeCode : (string)Session::get('annee_active_code', '');
             $sql = "
-                SELECT DISTINCT 
-                       edt.matiere_code, 
-                       edt.classe_code, 
-                       m.libelle_matiere, 
-                       cl.libelle_classe,
-                       ROUND(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 1) AS volume_horaire
+                SELECT
+                    edt.matiere_code,
+                    edt.classe_code,
+                    m.id_matiere,
+                    m.libelle_matiere,
+                    cl.id_classe,
+                    cl.libelle_classe,
+                    f.libelle_filiere,
+                    n.libelle_niveau,
+                    COUNT(edt.id_emploi) AS nb_creneaux,
+                    GROUP_CONCAT(DISTINCT s.libelle_salle ORDER BY s.libelle_salle SEPARATOR ', ') AS salles_noms,
+                    GROUP_CONCAT(
+                        DISTINCT CONCAT(
+                            UPPER(LEFT(edt.jour, 1)),
+                            SUBSTRING(edt.jour, 2),
+                            ' ',
+                            TIME_FORMAT(edt.heure_debut, '%H:%i'),
+                            '-',
+                            TIME_FORMAT(edt.heure_fin, '%H:%i')
+                        )
+                        ORDER BY FIELD(edt.jour, 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'), edt.heure_debut
+                        SEPARATOR ' · '
+                    ) AS creneaux_resume,
+                    ROUND(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 1) AS volume_horaire
                 FROM " . TABLES::EMPLOIS_TEMPS . " edt
                 LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
                 WHERE edt.enseignant_code = ?
                   AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
             ";
@@ -248,7 +273,15 @@ class ModelEnseignant extends BaseModel
                 $params[] = $targetAnnee;
             }
             $sql .= "
-                GROUP BY edt.matiere_code, edt.classe_code, m.libelle_matiere, cl.libelle_classe
+                GROUP BY
+                    edt.matiere_code,
+                    edt.classe_code,
+                    m.id_matiere,
+                    m.libelle_matiere,
+                    cl.id_classe,
+                    cl.libelle_classe,
+                    f.libelle_filiere,
+                    n.libelle_niveau
                 ORDER BY cl.libelle_classe ASC, m.libelle_matiere ASC
             ";
             $stmt = $this->getCon()->prepare($sql);
@@ -258,6 +291,122 @@ class ModelEnseignant extends BaseModel
             error_log("ModelEnseignant getCoursForEnseignant error: " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Récupère le planning hebdomadaire détaillé (créneau par créneau) d'un enseignant.
+     */
+    public function getPlanningForEnseignant(string $codeEnseignant, ?string $anneeCode = null): array
+    {
+        try {
+            $targetAnnee = $anneeCode !== null ? $anneeCode : (string)Session::get('annee_active_code', '');
+            $sql = "
+                SELECT
+                    edt.id_emploi,
+                    edt.jour,
+                    edt.heure_debut,
+                    edt.heure_fin,
+                    edt.classe_code,
+                    edt.matiere_code,
+                    edt.salle_code,
+                    cl.id_classe,
+                    cl.libelle_classe,
+                    f.libelle_filiere,
+                    n.libelle_niveau,
+                    m.id_matiere,
+                    m.libelle_matiere,
+                    s.id_salle,
+                    s.libelle_salle,
+                    ROUND(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut)) / 3600, 1) AS duree_heures
+                FROM " . TABLES::EMPLOIS_TEMPS . " edt
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = edt.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+                LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
+                WHERE edt.enseignant_code = ?
+                  AND (edt.statut_emploi = '" . STATUTS::ACTIF . "' OR edt.statut_emploi IS NULL)
+            ";
+            $params = [$codeEnseignant];
+            if ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL') {
+                $sql .= " AND edt.annee_code = ?";
+                $params[] = $targetAnnee;
+            }
+            $sql .= "
+                ORDER BY
+                    FIELD(edt.jour, 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'),
+                    edt.heure_debut ASC
+            ";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEnseignant getPlanningForEnseignant error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Statistiques consolidées de charge pédagogique pour un enseignant sur la session ciblée.
+     */
+    public function getStatsForEnseignant(string $codeEnseignant, ?string $anneeCode = null): array
+    {
+        $targetAnnee = $anneeCode !== null ? $anneeCode : (string)Session::get('annee_active_code', '');
+        $hasYear = ($targetAnnee !== '' && strtoupper($targetAnnee) !== 'ALL');
+        $con = $this->getCon();
+
+        $sqlEdt = "
+            SELECT
+                COUNT(*) AS total_creneaux,
+                COALESCE(ROUND(SUM(TIME_TO_SEC(TIMEDIFF(heure_fin, heure_debut))) / 3600, 1), 0) AS total_heures_hebdo,
+                COUNT(DISTINCT jour) AS total_jours_actifs,
+                COUNT(DISTINCT classe_code) AS total_classes,
+                COUNT(DISTINCT matiere_code) AS total_matieres,
+                COUNT(DISTINCT salle_code) AS total_salles
+            FROM " . TABLES::EMPLOIS_TEMPS . "
+            WHERE enseignant_code = ?
+              AND (statut_emploi = '" . STATUTS::ACTIF . "' OR statut_emploi IS NULL)
+        ";
+        $paramsEdt = [$codeEnseignant];
+        if ($hasYear) {
+            $sqlEdt .= " AND annee_code = ?";
+            $paramsEdt[] = $targetAnnee;
+        }
+        $stmtEdt = $con->prepare($sqlEdt);
+        $stmtEdt->execute($paramsEdt);
+        $edt = $stmtEdt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $sqlEtu = "
+            SELECT COUNT(DISTINCT i.etudiant_code) AS total_etudiants
+            FROM " . TABLES::INSCRIPTIONS . " i
+            INNER JOIN (
+                SELECT DISTINCT classe_code
+                FROM " . TABLES::EMPLOIS_TEMPS . "
+                WHERE enseignant_code = ?
+                  AND (statut_emploi = '" . STATUTS::ACTIF . "' OR statut_emploi IS NULL)"
+                  . ($hasYear ? " AND annee_code = ?" : "") . "
+            ) ecls ON ecls.classe_code = i.classe_code
+            WHERE i.statut_inscription != '" . STATUTS::ANNULE . "'"
+              . ($hasYear ? " AND i.annee_code = ?" : "") . "
+        ";
+        $paramsEtu = [$codeEnseignant];
+        if ($hasYear) {
+            $paramsEtu[] = $targetAnnee;
+            $paramsEtu[] = $targetAnnee;
+        }
+        $stmtEtu = $con->prepare($sqlEtu);
+        $stmtEtu->execute($paramsEtu);
+        $totalEtudiants = (int)$stmtEtu->fetchColumn();
+
+        return [
+            'total_creneaux'     => (int)($edt['total_creneaux'] ?? 0),
+            'total_heures_hebdo' => (float)($edt['total_heures_hebdo'] ?? 0),
+            'total_jours_actifs' => (int)($edt['total_jours_actifs'] ?? 0),
+            'total_classes'      => (int)($edt['total_classes'] ?? 0),
+            'total_matieres'     => (int)($edt['total_matieres'] ?? 0),
+            'total_salles'       => (int)($edt['total_salles'] ?? 0),
+            'total_etudiants'    => $totalEtudiants,
+        ];
     }
 
     /**
