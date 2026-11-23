@@ -1312,12 +1312,188 @@
     });
   }
 
+  // =========================================================================
+  // 6. VUE : DÉTAILS D'UN PARCOURS PIVOT FILIÈRE-CYCLE (views/filiere_cycles/details.php)
+  // =========================================================================
+  function initFiliereCycleDetailsModule() {
+    if (!$('#fc-details-config').length) return;
+
+    var cfg = {};
+    try {
+      var cfgEl = document.getElementById('fc-details-config');
+      if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+    } catch (e) {}
+
+    var racine = cfg.racine || window.RACINE || '/';
+    var csrfToken = cfg.csrfToken || '';
+    var fcId = cfg.fcId || 0;
+    var isActif = !!cfg.isActif;
+    var label = cfg.label || '';
+
+    function notify(msg, type) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(msg, type || 'info');
+      } else if (window.toastr) {
+        if (type === 'error') toastr.error(msg);
+        else toastr.success(msg);
+      }
+    }
+
+    // Recherche en direct sur les classes du parcours
+    $('#search-fc-classes').on('input', function() {
+      var q = ($(this).val() || '').toLowerCase().trim();
+      var visible = 0;
+      $('#table-fc-classes tbody tr.fc-classe-row').each(function() {
+        var text = $(this).text().toLowerCase();
+        var show = (!q || text.indexOf(q) !== -1);
+        $(this).toggle(show);
+        if (show) visible++;
+      });
+      $('#count-visible-fc-classes').text(visible);
+    });
+
+    // Filtre catégorie + recherche en direct sur la maquette pédagogique
+    function filterFcMaquettes() {
+      var cat = ($('#filter-fc-maquette-cat').val() || '').toUpperCase();
+      var q = ($('#search-fc-maquettes').val() || '').toLowerCase().trim();
+      var visible = 0;
+      $('#table-fc-maquettes tbody tr.fc-maquette-row').each(function() {
+        var rowCat = String($(this).data('categorie') || '').toUpperCase();
+        var text = $(this).text().toLowerCase();
+        var show = (!cat || rowCat === cat) && (!q || text.indexOf(q) !== -1);
+        $(this).toggle(show);
+        if (show) visible++;
+      });
+      $('#count-visible-fc-maquettes').text(visible);
+    }
+
+    $('#filter-fc-maquette-cat').on('change', filterFcMaquettes);
+    $('#search-fc-maquettes').on('input', filterFcMaquettes);
+
+    // Bascule rapide de statut (Activer / Désactiver)
+    $('#btn-toggle-statut-fc-detail').on('click', function() {
+      if (!fcId) return;
+      var actionLabel = isActif ? 'désactiver' : 'activer';
+      var confirmTitle = isActif ? 'Désactiver ce parcours ?' : 'Activer ce parcours ?';
+      var confirmText = 'Voulez-vous vraiment ' + actionLabel + ' le parcours « ' + label + ' » ?';
+
+      function executeToggle() {
+        $.ajax({
+          url: racine + 'filiere_cycle/changer',
+          type: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          data: {
+            id: fcId,
+            id_filiere_cycle: fcId,
+            csrf_token: csrfToken
+          },
+          dataType: 'json',
+          success: function(res) {
+            if (res && (res.status === 1 || res.success)) {
+              notify(res.message || 'Statut mis à jour avec succès', 'success');
+              setTimeout(function() { window.location.reload(); }, 600);
+            } else {
+              notify((res && res.message) || 'Erreur lors du changement de statut', 'error');
+            }
+          },
+          error: function() {
+            notify('Erreur réseau ou serveur', 'error');
+          }
+        });
+      }
+
+      if (window.Swal) {
+        Swal.fire({
+          title: confirmTitle,
+          text: confirmText,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: isActif ? '#D97706' : '#16A34A',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: isActif ? 'Oui, désactiver' : 'Oui, activer',
+          cancelButtonText: 'Annuler'
+        }).then(function(result) {
+          if (result.isConfirmed) executeToggle();
+        });
+      } else if (window.confirm(confirmText)) {
+        executeToggle();
+      }
+    });
+
+    // Mise à jour auto du type de filière dans la modale d'édition
+    $('#detail_fc_filiere').on('change', function() {
+      var typeVal = String($(this).find('option:selected').data('type') || '');
+      var display = typeVal === 'INDUSTRIELLE' ? 'Filière Industrielle' : (typeVal === 'TERTIAIRE' ? 'Filière Tertiaire' : typeVal);
+      $('#detail_fc_type_display').val(display);
+      $('#detail_fc_type').val(typeVal || 'AUTO');
+    });
+
+    // Modal d'édition rapide
+    $('#btn-edit-fc-detail').on('click', function() {
+      $('#modal-fc-detail').css('display', 'flex');
+      if (window.lucide) lucide.createIcons();
+    });
+
+    $('.btn-close-modal-fc-detail').on('click', function() {
+      $('#modal-fc-detail').css('display', 'none');
+    });
+
+    $('#modal-fc-detail').on('click', function(e) {
+      if ($(e.target).is('#modal-fc-detail')) {
+        $(this).css('display', 'none');
+      }
+    });
+
+    $(document).on('keydown.fcDetailModal', function(e) {
+      if (e.key === 'Escape' && $('#modal-fc-detail').is(':visible')) {
+        $('#modal-fc-detail').css('display', 'none');
+      }
+    });
+
+    $('#form-fc-detail').on('submit', function(e) {
+      e.preventDefault();
+      var $btn = $('#btn-save-fc-detail');
+      $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Enregistrement...');
+
+      $.ajax({
+        url: racine + 'filiere_cycle/edit',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: $(this).serialize(),
+        dataType: 'json',
+        success: function(res) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+          if (window.lucide) lucide.createIcons();
+
+          if (res && (res.status === 1 || res.success)) {
+            notify(res.message || 'Parcours modifié avec succès', 'success');
+            $('#modal-fc-detail').css('display', 'none');
+            setTimeout(function() { window.location.reload(); }, 600);
+          } else {
+            notify((res && res.message) || 'Erreur lors de la modification', 'error');
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur réseau ou serveur';
+          try {
+            var json = JSON.parse(xhr.responseText);
+            if (json && json.message) msg = json.message;
+          } catch (err) {}
+          notify(msg, 'error');
+        }
+      });
+    });
+  }
+
   $(document).ready(function() {
     initFilieresListModule();
     initFiliereCyclesHubModule();
     initNiveauxListModule();
     initMatieresListModule();
     initMatieresDetailsModule();
+    initFiliereCycleDetailsModule();
     if (window.lucide) lucide.createIcons();
   });
 

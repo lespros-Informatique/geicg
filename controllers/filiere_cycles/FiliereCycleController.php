@@ -132,9 +132,16 @@ class FiliereCycleController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::MANAGE_FILIERES, PERMISSIONS::MANAGE_CYCLES]);
-        $id = $this->post('id');
-        if ($id && $this->model->getById($id)) {
+        $id = $this->post('id') ?: $this->post('id_filiere_cycle');
+        if ($id && ($fc = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
+                $this->logAction(
+                    AuditLogger::ACTION_UPDATE,
+                    'filiere_cycles',
+                    $fc['code_filiere_cycle'] ?? (string)$id,
+                    "Basculement de statut du parcours pivot '" . ($fc['code_filiere_cycle'] ?? $id) . "'",
+                    ['id_filiere_cycle' => $id, 'code_filiere_cycle' => $fc['code_filiere_cycle'] ?? null]
+                );
                 $this->success('Statut mis à jour avec succès!', ['reload' => true]);
             } else {
                 $this->error('Erreur lors de la mise à jour du statut');
@@ -149,26 +156,88 @@ class FiliereCycleController extends BaseController
         $this->requireAuth();
         $this->requirePermission([PERMISSIONS::VIEW_FILIERES, PERMISSIONS::VIEW_CYCLES]);
         try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getDetails((int)$id);
-            if (!$item) { 
+            $item = null;
+            if (is_numeric($details)) {
+                $item = $this->model->getDetails((int)$details);
+            }
+            if (!$item) {
+                $decrypted = $this->validator->decrypter($details);
+                if (is_numeric($decrypted) && (int)$decrypted > 0) {
+                    $item = $this->model->getDetails((int)$decrypted);
+                } elseif (is_string($decrypted) && $decrypted !== '') {
+                    $item = $this->model->getByCode($decrypted);
+                }
+            }
+            if (!$item && is_string($details) && $details !== '') {
+                $item = $this->model->getByCode($details);
+            }
+            if (!$item) {
                 $this->renderNotFound("L'assignation Filière - Cycle demandée est introuvable.");
                 return;
             }
 
-            // Classes liées à ce parcours pivot (Cycle - Filière - Niveau) via le modèle
-            $classes = $this->model->getClassesForParcours($item['filiere_code'], $item['cycle_code'] ?? null, $item['niveau_code'] ?? null);
+            $anneeCode = $this->getActiveAnneeCode();
+            $anneeLibelle = $this->getActiveAnneeLibelle();
 
-            $encryptedId = $this->validator->crypter($id);
+            $classes = $this->model->getClassesForParcours(
+                $item['filiere_code'],
+                $item['cycle_code'] ?? null,
+                $item['niveau_code'] ?? null,
+                $anneeCode
+            );
+            foreach ($classes as &$c) {
+                $c['encrypted_classe_id'] = !empty($c['id_classe'])
+                    ? $this->validator->crypter((int)$c['id_classe'])
+                    : '';
+            }
+            unset($c);
+
+            $maquettes = $this->model->getMaquettesForParcours(
+                $item['filiere_code'],
+                $item['niveau_code'] ?? null,
+                $anneeCode
+            );
+            foreach ($maquettes as &$mq) {
+                $mq['encrypted_matiere_id'] = !empty($mq['id_matiere'])
+                    ? $this->validator->crypter((int)$mq['id_matiere'])
+                    : '';
+            }
+            unset($mq);
+
+            $scolarites = $this->model->getScolaritesForParcours(
+                $item['filiere_code'],
+                $item['niveau_code'] ?? null,
+                $anneeCode
+            );
+
+            $encryptedId = $this->validator->crypter((int)$item['id_filiere_cycle']);
+            $encryptedFiliereId = !empty($item['id_filiere']) ? $this->validator->crypter((int)$item['id_filiere']) : '';
+            $encryptedCycleId = !empty($item['id_cycle']) ? $this->validator->crypter((int)$item['id_cycle']) : '';
+            $encryptedNiveauId = !empty($item['id_niveau']) ? $this->validator->crypter((int)$item['id_niveau']) : '';
+
+            $canManage = Auth::can(PERMISSIONS::MANAGE_FILIERES) || Auth::can(PERMISSIONS::MANAGE_CYCLES);
+            $filieresList = $canManage ? $this->model->getActiveFilieres() : [];
+            $cyclesList = $canManage ? $this->model->getActiveCycles() : [];
+            $niveauxList = $canManage ? $this->model->getActiveNiveaux() : [];
         } catch (Exception $e) {
             error_log("FiliereCycleController::details error: " . $e->getMessage());
             $this->renderNotFound("L'assignation Filière - Cycle demandée est introuvable.");
             return;
         }
         $this->loadView('../views/filiere_cycles/details.php', [
-            'item' => $item, 
-            'classes' => $classes,
-            'encryptedId' => $encryptedId
+            'item'               => $item,
+            'classes'            => $classes,
+            'maquettes'          => $maquettes,
+            'scolarites'         => $scolarites,
+            'anneeCode'          => $anneeCode,
+            'anneeLibelle'       => $anneeLibelle,
+            'encryptedId'        => $encryptedId,
+            'encryptedFiliereId' => $encryptedFiliereId,
+            'encryptedCycleId'   => $encryptedCycleId,
+            'encryptedNiveauId'  => $encryptedNiveauId,
+            'filieresList'       => $filieresList,
+            'cyclesList'         => $cyclesList,
+            'niveauxList'        => $niveauxList
         ]);
     }
 
