@@ -493,22 +493,23 @@ if (empty($etablissement) || !is_array($etablissement)) {
     </tbody>
   </table>
 
-  <!-- BLOC DE SIGNATURES OFFICIELLES -->
+  <!-- BLOC DE SIGNATURE OFFICIELLE -->
   <?php
     $sigDirPedTitre = trim((string)($etablissement['titre_direction_pedagogique'] ?? ''));
     $sigDirPedNom = trim((string)($etablissement['nom_directeur_etudes'] ?? ''));
-    $sigDirGenTitre = trim((string)($etablissement['titre_direction_generale'] ?? ''));
-    $sigDirGenNom = trim((string)($etablissement['nom_directeur_general'] ?? ''));
     $sigMention = trim((string)($etablissement['mention_cachet_signature'] ?? ''));
     $sigVille = !empty($etablissement['ville_signature']) ? $etablissement['ville_signature'] : ($etablissement['ville_etablissement'] ?? '');
   ?>
   <table class="signature-table" style="width: 100%; border-collapse: collapse; margin-top: 16px;">
     <tr>
-      <td style="width: 46%; vertical-align: top; padding: 0;">
+      <td style="width: 60%;"></td>
+      <td style="width: 40%; vertical-align: top; padding: 0;">
         <table style="width: 100%; border-collapse: collapse;">
           <?php if (!empty($sigVille)): ?>
           <tr>
-            <td style="text-align: center; font-size: 8.5pt; color: #475569; padding: 0 8px 3px 8px;">&nbsp;</td>
+            <td style="text-align: center; font-size: 8.5pt; color: #475569; padding: 0 8px 3px 8px;">
+              Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
+            </td>
           </tr>
           <?php endif; ?>
           <tr>
@@ -523,38 +524,6 @@ if (empty($etablissement) || !is_array($etablissement)) {
           <tr>
             <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #0F172A;">
               <?= htmlspecialchars($sigDirPedNom) ?>
-            </td>
-          </tr>
-          <?php endif; ?>
-          <tr>
-            <td style="text-align: center; font-size: 8pt; font-style: italic; color: #64748B; padding: 0 8px 4px 8px;">
-              <?= htmlspecialchars($sigMention) ?>
-            </td>
-          </tr>
-        </table>
-      </td>
-      <td style="width: 8%;"></td>
-      <td style="width: 46%; vertical-align: top; padding: 0;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <?php if (!empty($sigVille)): ?>
-          <tr>
-            <td style="text-align: center; font-size: 8.5pt; color: #475569; padding: 0 8px 3px 8px;">
-              Fait à <?= htmlspecialchars($sigVille) ?>, le <?= date('d/m/Y') ?>
-            </td>
-          </tr>
-          <?php endif; ?>
-          <tr>
-            <td style="text-align: center; font-size: 9pt; font-weight: bold; color: #1E3A5F; text-transform: uppercase;">
-              <?= htmlspecialchars($sigDirGenTitre) ?>
-            </td>
-          </tr>
-          <tr>
-            <td height="44" style="height: 44px; text-align: center; vertical-align: middle;">&nbsp;</td>
-          </tr>
-          <?php if ($sigDirGenNom !== ''): ?>
-          <tr>
-            <td style="text-align: center; font-size: 9.5pt; font-weight: bold; color: #0F172A;">
-              <?= htmlspecialchars($sigDirGenNom) ?>
             </td>
           </tr>
           <?php endif; ?>
