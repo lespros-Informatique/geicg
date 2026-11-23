@@ -31,12 +31,17 @@ $photoRaw = !empty($item['photo_user']) ? (string)$item['photo_user'] : (!empty(
 $photoUrl = '';
 if ($photoRaw !== '') {
     $cleanRel = ltrim($photoRaw, '/');
-    if (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
-        $photoUrl = url('public/' . $cleanRel);
-    } elseif (file_exists(__DIR__ . '/../../' . $cleanRel)) {
+    if (file_exists(__DIR__ . '/../../' . $cleanRel)) {
         $photoUrl = url($cleanRel);
+    } elseif (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
+        $photoUrl = url('public/' . $cleanRel);
+    } elseif (strpos($photoRaw, 'http') === 0) {
+        $photoUrl = $photoRaw;
     }
 }
+$hasPhoto = ($photoUrl !== '');
+$placeholderPhotoUrl = placeholderUrl('user');
+$finalPhotoUrl = $hasPhoto ? $photoUrl : $placeholderPhotoUrl;
 
 $sexeLibelle = 'Non précisé';
 if (!empty($item['sexe_enseignant'])) {
@@ -113,11 +118,12 @@ $canManageEmplois = Auth::can(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
 
       <!-- EN-TÊTE DE PAGE -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
-        <div>
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <div style="width: 58px; height: 66px; border-radius: 12px; border: 2px solid #CBD5E1; overflow: hidden; background: #F8FAFC; flex-shrink: 0; box-shadow: 0 2px 6px rgba(15,23,42,0.08);">
+            <img src="<?= htmlspecialchars($finalPhotoUrl) ?>" alt="Photo <?= htmlspecialchars($nomComplet) ?>" onerror="this.onerror=null; this.src='<?= htmlspecialchars($placeholderPhotoUrl) ?>';" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+          </div>
+          <div>
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: #1E3A5F; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <i data-lucide="graduation-cap" style="width: 21px; height: 21px;"></i>
-            </div>
             <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">
               <?= htmlspecialchars($nomComplet ?: '-') ?>
             </h1>
@@ -149,6 +155,7 @@ $canManageEmplois = Auth::can(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
               &bull; Mis à jour le <strong style="color: #334155;"><?= htmlspecialchars($updatedAt) ?></strong>
             <?php endif; ?>
           </p>
+          </div>
         </div>
 
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
@@ -262,15 +269,14 @@ $canManageEmplois = Auth::can(PERMISSIONS::MANAGE_EMPLOI_TEMPS);
       <!-- CARTE PROFIL IDENTITÉ, COORDONNÉES & CONTRAT RH -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 22px; width: 100%; box-sizing: border-box;">
         <div style="display: flex; align-items: center; gap: 22px; flex-wrap: wrap;">
-          <?php if ($photoUrl !== ''): ?>
-            <div style="width: 78px; height: 78px; border-radius: 16px; border: 2px solid #E2E8F0; overflow: hidden; background: #F8FAFC; flex-shrink: 0;">
-              <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Enseignant" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
+            <div style="width: 106px; height: 122px; border-radius: 12px; border: 2px solid #CBD5E1; overflow: hidden; background: #F8FAFC; box-shadow: 0 3px 10px rgba(15,23,42,0.08);">
+              <img src="<?= htmlspecialchars($finalPhotoUrl) ?>" alt="Photo Enseignant <?= htmlspecialchars($nomComplet) ?>" onerror="this.onerror=null; this.src='<?= htmlspecialchars($placeholderPhotoUrl) ?>';" style="width: 100%; height: 100%; object-fit: cover; display: block;">
             </div>
-          <?php else: ?>
-            <div style="width: 78px; height: 78px; border-radius: 16px; background: #EFF6FF; color: #1E3A5F; border: 2px solid #BFDBFE; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; flex-shrink: 0;">
-              <?= htmlspecialchars($initials) ?>
-            </div>
-          <?php endif; ?>
+            <span style="margin-top: 7px; background: <?= $hasPhoto ? '#DCFCE7' : '#F1F5F9' ?>; color: <?= $hasPhoto ? '#15803D' : '#64748B' ?>; border: 1px solid <?= $hasPhoto ? '#86EFAC' : '#CBD5E1' ?>; padding: 2px 8px; border-radius: 10px; font-size: 10.5px; font-weight: 700;">
+              <?= $hasPhoto ? 'Photo enregistrée' : 'Aucune photo' ?>
+            </span>
+          </div>
 
           <div style="flex: 1; min-width: 240px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px;">
             <div>

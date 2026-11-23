@@ -32,12 +32,17 @@ $photoUser = !empty($user['photo_user']) ? (string)$user['photo_user'] : '';
 $photoUrl = '';
 if ($photoUser !== '') {
     $cleanRel = ltrim($photoUser, '/');
-    if (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
-        $photoUrl = url('public/' . $cleanRel);
-    } elseif (file_exists(__DIR__ . '/../../' . $cleanRel)) {
+    if (file_exists(__DIR__ . '/../../' . $cleanRel)) {
         $photoUrl = url($cleanRel);
+    } elseif (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
+        $photoUrl = url('public/' . $cleanRel);
+    } elseif (strpos($photoUser, 'http') === 0) {
+        $photoUrl = $photoUser;
     }
 }
+$hasPhoto = ($photoUrl !== '');
+$placeholderPhotoUrl = placeholderUrl('user');
+$finalPhotoUrl = $hasPhoto ? $photoUrl : $placeholderPhotoUrl;
 
 // Sexe libellé
 $sexeLibelle = 'Non précisé';
@@ -314,15 +319,9 @@ $canViewLogs = Auth::can(PERMISSIONS::VIEW_LOGS) || Auth::isSuperAdmin();
 
           <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
             <div style="text-align: center; padding-bottom: 18px; border-bottom: 1px solid #F1F5F9;">
-              <?php if ($photoUrl !== ''): ?>
-                <div style="width: 104px; height: 104px; border-radius: 50%; border: 3px solid #E2E8F0; overflow: hidden; background: #F8FAFC; margin: 0 auto 14px auto;">
-                  <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Utilisateur" style="width: 100%; height: 100%; object-fit: cover;">
-                </div>
-              <?php else: ?>
-                <div style="width: 92px; height: 92px; border-radius: 22px; background: #EFF6FF; color: #1E3A5F; border: 2px solid #BFDBFE; margin: 0 auto 14px auto; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800;">
-                  <?= htmlspecialchars($initials) ?>
-                </div>
-              <?php endif; ?>
+              <div style="width: 112px; height: 112px; border-radius: 50%; border: 3px solid #CBD5E1; overflow: hidden; background: #F8FAFC; margin: 0 auto 14px auto; box-shadow: 0 4px 12px rgba(15,23,42,0.08);">
+                <img src="<?= htmlspecialchars($finalPhotoUrl) ?>" alt="Photo Utilisateur <?= htmlspecialchars($nomComplet) ?>" onerror="this.onerror=null; this.src='<?= htmlspecialchars($placeholderPhotoUrl) ?>';" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+              </div>
 
               <h2 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0; line-height: 1.3;">
                 <?= htmlspecialchars($nomComplet ?: '-') ?>
