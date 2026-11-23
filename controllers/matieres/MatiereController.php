@@ -90,6 +90,7 @@ class MatiereController extends BaseController
         }
 
         $libelle = trim($data['libelle_matiere'] ?? '');
+        $data['updated_at_matiere'] = date('Y-m-d H:i:s');
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->logAction(
@@ -138,22 +139,56 @@ class MatiereController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_MATIERES);
         try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { redirect('matiere/list'); }
+            $item = null;
+            if (is_numeric($details)) {
+                $item = $this->model->getById((int)$details);
+            }
+            if (!$item) {
+                $decrypted = $this->validator->decrypter($details);
+                if (is_numeric($decrypted) && (int)$decrypted > 0) {
+                    $item = $this->model->getById((int)$decrypted);
+                } elseif (is_string($decrypted) && $decrypted !== '') {
+                    $item = $this->model->getByCode($decrypted, 'code_matiere');
+                }
+            }
+            if (!$item && is_string($details) && $details !== '') {
+                $item = $this->model->getByCode($details, 'code_matiere');
+            }
+            if (!$item) {
+                redirect('matiere/list');
+                return;
+            }
 
-            $matiereCode = $item['code_matiere'];
-            $affectations = $this->model->getAffectationsForMatiere($matiereCode);
-            $stats = $this->model->getStatsForMatiere($matiereCode, count($affectations));
-            $encryptedId = $this->validator->crypter($id);
+            $matiereCode = (string)$item['code_matiere'];
+            $anneeCode = $this->getActiveAnneeCode();
+            $anneeLibelle = $this->getActiveAnneeLibelle();
+
+            $affectations = $this->model->getAffectationsForMatiere($matiereCode, $anneeCode);
+            foreach ($affectations as &$aff) {
+                $aff['encrypted_classe_id'] = !empty($aff['id_classe'])
+                    ? $this->validator->crypter((int)$aff['id_classe'])
+                    : '';
+                $aff['encrypted_enseignant_id'] = !empty($aff['id_enseignant'])
+                    ? $this->validator->crypter((int)$aff['id_enseignant'])
+                    : '';
+            }
+            unset($aff);
+
+            $maquettes = $this->model->getMaquettesForMatiere($matiereCode, $anneeCode);
+            $stats = $this->model->getStatsForMatiere($matiereCode, count($affectations), $anneeCode);
+            $encryptedId = $this->validator->crypter((int)$item['id_matiere']);
         } catch (Exception $e) {
             redirect('matiere/list');
+            return;
         }
         $this->loadView('../views/matieres/details.php', [
-            'item' => $item, 
+            'item'         => $item,
             'affectations' => $affectations,
-            'stats' => $stats,
-            'encryptedId' => $encryptedId
+            'maquettes'    => $maquettes,
+            'stats'        => $stats,
+            'anneeCode'    => $anneeCode,
+            'anneeLibelle' => $anneeLibelle,
+            'encryptedId'  => $encryptedId
         ]);
     }
 

@@ -1143,11 +1143,181 @@
 
   }
 
+  // =========================================================================
+  // 5. VUE : DÉTAILS D'UNE MATIÈRE (views/matieres/details.php)
+  // =========================================================================
+  function initMatieresDetailsModule() {
+    if (!$('#matieres-details-config').length) return;
+
+    var configEl = document.getElementById('matieres-details-config');
+    var config = {};
+    if (configEl) {
+      try { config = JSON.parse(configEl.textContent); } catch (e) {}
+    }
+    var racine = config.racine || window.RACINE || '/';
+    var csrfToken = config.csrfToken || '';
+    var matiereId = config.matiereId || 0;
+    var isActif = !!config.isActif;
+    var libelleMatiere = config.libelleMatiere || '';
+
+    function notify(msg, type) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(msg, type || 'info');
+      } else if (window.toastr) {
+        if (type === 'error') toastr.error(msg);
+        else toastr.success(msg);
+      }
+    }
+
+    // Recherche en direct sur les affectations (classes, filières, profs, salles)
+    $('#search-matiere-affectations').on('input', function() {
+      var q = ($(this).val() || '').toLowerCase().trim();
+      var visible = 0;
+      $('#table-matiere-affectations tbody tr.matiere-affectation-row').each(function() {
+        var text = $(this).text().toLowerCase();
+        var show = (!q || text.indexOf(q) !== -1);
+        $(this).toggle(show);
+        if (show) visible++;
+      });
+      $('#count-visible-affectations').text(visible);
+    });
+
+    // Filtre catégorie + recherche sur les maquettes pédagogiques
+    function filterMaquettesTable() {
+      var q = ($('#search-matiere-maquettes').val() || '').toLowerCase().trim();
+      var cat = ($('#filter-matiere-categorie').val() || '').toUpperCase();
+      var visible = 0;
+      $('#table-matiere-maquettes tbody tr.matiere-maquette-row').each(function() {
+        var rowCat = String($(this).data('categorie') || '').toUpperCase();
+        var text = $(this).text().toLowerCase();
+        var matchCat = (!cat || rowCat === cat);
+        var matchText = (!q || text.indexOf(q) !== -1);
+        var show = matchCat && matchText;
+        $(this).toggle(show);
+        if (show) visible++;
+      });
+      $('#count-visible-maquettes').text(visible);
+    }
+
+    $('#search-matiere-maquettes').on('input', filterMaquettesTable);
+    $('#filter-matiere-categorie').on('change', filterMaquettesTable);
+
+    // Bascule rapide de statut (Activer / Désactiver)
+    $('#btn-toggle-statut-matiere-detail').on('click', function() {
+      if (!matiereId) return;
+      var actionLabel = isActif ? 'désactiver' : 'activer';
+      var confirmTitle = isActif ? 'Désactiver cette matière ?' : 'Activer cette matière ?';
+      var confirmText = 'Voulez-vous vraiment ' + actionLabel + ' la matière « ' + libelleMatiere + ' » ?';
+
+      function executeToggle() {
+        $.ajax({
+          url: racine + 'matiere/changer',
+          type: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          data: {
+            id: matiereId,
+            id_matiere: matiereId,
+            csrf_token: csrfToken
+          },
+          dataType: 'json',
+          success: function(res) {
+            if (res && (res.status === 1 || res.success)) {
+              notify(res.message || 'Statut mis à jour avec succès', 'success');
+              setTimeout(function() { window.location.reload(); }, 600);
+            } else {
+              notify((res && res.message) || 'Erreur lors du changement de statut', 'error');
+            }
+          },
+          error: function() {
+            notify('Erreur réseau ou serveur', 'error');
+          }
+        });
+      }
+
+      if (window.Swal) {
+        Swal.fire({
+          title: confirmTitle,
+          text: confirmText,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: isActif ? '#D97706' : '#16A34A',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: isActif ? 'Oui, désactiver' : 'Oui, activer',
+          cancelButtonText: 'Annuler'
+        }).then(function(result) {
+          if (result.isConfirmed) executeToggle();
+        });
+      } else if (window.confirm(confirmText)) {
+        executeToggle();
+      }
+    });
+
+    // Modal d'édition rapide
+    $('#btn-edit-matiere-detail').on('click', function() {
+      $('#modal-matiere-detail').css('display', 'flex');
+      if (window.lucide) lucide.createIcons();
+      setTimeout(function() { $('#detail_matiere_libelle').focus(); }, 100);
+    });
+
+    $('.btn-close-modal-matiere-detail').on('click', function() {
+      $('#modal-matiere-detail').css('display', 'none');
+    });
+
+    $('#modal-matiere-detail').on('click', function(e) {
+      if ($(e.target).is('#modal-matiere-detail')) {
+        $(this).css('display', 'none');
+      }
+    });
+
+    $(document).on('keydown.matiereDetailModal', function(e) {
+      if (e.key === 'Escape' && $('#modal-matiere-detail').is(':visible')) {
+        $('#modal-matiere-detail').css('display', 'none');
+      }
+    });
+
+    $('#form-matiere-detail').on('submit', function(e) {
+      e.preventDefault();
+      var $btn = $('#btn-save-matiere-detail');
+      $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Enregistrement...');
+
+      $.ajax({
+        url: racine + 'matiere/edit',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: $(this).serialize(),
+        dataType: 'json',
+        success: function(res) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+          if (window.lucide) lucide.createIcons();
+
+          if (res && (res.status === 1 || res.success)) {
+            notify(res.message || 'Matière modifiée avec succès', 'success');
+            $('#modal-matiere-detail').css('display', 'none');
+            setTimeout(function() { window.location.reload(); }, 600);
+          } else {
+            notify((res && res.message) || 'Erreur lors de la modification', 'error');
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur réseau ou serveur';
+          try {
+            var json = JSON.parse(xhr.responseText);
+            if (json && json.message) msg = json.message;
+          } catch (err) {}
+          notify(msg, 'error');
+        }
+      });
+    });
+  }
+
   $(document).ready(function() {
     initFilieresListModule();
     initFiliereCyclesHubModule();
     initNiveauxListModule();
     initMatieresListModule();
+    initMatieresDetailsModule();
     if (window.lucide) lucide.createIcons();
   });
 
