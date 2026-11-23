@@ -751,6 +751,72 @@
       imprimerCarteScolaire();
     });
 
+    // Téléversement rapide de la photo d'identité étudiant depuis le dossier
+    $('#btn-upload-etu-detail-photo').on('click', function () {
+      $('#input-etu-detail-photo').val('').trigger('click');
+    });
+
+    $('#input-etu-detail-photo').on('change', function () {
+      var file = this.files && this.files[0];
+      if (!file) return;
+      if (!cfg.inscriptionId && !cfg.codeInscription) return;
+
+      var $btn = $('#btn-upload-etu-detail-photo');
+      var origHtml = $btn.html();
+      $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Envoi...');
+
+      var fd = new FormData();
+      fd.append('id_inscription', cfg.inscriptionId || '');
+      fd.append('code_inscription', cfg.codeInscription || '');
+      fd.append('csrf_token', cfg.csrfToken || '');
+      fd.append('photo_inscription', file);
+
+      var detRacine = cfg.racine || window.RACINE || '/';
+      $.ajax({
+        url: detRacine + 'inscription/uploadPhoto',
+        type: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        dataType: 'json',
+        success: function (res) {
+          $btn.prop('disabled', false).html(origHtml);
+          if (window.lucide) lucide.createIcons();
+
+          if (res && (res.status === 1 || res.success)) {
+            var newUrl = (res.photo_url || (res.data && res.data.photo_url) || '');
+            if (newUrl) {
+              var bustUrl = newUrl + (newUrl.indexOf('?') === -1 ? '?t=' : '&t=') + Date.now();
+              $('.etu-photo-live-img').attr('src', bustUrl);
+            }
+            $('#badge-etu-photo-status')
+              .text('Photo enregistrée')
+              .css({ background: '#DCFCE7', color: '#15803D', borderColor: '#86EFAC' });
+            $btn.html('<i data-lucide="camera" style="width: 13px; height: 13px;"></i> Changer photo');
+            if (window.lucide) lucide.createIcons();
+            if (typeof showToast === 'function') showToast(res.message || 'Photo enregistrée avec succès', 'success');
+            else if (window.toastr) toastr.success(res.message || 'Photo enregistrée avec succès');
+          } else {
+            var errMsg = (res && res.message) || 'Erreur lors de l\'enregistrement de la photo.';
+            if (typeof showToast === 'function') showToast(errMsg, 'error');
+            else if (window.toastr) toastr.error(errMsg);
+          }
+        },
+        error: function (xhr) {
+          $btn.prop('disabled', false).html(origHtml);
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur réseau lors de l\'envoi de la photo.';
+          try {
+            var j = xhr.responseJSON || JSON.parse(xhr.responseText);
+            if (j && j.message) msg = j.message;
+          } catch (e) {}
+          if (typeof showToast === 'function') showToast(msg, 'error');
+          else if (window.toastr) toastr.error(msg);
+        }
+      });
+    });
+
     if (urlParams.has('print')) {
       setTimeout(function () { window.print(); }, 400);
     }

@@ -42,15 +42,21 @@ $photoCandidates = [
 foreach ($photoCandidates as $cand) {
     if (!empty($cand)) {
         $cleanRel = ltrim((string)$cand, '/');
-        if (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
+        if (file_exists(__DIR__ . '/../../' . $cleanRel)) {
+            $photoUrl = url($cleanRel);
+            break;
+        } elseif (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
             $photoUrl = url('public/' . $cleanRel);
             break;
-        } elseif (file_exists(__DIR__ . '/../../' . $cleanRel)) {
-            $photoUrl = url($cleanRel);
+        } elseif (strpos((string)$cand, 'http') === 0) {
+            $photoUrl = (string)$cand;
             break;
         }
     }
 }
+$hasPhoto = ($photoUrl !== '');
+$placeholderPhotoUrl = placeholderUrl('etudiant');
+$finalPhotoUrl = $hasPhoto ? $photoUrl : $placeholderPhotoUrl;
 
 // Établissement dynamique depuis table configurations (Règle 9)
 $etabNom = (string)($etablissement['nom_etablissement'] ?? '');
@@ -135,6 +141,11 @@ $canViewFinances = Auth::can(PERMISSIONS::VIEW_PAIEMENTS) || Auth::can(PERMISSIO
 $canRecordPaiement = Auth::can(PERMISSIONS::RECORD_PAIEMENTS) || Auth::can(PERMISSIONS::MANAGE_PAIEMENTS);
 $canViewAbsences = Auth::can(PERMISSIONS::VIEW_ABSENCES) || Auth::can(PERMISSIONS::MANAGE_ABSENCES);
 $canViewDossiers = Auth::can(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || Auth::can(PERMISSIONS::MANAGE_DEPOT_DOSSIERS);
+$canUploadPhoto = $hasInscr && (
+    $hasPhoto
+        ? Auth::can(PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION)
+        : (Auth::can(PERMISSIONS::MANAGE_INSCRIPTIONS_SANS_PHOTO) || Auth::can(PERMISSIONS::MANAGE_INSCRIPTIONS))
+);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
@@ -145,15 +156,9 @@ $canViewDossiers = Auth::can(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || Auth::can(PERM
       <!-- EN-TÊTE DE PAGE -->
       <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-          <?php if ($photoUrl !== ''): ?>
-            <div style="width: 54px; height: 54px; border-radius: 14px; border: 2px solid #CBD5E1; overflow: hidden; background: #F8FAFC; flex-shrink: 0;">
-              <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-          <?php else: ?>
-            <div style="width: 54px; height: 54px; border-radius: 14px; background: <?= $isF ? '#FCE7F3' : '#EFF6FF' ?>; color: <?= $isF ? '#BE185D' : '#1E3A5F' ?>; border: 2px solid <?= $isF ? '#FBCFE8' : '#BFDBFE' ?>; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0;">
-              <?= htmlspecialchars($initials) ?>
-            </div>
-          <?php endif; ?>
+          <div style="width: 60px; height: 68px; border-radius: 12px; border: 2px solid #CBD5E1; overflow: hidden; background: #F8FAFC; flex-shrink: 0; box-shadow: 0 2px 6px rgba(15,23,42,0.08);">
+            <img class="etu-photo-live-img" src="<?= htmlspecialchars($finalPhotoUrl) ?>" alt="Photo <?= htmlspecialchars($nomComplet) ?>" onerror="this.onerror=null; this.src='<?= htmlspecialchars($placeholderPhotoUrl) ?>';" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+          </div>
 
           <div>
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -347,10 +352,28 @@ $canViewDossiers = Auth::can(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || Auth::can(PERM
         <!-- État Civil & Coordonnées -->
         <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 22px; width: 100%; box-sizing: border-box;">
           <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
-            <i data-lucide="user" style="width: 18px; height: 18px; color: #1E3A5F;"></i> État Civil, Identification &amp; Coordonnées
+            <i data-lucide="user" style="width: 18px; height: 18px; color: #1E3A5F;"></i> État Civil, Photo d'Identité &amp; Coordonnées
           </h3>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; font-size: 13px;">
+          <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;">
+            <!-- Portrait Photo Étudiant -->
+            <div style="width: 156px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 12px;">
+              <div style="width: 120px; height: 144px; border-radius: 10px; border: 2px solid #CBD5E1; overflow: hidden; background: #FFFFFF; box-shadow: 0 3px 10px rgba(15,23,42,0.08);">
+                <img class="etu-photo-live-img" src="<?= htmlspecialchars($finalPhotoUrl) ?>" alt="Photo d'identité <?= htmlspecialchars($nomComplet) ?>" onerror="this.onerror=null; this.src='<?= htmlspecialchars($placeholderPhotoUrl) ?>';" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+              </div>
+              <span id="badge-etu-photo-status" style="margin-top: 10px; background: <?= $hasPhoto ? '#DCFCE7' : '#FEF3C7' ?>; color: <?= $hasPhoto ? '#15803D' : '#B45309' ?>; border: 1px solid <?= $hasPhoto ? '#86EFAC' : '#FCD34D' ?>; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 700;">
+                <?= $hasPhoto ? 'Photo enregistrée' : 'Photo manquante' ?>
+              </span>
+              <?php if ($canUploadPhoto): ?>
+                <input type="file" id="input-etu-detail-photo" accept="image/png,image/jpeg,image/webp" style="display: none;">
+                <button type="button" id="btn-upload-etu-detail-photo" style="margin-top: 8px; width: 100%; background: #1E3A5F; color: #FFFFFF; border: none; border-radius: 7px; padding: 6px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px;">
+                  <i data-lucide="camera" style="width: 13px; height: 13px;"></i>
+                  <?= $hasPhoto ? 'Changer photo' : 'Ajouter photo' ?>
+                </button>
+              <?php endif; ?>
+            </div>
+
+            <div style="flex: 1; min-width: 260px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; font-size: 13px;">
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 9px; padding: 12px 14px;">
               <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Code &amp; Matricule</div>
               <div style="font-weight: 800; color: #1E3A5F; font-family: monospace; margin-top: 4px;"><?= htmlspecialchars($matricule !== '' ? $matricule : '-') ?></div>
@@ -410,6 +433,7 @@ $canViewDossiers = Auth::can(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || Auth::can(PERM
               <?php endif; ?>
             </div>
             <?php endif; ?>
+            </div>
           </div>
         </div>
 
@@ -917,11 +941,7 @@ $canViewDossiers = Auth::can(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || Auth::can(PERM
 
               <div style="display: flex; gap: 14px; align-items: center; margin-top: 6px;">
                 <div style="width: 78px; height: 96px; border-radius: 8px; border: 2px solid #F59E0B; background: #0F172A; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; flex-shrink: 0;">
-                  <?php if ($photoUrl !== ''): ?>
-                    <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
-                  <?php else: ?>
-                    <span style="font-size: 24px; font-weight: 900; color: #FDE68A;"><?= htmlspecialchars($initials) ?></span>
-                  <?php endif; ?>
+                  <img class="etu-photo-live-img" src="<?= htmlspecialchars($finalPhotoUrl) ?>" alt="Photo Étudiant" onerror="this.onerror=null; this.src='<?= htmlspecialchars($placeholderPhotoUrl) ?>';" style="width: 100%; height: 100%; object-fit: cover;">
                   <span style="position: absolute; bottom: 0; left: 0; right: 0; background: #D97706; font-size: 7px; font-weight: 800; text-align: center; color: #FFF; padding: 1px 0; text-transform: uppercase;">ÉTUDIANT</span>
                 </div>
 
@@ -1025,9 +1045,12 @@ $canViewDossiers = Auth::can(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || Auth::can(PERM
 
 <script type="application/json" id="etudiants-details-config">
 <?= json_encode([
-    'racine'     => RACINE,
-    'nomComplet' => $nomComplet,
-    'matricule'  => $matricule !== '' ? $matricule : $codeEtudiant
+    'racine'          => RACINE,
+    'nomComplet'      => $nomComplet,
+    'matricule'       => $matricule !== '' ? $matricule : $codeEtudiant,
+    'inscriptionId'   => (int)($inscription['id_inscription'] ?? 0),
+    'codeInscription' => (string)($inscription['code_inscription'] ?? ''),
+    'csrfToken'       => Validator::generateCsrfToken()
 ]) ?>
 </script>
 <?php
