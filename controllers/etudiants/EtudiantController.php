@@ -358,22 +358,80 @@ class EtudiantController extends BaseController
                 return;
             }
 
-            $etudiantCode = $item['code_etudiant'];
+            $etudiantCode = (string)$item['code_etudiant'];
             $fullDetails = $this->model->getStudentFullDetails($etudiantCode);
-            $encryptedId = $this->validator->crypter($id);
+            $encryptedId = $this->validator->crypter((int)$item['id_etudiant']);
+
+            $inscription = $fullDetails['inscription'] ?? [];
+            $encryptedInscriptionId = !empty($inscription['id_inscription'])
+                ? $this->validator->crypter((int)$inscription['id_inscription'])
+                : '';
+            $encryptedClasseId = !empty($inscription['id_classe'])
+                ? $this->validator->crypter((int)$inscription['id_classe'])
+                : '';
+            $encryptedAnneeId = !empty($inscription['id_annee'])
+                ? $this->validator->crypter((int)$inscription['id_annee'])
+                : '';
+
+            $inscriptionsHistory = $fullDetails['inscriptionsHistory'] ?? [];
+            foreach ($inscriptionsHistory as &$ih) {
+                $ih['encrypted_inscription_id'] = !empty($ih['id_inscription'])
+                    ? $this->validator->crypter((int)$ih['id_inscription'])
+                    : '';
+                $ih['encrypted_classe_id'] = !empty($ih['id_classe'])
+                    ? $this->validator->crypter((int)$ih['id_classe'])
+                    : '';
+                $ih['encrypted_annee_id'] = !empty($ih['id_annee'])
+                    ? $this->validator->crypter((int)$ih['id_annee'])
+                    : '';
+            }
+            unset($ih);
+
+            $paiementsScolarite = $fullDetails['paiementsScolarite'] ?? [];
+            foreach ($paiementsScolarite as &$ps) {
+                $ps['encrypted_paiement_id'] = !empty($ps['id_paiement'])
+                    ? $this->validator->crypter((int)$ps['id_paiement'])
+                    : '';
+            }
+            unset($ps);
+
+            $paiementsAnnexes = $fullDetails['paiementsAnnexes'] ?? [];
+            foreach ($paiementsAnnexes as &$pa) {
+                $pa['encrypted_paiement_id'] = !empty($pa['id_paiement'])
+                    ? $this->validator->crypter((int)$pa['id_paiement'])
+                    : '';
+            }
+            unset($pa);
+
+            $absences = $fullDetails['absences'] ?? [];
+            foreach ($absences as &$ab) {
+                $ab['encrypted_absence_id'] = !empty($ab['id_absence'])
+                    ? $this->validator->crypter((int)$ab['id_absence'])
+                    : '';
+            }
+            unset($ab);
+
+            $etablissementConfig = $this->getEtablissementConfig();
 
             $this->loadView('../views/etudiants/details.php', [
-                'item' => $item, 
-                'parent' => $fullDetails['parent'],
-                'inscription' => $fullDetails['inscription'],
-                'etablissement' => $fullDetails['etablissement'],
-                'dossierPieces' => $fullDetails['dossierPieces'],
-                'paiements' => $fullDetails['paiements'],
-                'totalPaye' => $fullDetails['totalPaye'],
-                'soldeRestant' => $fullDetails['soldeRestant'],
-                'scolariteTotale' => $fullDetails['scolariteTotale'],
-                'absences' => $fullDetails['absences'],
-                'encryptedId' => $encryptedId
+                'item'                   => $item,
+                'parent'                 => $fullDetails['parent'] ?? [],
+                'inscription'            => $inscription,
+                'inscriptionsHistory'    => $inscriptionsHistory,
+                'etablissement'          => $etablissementConfig,
+                'dossierPieces'          => $fullDetails['dossierPieces'] ?? [],
+                'paiements'              => $paiementsScolarite,
+                'paiementsScolarite'     => $paiementsScolarite,
+                'paiementsAnnexes'       => $paiementsAnnexes,
+                'totalPaye'              => $fullDetails['totalPaye'] ?? 0,
+                'totalFraisAnnexesPaye'  => $fullDetails['totalFraisAnnexesPaye'] ?? 0,
+                'soldeRestant'           => $fullDetails['soldeRestant'] ?? 0,
+                'scolariteTotale'        => $fullDetails['scolariteTotale'] ?? 0,
+                'absences'               => $absences,
+                'encryptedId'            => $encryptedId,
+                'encryptedInscriptionId' => $encryptedInscriptionId,
+                'encryptedClasseId'      => $encryptedClasseId,
+                'encryptedAnneeId'       => $encryptedAnneeId
             ]);
         } catch (Exception $e) {
             error_log("EtudiantController::details error: " . $e->getMessage());

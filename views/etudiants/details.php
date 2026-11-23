@@ -1,480 +1,1036 @@
 <?php
 require_once __DIR__ . '/../../public/inc/header.php';
-$parent = isset($parent) ? $parent : [];
-$inscription = isset($inscription) ? $inscription : [];
-$etablissement = isset($etablissement) ? $etablissement : [];
-$absences = isset($absences) ? $absences : [];
-$scolariteTotale = $scolariteTotale ?? 0;
-$soldeRestant = $soldeRestant ?? 0;
-$tauxPaiement = ($scolariteTotale > 0) ? min(100, round(($totalPaye / $scolariteTotale) * 100)) : 100;
+
+$parent = $parent ?? [];
+$inscription = $inscription ?? [];
+$inscriptionsHistory = $inscriptionsHistory ?? [];
+$etablissement = $etablissement ?? [];
+$dossierPieces = $dossierPieces ?? [];
+$paiementsScolarite = $paiementsScolarite ?? ($paiements ?? []);
+$paiementsAnnexes = $paiementsAnnexes ?? [];
+$absences = $absences ?? [];
+
+$scolariteTotale = (float)($scolariteTotale ?? 0);
+$totalPaye = (float)($totalPaye ?? 0);
+$soldeRestant = (float)($soldeRestant ?? 0);
+$totalFraisAnnexesPaye = (float)($totalFraisAnnexesPaye ?? 0);
+$tauxPaiement = ($scolariteTotale > 0) ? min(100, (int)round(($totalPaye / $scolariteTotale) * 100)) : 0;
+
+$encryptedId = (string)($encryptedId ?? '');
+$encryptedInscriptionId = (string)($encryptedInscriptionId ?? '');
+$encryptedClasseId = (string)($encryptedClasseId ?? '');
+$encryptedAnneeId = (string)($encryptedAnneeId ?? '');
 
 $nomComplet = trim(($item['nom_etudiant'] ?? '') . ' ' . ($item['prenom_etudiant'] ?? ''));
-$matricule = $item['matricule_etudiant'] ?? '-';
-$classeLibelle = $inscription['libelle_classe'] ?? 'Non inscrit';
-$anneeLibelle = $inscription['libelle_annee'] ?? date('Y') . '-' . (date('Y') + 1);
-$etabNom = $etablissement['libelle_etablissement'] ?? 'GROUPE ECOLE INTERNATIONALE';
-$etabTel = $etablissement['telephone_etablissement'] ?? '+225 01 02 03 04 05';
-$etabEmail = $etablissement['email_etablissement'] ?? 'contact@geicg.ci';
-$etabAdresse = $etablissement['adresse_etablissement'] ?? 'Abidjan, Côte d\'Ivoire';
-$encryptedId = $encryptedId ?? (!empty($item['id_etudiant']) ? (new Validator())->crypter($item['id_etudiant']) : '');
+$codeEtudiant = (string)($item['code_etudiant'] ?? '');
+$matricule = (string)($item['matricule_etudiant'] ?? '');
+$isActif = (strtolower(trim((string)($item['statut_etudiant'] ?? ''))) === STATUTS::ACTIF);
+
+// Initiales et photo (priorité à photo_inscription puis photo_etudiant)
+$parts = preg_split('/\s+/', $nomComplet) ?: [];
+$initials = '';
+foreach (array_slice($parts, 0, 2) as $pt) {
+    if ($pt !== '') $initials .= mb_strtoupper(mb_substr($pt, 0, 1, 'UTF-8'), 'UTF-8');
+}
+if ($initials === '') $initials = 'ET';
+
+$photoUrl = '';
+$photoCandidates = [
+    $inscription['photo_inscription'] ?? '',
+    $item['photo_etudiant'] ?? '',
+];
+foreach ($photoCandidates as $cand) {
+    if (!empty($cand)) {
+        $cleanRel = ltrim((string)$cand, '/');
+        if (file_exists(__DIR__ . '/../../public/' . $cleanRel)) {
+            $photoUrl = url('public/' . $cleanRel);
+            break;
+        } elseif (file_exists(__DIR__ . '/../../' . $cleanRel)) {
+            $photoUrl = url($cleanRel);
+            break;
+        }
+    }
+}
+
+// Établissement dynamique depuis table configurations (Règle 9)
+$etabNom = (string)($etablissement['nom_etablissement'] ?? '');
+$etabSigle = (string)($etablissement['sigle_etablissement'] ?? '');
+$etabPays = (string)($etablissement['pays_etablissement'] ?? '');
+$etabAdresse = trim((string)($etablissement['adresse_etablissement'] ?? '') . (!empty($etablissement['ville_etablissement']) ? ', ' . $etablissement['ville_etablissement'] : ''));
+$etabContacts = (string)($etablissement['contacts_formatted'] ?? trim(($etablissement['telephone_fixe'] ?? '') . (!empty($etablissement['telephone_mobile']) ? ' / ' . $etablissement['telephone_mobile'] : '')));
+$etabTitreDG = (string)($etablissement['titre_direction_generale'] ?? '');
+$etabNomDG = (string)($etablissement['nom_directeur_general'] ?? '');
+$etabLogoUrl = '';
+if (!empty($etablissement['logo_etablissement'])) {
+    $cleanLogo = ltrim((string)$etablissement['logo_etablissement'], '/');
+    if (file_exists(__DIR__ . '/../../' . $cleanLogo)) {
+        $etabLogoUrl = url($cleanLogo);
+    } elseif (file_exists(__DIR__ . '/../../public/' . $cleanLogo)) {
+        $etabLogoUrl = url('public/' . $cleanLogo);
+    }
+}
+
+// Sexe & état civil (zéro fallback arbitraire)
+$sexeRaw = strtoupper(trim((string)($item['sexe_etudiant'] ?? '')));
+$sexeLibelle = $sexeRaw !== ''
+    ? (($sexeRaw === 'M' || $sexeRaw === 'MASCULIN' || $sexeRaw === 'HOMME') ? 'Masculin' : (($sexeRaw === 'F' || $sexeRaw === 'FEMININ' || $sexeRaw === 'FEMME') ? 'Féminin' : $sexeRaw))
+    : 'Non précisé';
+$isF = ($sexeRaw !== '' && strpos($sexeRaw, 'F') !== false);
+
+$dobRaw = (string)($item['date_naissance_etudiant'] ?? '');
+$dobFormatted = ($dobRaw !== '' && $dobRaw !== '0000-00-00') ? date('d/m/Y', strtotime($dobRaw)) : 'Non renseignée';
+
+// Inscription active
+$classeLibelle = (string)($inscription['libelle_classe'] ?? '');
+$filiereLibelle = (string)($inscription['libelle_filiere'] ?? '');
+$niveauLibelle = (string)($inscription['libelle_niveau'] ?? '');
+$cycleLibelle = (string)($inscription['libelle_cycle'] ?? '');
+$anneeLibelle = (string)($inscription['libelle_annee'] ?? '');
+$dateFinAnnee = !empty($inscription['date_fin_annee']) && $inscription['date_fin_annee'] !== '0000-00-00'
+    ? date('d/m/Y', strtotime($inscription['date_fin_annee']))
+    : '';
+$affRaw = strtolower(trim((string)($inscription['affectation_etat'] ?? '')));
+$hasInscr = !empty($inscription['code_inscription']);
+$isAffecte = ($affRaw === 'oui' || $affRaw === 'affecte');
+$statutInscr = strtolower(trim((string)($inscription['statut_inscription'] ?? '')));
+
+// Dossier administratif
+$totalPieces = count($dossierPieces);
+$deposedCount = 0;
+foreach ($dossierPieces as $dp) {
+    if (($dp['statut_depot'] ?? '') === 'depose') $deposedCount++;
+}
+$tauxDossier = ($totalPieces > 0) ? (int)round(($deposedCount / $totalPieces) * 100) : 0;
+$isDossierComplet = ($totalPieces > 0 && $deposedCount === $totalPieces);
+
+// Absences
+$totalAbsCount = count($absences);
+$totalAbsHeures = 0.0;
+$totalAbsJust = 0.0;
+$totalAbsInjust = 0.0;
+foreach ($absences as $ab) {
+    $dur = (float)($ab['duree_heures'] ?? 0);
+    $totalAbsHeures += $dur;
+    if (strtolower((string)($ab['justifiee'] ?? 'non')) === 'oui') {
+        $totalAbsJust += $dur;
+    } else {
+        $totalAbsInjust += $dur;
+    }
+}
+
+$fmtHeures = static function ($h): string {
+    $val = (float)$h;
+    return (fmod($val, 1.0) === 0.0) ? ((int)$val . ' h') : (number_format($val, 1, ',', ' ') . ' h');
+};
+$fmtMoney = static function ($m): string {
+    return number_format((float)$m, 0, ',', ' ') . ' FCFA';
+};
+
+// Permissions RBAC
+$canEditEtudiant = Auth::can(PERMISSIONS::EDIT_ETUDIANT) || Auth::can(PERMISSIONS::MANAGE_ETUDIANTS);
+$canChangerClasse = Auth::can(PERMISSIONS::CHANGER_CLASSE_ETUDIANT) || Auth::can(PERMISSIONS::MANAGE_ETUDIANTS);
+$canViewClasses = Auth::can(PERMISSIONS::VIEW_CLASSES);
+$canViewAnnees = Auth::can(PERMISSIONS::VIEW_ANNEES);
+$canViewFinances = Auth::can(PERMISSIONS::VIEW_PAIEMENTS) || Auth::can(PERMISSIONS::VIEW_COMPTABILITE_ETUDIANTS) || Auth::can(PERMISSIONS::MANAGE_PAIEMENTS);
+$canRecordPaiement = Auth::can(PERMISSIONS::RECORD_PAIEMENTS) || Auth::can(PERMISSIONS::MANAGE_PAIEMENTS);
+$canViewAbsences = Auth::can(PERMISSIONS::VIEW_ABSENCES) || Auth::can(PERMISSIONS::MANAGE_ABSENCES);
+$canViewDossiers = Auth::can(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || Auth::can(PERMISSIONS::MANAGE_DEPOT_DOSSIERS);
 ?>
 <div class="app-layout">
   <?php require_once __DIR__ . '/../../public/inc/sidbar.php'; ?>
   <main class="main-content">
     <?php require_once __DIR__ . '/../../public/inc/nav.php'; ?>
-    <div class="content-wrapper" style="padding: 24px; width: 100%; box-sizing: border-box;">
-      
-      <!-- En-tête de page -->
-      <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
-        <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i data-lucide="folder-check" style="width: 24px; height: 24px; color: #1E3A5F;"></i> Dossier Étudiant : <?= htmlspecialchars($nomComplet) ?>
-          </h1>
-          <p style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Matricule : <strong><?= htmlspecialchars($matricule) ?></strong> &bull; Classe : <strong><?= htmlspecialchars($classeLibelle) ?></strong> &bull; Année : <strong><?= htmlspecialchars($anneeLibelle) ?></strong></p>
-        </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <a href="<?= url('etudiant/list') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
-            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Retour
-          </a>
-          <button type="button" onclick="imprimerCarteScolaire()" class="btn btn-warning" style="background: #D97706; border-color: #D97706; color: #FFF; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
-            <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Imprimer Carte Scolaire
-          </button>
-          <?php if (!isset($canAccess) || (is_callable($canAccess) && $canAccess([PERMISSIONS::EDIT_ETUDIANT, PERMISSIONS::MANAGE_ETUDIANTS]))): ?>
-          <a href="<?= url('etudiant/edition/' . $encryptedId) ?>" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 8px; padding: 9px 16px;">
-            <i data-lucide="edit" style="width: 16px; height: 16px;"></i> Modifier le dossier
-          </a>
-          <?php endif; ?>
-        </div>
-      </div>
+    <div class="content-wrapper" style="padding: 24px; width: 100%; max-width: 100%; box-sizing: border-box;">
 
-      <!-- ========================================================================= -->
-      <!-- SECTION NOUVELLE : CARTE SCOLAIRE  & BADGE ÉTUDIANT (RECTO / VERSO) -->
-      <!-- ========================================================================= -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #EFF6FF; padding-bottom: 12px;">
-          <div>
-            <h3 style="font-size: 16px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="id-card" style="width: 20px; height: 20px; color: #D97706;"></i> Carte d'Identité Scolaire & Badge Étudiant
-            </h3>
-            <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Format PVC Standard (CR-80) - Prête à l'impression et à l'encodage</p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" onclick="imprimerCarteScolaire()" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px;">
-              <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Lancer l'impression badge
-            </button>
-          </div>
-        </div>
-
-        <!-- ZONE D'AFFICHAGE DU BADGE (RECTO ET VERSO CÔTE À CÔTE) -->
-        <div id="section-carte-scolaire" style="display: flex; justify-content: center; align-items: center; gap: 28px; flex-wrap: wrap; padding: 10px 0;">
-          
-          <!-- ===== 1. RECTO DU BADGE (FACE AVANT) ===== -->
-          <div class="badge-card-container badge-recto" style="width: 390px; height: 245px; border-radius: 14px; background: #1E3A5F; color: #FFFFFF; position: relative; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35); overflow: hidden; padding: 14px 18px; box-sizing: border-box; border: 1px solid #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            
-            <!-- Bande d'accentuation supérieure unie -->
-            <div style="position: absolute; left: 0; top: 0; right: 0; height: 5px; background: #D97706;"></div>
-
-            <!-- En-tête Badge -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 28px; height: 28px; border-radius: 6px; background: #D97706; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: #FFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                  G
-                </div>
-                <div>
-                  <div style="font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #FDE68A; line-height: 1.1;">
-                    <?= htmlspecialchars(strtoupper($etabNom)) ?>
-                  </div>
-                  <div style="font-size: 8px; color: #CBD5E1; letter-spacing: 0.5px;">RÉPUBLIQUE DE CÔTE D'IVOIRE</div>
-                </div>
-              </div>
-              <div style="text-align: right;">
-                <span style="background: #D97706; border: 1px solid #F59E0B; color: #FFFFFF; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
-                  <?= htmlspecialchars($anneeLibelle) ?>
-                </span>
-              </div>
+      <!-- EN-TÊTE DE PAGE -->
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <?php if ($photoUrl !== ''): ?>
+            <div style="width: 54px; height: 54px; border-radius: 14px; border: 2px solid #CBD5E1; overflow: hidden; background: #F8FAFC; flex-shrink: 0;">
+              <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
+          <?php else: ?>
+            <div style="width: 54px; height: 54px; border-radius: 14px; background: <?= $isF ? '#FCE7F3' : '#EFF6FF' ?>; color: <?= $isF ? '#BE185D' : '#1E3A5F' ?>; border: 2px solid <?= $isF ? '#FBCFE8' : '#BFDBFE' ?>; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0;">
+              <?= htmlspecialchars($initials) ?>
+            </div>
+          <?php endif; ?>
 
-            <!-- Corps du Badge -->
-            <div style="display: flex; gap: 14px; align-items: center; margin-top: 6px;">
-              
-              <!-- Photo / Avatar Étudiant avec cadre sécurité -->
-              <div style="width: 78px; height: 96px; border-radius: 8px; border: 2px solid #F59E0B; background: #0F172A; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0;">
-                <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-                  <img src="<?= url($item['photo_etudiant']) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">
+                <?= htmlspecialchars($nomComplet ?: '-') ?>
+              </h1>
+              <?php if ($matricule !== ''): ?>
+                <code style="font-size: 12px; font-weight: 800; color: #1E3A5F; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 3px 9px; border-radius: 6px;"><?= htmlspecialchars($matricule) ?></code>
+              <?php endif; ?>
+              <?php if ($hasInscr): ?>
+                <span style="background: <?= $isAffecte ? '#DCFCE7' : '#E0F2FE' ?>; color: <?= $isAffecte ? '#15803D' : '#0369A1' ?>; border: 1px solid <?= $isAffecte ? '#86EFAC' : '#BAE6FD' ?>; padding: 3px 10px; border-radius: 20px; font-weight: 800; font-size: 11.5px;">
+                  <?= $isAffecte ? 'Affecté(e)' : 'Non Affecté(e)' ?>
+                </span>
+              <?php endif; ?>
+              <?php if ($isActif): ?>
+                <span style="display: inline-flex; align-items: center; gap: 4px; background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; padding: 3px 10px; border-radius: 20px; font-weight: 800; font-size: 11.5px;">
+                  <i data-lucide="check-circle-2" style="width: 13px; height: 13px;"></i> Actif
+                </span>
+              <?php else: ?>
+                <span style="display: inline-flex; align-items: center; gap: 4px; background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; padding: 3px 10px; border-radius: 20px; font-weight: 800; font-size: 11.5px;">
+                  <i data-lucide="x-circle" style="width: 13px; height: 13px;"></i> Inactif
+                </span>
+              <?php endif; ?>
+            </div>
+            <p style="color: #64748B; font-size: 13px; margin: 6px 0 0 0;">
+              Classe :
+              <?php if ($classeLibelle !== '' && $canViewClasses && $encryptedClasseId !== ''): ?>
+                <a href="<?= url('classe/details/' . $encryptedClasseId) ?>" style="color: #1E3A5F; font-weight: 800; text-decoration: none;"><?= htmlspecialchars($classeLibelle) ?></a>
+              <?php else: ?>
+                <strong style="color: #0F172A;"><?= htmlspecialchars($classeLibelle !== '' ? $classeLibelle : 'Non inscrit') ?></strong>
+              <?php endif; ?>
+              <?php if ($filiereLibelle !== ''): ?>
+                &bull; <strong style="color: #334155;"><?= htmlspecialchars($filiereLibelle) ?></strong>
+              <?php endif; ?>
+              <?php if ($anneeLibelle !== ''): ?>
+                &bull; Session :
+                <?php if ($canViewAnnees && $encryptedAnneeId !== ''): ?>
+                  <a href="<?= url('annee/details/' . $encryptedAnneeId) ?>" style="color: #1E3A5F; font-weight: 800; text-decoration: none;"><?= htmlspecialchars($anneeLibelle) ?></a>
                 <?php else: ?>
-                  <span style="font-size: 24px; font-weight: 900; color: #FDE68A;">
-                    <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
-                  </span>
+                  <strong style="color: #1E3A5F;"><?= htmlspecialchars($anneeLibelle) ?></strong>
                 <?php endif; ?>
-                <span style="position: absolute; bottom: 0; left: 0; right: 0; background: #D97706; font-size: 7px; font-weight: 800; text-align: center; color: #FFF; padding: 1px 0; text-transform: uppercase; letter-spacing: 0.5px;">
-                  ÉTUDIANT
-                </span>
-              </div>
-
-              <!-- Informations de l'Étudiant -->
-              <div style="flex: 1; min-width: 0;">
-                <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase; letter-spacing: 0.5px;">NOM & PRÉNOMS</div>
-                <div style="font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
-                  <?= htmlspecialchars($nomComplet) ?>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;">
-                  <div>
-                    <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">MATRICULE</div>
-                    <div style="font-size: 10px; font-weight: 800; color: #FDE68A; font-family: monospace; letter-spacing: 0.5px;">
-                      <?= htmlspecialchars($matricule) ?>
-                    </div>
-                  </div>
-                  <div>
-                    <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">SEXE</div>
-                    <div style="font-size: 10px; font-weight: 700; color: #FFF;">
-                      <?= htmlspecialchars($item['sexe_etudiant'] ?? 'M') ?>
-                    </div>
-                  </div>
-                </div>
-
-                <div style="margin-top: 6px;">
-                  <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">CLASSE & FILIÈRE</div>
-                  <div style="font-size: 10px; font-weight: 800; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    <?= htmlspecialchars($classeLibelle) ?>
-                  </div>
-                </div>
-              </div>
-
-              <!-- QR Code de vérification numérique -->
-              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; background: #FFFFFF; padding: 4px; border-radius: 6px; border: 1px solid #CBD5E1;">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=<?= urlencode('MAT:' . $matricule . '|NOM:' . $nomComplet . '|CLASSE:' . $classeLibelle . '|ANNEE:' . $anneeLibelle) ?>" alt="QR Code" style="width: 54px; height: 54px; display: block;">
-                <span style="font-size: 6px; font-weight: 800; color: #0F172A; margin-top: 2px;">SCAN VALIDE</span>
-              </div>
-
-            </div>
-
-            <!-- Pied du Recto -->
-            <div style="position: absolute; bottom: 8px; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 4px; font-size: 7px; color: #94A3B8;">
-              <span>CARTE D'IDENTITÉ SCOLAIRE</span>
-              <span style="color: #FDE68A; font-weight: 700;">VALABLE JUSQU'AU 31/08/2026</span>
-            </div>
-
-          </div>
-
-          <!-- ===== 2. VERSO DU BADGE (FACE ARRIÈRE) ===== -->
-          <div class="badge-card-container badge-verso" style="width: 390px; height: 245px; border-radius: 14px; background: #FFFFFF; color: #1E293B; position: relative; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25); overflow: hidden; padding: 14px 18px; box-sizing: border-box; border: 1px solid #CBD5E1; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            
-            <div style="position: absolute; left: 0; top: 0; right: 0; height: 5px; background: #1E3A5F;"></div>
-
-            <!-- Conditions & Règlement -->
-            <div style="font-size: 8px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">
-              CONDITIONS D'UTILISATION
-            </div>
-            <p style="font-size: 7.5px; line-height: 1.35; color: #475569; margin: 0 0 8px 0;">
-              1. Cette carte est strictement personnelle et engage la responsabilité de son titulaire.<br>
-              2. Elle doit être obligatoirement présentée à toute réquisition et lors des contrôles/examens.<br>
-              3. En cas de perte ou de vol, aviser immédiatement le secrétariat de l'établissement.
+              <?php endif; ?>
             </p>
-
-            <!-- Contacts d'urgence -->
-            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px;">
-              <div style="font-size: 7.5px; font-weight: 800; color: #0F172A;">CONTACTS EN CAS D'URGENCE :</div>
-              <div style="font-size: 7.5px; color: #334155;">
-                Tuteur : <strong><?= htmlspecialchars($parent['nom_tuteur'] ?? ($parent['nom_pere'] ?? 'Administration Scolaire')) ?></strong> - Tél : <strong><?= htmlspecialchars($parent['telephone_tuteur'] ?? ($parent['telephone_pere'] ?? $item['telephone_etudiant'] ?? '-')) ?></strong>
-              </div>
-            </div>
-
-            <!-- Signatures et Cachet -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px;">
-              <div style="text-align: center; width: 110px;">
-                <div style="font-size: 7px; color: #64748B; text-transform: uppercase; margin-bottom: 18px;">Signature du Titulaire</div>
-                <div style="border-bottom: 1px dashed #94A3B8; width: 100%;"></div>
-              </div>
-
-              <!-- Code-barre décoratif -->
-              <div style="text-align: center;">
-                <div style="font-family: monospace; font-size: 16px; letter-spacing: 2px; color: #0F172A; font-weight: 900;">|||| | ||||| || ||||</div>
-                <div style="font-size: 7px; font-family: monospace; color: #64748B;"><?= htmlspecialchars($matricule) ?></div>
-              </div>
-
-              <div style="text-align: center; width: 110px;">
-                <div style="font-size: 7px; color: #1E3A5F; font-weight: 700; text-transform: uppercase; margin-bottom: 18px;">Le Directeur Général</div>
-                <div style="border-bottom: 1px dashed #94A3B8; width: 100%;"></div>
-              </div>
-            </div>
-
-            <!-- Footer Verso -->
-            <div style="position: absolute; bottom: 6px; left: 18px; right: 18px; border-top: 1px solid #E2E8F0; padding-top: 3px; font-size: 6.5px; color: #64748B; text-align: center;">
-              <?= htmlspecialchars($etabNom) ?> &bull; <?= htmlspecialchars($etabAdresse) ?> &bull; Tél : <?= htmlspecialchars($etabTel) ?>
-            </div>
-
           </div>
-
         </div>
 
-      </div>
-
-      <!-- CARD 1 (COL-12) : ÉTAT CIVIL & INSCRIPTION ACTIVE -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
-        <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 10px;">
-          <i data-lucide="user" style="width: 18px; height: 18px;"></i> Identité & Parcours Pédagogique
-        </h3>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-          
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <div style="width: 64px; height: 76px; min-width: 64px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); flex-shrink: 0;">
-              <?php if (!empty($item['photo_etudiant']) && file_exists(__DIR__ . '/../../public/' . $item['photo_etudiant'])): ?>
-                <img src="<?= url($item['photo_etudiant']) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
-              <?php else: ?>
-                <span style="font-size: 18px; font-weight: 900; color: #1E3A5F;">
-                  <?= strtoupper(substr($item['nom_etudiant'] ?? 'E', 0, 1) . substr($item['prenom_etudiant'] ?? 'T', 0, 1)) ?>
-                </span>
-                <span style="font-size: 7.5px; font-weight: 800; color: #64748B; text-transform: uppercase; margin-top: 2px;">PHOTO</span>
-              <?php endif; ?>
-            </div>
-            <div>
-              <h2 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0;">
-                <?= htmlspecialchars($nomComplet) ?>
-              </h2>
-              <span style="font-size: 12px; color: #64748B;">Sexe : <strong><?= htmlspecialchars($item['sexe_etudiant'] ?? 'M') ?></strong> &bull; Nat. : <strong><?= htmlspecialchars($item['nationalite_etudiant'] ?? 'Ivoirienne') ?></strong></span>
-            </div>
-          </div>
-
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Coordonnées de Contact</span>
-            <div style="font-size: 13px; font-weight: 700; color: #0F172A;"><?= htmlspecialchars($item['telephone_etudiant'] ?? '-') ?></div>
-            <div style="font-size: 12px; color: #1E3A5F;"><?= htmlspecialchars($item['email_etudiant'] ?? 'Aucun email') ?></div>
-          </div>
-
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Classe Actuelle</span>
-            <div style="font-size: 16px; font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($classeLibelle) ?></div>
-            <div style="font-size: 12px; color: #64748B;"><?= htmlspecialchars(($inscription['libelle_filiere'] ?? '-') . ' / ' . ($inscription['libelle_niveau'] ?? '-')) ?></div>
-          </div>
-
-          <div>
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Statut Dossier</span>
-            <div style="margin-top: 4px;">
-              <?php if (($item['statut_etudiant'] ?? '') === STATUTS::ACTIF): ?>
-                <span class="badge" style="background:#DCFCE7; color:#15803D; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Actif / Régulier</span>
-              <?php else: ?>
-                <span class="badge" style="background:#FEE2E2; color:#B91C1C; padding:5px 12px; border-radius:10px; font-weight:700; font-size:12px;">Inactif</span>
-              <?php endif; ?>
-            </div>
-          </div>
-
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding-top: 16px; border-top: 1px solid #F1F5F9; font-size: 13px; margin-top: 16px;">
-          <div>
-            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Date de naissance</strong>
-            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
-              <?= (!empty($item['date_naissance_etudiant']) && $item['date_naissance_etudiant'] !== '0000-00-00') ? date('d/m/Y', strtotime($item['date_naissance_etudiant'])) : ((!empty($item['date_naissance']) && $item['date_naissance'] !== '0000-00-00') ? date('d/m/Y', strtotime($item['date_naissance'])) : 'Non renseignée') ?>
-            </span>
-          </div>
-          <div>
-            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Lieu de naissance</strong>
-            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
-              <?= htmlspecialchars($item['lieu_naissance_etudiant'] ?? $item['lieu_naissance'] ?? 'Non renseigné') ?>
-            </span>
-          </div>
-          <div>
-            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Nationalité</strong>
-            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
-              <?= htmlspecialchars($item['nationalite_etudiant'] ?? $item['nationalite'] ?? 'Ivoirienne') ?>
-            </span>
-          </div>
-          <div>
-            <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Adresse de résidence</strong>
-            <span style="font-weight: 700; color: #0F172A; font-size: 13.5px;">
-              <?= htmlspecialchars($item['lieu_residence_etudiant'] ?? $item['adresse_etudiant'] ?? 'Non renseignée') ?>
-            </span>
-          </div>
-          <?php if (!empty($item['matricule_menet'])): ?>
-            <div>
-              <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Matricule MENET-FP</strong>
-              <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px; font-size: 13px;"><?= htmlspecialchars($item['matricule_menet']) ?></code>
-            </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <a href="<?= url('etudiant/list') ?>" style="background: #FFFFFF; color: #334155; border: 1.5px solid #CBD5E1; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; border-radius: 8px; padding: 9px 14px; text-decoration: none;">
+            <i data-lucide="arrow-left" style="width: 15px; height: 15px;"></i> Retour
+          </a>
+          <a href="<?= url('etudiant/imprimerFichePdf/' . $encryptedId) ?>" target="_blank" style="background: #FFFFFF; color: #334155; border: 1.5px solid #CBD5E1; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; border-radius: 8px; padding: 9px 13px; text-decoration: none;" title="Imprimer la fiche officielle de l'étudiant en PDF">
+            <i data-lucide="file-text" style="width: 15px; height: 15px;"></i> Fiche PDF
+          </a>
+          <button type="button" id="btn-print-carte-scolaire-header" style="background: #FFFBEB; color: #B45309; border: 1.5px solid #FCD34D; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; border-radius: 8px; padding: 9px 13px; cursor: pointer;" title="Imprimer la carte d'identité scolaire (Recto / Verso)">
+            <i data-lucide="id-card" style="width: 15px; height: 15px;"></i> Carte Scolaire
+          </button>
+          <?php if ($canChangerClasse): ?>
+            <a href="<?= url('etudiant/changerClassePage/' . $encryptedId) ?>" style="background: #F0F9FF; color: #0369A1; border: 1.5px solid #BAE6FD; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; border-radius: 8px; padding: 9px 13px; text-decoration: none;">
+              <i data-lucide="arrow-left-right" style="width: 15px; height: 15px;"></i> Changer Classe
+            </a>
           <?php endif; ?>
-          <?php if (!empty($item['matricule_mesrs'])): ?>
-            <div>
-              <strong style="color: #64748B; display: block; font-size: 11px; text-transform: uppercase; margin-bottom: 3px;">Matricule MESRS</strong>
-              <code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; padding: 2px 6px; border-radius: 4px; font-size: 13px;"><?= htmlspecialchars($item['matricule_mesrs']) ?></code>
-            </div>
+          <?php if ($canEditEtudiant): ?>
+            <a href="<?= url('etudiant/edition/' . $encryptedId) ?>" style="background: #1E3A5F; color: #FFFFFF; border: 1.5px solid #1E3A5F; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; border-radius: 8px; padding: 9px 15px; text-decoration: none;">
+              <i data-lucide="edit" style="width: 15px; height: 15px;"></i> Modifier
+            </a>
           <?php endif; ?>
         </div>
       </div>
 
-      <!-- CARD 2 (COL-12) : PARENTS ET TUTEURS -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
-        <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #EFF6FF; padding-bottom: 10px;">
-          <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i> Responsables Légaux & Filiation
-        </h3>
+      <!-- GRILLE DE 4 CARTES KPI -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 16px; margin-bottom: 22px;">
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Père</span>
-            <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($parent['nom_pere'] ?? 'Non renseigné') ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Tél : <?= htmlspecialchars($parent['telephone_pere'] ?? '-') ?></div>
-            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Profession : <?= htmlspecialchars($parent['profession_pere'] ?? '-') ?></div>
+        <!-- KPI 1 : Scolarité (strictement dissociée des frais annexes) -->
+        <?php if ($canViewFinances): ?>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: <?= ($scolariteTotale > 0 && $soldeRestant <= 0) ? '#F0FDF4' : '#EFF6FF' ?>; color: <?= ($scolariteTotale > 0 && $soldeRestant <= 0) ? '#15803D' : '#1D4ED8' ?>; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="wallet" style="width: 21px; height: 21px;"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px;">Scolarité (<?= $tauxPaiement ?>%)</div>
+              <div style="font-size: 19px; font-weight: 800; color: <?= ($scolariteTotale > 0 && $soldeRestant <= 0) ? '#15803D' : '#0F172A' ?>; line-height: 1.15; margin-top: 2px;">
+                <?= $scolariteTotale > 0 ? ($soldeRestant <= 0 ? 'Soldée' : htmlspecialchars($fmtMoney($soldeRestant))) : '-' ?>
+              </div>
+            </div>
           </div>
-
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Mère</span>
-            <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($parent['nom_mere'] ?? 'Non renseignée') ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Tél : <?= htmlspecialchars($parent['telephone_mere'] ?? '-') ?></div>
-            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Profession : <?= htmlspecialchars($parent['profession_mere'] ?? '-') ?></div>
-          </div>
-
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 16px;">
-            <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Tuteur Légal / Correspondant</span>
-            <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($parent['nom_tuteur'] ?? 'Non renseigné') ?></div>
-            <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Tél : <?= htmlspecialchars($parent['telephone_tuteur'] ?? '-') ?></div>
-            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Profession : <?= htmlspecialchars($parent['profession_tuteur'] ?? '-') ?></div>
+          <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #475569;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>Versé : <strong style="color: #15803D;"><?= htmlspecialchars($fmtMoney($totalPaye)) ?></strong></span>
+              <span>/ <?= htmlspecialchars($fmtMoney($scolariteTotale)) ?></span>
+            </div>
+            <div style="width: 100%; height: 5px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
+              <div style="width: <?= $tauxPaiement ?>%; height: 100%; background: <?= $soldeRestant <= 0 && $scolariteTotale > 0 ? '#16A34A' : '#2563EB' ?>; border-radius: 99px;"></div>
+            </div>
           </div>
         </div>
+        <?php endif; ?>
+
+        <!-- KPI 2 : Parcours & Classe -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="graduation-cap" style="width: 21px; height: 21px;"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px;">Inscription Active</div>
+              <div style="font-size: 19px; font-weight: 800; color: #0F172A; line-height: 1.15; margin-top: 2px;">
+                <?= htmlspecialchars($classeLibelle !== '' ? $classeLibelle : 'Non inscrit') ?>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; display: flex; justify-content: space-between; font-size: 12px; color: #475569;">
+            <span><?= htmlspecialchars($niveauLibelle !== '' ? $niveauLibelle : '-') ?></span>
+            <strong style="color: #7E22CE;"><?= count($inscriptionsHistory) ?> session<?= count($inscriptionsHistory) > 1 ? 's' : '' ?></strong>
+          </div>
+        </div>
+
+        <!-- KPI 3 : Pièces Administratives -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: <?= $isDossierComplet ? '#F0FDF4' : '#FEF3C7' ?>; color: <?= $isDossierComplet ? '#15803D' : '#B45309' ?>; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="folder-check" style="width: 21px; height: 21px;"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px;">Dossier Physique</div>
+              <div style="font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.1; margin-top: 2px;">
+                <?= $deposedCount ?> <span style="font-size: 13px; font-weight: 600; color: #64748B;">/ <?= $totalPieces ?> pièces</span>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #475569;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>Complétude :</span>
+              <strong style="color: <?= $isDossierComplet ? '#15803D' : '#B45309' ?>;"><?= $isDossierComplet ? 'Complet' : ($tauxDossier . '%') ?></strong>
+            </div>
+            <div style="width: 100%; height: 5px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
+              <div style="width: <?= $tauxDossier ?>%; height: 100%; background: <?= $isDossierComplet ? '#16A34A' : '#D97706' ?>; border-radius: 99px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 4 : Assiduité & Absences -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: <?= $totalAbsInjust > 0 ? '#FEF2F2' : '#F0FDF4' ?>; color: <?= $totalAbsInjust > 0 ? '#B91C1C' : '#15803D' ?>; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="calendar-x" style="width: 21px; height: 21px;"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px;">Assiduité &amp; Absences</div>
+              <div style="font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.1; margin-top: 2px;">
+                <?= htmlspecialchars($fmtHeures($totalAbsHeures)) ?> <span style="font-size: 12px; font-weight: 600; color: #64748B;">(<?= $totalAbsCount ?>)</span>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid #F1F5F9; padding-top: 10px; display: flex; justify-content: space-between; font-size: 12px; color: #475569;">
+            <span>Just. : <strong style="color: #15803D;"><?= htmlspecialchars($fmtHeures($totalAbsJust)) ?></strong></span>
+            <span>Injust. : <strong style="color: <?= $totalAbsInjust > 0 ? '#B91C1C' : '#15803D' ?>;"><?= htmlspecialchars($fmtHeures($totalAbsInjust)) ?></strong></span>
+          </div>
+        </div>
+
       </div>
 
-      <!-- CARD : DOSSIER DE L'ÉTUDIANT & PIÈCES PHYSIQUES FOURNIES -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
-        <?php
-          $totalPieces = count($dossierPieces ?? []);
-          $deposedCount = 0;
-          foreach (($dossierPieces ?? []) as $dp) {
-              if (($dp['statut_depot'] ?? '') === 'depose') $deposedCount++;
-          }
-          $isComplet = ($totalPieces > 0 && $deposedCount === $totalPieces);
-        ?>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
-          <div>
-            <h3 style="font-size: 15px; font-weight: 800; color: #1E3A5F; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="folder-check" style="width: 18px; height: 18px; color: #15803D;"></i> Dossier Étudiant & Pièces Fournies
-            </h3>
-            <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Pointage et contrôle des documents administratifs physiques déposés</p>
-          </div>
-          <div>
-            <?php if ($isComplet): ?>
-              <span class="badge" style="background: #DCFCE7; color: #15803D; padding: 6px 14px; border-radius: 10px; font-weight: 800; font-size: 12px; border: 1px solid #86EFAC;">
-                ✓ Dossier Complet (<?= $deposedCount ?> / <?= $totalPieces ?>)
-              </span>
-            <?php else: ?>
-              <span class="badge" style="background: #FEF3C7; color: #B45309; padding: 6px 14px; border-radius: 10px; font-weight: 800; font-size: 12px; border: 1px solid #FCD34D;">
-                ⏳ Dossier Incomplet (<?= $deposedCount ?> / <?= $totalPieces ?> pièces fournies)
-              </span>
+      <!-- BARRE D'ONGLETS EXÉCUTIFS -->
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 2px solid #E2E8F0; margin-bottom: 22px;">
+        <button type="button" class="etu-detail-tab-btn active" data-tab="tab-etu-overview" style="background: transparent; border: none; border-bottom: 3px solid #1E3A5F; color: #1E3A5F; padding: 10px 16px; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
+          <i data-lucide="user" style="width: 15px; height: 15px;"></i> Identité &amp; Parcours
+        </button>
+        <?php if ($canViewFinances): ?>
+        <button type="button" class="etu-detail-tab-btn" data-tab="tab-etu-finances" style="background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748B; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
+          <i data-lucide="credit-card" style="width: 15px; height: 15px;"></i> Scolarité &amp; Paiements (<?= count($paiementsScolarite) ?>)
+        </button>
+        <?php endif; ?>
+        <button type="button" class="etu-detail-tab-btn" data-tab="tab-etu-dossier" style="background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748B; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
+          <i data-lucide="folder-check" style="width: 15px; height: 15px;"></i> Pièces du Dossier (<?= $deposedCount ?>/<?= $totalPieces ?>)
+        </button>
+        <?php if ($canViewAbsences): ?>
+        <button type="button" class="etu-detail-tab-btn" data-tab="tab-etu-absences" style="background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748B; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
+          <i data-lucide="calendar-x" style="width: 15px; height: 15px;"></i> Absences (<?= $totalAbsCount ?>)
+        </button>
+        <?php endif; ?>
+        <button type="button" class="etu-detail-tab-btn" data-tab="tab-etu-carte" style="background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748B; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
+          <i data-lucide="id-card" style="width: 15px; height: 15px;"></i> Carte Scolaire
+        </button>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- ONGLET 1 : IDENTITÉ, FILIATION & HISTORIQUE DES INSCRIPTIONS -->
+      <!-- ========================================================================= -->
+      <div id="tab-etu-overview" class="etu-detail-tab-pane">
+
+        <!-- État Civil & Coordonnées -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 22px; width: 100%; box-sizing: border-box;">
+          <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+            <i data-lucide="user" style="width: 18px; height: 18px; color: #1E3A5F;"></i> État Civil, Identification &amp; Coordonnées
+          </h3>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; font-size: 13px;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 9px; padding: 12px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Code &amp; Matricule</div>
+              <div style="font-weight: 800; color: #1E3A5F; font-family: monospace; margin-top: 4px;"><?= htmlspecialchars($matricule !== '' ? $matricule : '-') ?></div>
+              <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Code : <code><?= htmlspecialchars($codeEtudiant ?: '-') ?></code></div>
+            </div>
+
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 9px; padding: 12px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Naissance &amp; Genre</div>
+              <div style="font-weight: 700; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars($dobFormatted) ?></div>
+              <div style="font-size: 12px; color: #475569; margin-top: 2px;">
+                <?= htmlspecialchars(!empty($item['lieu_naissance_etudiant']) ? $item['lieu_naissance_etudiant'] : 'Lieu non renseigné') ?> &bull; <?= htmlspecialchars($sexeLibelle) ?>
+              </div>
+            </div>
+
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 9px; padding: 12px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Nationalité &amp; Pièce CNI</div>
+              <div style="font-weight: 700; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(!empty($item['nationalite_etudiant']) ? $item['nationalite_etudiant'] : 'Non renseignée') ?></div>
+              <div style="font-size: 12px; color: #475569; margin-top: 2px;">
+                CNI : <strong style="color: #1E3A5F;"><?= htmlspecialchars(!empty($item['numero_cni']) ? $item['numero_cni'] : '-') ?></strong>
+              </div>
+            </div>
+
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 9px; padding: 12px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Contact Étudiant</div>
+              <div style="font-weight: 700; color: #0F172A; margin-top: 4px;">
+                <?php if (!empty($item['telephone_etudiant'])): ?>
+                  <a href="tel:<?= htmlspecialchars($item['telephone_etudiant']) ?>" style="color: #0F172A; text-decoration: none;"><?= htmlspecialchars($item['telephone_etudiant']) ?></a>
+                <?php else: ?>
+                  <span style="color: #94A3B8;">-</span>
+                <?php endif; ?>
+              </div>
+              <div style="font-size: 12px; color: #1E3A5F; margin-top: 2px; word-break: break-all;">
+                <?php if (!empty($item['email_etudiant'])): ?>
+                  <a href="mailto:<?= htmlspecialchars($item['email_etudiant']) ?>" style="color: #1E3A5F; text-decoration: none;"><?= htmlspecialchars($item['email_etudiant']) ?></a>
+                <?php else: ?>
+                  <span style="color: #94A3B8;">Aucun email</span>
+                <?php endif; ?>
+              </div>
+            </div>
+
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 9px; padding: 12px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Résidence &amp; Provenance</div>
+              <div style="font-weight: 700; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(!empty($item['lieu_residence_etudiant']) ? $item['lieu_residence_etudiant'] : 'Non renseignée') ?></div>
+              <?php if (!empty($item['etablissement_origine'])): ?>
+                <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Origine : <?= htmlspecialchars($item['etablissement_origine']) ?></div>
+              <?php endif; ?>
+            </div>
+
+            <?php if (!empty($item['matricule_menet']) || !empty($item['matricule_mesrs'])): ?>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 9px; padding: 12px 14px;">
+              <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Matricules Officiels</div>
+              <?php if (!empty($item['matricule_menet'])): ?>
+                <div style="font-size: 12px; color: #334155; margin-top: 4px;">MENET : <code style="font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($item['matricule_menet']) ?></code></div>
+              <?php endif; ?>
+              <?php if (!empty($item['matricule_mesrs'])): ?>
+                <div style="font-size: 12px; color: #334155; margin-top: 2px;">MESRS : <code style="font-weight: 800; color: #1E3A5F;"><?= htmlspecialchars($item['matricule_mesrs']) ?></code></div>
+              <?php endif; ?>
+            </div>
             <?php endif; ?>
           </div>
         </div>
 
-        <?php if (!empty($dossierPieces)): ?>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
-            <?php foreach ($dossierPieces as $dp): 
-              $isDep = (($dp['statut_depot'] ?? '') === 'depose');
-            ?>
-              <div style="background: <?= $isDep ? '#F0FDF4' : '#F8FAFC' ?>; border: 1px solid <?= $isDep ? '#BBF7D0' : '#E2E8F0' ?>; border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;">
-                <div style="width: 28px; height: 28px; border-radius: 50%; background: <?= $isDep ? '#DCFCE7' : '#E2E8F0' ?>; color: <?= $isDep ? '#15803D' : '#64748B' ?>; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; margin-top: 2px;">
-                  <?= $isDep ? '✓' : '•' ?>
-                </div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 700; color: #0F172A; font-size: 13px; line-height: 1.35;">
-                    <?= htmlspecialchars($dp['libelle_piece']) ?>
-                  </div>
-                  <?php if (!empty($dp['description_piece'])): ?>
-                    <div style="font-size: 11.5px; color: #64748B; margin-top: 3px; line-height: 1.3;">
-                      <?= htmlspecialchars($dp['description_piece']) ?>
-                    </div>
-                  <?php endif; ?>
-                  <div style="margin-top: 6px;">
-                    <?php if ($isDep): ?>
-                      <span style="background: #DCFCE7; color: #15803D; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #86EFAC;">
-                        Déposée <?= !empty($dp['date_depot']) ? 'le ' . date('d/m/Y', strtotime($dp['date_depot'])) : '' ?>
-                      </span>
-                    <?php else: ?>
-                      <span style="background: #FEF2F2; color: #DC2626; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #FECACA;">
-                        Non fournie / En attente
-                      </span>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        <?php else: ?>
-          <p style="color: #94A3B8; text-align: center; padding: 16px 0; font-style: italic;">Aucune pièce répertoriée dans le dossier.</p>
-        <?php endif; ?>
-      </div>
-
-      <!-- CARD 3 (COL-12) : SITUATION FINANCIÈRE & PAIEMENTS -->
-      <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; width: 100%; box-sizing: border-box;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #EFF6FF;">
-          <div>
+        <!-- Responsables Légaux & Filiation -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 22px; width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
             <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="credit-card" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Situation Financière & Reçus de Scolarité
+              <i data-lucide="shield-check" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Responsables Légaux &amp; Filiation
             </h3>
-          </div>
-          <a href="<?= url('paiement/formulaire') ?>" class="btn btn-sm btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 700; border-radius: 6px; font-size: 12px;">
-            + Nouveau règlement
-          </a>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
-          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Scolarité Totale</span>
-            <div style="font-size: 20px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= number_format($scolariteTotale, 0, ',', ' ') ?> F</div>
+            <?php if (!empty($parent['parent_habitation'])): ?>
+              <span style="font-size: 12px; color: #475569; font-weight: 600;">
+                Domicile familial : <strong style="color: #0F172A;"><?= htmlspecialchars($parent['parent_habitation']) ?></strong>
+              </span>
+            <?php endif; ?>
           </div>
 
-          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Total Versé (<?= $tauxPaiement ?>%)</span>
-            <div style="font-size: 20px; font-weight: 800; color: #15803D; margin-top: 4px;"><?= number_format($totalPaye, 0, ',', ' ') ?> F</div>
-          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px;">
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Père</span>
+              <div style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(!empty($parent['nom_pere']) ? $parent['nom_pere'] : 'Non renseigné') ?></div>
+              <div style="font-size: 12.5px; color: #334155; margin-top: 4px;">
+                Tél :
+                <?php if (!empty($parent['telephone_pere'])): ?>
+                  <a href="tel:<?= htmlspecialchars($parent['telephone_pere']) ?>" style="color: #1E3A5F; font-weight: 700; text-decoration: none;"><?= htmlspecialchars($parent['telephone_pere']) ?></a>
+                <?php else: ?>
+                  <span>-</span>
+                <?php endif; ?>
+              </div>
+              <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Profession : <?= htmlspecialchars(!empty($parent['profession_pere']) ? $parent['profession_pere'] : '-') ?></div>
+            </div>
 
-          <div style="background: <?= $soldeRestant > 0 ? '#FEF2F2' : '#F8FAFC' ?>; border: 1px solid <?= $soldeRestant > 0 ? '#FECACA' : '#E2E8F0' ?>; border-radius: 10px; padding: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: <?= $soldeRestant > 0 ? '#DC2626' : '#64748B' ?>; text-transform: uppercase;">Reste à Payer</span>
-            <div style="font-size: 20px; font-weight: 800; color: <?= $soldeRestant > 0 ? '#DC2626' : '#15803D' ?>; margin-top: 4px;">
-              <?= $soldeRestant > 0 ? number_format($soldeRestant, 0, ',', ' ') . ' F' : 'Soldé (0 F)' ?>
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Mère</span>
+              <div style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(!empty($parent['nom_mere']) ? $parent['nom_mere'] : 'Non renseignée') ?></div>
+              <div style="font-size: 12.5px; color: #334155; margin-top: 4px;">
+                Tél :
+                <?php if (!empty($parent['telephone_mere'])): ?>
+                  <a href="tel:<?= htmlspecialchars($parent['telephone_mere']) ?>" style="color: #1E3A5F; font-weight: 700; text-decoration: none;"><?= htmlspecialchars($parent['telephone_mere']) ?></a>
+                <?php else: ?>
+                  <span>-</span>
+                <?php endif; ?>
+              </div>
+              <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">Profession : <?= htmlspecialchars(!empty($parent['profession_mere']) ? $parent['profession_mere'] : '-') ?></div>
+            </div>
+
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Tuteur Légal / Urgence</span>
+              <div style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin-top: 4px;"><?= htmlspecialchars(!empty($parent['nom_tuteur']) ? $parent['nom_tuteur'] : 'Non renseigné') ?></div>
+              <div style="font-size: 12.5px; color: #334155; margin-top: 4px;">
+                Tél :
+                <?php if (!empty($parent['telephone_tuteur'])): ?>
+                  <a href="tel:<?= htmlspecialchars($parent['telephone_tuteur']) ?>" style="color: #1D4ED8; font-weight: 700; text-decoration: none;"><?= htmlspecialchars($parent['telephone_tuteur']) ?></a>
+                <?php else: ?>
+                  <span>-</span>
+                <?php endif; ?>
+              </div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">Profession : <?= htmlspecialchars(!empty($parent['profession_tuteur']) ? $parent['profession_tuteur'] : '-') ?></div>
             </div>
           </div>
         </div>
 
-        <?php if (empty($paiements)): ?>
-          <p style="color: #94A3B8; text-align: center; padding: 20px 0; font-style: italic;">Aucun paiement enregistré pour cet étudiant.</p>
-        <?php else: ?>
+        <!-- Historique des Inscriptions -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; box-sizing: border-box;">
+          <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+            <i data-lucide="history" style="width: 18px; height: 18px; color: #1E3A5F;"></i> Historique des Inscriptions (<?= count($inscriptionsHistory) ?>)
+          </h3>
+
+          <?php if (empty($inscriptionsHistory)): ?>
+            <div style="color: #94A3B8; text-align: center; padding: 20px 0; font-style: italic; font-size: 13px;">
+              Aucune inscription enregistrée pour cet étudiant.
+            </div>
+          <?php else: ?>
+            <div style="width: 100%; overflow-x: auto;">
+              <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                  <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 11.5px; text-transform: uppercase;">
+                    <th style="padding: 10px 12px;">Session</th>
+                    <th style="padding: 10px 12px;">Code</th>
+                    <th style="padding: 10px 12px;">Classe &amp; Parcours</th>
+                    <th style="padding: 10px 12px; text-align: center;">Régime</th>
+                    <?php if ($canViewFinances): ?>
+                      <th style="padding: 10px 12px; text-align: right;">Scolarité</th>
+                    <?php endif; ?>
+                    <th style="padding: 10px 12px; text-align: center;">Statut</th>
+                    <th style="padding: 10px 12px; text-align: right; width: 85px;">Fiche</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($inscriptionsHistory as $ih):
+                    $ihAff = in_array(strtolower((string)($ih['affectation_etat'] ?? '')), ['oui', 'affecte'], true);
+                    $ihSt = strtolower((string)($ih['statut_inscription'] ?? ''));
+                    $stBadge = [
+                      'solde'      => ['bg' => '#DCFCE7', 'fg' => '#15803D', 'lbl' => 'Soldé'],
+                      'valide'     => ['bg' => '#EFF6FF', 'fg' => '#1D4ED8', 'lbl' => 'Validé'],
+                      'en_attente' => ['bg' => '#FEF3C7', 'fg' => '#B45309', 'lbl' => 'En attente'],
+                      'annule'     => ['bg' => '#FEE2E2', 'fg' => '#B91C1C', 'lbl' => 'Annulé'],
+                    ][$ihSt] ?? ['bg' => '#F1F5F9', 'fg' => '#475569', 'lbl' => ucfirst($ihSt ?: '-')];
+                  ?>
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                      <td style="padding: 11px 12px; font-weight: 800; color: #1E3A5F; white-space: nowrap;">
+                        <?php if ($canViewAnnees && !empty($ih['encrypted_annee_id'])): ?>
+                          <a href="<?= url('annee/details/' . $ih['encrypted_annee_id']) ?>" style="color: #1E3A5F; text-decoration: none;"><?= htmlspecialchars($ih['libelle_annee'] ?? '-') ?></a>
+                        <?php else: ?>
+                          <?= htmlspecialchars($ih['libelle_annee'] ?? '-') ?>
+                        <?php endif; ?>
+                      </td>
+                      <td style="padding: 11px 12px; white-space: nowrap;">
+                        <code style="font-weight: 700; color: #475569; background: #F1F5F9; padding: 2px 7px; border-radius: 5px; font-size: 12px;"><?= htmlspecialchars($ih['code_inscription'] ?? '-') ?></code>
+                      </td>
+                      <td style="padding: 11px 12px;">
+                        <div style="font-weight: 800; color: #0F172A;">
+                          <?php if ($canViewClasses && !empty($ih['encrypted_classe_id'])): ?>
+                            <a href="<?= url('classe/details/' . $ih['encrypted_classe_id']) ?>" style="color: #0F172A; text-decoration: none;"><?= htmlspecialchars($ih['libelle_classe'] ?? '-') ?></a>
+                          <?php else: ?>
+                            <?= htmlspecialchars($ih['libelle_classe'] ?? '-') ?>
+                          <?php endif; ?>
+                        </div>
+                        <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
+                          <?= htmlspecialchars(trim(($ih['libelle_filiere'] ?? '') . (!empty($ih['libelle_niveau']) ? ' · ' . $ih['libelle_niveau'] : ''))) ?>
+                        </div>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; white-space: nowrap;">
+                        <span style="background: <?= $ihAff ? '#DCFCE7' : '#E0F2FE' ?>; color: <?= $ihAff ? '#15803D' : '#0369A1' ?>; padding: 3px 9px; border-radius: 12px; font-size: 11.5px; font-weight: 700;">
+                          <?= $ihAff ? 'Affecté(e)' : 'Privé(e)' ?>
+                        </span>
+                      </td>
+                      <?php if ($canViewFinances): ?>
+                        <td style="padding: 11px 12px; text-align: right; font-weight: 700; color: #0F172A; white-space: nowrap;">
+                          <?= htmlspecialchars($fmtMoney($ih['montant_scolarite_inscription'] ?? 0)) ?>
+                        </td>
+                      <?php endif; ?>
+                      <td style="padding: 11px 12px; text-align: center; white-space: nowrap;">
+                        <span style="background: <?= $stBadge['bg'] ?>; color: <?= $stBadge['fg'] ?>; padding: 3px 9px; border-radius: 12px; font-size: 11.5px; font-weight: 700;">
+                          <?= htmlspecialchars($stBadge['lbl']) ?>
+                        </span>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: right; white-space: nowrap;">
+                        <?php if (!empty($ih['encrypted_inscription_id'])): ?>
+                          <a href="<?= url('etudiant/imprimerFichePdf/' . $encryptedId) . '?inscription_id=' . urlencode($ih['encrypted_inscription_id']) ?>" target="_blank" title="Imprimer la fiche de cette inscription" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #334155; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+                            <i data-lucide="printer" style="width: 15px; height: 15px;"></i>
+                          </a>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- ONGLET 2 : SCOLARITÉ & PAIEMENTS (DISSOCIATION STRICTE RÈGLE 4) -->
+      <!-- ========================================================================= -->
+      <?php if ($canViewFinances): ?>
+      <div id="tab-etu-finances" class="etu-detail-tab-pane" style="display: none;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 22px; width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+            <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="credit-card" style="width: 18px; height: 18px; color: #1E3A5F;"></i>
+              Situation Financière &amp; Reçus de Scolarité (<span id="count-visible-etu-paiements"><?= count($paiementsScolarite) ?></span>)
+            </h3>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <?php if (!empty($paiementsScolarite)): ?>
+                <div style="position: relative; min-width: 200px;">
+                  <input type="text" id="search-etu-paiements" placeholder="Rechercher reçu, mode..." style="width: 100%; box-sizing: border-box; padding: 7px 12px 7px 32px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12.5px; color: #0F172A; background: #F8FAFC;">
+                  <i data-lucide="search" style="width: 14px; height: 14px; color: #94A3B8; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"></i>
+                </div>
+              <?php endif; ?>
+              <?php if ($encryptedInscriptionId !== ''): ?>
+                <a href="<?= url('paiement/imprimerBilanFinancier/' . $encryptedInscriptionId) ?>" target="_blank" style="background: #FFFFFF; color: #334155; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 7px 13px; font-size: 12.5px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                  <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Bilan Scolarité PDF
+                </a>
+              <?php endif; ?>
+              <?php if ($canRecordPaiement): ?>
+                <a href="<?= url('paiement/formulaire') ?>" style="background: #1E3A5F; color: #FFFFFF; border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                  <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> Nouveau règlement
+                </a>
+              <?php endif; ?>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #1E3A5F; text-transform: uppercase;">Scolarité Totale (Session Active)</span>
+              <div style="font-size: 20px; font-weight: 800; color: #1E3A5F; margin-top: 4px;"><?= htmlspecialchars($fmtMoney($scolariteTotale)) ?></div>
+            </div>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 14px 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: #15803D; text-transform: uppercase;">Total Versé Scolarité (<?= $tauxPaiement ?>%)</span>
+              <div style="font-size: 20px; font-weight: 800; color: #15803D; margin-top: 4px;"><?= htmlspecialchars($fmtMoney($totalPaye)) ?></div>
+            </div>
+            <div style="background: <?= $soldeRestant > 0 ? '#FEF2F2' : '#F8FAFC' ?>; border: 1px solid <?= $soldeRestant > 0 ? '#FECACA' : '#E2E8F0' ?>; border-radius: 10px; padding: 14px 16px;">
+              <span style="font-size: 11px; font-weight: 700; color: <?= $soldeRestant > 0 ? '#DC2626' : '#64748B' ?>; text-transform: uppercase;">Reste à Payer</span>
+              <div style="font-size: 20px; font-weight: 800; color: <?= $soldeRestant > 0 ? '#DC2626' : '#15803D' ?>; margin-top: 4px;">
+                <?= $soldeRestant > 0 ? htmlspecialchars($fmtMoney($soldeRestant)) : 'Soldé (0 FCFA)' ?>
+              </div>
+            </div>
+          </div>
+
+          <?php if (empty($paiementsScolarite)): ?>
+            <div style="color: #94A3B8; text-align: center; padding: 24px 0; font-style: italic; font-size: 13px;">
+              Aucun règlement de scolarité enregistré pour cet étudiant.
+            </div>
+          <?php else: ?>
+            <div style="width: 100%; overflow-x: auto;">
+              <table id="table-etu-paiements" class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                  <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 11.5px; text-transform: uppercase;">
+                    <th style="padding: 10px 12px;">Reçu / Réf.</th>
+                    <th style="padding: 10px 12px;">Date</th>
+                    <th style="padding: 10px 12px;">Session</th>
+                    <th style="padding: 10px 12px;">Libellé / Tranche</th>
+                    <th style="padding: 10px 12px;">Mode</th>
+                    <th style="padding: 10px 12px; text-align: right;">Montant</th>
+                    <th style="padding: 10px 12px; text-align: center;">Statut</th>
+                    <th style="padding: 10px 12px; text-align: right; width: 70px;">Détail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($paiementsScolarite as $p):
+                    $stP = strtolower((string)($p['statut_paiement'] ?? ''));
+                    $pBadge = [
+                      'confirme'   => ['bg' => '#DCFCE7', 'fg' => '#15803D', 'lbl' => 'Confirmé'],
+                      'valide'     => ['bg' => '#DCFCE7', 'fg' => '#15803D', 'lbl' => 'Validé'],
+                      'en_attente' => ['bg' => '#FEF3C7', 'fg' => '#B45309', 'lbl' => 'En attente'],
+                      'annule'     => ['bg' => '#FEE2E2', 'fg' => '#B91C1C', 'lbl' => 'Annulé'],
+                    ][$stP] ?? ['bg' => '#F1F5F9', 'fg' => '#475569', 'lbl' => ucfirst($stP ?: '-')];
+                  ?>
+                    <tr class="etu-paiement-row" style="border-bottom: 1px solid #F1F5F9;">
+                      <td style="padding: 11px 12px; white-space: nowrap;">
+                        <code style="font-weight: 800; color: #1E3A5F; background: #EFF6FF; padding: 2px 7px; border-radius: 5px; font-size: 12px;">
+                          <?= htmlspecialchars(!empty($p['reference_paiement']) ? $p['reference_paiement'] : ($p['code_paiement'] ?? '-')) ?>
+                        </code>
+                      </td>
+                      <td style="padding: 11px 12px; color: #334155; white-space: nowrap;">
+                        <?= !empty($p['date_paiement']) ? date('d/m/Y H:i', strtotime($p['date_paiement'])) : '-' ?>
+                      </td>
+                      <td style="padding: 11px 12px; color: #475569; font-weight: 600; white-space: nowrap;">
+                        <?= htmlspecialchars($p['libelle_annee'] ?? '-') ?>
+                      </td>
+                      <td style="padding: 11px 12px; color: #0F172A; font-weight: 600;">
+                        <?= htmlspecialchars(!empty($p['type_paiement']) ? $p['type_paiement'] : (!empty($p['observations']) ? $p['observations'] : '-')) ?>
+                      </td>
+                      <td style="padding: 11px 12px; color: #475569; font-weight: 600; white-space: nowrap;">
+                        <?= htmlspecialchars(!empty($p['mode_paiement']) ? $p['mode_paiement'] : '-') ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: right; font-weight: 800; color: <?= $stP === 'annule' ? '#94A3B8' : '#15803D' ?>; white-space: nowrap;">
+                        <?= htmlspecialchars($fmtMoney($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0))) ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; white-space: nowrap;">
+                        <span style="background: <?= $pBadge['bg'] ?>; color: <?= $pBadge['fg'] ?>; padding: 3px 9px; border-radius: 12px; font-weight: 700; font-size: 11px;">
+                          <?= htmlspecialchars($pBadge['lbl']) ?>
+                        </span>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: right;">
+                        <?php if (!empty($p['encrypted_paiement_id'])): ?>
+                          <a href="<?= url('paiement/details/' . $p['encrypted_paiement_id']) ?>" title="Voir le reçu" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #BAE6FD; background: #EFF6FF; color: #0284C7; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+                            <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
+                          </a>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
+        </div>
+
+        <?php if (!empty($paiementsAnnexes)): ?>
+        <!-- Caisse Frais Annexes : strictement indépendante et jamais additionnée à la scolarité -->
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #F1F5F9;">
+            <div>
+              <h3 style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="package" style="width: 17px; height: 17px; color: #B45309;"></i>
+                Frais Annexes (<?= count($paiementsAnnexes) ?>)
+              </h3>
+              <p style="font-size: 11.5px; color: #64748B; margin: 2px 0 0 0;">Caisse annexe indépendante — non comptabilisée dans le solde de scolarité</p>
+            </div>
+            <span style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 4px 12px; border-radius: 10px; font-weight: 800; font-size: 12px;">
+              Total Annexes (Session Active) : <?= htmlspecialchars($fmtMoney($totalFraisAnnexesPaye)) ?>
+            </span>
+          </div>
           <div style="width: 100%; overflow-x: auto;">
-            <table class="table" style="width: 100%; border-collapse: collapse;">
+            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <thead>
-                <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px;">
-                  <th style="padding: 10px;">Reçu N°</th>
-                  <th style="padding: 10px;">Date</th>
-                  <th style="padding: 10px;">Mode Règlement</th>
-                  <th style="padding: 10px; text-align: right;">Montant Payé</th>
-                  <th style="padding: 10px; text-align: center;">Statut</th>
+                <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 11.5px; text-transform: uppercase;">
+                  <th style="padding: 9px 12px;">Code</th>
+                  <th style="padding: 9px 12px;">Date</th>
+                  <th style="padding: 9px 12px;">Objet</th>
+                  <th style="padding: 9px 12px;">Mode</th>
+                  <th style="padding: 9px 12px; text-align: right;">Montant</th>
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($paiements as $p): ?>
+                <?php foreach ($paiementsAnnexes as $pa): ?>
                   <tr style="border-bottom: 1px solid #F1F5F9;">
-                    <td style="padding: 10px; font-family: monospace; font-weight: 700; color: #1E3A5F;">
-                      <a href="<?= url('paiement/details/' . $this->validator->crypter($p['id_paiement'])) ?>" style="color: #1E3A5F; text-decoration: underline;">
-                        <?= htmlspecialchars($p['reference_paiement'] ?? ($p['code_paiement'] ?? '-')) ?>
-                      </a>
-                    </td>
-                    <td style="padding: 10px; color: #334155;"><?= !empty($p['date_paiement']) ? date('d/m/Y', strtotime($p['date_paiement'])) : '-' ?></td>
-                    <td style="padding: 10px; color: #334155; text-transform: uppercase; font-size: 12px;"><?= htmlspecialchars($p['mode_paiement'] ?? 'Espèces') ?></td>
-                    <td style="padding: 10px; text-align: right; font-weight: 800; color: #15803D;">
-                      <?= number_format((float)($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0)), 0, ',', ' ') ?> FCFA
-                    </td>
-                    <td style="padding: 10px; text-align: center;">
-                      <span class="badge" style="background:#DCFCE7; color:#15803D; padding:2px 8px; border-radius:8px; font-weight:700; font-size:11px;">Validé</span>
-                    </td>
+                    <td style="padding: 9px 12px;"><code><?= htmlspecialchars($pa['code_paiement'] ?? '-') ?></code></td>
+                    <td style="padding: 9px 12px; color: #334155;"><?= !empty($pa['date_paiement']) ? date('d/m/Y', strtotime($pa['date_paiement'])) : '-' ?></td>
+                    <td style="padding: 9px 12px; font-weight: 600; color: #0F172A;"><?= htmlspecialchars($pa['type_paiement'] ?? ($pa['observations'] ?? '-')) ?></td>
+                    <td style="padding: 9px 12px; color: #475569;"><?= htmlspecialchars($pa['mode_paiement'] ?? '-') ?></td>
+                    <td style="padding: 9px 12px; text-align: right; font-weight: 800; color: #B45309;"><?= htmlspecialchars($fmtMoney($pa['montant_paiement'] ?? 0)) ?></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
             </table>
           </div>
+        </div>
         <?php endif; ?>
+      </div>
+      <?php endif; ?>
+
+      <!-- ========================================================================= -->
+      <!-- ONGLET 3 : PIÈCES PHYSIQUES DU DOSSIER -->
+      <!-- ========================================================================= -->
+      <div id="tab-etu-dossier" class="etu-detail-tab-pane" style="display: none;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+            <div>
+              <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="folder-check" style="width: 18px; height: 18px; color: #15803D;"></i>
+                Pièces Administratives Fournies (<?= $deposedCount ?> / <?= $totalPieces ?>)
+              </h3>
+              <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Contrôle des pièces physiques déposées à la scolarité</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <?php if ($isDossierComplet): ?>
+                <span style="background: #DCFCE7; color: #15803D; padding: 5px 12px; border-radius: 10px; font-weight: 800; font-size: 12px; border: 1px solid #86EFAC;">Dossier Complet</span>
+              <?php else: ?>
+                <span style="background: #FEF3C7; color: #B45309; padding: 5px 12px; border-radius: 10px; font-weight: 800; font-size: 12px; border: 1px solid #FCD34D;">Dossier Incomplet</span>
+              <?php endif; ?>
+              <?php if ($canViewDossiers): ?>
+                <a href="<?= url('dossier/list') ?>" style="background: #FFFFFF; color: #1E3A5F; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; text-decoration: none;">Gérer les dépôts</a>
+              <?php endif; ?>
+            </div>
+          </div>
+
+          <?php if (empty($dossierPieces)): ?>
+            <div style="color: #94A3B8; text-align: center; padding: 24px 0; font-style: italic; font-size: 13px;">
+              Aucune pièce administrative configurée.
+            </div>
+          <?php else: ?>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+              <?php foreach ($dossierPieces as $dp):
+                $isDep = (($dp['statut_depot'] ?? '') === 'depose');
+              ?>
+                <div style="background: <?= $isDep ? '#F0FDF4' : '#F8FAFC' ?>; border: 1px solid <?= $isDep ? '#BBF7D0' : '#E2E8F0' ?>; border-radius: 10px; padding: 13px 15px; display: flex; align-items: flex-start; gap: 11px;">
+                  <div style="width: 28px; height: 28px; border-radius: 8px; background: <?= $isDep ? '#DCFCE7' : '#E2E8F0' ?>; color: <?= $isDep ? '#15803D' : '#64748B' ?>; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="<?= $isDep ? 'check' : 'clock' ?>" style="width: 15px; height: 15px;"></i>
+                  </div>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 700; color: #0F172A; font-size: 13px; line-height: 1.35;">
+                      <?= htmlspecialchars($dp['libelle_piece'] ?? '-') ?>
+                    </div>
+                    <?php if (!empty($dp['description_piece'])): ?>
+                      <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;"><?= htmlspecialchars($dp['description_piece']) ?></div>
+                    <?php endif; ?>
+                    <div style="margin-top: 6px;">
+                      <?php if ($isDep): ?>
+                        <span style="background: #DCFCE7; color: #15803D; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">
+                          Déposée<?= !empty($dp['date_depot']) ? ' le ' . date('d/m/Y', strtotime($dp['date_depot'])) : '' ?>
+                        </span>
+                      <?php else: ?>
+                        <span style="background: #FEF2F2; color: #B91C1C; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">
+                          En attente
+                        </span>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- ONGLET 4 : ABSENCES & ASSIDUITÉ -->
+      <!-- ========================================================================= -->
+      <?php if ($canViewAbsences): ?>
+      <div id="tab-etu-absences" class="etu-detail-tab-pane" style="display: none;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+            <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="calendar-x" style="width: 18px; height: 18px; color: #B91C1C;"></i>
+              Relevé d'Absences &amp; Assiduité (<?= $totalAbsCount ?>)
+            </h3>
+            <a href="<?= url('absence/imprimerHistoriqueEtudiant/' . $encryptedId) ?>" target="_blank" style="background: #FFFFFF; color: #334155; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 7px 13px; font-size: 12.5px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Relevé d'Absences PDF
+            </a>
+          </div>
+
+          <?php if (empty($absences)): ?>
+            <div style="color: #15803D; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; text-align: center; padding: 24px; font-weight: 700; font-size: 13px;">
+              Aucune absence enregistrée pour cet étudiant.
+            </div>
+          <?php else: ?>
+            <div style="width: 100%; overflow-x: auto;">
+              <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                  <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 11.5px; text-transform: uppercase;">
+                    <th style="padding: 10px 12px;">Date</th>
+                    <th style="padding: 10px 12px;">Session / Semestre</th>
+                    <th style="padding: 10px 12px;">Matière</th>
+                    <th style="padding: 10px 12px; text-align: center;">Durée</th>
+                    <th style="padding: 10px 12px; text-align: center;">Statut</th>
+                    <th style="padding: 10px 12px;">Motif</th>
+                    <th style="padding: 10px 12px; text-align: right; width: 70px;">Détail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($absences as $ab):
+                    $isJust = (strtolower((string)($ab['justifiee'] ?? 'non')) === 'oui');
+                  ?>
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                      <td style="padding: 11px 12px; font-weight: 700; color: #0F172A; white-space: nowrap;">
+                        <?= !empty($ab['date_absence']) ? date('d/m/Y', strtotime($ab['date_absence'])) : '-' ?>
+                      </td>
+                      <td style="padding: 11px 12px; white-space: nowrap;">
+                        <div style="font-weight: 700; color: #1E3A5F;"><?= htmlspecialchars($ab['libelle_semestre'] ?? '-') ?></div>
+                        <div style="font-size: 11px; color: #64748B;"><?= htmlspecialchars($ab['libelle_annee'] ?? '') ?></div>
+                      </td>
+                      <td style="padding: 11px 12px; font-weight: 600; color: #0F172A;">
+                        <?= htmlspecialchars($ab['libelle_matiere'] ?? '-') ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; font-weight: 800; color: #1E3A5F; white-space: nowrap;">
+                        <?= htmlspecialchars($fmtHeures($ab['duree_heures'] ?? 0)) ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; white-space: nowrap;">
+                        <?php if ($isJust): ?>
+                          <span style="background: #DCFCE7; color: #15803D; padding: 3px 9px; border-radius: 12px; font-size: 11.5px; font-weight: 700;">Justifiée</span>
+                        <?php else: ?>
+                          <span style="background: #FEE2E2; color: #B91C1C; padding: 3px 9px; border-radius: 12px; font-size: 11.5px; font-weight: 700;">Non justifiée</span>
+                        <?php endif; ?>
+                      </td>
+                      <td style="padding: 11px 12px; color: #475569;">
+                        <?= htmlspecialchars(!empty($ab['motif']) ? $ab['motif'] : '-') ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: right;">
+                        <?php if (!empty($ab['encrypted_absence_id'])): ?>
+                          <a href="<?= url('absence/details/' . $ab['encrypted_absence_id']) ?>" title="Ouvrir la fiche absence" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #BAE6FD; background: #EFF6FF; color: #0284C7; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+                            <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
+                          </a>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endif; ?>
+
+      <!-- ========================================================================= -->
+      <!-- ONGLET 5 : CARTE D'IDENTITÉ SCOLAIRE (RECTO / VERSO — 100% CONFIGURATIONS) -->
+      <!-- ========================================================================= -->
+      <div id="tab-etu-carte" class="etu-detail-tab-pane" style="display: none;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px 28px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+            <div>
+              <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="id-card" style="width: 18px; height: 18px; color: #D97706;"></i> Carte d'Identité Scolaire &amp; Badge Étudiant
+              </h3>
+              <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Format PVC Standard (CR-80) — Données institutionnelles dynamiques</p>
+            </div>
+            <button type="button" id="btn-print-carte-scolaire-tab" style="background: #1E3A5F; color: #FFFFFF; border: none; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer;">
+              <i data-lucide="printer" style="width: 15px; height: 15px;"></i> Imprimer la Carte Scolaire
+            </button>
+          </div>
+
+          <div id="section-carte-scolaire" style="display: flex; justify-content: center; align-items: center; gap: 28px; flex-wrap: wrap; padding: 10px 0;">
+            <!-- RECTO -->
+            <div class="badge-card-container badge-recto" style="width: 390px; height: 245px; border-radius: 14px; background: #1E3A5F; color: #FFFFFF; position: relative; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35); overflow: hidden; padding: 14px 18px; box-sizing: border-box; border: 1px solid #334155; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <div style="position: absolute; left: 0; top: 0; right: 0; height: 5px; background: #D97706;"></div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 10px; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                  <?php if ($etabLogoUrl !== ''): ?>
+                    <img src="<?= htmlspecialchars($etabLogoUrl) ?>" alt="Logo" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover; background: #FFFFFF; flex-shrink: 0;">
+                  <?php else: ?>
+                    <div style="width: 28px; height: 28px; border-radius: 6px; background: #D97706; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; color: #FFF; flex-shrink: 0;">
+                      <?= htmlspecialchars(mb_substr($etabSigle !== '' ? $etabSigle : $etabNom, 0, 2, 'UTF-8')) ?>
+                    </div>
+                  <?php endif; ?>
+                  <div style="min-width: 0;">
+                    <div style="font-size: 9.5px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #FDE68A; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      <?= htmlspecialchars($etabSigle !== '' ? $etabSigle : $etabNom) ?>
+                    </div>
+                    <?php if ($etabPays !== ''): ?>
+                      <div style="font-size: 7.5px; color: #CBD5E1; letter-spacing: 0.4px; text-transform: uppercase;"><?= htmlspecialchars($etabPays) ?></div>
+                    <?php endif; ?>
+                  </div>
+                </div>
+                <?php if ($anneeLibelle !== ''): ?>
+                  <span style="background: #D97706; border: 1px solid #F59E0B; color: #FFFFFF; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0;">
+                    <?= htmlspecialchars($anneeLibelle) ?>
+                  </span>
+                <?php endif; ?>
+              </div>
+
+              <div style="display: flex; gap: 14px; align-items: center; margin-top: 6px;">
+                <div style="width: 78px; height: 96px; border-radius: 8px; border: 2px solid #F59E0B; background: #0F172A; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; flex-shrink: 0;">
+                  <?php if ($photoUrl !== ''): ?>
+                    <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+                  <?php else: ?>
+                    <span style="font-size: 24px; font-weight: 900; color: #FDE68A;"><?= htmlspecialchars($initials) ?></span>
+                  <?php endif; ?>
+                  <span style="position: absolute; bottom: 0; left: 0; right: 0; background: #D97706; font-size: 7px; font-weight: 800; text-align: center; color: #FFF; padding: 1px 0; text-transform: uppercase;">ÉTUDIANT</span>
+                </div>
+
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">NOM &amp; PRÉNOMS</div>
+                  <div style="font-size: 13px; font-weight: 900; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+                    <?= htmlspecialchars($nomComplet ?: '-') ?>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 4px; margin-top: 6px;">
+                    <div>
+                      <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">MATRICULE</div>
+                      <div style="font-size: 10px; font-weight: 800; color: #FDE68A; font-family: monospace;">
+                        <?= htmlspecialchars($matricule !== '' ? $matricule : $codeEtudiant) ?>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">SEXE</div>
+                      <div style="font-size: 10px; font-weight: 700; color: #FFF;">
+                        <?= htmlspecialchars($sexeRaw !== '' ? $sexeRaw : '-') ?>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 6px;">
+                    <div style="font-size: 7px; font-weight: 800; color: #93C5FD; text-transform: uppercase;">CLASSE &amp; FILIÈRE</div>
+                    <div style="font-size: 10px; font-weight: 800; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      <?= htmlspecialchars($classeLibelle !== '' ? $classeLibelle : '-') ?>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; background: #FFFFFF; padding: 4px; border-radius: 6px; border: 1px solid #CBD5E1;">
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=<?= urlencode('MAT:' . ($matricule ?: $codeEtudiant) . '|NOM:' . $nomComplet . '|CLASSE:' . $classeLibelle . '|ANNEE:' . $anneeLibelle) ?>" alt="QR Code" style="width: 54px; height: 54px; display: block;">
+                  <span style="font-size: 6px; font-weight: 800; color: #0F172A; margin-top: 2px;">SCAN VALIDE</span>
+                </div>
+              </div>
+
+              <div style="position: absolute; bottom: 8px; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 4px; font-size: 7px; color: #94A3B8;">
+                <span>CARTE D'IDENTITÉ SCOLAIRE</span>
+                <?php if ($dateFinAnnee !== ''): ?>
+                  <span style="color: #FDE68A; font-weight: 700;">VALABLE JUSQU'AU <?= htmlspecialchars($dateFinAnnee) ?></span>
+                <?php elseif ($anneeLibelle !== ''): ?>
+                  <span style="color: #FDE68A; font-weight: 700;">SESSION <?= htmlspecialchars($anneeLibelle) ?></span>
+                <?php endif; ?>
+              </div>
+            </div>
+
+            <!-- VERSO -->
+            <div class="badge-card-container badge-verso" style="width: 390px; height: 245px; border-radius: 14px; background: #FFFFFF; color: #1E293B; position: relative; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25); overflow: hidden; padding: 14px 18px; box-sizing: border-box; border: 1px solid #CBD5E1; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <div style="position: absolute; left: 0; top: 0; right: 0; height: 5px; background: #1E3A5F;"></div>
+
+              <div style="font-size: 8px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">CONDITIONS D'UTILISATION</div>
+              <p style="font-size: 7.5px; line-height: 1.35; color: #475569; margin: 0 0 8px 0;">
+                1. Cette carte est strictement personnelle et engage la responsabilité de son titulaire.<br>
+                2. Elle doit être présentée à toute réquisition et lors des contrôles ou examens.<br>
+                3. En cas de perte ou de vol, aviser immédiatement le secrétariat de l'établissement.
+              </p>
+
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px;">
+                <div style="font-size: 7.5px; font-weight: 800; color: #0F172A;">CONTACT EN CAS D'URGENCE :</div>
+                <div style="font-size: 7.5px; color: #334155;">
+                  Tuteur : <strong><?= htmlspecialchars(!empty($parent['nom_tuteur']) ? $parent['nom_tuteur'] : (!empty($parent['nom_pere']) ? $parent['nom_pere'] : '-')) ?></strong>
+                  &bull; Tél : <strong><?= htmlspecialchars(!empty($parent['telephone_tuteur']) ? $parent['telephone_tuteur'] : (!empty($parent['telephone_pere']) ? $parent['telephone_pere'] : (!empty($item['telephone_etudiant']) ? $item['telephone_etudiant'] : '-'))) ?></strong>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 6px;">
+                <div style="text-align: center; width: 112px;">
+                  <div style="font-size: 7px; color: #64748B; text-transform: uppercase; margin-bottom: 18px;">Signature du Titulaire</div>
+                  <div style="border-bottom: 1px dashed #94A3B8; width: 100%;"></div>
+                </div>
+
+                <div style="text-align: center;">
+                  <div style="font-family: monospace; font-size: 14px; letter-spacing: 2px; color: #0F172A; font-weight: 900;">|||| | ||||| || ||||</div>
+                  <div style="font-size: 7px; font-family: monospace; color: #64748B;"><?= htmlspecialchars($matricule !== '' ? $matricule : $codeEtudiant) ?></div>
+                </div>
+
+                <div style="text-align: center; width: 120px;">
+                  <div style="font-size: 7px; color: #1E3A5F; font-weight: 700; text-transform: uppercase; margin-bottom: 14px;">
+                    <?= htmlspecialchars($etabTitreDG !== '' ? $etabTitreDG : '') ?>
+                  </div>
+                  <div style="border-bottom: 1px dashed #94A3B8; width: 100%;"></div>
+                  <?php if ($etabNomDG !== ''): ?>
+                    <div style="font-size: 6.5px; font-weight: 700; color: #0F172A; margin-top: 2px;"><?= htmlspecialchars($etabNomDG) ?></div>
+                  <?php endif; ?>
+                </div>
+              </div>
+
+              <div style="position: absolute; bottom: 6px; left: 18px; right: 18px; border-top: 1px solid #E2E8F0; padding-top: 3px; font-size: 6.5px; color: #64748B; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <?= htmlspecialchars(implode(' · ', array_filter([$etabNom, $etabAdresse, $etabContacts !== '' ? 'Tél : ' . $etabContacts : '']))) ?>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
   </main>
 </div>
 
-<?php 
+<script type="application/json" id="etudiants-details-config">
+<?= json_encode([
+    'racine'     => RACINE,
+    'nomComplet' => $nomComplet,
+    'matricule'  => $matricule !== '' ? $matricule : $codeEtudiant
+]) ?>
+</script>
+<?php
 ViewContext::setScripts(['public/assets/js/modules/etudiants.js']);
-require_once __DIR__ . '/../../public/inc/footer-link.php'; 
+require_once __DIR__ . '/../../public/inc/footer-link.php';
 ?>

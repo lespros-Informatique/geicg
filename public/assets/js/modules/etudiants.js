@@ -668,14 +668,92 @@
 
   // 3. VUE : DÉTAILS PROFIL ÉTUDIANT (views/etudiants/details.php)
   function initEtudiantsDetails() {
-    if (!$('#btn-print-profil-etudiant').length && !$('.badge-statut-etudiant').length) return;
+    if (!$('#etudiants-details-config').length && !$('#btn-print-profil-etudiant').length && !$('.badge-statut-etudiant').length) return;
+
+    var cfg = {};
+    try {
+      var cfgEl = document.getElementById('etudiants-details-config');
+      if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+    } catch (e) {}
 
     if (window.lucide) lucide.createIcons();
+
+    function activateEtuTab(tabId) {
+      if (!tabId || !$('#' + tabId).length) return;
+      $('.etu-detail-tab-btn').css({ 'color': '#64748B', 'border-bottom-color': 'transparent', 'font-weight': '700' }).removeClass('active');
+      $('.etu-detail-tab-btn[data-tab="' + tabId + '"]').css({ 'color': '#1E3A5F', 'border-bottom-color': '#1E3A5F', 'font-weight': '800' }).addClass('active');
+      $('.etu-detail-tab-pane').hide();
+      $('#' + tabId).show();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    $('.etu-detail-tab-btn').on('click', function () {
+      activateEtuTab($(this).data('tab'));
+    });
+
+    // Ouverture directe d'un onglet via ?tab= ou #hash
     var urlParams = new URLSearchParams(window.location.search);
+    var hashTab = (window.location.hash || '').replace('#', '');
+    var requestedTab = urlParams.get('tab') || (hashTab ? ('tab-etu-' + hashTab.replace(/^tab-etu-/, '')) : '');
+    if (requestedTab && $('#' + requestedTab).length) {
+      activateEtuTab(requestedTab);
+    }
+
+    // Recherche en direct dans les reçus de scolarité
+    $('#search-etu-paiements').on('input', function () {
+      var q = ($(this).val() || '').toLowerCase().trim();
+      var visible = 0;
+      $('#table-etu-paiements tbody tr.etu-paiement-row').each(function () {
+        var text = $(this).text().toLowerCase();
+        var show = (!q || text.indexOf(q) !== -1);
+        $(this).toggle(show);
+        if (show) visible++;
+      });
+      $('#count-visible-etu-paiements').text(visible);
+    });
+
+    // Impression propre de la Carte Scolaire (Recto / Verso) consommant ETABLISSEMENT_CONFIG
+    function imprimerCarteScolaire() {
+      var cardEl = document.getElementById('section-carte-scolaire');
+      if (!cardEl) return;
+      var etabCfg = window.ETABLISSEMENT_CONFIG || {};
+      var etabTitle = etabCfg.sigle_etablissement || etabCfg.nom_etablissement || '';
+      var studentName = cfg.nomComplet || '';
+      var winTitle = 'Carte Scolaire' + (studentName ? (' - ' + studentName) : '') + (etabTitle ? (' | ' + etabTitle) : '');
+
+      var win = window.open('', '_blank', 'width=920,height=600');
+      if (!win) {
+        if (typeof showToast === 'function') showToast('Veuillez autoriser les fenêtres pop-up pour imprimer la carte.', 'error');
+        else if (window.toastr) toastr.error('Veuillez autoriser les fenêtres pop-up pour imprimer la carte.');
+        return;
+      }
+
+      var htmlDoc = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>' + winTitle + '</title>' +
+        '<style>' +
+        'body{margin:0;padding:24px;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+        '.print-wrap{display:flex;justify-content:center;align-items:center;gap:24px;flex-wrap:wrap;}' +
+        '@media print{body{background:#FFFFFF;padding:8mm;}@page{size:A4 landscape;margin:8mm;}}' +
+        '</style></head><body><div class="print-wrap">' + cardEl.innerHTML + '</div></body></html>';
+
+      win.document.open();
+      win.document.write(htmlDoc);
+      win.document.close();
+      win.focus();
+      setTimeout(function () {
+        win.print();
+      }, 450);
+    }
+
+    window.imprimerCarteScolaire = imprimerCarteScolaire;
+
+    $('#btn-print-carte-scolaire-header, #btn-print-carte-scolaire-tab').on('click', function () {
+      activateEtuTab('tab-etu-carte');
+      imprimerCarteScolaire();
+    });
+
     if (urlParams.has('print')) {
       setTimeout(function () { window.print(); }, 400);
     }
-
   }
 
   // 4. VUE : CHANGEMENT DE CLASSE / RÉORIENTATION (views/etudiants/changer_classe.php)

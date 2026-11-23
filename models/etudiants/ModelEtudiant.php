@@ -677,11 +677,13 @@ class ModelEtudiant extends BaseModel
         $activeAnnee = Session::get('annee_active_code', '');
         try {
             $stmtIns = $db->prepare("
-                SELECT ins.*, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau, a.libelle_annee
+                SELECT ins.*, cl.id_classe, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       c.libelle_cycle, a.id_annee, a.libelle_annee, a.date_fin_annee
                 FROM " . TABLES::INSCRIPTIONS . " ins
                 LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = cl.cycle_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = ins.annee_code
                 WHERE ins.etudiant_code = ? AND ins.statut_inscription != '" . STATUTS::ANNULE . "'
                 ORDER BY (ins.annee_code = ?) DESC, ins.id_inscription DESC LIMIT 1
@@ -692,6 +694,27 @@ class ModelEtudiant extends BaseModel
             error_log("ModelEtudiant::getStudentFullDetails inscription: " . $e->getMessage());
         }
 
+        // 2.a Historique complet des inscriptions de l'étudiant (toutes sessions)
+        $inscriptionsHistory = [];
+        try {
+            $stmtHist = $db->prepare("
+                SELECT ins.*, cl.id_classe, cl.libelle_classe, f.libelle_filiere, n.libelle_niveau,
+                       c.libelle_cycle, a.id_annee, a.libelle_annee
+                FROM " . TABLES::INSCRIPTIONS . " ins
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
+                LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN " . TABLES::CYCLES . " c ON c.code_cycle = cl.cycle_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = ins.annee_code
+                WHERE ins.etudiant_code = ?
+                ORDER BY ins.id_inscription DESC
+            ");
+            $stmtHist->execute([$etudiantCode]);
+            $inscriptionsHistory = $stmtHist->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails inscriptionsHistory: " . $e->getMessage());
+        }
+
         // 2.bis Établissement
         $etablissement = [];
         try {
@@ -700,8 +723,8 @@ class ModelEtudiant extends BaseModel
             error_log("ModelEtudiant::getStudentFullDetails etablissement: " . $e->getMessage());
         }
 
-        // 3. Paiements effectués
-        $paiements = [];
+        // 3. Paiements effectués (séparation stricte Scolarité vs Frais Annexes - Règle 4)
+        $allPaiements = [];
         try {
             $stmtPaiements = $db->prepare("
                 SELECT p.*, a.libelle_annee, ins.code_inscription
@@ -709,43 +732,57 @@ class ModelEtudiant extends BaseModel
                 JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = p.inscription_code
                 LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = p.annee_code
                 WHERE ins.etudiant_code = ?
-                ORDER BY p.date_paiement DESC
+                ORDER BY p.date_paiement DESC, p.id_paiement DESC
             ");
             $stmtPaiements->execute([$etudiantCode]);
-            $paiements = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $allPaiements = $stmtPaiements->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelEtudiant::getStudentFullDetails paiements: " . $e->getMessage());
         }
 
-        // 4. Statistiques financières calculées dynamiquement (Séparation stricte Scolarité / Frais Annexes - Règle 4)
+        // 4. Statistiques financières calculées dynamiquement (Séparation étanche Scolarité / Frais Annexes)
         $scolariteTotale = (float)($inscription['montant_scolarite_inscription'] ?? 0);
         $totalPaye = 0.0;
+        $totalFraisAnnexesPaye = 0.0;
+        $paiementsScolarite = [];
+        $paiementsAnnexes = [];
         $activeInscrCode = $inscription['code_inscription'] ?? '';
-        foreach ($paiements as $p) {
-            $cat = strtoupper($p['categorie_paiement'] ?? '');
-            $tranche = strtoupper($p['tranche_code'] ?? '');
-            $type = strtolower($p['type_paiement'] ?? '');
-            $isFraisAnnexe = ($cat === 'FRAIS_ANNEXES' || $tranche === 'FRAIS_ANNEXES' || strpos($type, 'annexe') !== false);
 
-            if (($p['statut_paiement'] ?? '') !== STATUTS::ANNULE && !$isFraisAnnexe) {
-                // Imputer uniquement sur l'inscription active affichée
-                if (empty($activeInscrCode) || ($p['inscription_code'] ?? '') === $activeInscrCode) {
-                    $totalPaye += (float)($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0));
+        foreach ($allPaiements as $p) {
+            $cat = strtoupper((string)($p['categorie_paiement'] ?? ''));
+            $tranche = strtoupper((string)($p['tranche_code'] ?? ''));
+            $type = strtolower((string)($p['type_paiement'] ?? ''));
+            $isFraisAnnexe = ($cat === 'FRAIS_ANNEXES' || $tranche === 'FRAIS_ANNEXES' || strpos($type, 'annexe') !== false);
+            $montantRow = (float)($p['montant_paiement'] ?? ($p['montant_paye'] ?? 0));
+            $isNotAnnule = (($p['statut_paiement'] ?? '') !== STATUTS::ANNULE);
+            $isActiveInscr = (empty($activeInscrCode) || ($p['inscription_code'] ?? '') === $activeInscrCode);
+
+            if ($isFraisAnnexe) {
+                $paiementsAnnexes[] = $p;
+                if ($isNotAnnule && $isActiveInscr) {
+                    $totalFraisAnnexesPaye += $montantRow;
+                }
+            } else {
+                $paiementsScolarite[] = $p;
+                if ($isNotAnnule && $isActiveInscr) {
+                    $totalPaye += $montantRow;
                 }
             }
         }
         $soldeRestant = max(0, $scolariteTotale - $totalPaye);
 
-        // 5. Absences
+        // 5. Absences (enrichies avec matière, semestre et année)
         $absences = [];
         try {
             $stmtAbs = $db->prepare("
-                SELECT abs.*, m.libelle_matiere
+                SELECT abs.*, m.libelle_matiere, s.libelle_semestre, a.libelle_annee
                 FROM " . TABLES::ABSENCES . " abs
                 JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = abs.inscription_code
                 LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = abs.matiere_code
+                LEFT JOIN " . TABLES::SEMESTRES . " s ON s.code_semestre = abs.semestre_code
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = abs.annee_code
                 WHERE ins.etudiant_code = ?
-                ORDER BY abs.date_absence DESC
+                ORDER BY abs.date_absence DESC, abs.id_absence DESC
             ");
             $stmtAbs->execute([$etudiantCode]);
             $absences = $stmtAbs->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -770,15 +807,19 @@ class ModelEtudiant extends BaseModel
         }
 
         return [
-            'parent' => $parent,
-            'inscription' => $inscription,
-            'etablissement' => $etablissement,
-            'paiements' => $paiements,
-            'totalPaye' => $totalPaye,
-            'soldeRestant' => $soldeRestant,
-            'scolariteTotale' => $scolariteTotale,
-            'absences' => $absences,
-            'dossierPieces' => $dossierPieces
+            'parent'                => $parent,
+            'inscription'           => $inscription,
+            'inscriptionsHistory'   => $inscriptionsHistory,
+            'etablissement'         => $etablissement,
+            'paiements'             => $paiementsScolarite,
+            'paiementsScolarite'    => $paiementsScolarite,
+            'paiementsAnnexes'      => $paiementsAnnexes,
+            'totalPaye'             => $totalPaye,
+            'totalFraisAnnexesPaye' => $totalFraisAnnexesPaye,
+            'soldeRestant'          => $soldeRestant,
+            'scolariteTotale'       => $scolariteTotale,
+            'absences'              => $absences,
+            'dossierPieces'         => $dossierPieces
         ];
     }
 
