@@ -806,6 +806,115 @@ window.toggleModuleInput = function() {
     });
   }
 
+  // =========================================================================
+  // 10. VUE : DÉTAILS D'UN COMPTE UTILISATEUR (views/users/details.php)
+  // =========================================================================
+  function initUsersDetailsModule() {
+    if (!$('#users-details-config').length) return;
+
+    var cfg = {};
+    try {
+      var cfgEl = document.getElementById('users-details-config');
+      if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+    } catch (e) {}
+
+    var racine = cfg.racine || window.RACINE || '/';
+    var csrfToken = cfg.csrfToken || '';
+    var userId = cfg.userId || 0;
+    var isActif = !!cfg.isActif;
+    var nomComplet = cfg.nomComplet || '';
+
+    function notify(msg, type) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(msg, type || 'info');
+      } else if (window.toastr) {
+        if (type === 'error') toastr.error(msg);
+        else toastr.success(msg);
+      }
+    }
+
+    // Filtrage combiné module + recherche sur les permissions RBAC effectives
+    function filterUserPermissions() {
+      var selectedMod = ($('#filter-user-perm-module').val() || '').toUpperCase();
+      var q = ($('#search-user-permissions').val() || '').toLowerCase().trim();
+      var totalVisible = 0;
+
+      $('#user-permissions-list .user-perm-module-group').each(function() {
+        var $grp = $(this);
+        var grpMod = String($grp.data('module') || '').toUpperCase();
+        var modMatch = (!selectedMod || grpMod === selectedMod);
+        var grpVisible = 0;
+
+        $grp.find('.user-perm-item').each(function() {
+          var haystack = String($(this).data('search') || '').toLowerCase();
+          var show = modMatch && (!q || haystack.indexOf(q) !== -1);
+          $(this).toggle(show);
+          if (show) {
+            grpVisible++;
+            totalVisible++;
+          }
+        });
+
+        $grp.toggle(grpVisible > 0);
+      });
+
+      $('#count-visible-user-perms').text(totalVisible);
+    }
+
+    $('#filter-user-perm-module').on('change', filterUserPermissions);
+    $('#search-user-permissions').on('input', filterUserPermissions);
+
+    // Bascule rapide du statut du compte (Activer / Désactiver)
+    $('#btn-toggle-statut-user-detail').on('click', function() {
+      if (!userId) return;
+      var actionLabel = isActif ? 'désactiver' : 'activer';
+      var confirmTitle = isActif ? 'Désactiver ce compte ?' : 'Activer ce compte ?';
+      var confirmText = 'Voulez-vous vraiment ' + actionLabel + ' le compte de « ' + nomComplet + ' » ?';
+
+      function executeToggle() {
+        $.ajax({
+          url: racine + 'user/changer',
+          type: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          data: {
+            id: userId,
+            id_user: userId,
+            csrf_token: csrfToken
+          },
+          dataType: 'json',
+          success: function(res) {
+            if (res && (res.status === 1 || res.success)) {
+              notify(res.message || 'Statut mis à jour avec succès', 'success');
+              setTimeout(function() { window.location.reload(); }, 600);
+            } else {
+              notify((res && res.message) || 'Erreur lors du changement de statut', 'error');
+            }
+          },
+          error: function() {
+            notify('Erreur réseau ou serveur', 'error');
+          }
+        });
+      }
+
+      if (window.Swal) {
+        Swal.fire({
+          title: confirmTitle,
+          text: confirmText,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: isActif ? '#D97706' : '#16A34A',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: isActif ? 'Oui, désactiver' : 'Oui, activer',
+          cancelButtonText: 'Annuler'
+        }).then(function(result) {
+          if (result.isConfirmed) executeToggle();
+        });
+      } else if (window.confirm(confirmText)) {
+        executeToggle();
+      }
+    });
+  }
+
   $(document).ready(function() {
     initUsersListModule();
     initUsersEditModule();
@@ -816,6 +925,7 @@ window.toggleModuleInput = function() {
     initPermissionsEditModule();
     initForgotPasswordModule();
     initResetPasswordModule();
+    initUsersDetailsModule();
     if (window.lucide) lucide.createIcons();
   });
 

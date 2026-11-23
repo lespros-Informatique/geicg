@@ -279,7 +279,7 @@ class UserController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_USERS);
-        $id = $this->post('id');
+        $id = $this->post('id') ?: $this->post('id_user');
         if (isset($id) && ($usr = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
                 $this->logAction(
@@ -303,23 +303,85 @@ class UserController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_USERS);
         try {
-            $userId = $this->validator->decrypter($details);
-            $userProfile = $this->model->getById($userId);
+            $userProfile = null;
+            if (is_numeric($details)) {
+                $userProfile = $this->model->getUserDetailsById((int)$details);
+            }
+            if (!$userProfile) {
+                $decrypted = $this->validator->decrypter($details);
+                if (is_numeric($decrypted) && (int)$decrypted > 0) {
+                    $userProfile = $this->model->getUserDetailsById((int)$decrypted);
+                } elseif (is_string($decrypted) && $decrypted !== '') {
+                    $byCode = $this->model->getByCode($decrypted, 'code_user');
+                    if (!empty($byCode['id_user'])) {
+                        $userProfile = $this->model->getUserDetailsById((int)$byCode['id_user']);
+                    }
+                }
+            }
+            if (!$userProfile && is_string($details) && $details !== '') {
+                $byCode = $this->model->getByCode($details, 'code_user');
+                if (!empty($byCode['id_user'])) {
+                    $userProfile = $this->model->getUserDetailsById((int)$byCode['id_user']);
+                }
+            }
             if (!$userProfile) {
                 redirect('user/list');
+                return;
             }
-            $userRoles = $this->model->getUserRoles($userProfile['code_user']);
+
+            $userId = (int)$userProfile['id_user'];
+            $userCode = (string)($userProfile['code_user'] ?? '');
+
+            $userRoles = $this->model->getUserRoles($userCode);
+            foreach ($userRoles as &$ur) {
+                $ur['encrypted_role_id'] = !empty($ur['role_id'])
+                    ? $this->validator->crypter((int)$ur['role_id'])
+                    : '';
+            }
+            unset($ur);
+
             $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
+            $permissionsDetailed = $this->model->getUserPermissionsDetailed($userCode);
+
+            $anneesAcces = $this->model->getUserAnneeAccesDetails($userCode);
+            foreach ($anneesAcces as &$aa) {
+                $aa['encrypted_annee_id'] = !empty($aa['id_annee'])
+                    ? $this->validator->crypter((int)$aa['id_annee'])
+                    : '';
+            }
+            unset($aa);
+
+            $enseignantProfile = $this->model->getEnseignantLink($userCode);
+            $encryptedEnseignantId = !empty($enseignantProfile['id_enseignant'])
+                ? $this->validator->crypter((int)$enseignantProfile['id_enseignant'])
+                : '';
+
+            $canViewLogs = Auth::can(PERMISSIONS::VIEW_LOGS) || Auth::isSuperAdmin();
+            $recentLogs = $canViewLogs ? $this->model->getUserRecentLogs($userCode, 15) : [];
+            $totalLogsCount = $this->model->getUserLogsCount($userCode);
+
+            $etablissement = $this->getEtablissementConfig();
             $encryptedId = $this->validator->crypter($userId);
+            $isSelf = ((int)Auth::id() === $userId);
         } catch (Exception $e) {
+            error_log("UserController::details error: " . $e->getMessage());
             redirect('user/list');
+            return;
         }
 
         $this->loadView('../views/users/details.php', [
-            'user' => $userProfile,
-            'role' => $primaryRole,
-            'userRoles' => $userRoles,
-            'encryptedId' => $encryptedId
+            'user'                  => $userProfile,
+            'role'                  => $primaryRole,
+            'userRoles'             => $userRoles,
+            'permissionsDetailed'   => $permissionsDetailed,
+            'anneesAcces'           => $anneesAcces,
+            'enseignantProfile'     => $enseignantProfile,
+            'encryptedEnseignantId' => $encryptedEnseignantId,
+            'recentLogs'            => $recentLogs,
+            'totalLogsCount'        => $totalLogsCount,
+            'etablissement'         => $etablissement,
+            'encryptedId'           => $encryptedId,
+            'isSelf'                => $isSelf
         ]);
     }
 

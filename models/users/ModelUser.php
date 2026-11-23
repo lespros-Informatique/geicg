@@ -12,7 +12,7 @@ class ModelUser extends BaseModel
     public function getUserRoles(string $userCode): array
     {
         try {
-            $sql = "SELECT ur.*, r.libelle_role, r.module, r.groupe, r.description 
+            $sql = "SELECT ur.*, r.id AS role_id, r.libelle_role, r.module, r.groupe, r.description 
                     FROM " . TABLES::USER_ROLES . " ur
                     INNER JOIN " . TABLES::ROLES . " r ON r.code_role = ur.role_code
                     WHERE ur.user_code = ?
@@ -450,6 +450,141 @@ class ModelUser extends BaseModel
         } catch (Exception $e) {
             error_log("ModelUser::markPasswordResetUsed error: " . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Récupère la fiche détaillée d'un utilisateur avec le libellé de sa fonction.
+     */
+    public function getUserDetailsById(int $userId): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT u.*, f.libelle_fonction
+                FROM " . TABLES::USERS . " u
+                LEFT JOIN " . TABLES::FONCTIONS . " f ON f.code_fonction = u.fonction_code
+                WHERE u.id_user = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (Exception $e) {
+            error_log("ModelUser::getUserDetailsById error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Récupère le profil enseignant lié à un compte utilisateur (actif ou inactif).
+     */
+    public function getEnseignantLink(string $userCode): ?array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT id_enseignant, code_enseignant, grade_enseignant, type_contrat, numero_autorisation, statut_enseignant
+                FROM " . TABLES::ENSEIGNANTS . "
+                WHERE code_enseignant = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$userCode]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (Exception $e) {
+            error_log("ModelUser::getEnseignantLink error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Récupère la liste détaillée des permissions RBAC effectives de l'utilisateur (avec libellés et modules).
+     */
+    public function getUserPermissionsDetailed(string $userCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT DISTINCT
+                    p.code_permission,
+                    p.libelle_permission,
+                    p.module_permission
+                FROM " . TABLES::USER_ROLES . " ur
+                INNER JOIN " . TABLES::ROLE_PERMISSIONS . " rp ON rp.role_code = ur.role_code
+                INNER JOIN " . TABLES::PERMISSIONS . " p ON p.code_permission = rp.permission_code
+                WHERE ur.user_code = ?
+                  AND p.statut_permission = '" . STATUTS::ACTIF . "'
+                ORDER BY p.module_permission ASC, p.libelle_permission ASC
+            ");
+            $stmt->execute([$userCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelUser::getUserPermissionsDetailed error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Récupère les accès aux années académiques avec leurs libellés et statuts.
+     */
+    public function getUserAnneeAccesDetails(string $userCode): array
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT
+                    uaa.annee_code,
+                    uaa.niveau_acces,
+                    uaa.created_at_acces,
+                    a.id_annee,
+                    a.libelle_annee,
+                    a.statut_annee
+                FROM " . TABLES::USER_ANNEE_ACCES . " uaa
+                LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = uaa.annee_code
+                WHERE uaa.user_code = ?
+                ORDER BY a.id_annee DESC
+            ");
+            $stmt->execute([$userCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelUser::getUserAnneeAccesDetails error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Récupère les dernières actions journalisées de l'utilisateur dans logs_activites.
+     */
+    public function getUserRecentLogs(string $userCode, int $limit = 15): array
+    {
+        try {
+            $lim = max(1, min(50, $limit));
+            $stmt = $this->getCon()->prepare("
+                SELECT id_log, action, module, entite_id, description, ip_address, created_at
+                FROM " . TABLES::LOGS_ACTIVITES . "
+                WHERE user_code = ?
+                ORDER BY created_at DESC, id_log DESC
+                LIMIT {$lim}
+            ");
+            $stmt->execute([$userCode]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelUser::getUserRecentLogs error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Compte le nombre total d'actions journalisées pour cet utilisateur.
+     */
+    public function getUserLogsCount(string $userCode): int
+    {
+        try {
+            $stmt = $this->getCon()->prepare("
+                SELECT COUNT(*) FROM " . TABLES::LOGS_ACTIVITES . " WHERE user_code = ?
+            ");
+            $stmt->execute([$userCode]);
+            return (int)$stmt->fetchColumn();
+        } catch (Exception $e) {
+            error_log("ModelUser::getUserLogsCount error: " . $e->getMessage());
+            return 0;
         }
     }
 }
