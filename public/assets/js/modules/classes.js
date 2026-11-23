@@ -570,6 +570,91 @@ $(document).ready(function () {
     });
   }
 
+  // =========================================================================
+  // 3. SECTION DÉTAILS CLASSE (views/classes/details.php)
+  // =========================================================================
+  if ($('#classes-details-config').length) {
+    (function () {
+      var cfg = {};
+      try {
+        cfg = JSON.parse(document.getElementById('classes-details-config').textContent || '{}');
+      } catch (e) {}
+
+      var racine = cfg.racine || window.RACINE || '/';
+      var classeId = cfg.classeId || 0;
+      var isActif = !!cfg.isActif;
+      var libelleClasse = cfg.libelleClasse || '';
+      var csrfToken = cfg.csrfToken || '';
+
+      function filterEtudiantsTable() {
+        var q = ($('#search-classe-etudiants').val() || '').toString().toLowerCase().trim();
+        var regime = ($('#filter-classe-regime').val() || '').toString();
+        var visible = 0;
+
+        $('#table-classe-etudiants tbody tr.etudiant-row-item').each(function () {
+          var txt = $(this).text().toLowerCase();
+          var rowRegime = ($(this).data('regime') || '').toString();
+          var matchQ = (!q || txt.indexOf(q) !== -1);
+          var matchR = (!regime || rowRegime === regime);
+          var show = matchQ && matchR;
+          $(this).toggle(show);
+          if (show) visible++;
+        });
+        $('#count-visible-etudiants').text(visible);
+      }
+
+      $('#search-classe-etudiants').on('input', filterEtudiantsTable);
+      $('#filter-classe-regime').on('change', filterEtudiantsTable);
+
+      $('#btn-toggle-statut-classe-detail').on('click', function () {
+        if (!classeId) return;
+        var $btn = $(this);
+        var runToggle = function () {
+          $btn.prop('disabled', true);
+          $.ajax({
+            url: racine + 'classe/changer',
+            type: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            data: { id: classeId, csrf_token: csrfToken },
+            dataType: 'json',
+            success: function (res) {
+              if (res.status === 1 || res.success) {
+                if (window.toastr) toastr.success(res.message || 'Statut de la classe mis à jour.');
+                setTimeout(function () { window.location.reload(); }, 450);
+              } else {
+                if (window.toastr) toastr.error(res.message || 'Erreur lors du changement de statut.');
+                $btn.prop('disabled', false);
+              }
+            },
+            error: function () {
+              if (window.toastr) toastr.error('Erreur réseau.');
+              $btn.prop('disabled', false);
+            }
+          });
+        };
+
+        if (window.Swal) {
+          Swal.fire({
+            title: isActif ? ('Désactiver la classe ' + libelleClasse + ' ?') : ('Activer la classe ' + libelleClasse + ' ?'),
+            text: isActif
+              ? 'La classe ne sera plus proposée pour de nouvelles inscriptions.'
+              : 'La classe redeviendra active dans les sélecteurs et registres.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: isActif ? '#D97706' : '#16A34A',
+            cancelButtonColor: '#64748B',
+            confirmButtonText: isActif ? 'Oui, désactiver' : 'Oui, activer',
+            cancelButtonText: 'Annuler'
+          }).then(function (result) {
+            if (result.isConfirmed) runToggle();
+          });
+        } else {
+          runToggle();
+        }
+      });
+    })();
+  }
+
   if (window.lucide) lucide.createIcons();
 });
 

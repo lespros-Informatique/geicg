@@ -285,10 +285,13 @@ class ModelClasse extends BaseModel
             SELECT c.*, 
                    f.libelle_filiere,
                    n.libelle_niveau,
+                   cy.libelle_cycle,
+                   a.id_annee,
                    a.libelle_annee
             FROM " . TABLES::CLASSES . " c
             LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = c.filiere_code
             LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = c.niveau_code
+            LEFT JOIN " . TABLES::CYCLES . " cy ON cy.code_cycle = c.cycle_code
             LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = c.annee_code
             WHERE c.id_classe = ? OR c.code_classe = ?
             LIMIT 1
@@ -319,16 +322,18 @@ class ModelClasse extends BaseModel
     public function getMatieresForClasse(string $classeCode, ?string $anneeCode = null): array
     {
         $sql = "
-            SELECT DISTINCT
-                   edt.matiere_code,
+            SELECT edt.matiere_code,
                    m.libelle_matiere,
                    edt.classe_code,
-                   u.nom_user as nom_prof,
-                   u.prenom_user as prenom_prof,
+                   u.nom_user AS nom_prof,
+                   u.prenom_user AS prenom_prof,
                    e.grade_enseignant,
+                   COUNT(edt.id_emploi) AS nb_creneaux,
+                   GROUP_CONCAT(DISTINCT s.libelle_salle ORDER BY s.libelle_salle SEPARATOR ', ') AS salles_noms,
                    ROUND(SUM(TIME_TO_SEC(TIMEDIFF(edt.heure_fin, edt.heure_debut))) / 3600, 1) AS volume_horaire
             FROM " . TABLES::EMPLOIS_TEMPS . " edt
             LEFT JOIN " . TABLES::MATIERES . " m ON m.code_matiere = edt.matiere_code
+            LEFT JOIN " . TABLES::SALLES . " s ON s.code_salle = edt.salle_code
             LEFT JOIN " . TABLES::ENSEIGNANTS . " e ON e.code_enseignant = edt.enseignant_code
             LEFT JOIN " . TABLES::USERS . " u ON u.code_user = edt.enseignant_code
             WHERE edt.classe_code = ?
@@ -346,5 +351,72 @@ class ModelClasse extends BaseModel
         $stmt = $this->getCon()->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function getClassActivityStats(string $classeCode, ?string $anneeCode = null): array
+    {
+        $stats = [
+            'nb_enseignants' => 0,
+            'total_evaluations' => 0,
+            'total_absences_count' => 0,
+            'total_absences_heures' => 0.0,
+            'total_absences_injustifiees' => 0.0
+        ];
+
+        try {
+            $db = $this->getCon();
+            $hasYear = (!empty($anneeCode) && strtoupper($anneeCode) !== 'ALL');
+
+            $sqlProf = "SELECT COUNT(DISTINCT enseignant_code) FROM " . TABLES::EMPLOIS_TEMPS . " WHERE classe_code = ? AND enseignant_code IS NOT NULL AND enseignant_code != '' AND (statut_emploi = '" . STATUTS::ACTIF . "' OR statut_emploi IS NULL)";
+            $paramsProf = [$classeCode];
+            if ($hasYear) {
+                $sqlProf .= " AND annee_code = ?";
+                $paramsProf[] = $anneeCode;
+            }
+            $stProf = $db->prepare($sqlProf);
+            $stProf->execute($paramsProf);
+            $stats['nb_enseignants'] = (int)$stProf->fetchColumn();
+
+            $sqlEval = "
+                SELECT COUNT(DISTINCT CONCAT(n.composition_code, '|', COALESCE(n.composition_matiere_id, 0)))
+                FROM " . TABLES::NOTES . " n
+                INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = n.inscription_code
+                WHERE i.classe_code = ?
+                  AND (n.statut_note = '" . STATUTS::ACTIF . "' OR n.statut_note IS NULL)
+            ";
+            $paramsEval = [$classeCode];
+            if ($hasYear) {
+                $sqlEval .= " AND i.annee_code = ?";
+                $paramsEval[] = $anneeCode;
+            }
+            $stEval = $db->prepare($sqlEval);
+            $stEval->execute($paramsEval);
+            $stats['total_evaluations'] = (int)$stEval->fetchColumn();
+
+            $sqlAbs = "
+                SELECT COUNT(*) AS nb_abs,
+                       COALESCE(SUM(a.duree_heures), 0) AS total_h,
+                       COALESCE(SUM(CASE WHEN a.justifiee != '" . STATUTS::JUSTIFIE . "' THEN a.duree_heures ELSE 0 END), 0) AS injust_h
+                FROM " . TABLES::ABSENCES . " a
+                INNER JOIN " . TABLES::INSCRIPTIONS . " i ON i.code_inscription = a.inscription_code
+                WHERE i.classe_code = ?
+            ";
+            $paramsAbs = [$classeCode];
+            if ($hasYear) {
+                $sqlAbs .= " AND (a.annee_code = ? OR i.annee_code = ?)";
+                $paramsAbs[] = $anneeCode;
+                $paramsAbs[] = $anneeCode;
+            }
+            $stAbs = $db->prepare($sqlAbs);
+            $stAbs->execute($paramsAbs);
+            $absRow = $stAbs->fetch(PDO::FETCH_ASSOC) ?: [];
+            $stats['total_absences_count'] = (int)($absRow['nb_abs'] ?? 0);
+            $stats['total_absences_heures'] = (float)($absRow['total_h'] ?? 0);
+            $stats['total_absences_injustifiees'] = (float)($absRow['injust_h'] ?? 0);
+        } catch (Exception $e) {
+            error_log("ModelClasse::getClassActivityStats error: " . $e->getMessage());
+        }
+
+        return $stats;
     }
 }

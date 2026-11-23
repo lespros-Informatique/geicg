@@ -225,16 +225,31 @@ class ClasseController extends BaseController
         $this->requirePermission(PERMISSIONS::VIEW_CLASSES);
         try {
             $id = $this->validator->decrypter($details);
+            if ($id === false || $id === null || $id === '') {
+                $id = $details;
+            }
             $item = $this->model->getClasseWithDetails($id);
             if (!$item) { 
                 $this->renderNotFound("La classe demandée est introuvable.");
                 return;
             }
 
-            $classeCode = $item['code_classe'];
-            $etudiants = $this->model->getEtudiantsForClasse($classeCode);
-            $matieres = $this->model->getMatieresForClasse($classeCode);
-            $encryptedId = $this->validator->crypter($id);
+            $classeCode = (string)$item['code_classe'];
+            $anneeCode = !empty($item['annee_code']) ? (string)$item['annee_code'] : null;
+
+            $rawEtudiants = $this->model->getEtudiantsForClasse($classeCode, $anneeCode);
+            $etudiants = [];
+            foreach ($rawEtudiants as $etu) {
+                $etu['encrypted_id'] = !empty($etu['id_etudiant'])
+                    ? $this->validator->crypter($etu['id_etudiant'])
+                    : (!empty($etu['code_etudiant']) ? $this->validator->crypter($etu['code_etudiant']) : '');
+                $etudiants[] = $etu;
+            }
+
+            $matieres = $this->model->getMatieresForClasse($classeCode, $anneeCode);
+            $activityStats = $this->model->getClassActivityStats($classeCode, $anneeCode);
+            $encryptedId = $this->validator->crypter($item['id_classe']);
+            $encryptedAnneeId = !empty($item['id_annee']) ? $this->validator->crypter($item['id_annee']) : '';
         } catch (Exception $e) {
             error_log("ClasseController::details error: " . $e->getMessage());
             $this->renderNotFound("La classe demandée est introuvable.");
@@ -244,7 +259,9 @@ class ClasseController extends BaseController
             'item' => $item, 
             'etudiants' => $etudiants,
             'matieres' => $matieres,
-            'encryptedId' => $encryptedId
+            'activityStats' => $activityStats,
+            'encryptedId' => $encryptedId,
+            'encryptedAnneeId' => $encryptedAnneeId
         ]);
     }
 
