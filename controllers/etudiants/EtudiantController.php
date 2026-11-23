@@ -411,6 +411,18 @@ class EtudiantController extends BaseController
             }
             unset($ab);
 
+            $kits = $fullDetails['kits'] ?? [];
+
+            $bulletins = $fullDetails['bulletins'] ?? [];
+            foreach ($bulletins as &$bul) {
+                $bul['encrypted_inscription_id'] = !empty($bul['id_inscription'])
+                    ? $this->validator->crypter((int)$bul['id_inscription'])
+                    : '';
+            }
+            unset($bul);
+
+            $deliberations = $fullDetails['deliberations'] ?? [];
+
             $etablissementConfig = $this->getEtablissementConfig();
 
             $this->loadView('../views/etudiants/details.php', [
@@ -428,6 +440,9 @@ class EtudiantController extends BaseController
                 'soldeRestant'           => $fullDetails['soldeRestant'] ?? 0,
                 'scolariteTotale'        => $fullDetails['scolariteTotale'] ?? 0,
                 'absences'               => $absences,
+                'kits'                   => $kits,
+                'bulletins'              => $bulletins,
+                'deliberations'          => $deliberations,
                 'encryptedId'            => $encryptedId,
                 'encryptedInscriptionId' => $encryptedInscriptionId,
                 'encryptedClasseId'      => $encryptedClasseId,

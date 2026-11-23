@@ -806,6 +806,108 @@ class ModelEtudiant extends BaseModel
             error_log("ModelEtudiant::getStudentFullDetails dossierPieces: " . $e->getMessage());
         }
 
+        // 7. Kits & Accessoires (remise de tenues, polos, badges, macarons)
+        $kits = [];
+        try {
+            $stmtKits = $db->prepare("
+                SELECT
+                    ai.id_accessoire_inscription,
+                    ai.code_accessoire_inscription,
+                    ai.inscription_code,
+                    ai.accessoire_code,
+                    ai.annee_code,
+                    ai.etat_retrait,
+                    ai.date_retrait,
+                    ai.created_at_accessoire_inscription,
+                    a.libelle_accessoire,
+                    a.type_filiere_cible,
+                    an.libelle_annee
+                FROM " . TABLES::ACCESSOIRE_INSCRIPTION . " ai
+                INNER JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = ai.inscription_code
+                LEFT JOIN " . TABLES::ACCESSOIRES . " a ON a.code_accessoire = ai.accessoire_code
+                LEFT JOIN " . TABLES::ANNEES . " an ON an.code_annee = ai.annee_code
+                WHERE ins.etudiant_code = ?
+                  AND ai.statut_accessoire_inscription = '" . STATUTS::ACTIF . "'
+                ORDER BY ins.id_inscription DESC, ai.id_accessoire_inscription ASC
+            ");
+            $stmtKits->execute([$etudiantCode]);
+            $kits = $stmtKits->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails kits: " . $e->getMessage());
+        }
+
+        // 8. Bulletins semestriels & moyennes pondérées dynamiques (v_moyennes_semestres_matieres)
+        $bulletins = [];
+        try {
+            $stmtBul = $db->prepare("
+                SELECT
+                    ins.id_inscription,
+                    ins.code_inscription,
+                    ins.annee_code,
+                    an.libelle_annee,
+                    cl.id_classe,
+                    cl.libelle_classe,
+                    s.id_semestre,
+                    s.code_semestre,
+                    s.libelle_semestre,
+                    COUNT(DISTINCT vm.matiere_code) AS nb_matieres,
+                    COALESCE(SUM(vm.nb_notes_matiere), 0) AS nb_notes,
+                    COALESCE(SUM(vm.coefficient_maquette), 0) AS total_coefficients,
+                    ROUND(SUM(vm.points_matiere) / NULLIF(SUM(vm.coefficient_maquette), 0), 2) AS moyenne_generale,
+                    ROUND(
+                        SUM(CASE WHEN vm.categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN vm.points_matiere ELSE 0 END)
+                        / NULLIF(SUM(CASE WHEN vm.categorie_matiere = '" . CATEGORIES_MATIERES::GENERALE . "' THEN vm.coefficient_maquette ELSE 0 END), 0),
+                        2
+                    ) AS moyenne_generales,
+                    ROUND(
+                        SUM(CASE WHEN vm.categorie_matiere = '" . CATEGORIES_MATIERES::PROFESSIONNELLE . "' THEN vm.points_matiere ELSE 0 END)
+                        / NULLIF(SUM(CASE WHEN vm.categorie_matiere = '" . CATEGORIES_MATIERES::PROFESSIONNELLE . "' THEN vm.coefficient_maquette ELSE 0 END), 0),
+                        2
+                    ) AS moyenne_pro
+                FROM " . TABLES::INSCRIPTIONS . " ins
+                INNER JOIN " . TABLES::ANNEES . " an ON an.code_annee = ins.annee_code
+                INNER JOIN " . TABLES::SEMESTRES . " s ON s.annee_code = ins.annee_code
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                LEFT JOIN " . VIEWS::MOYENNES_SEMESTRES_MATIERES . " vm
+                       ON vm.inscription_code = ins.code_inscription
+                      AND vm.semestre_code = s.code_semestre
+                WHERE ins.etudiant_code = ?
+                  AND ins.statut_inscription != '" . STATUTS::ANNULE . "'
+                GROUP BY
+                    ins.id_inscription,
+                    ins.code_inscription,
+                    ins.annee_code,
+                    an.libelle_annee,
+                    cl.id_classe,
+                    cl.libelle_classe,
+                    s.id_semestre,
+                    s.code_semestre,
+                    s.libelle_semestre
+                ORDER BY ins.id_inscription DESC, s.id_semestre ASC
+            ");
+            $stmtBul->execute([$etudiantCode]);
+            $bulletins = $stmtBul->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails bulletins: " . $e->getMessage());
+        }
+
+        // 8.bis Délibérations annuelles officielles (si existantes)
+        $deliberations = [];
+        try {
+            $stmtDelib = $db->prepare("
+                SELECT d.*, an.libelle_annee, cl.libelle_classe
+                FROM " . TABLES::DELIBERATIONS . " d
+                LEFT JOIN " . TABLES::ANNEES . " an ON an.code_annee = d.annee_code
+                LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = d.classe_code
+                WHERE d.etudiant_code = ?
+                ORDER BY d.id_deliberation DESC
+            ");
+            $stmtDelib->execute([$etudiantCode]);
+            $deliberations = $stmtDelib->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelEtudiant::getStudentFullDetails deliberations: " . $e->getMessage());
+        }
+
         return [
             'parent'                => $parent,
             'inscription'           => $inscription,
@@ -819,7 +921,10 @@ class ModelEtudiant extends BaseModel
             'soldeRestant'          => $soldeRestant,
             'scolariteTotale'       => $scolariteTotale,
             'absences'              => $absences,
-            'dossierPieces'         => $dossierPieces
+            'dossierPieces'         => $dossierPieces,
+            'kits'                  => $kits,
+            'bulletins'             => $bulletins,
+            'deliberations'         => $deliberations
         ];
     }
 

@@ -9,6 +9,9 @@ $dossierPieces = $dossierPieces ?? [];
 $paiementsScolarite = $paiementsScolarite ?? ($paiements ?? []);
 $paiementsAnnexes = $paiementsAnnexes ?? [];
 $absences = $absences ?? [];
+$kits = $kits ?? [];
+$bulletins = $bulletins ?? [];
+$deliberations = $deliberations ?? [];
 
 $scolariteTotale = (float)($scolariteTotale ?? 0);
 $totalPaye = (float)($totalPaye ?? 0);
@@ -132,6 +135,16 @@ $fmtMoney = static function ($m): string {
     return number_format((float)$m, 0, ',', ' ') . ' FCFA';
 };
 
+// Kits & Accessoires
+$totalKits = count($kits);
+$kitsRetiresCount = 0;
+foreach ($kits as $kt) {
+    if (strtolower((string)($kt['etat_retrait'] ?? '')) === 'retire') {
+        $kitsRetiresCount++;
+    }
+}
+$kitsEnAttenteCount = max(0, $totalKits - $kitsRetiresCount);
+
 // Permissions RBAC
 $canEditEtudiant = Auth::can(PERMISSIONS::EDIT_ETUDIANT) || Auth::can(PERMISSIONS::MANAGE_ETUDIANTS);
 $canChangerClasse = Auth::can(PERMISSIONS::CHANGER_CLASSE_ETUDIANT) || Auth::can(PERMISSIONS::MANAGE_ETUDIANTS);
@@ -141,6 +154,9 @@ $canViewFinances = Auth::can(PERMISSIONS::VIEW_PAIEMENTS) || Auth::can(PERMISSIO
 $canRecordPaiement = Auth::can(PERMISSIONS::RECORD_PAIEMENTS) || Auth::can(PERMISSIONS::MANAGE_PAIEMENTS);
 $canViewAbsences = Auth::can(PERMISSIONS::VIEW_ABSENCES) || Auth::can(PERMISSIONS::MANAGE_ABSENCES);
 $canViewDossiers = Auth::can(PERMISSIONS::VIEW_DEPOT_DOSSIERS) || Auth::can(PERMISSIONS::MANAGE_DEPOT_DOSSIERS);
+$canViewKits = Auth::can(PERMISSIONS::VIEW_REMISE_KITS) || Auth::can(PERMISSIONS::MANAGE_REMISE_KITS) || Auth::can(PERMISSIONS::VIEW_ACCESSOIRES) || Auth::can(PERMISSIONS::MANAGE_ACCESSOIRES);
+$canManageKits = Auth::can(PERMISSIONS::MANAGE_REMISE_KITS);
+$canViewBulletins = Auth::can(PERMISSIONS::VIEW_BULLETINS) || Auth::can(PERMISSIONS::GENERATE_BULLETINS) || Auth::can(PERMISSIONS::VIEW_NOTES);
 $canUploadPhoto = $hasInscr && (
     $hasPhoto
         ? Auth::can(PERMISSIONS::REPRENDRE_PHOTO_INSCRIPTION)
@@ -334,6 +350,16 @@ $canUploadPhoto = $hasInscr && (
         <button type="button" class="etu-detail-tab-btn" data-tab="tab-etu-dossier" style="background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748B; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
           <i data-lucide="folder-check" style="width: 15px; height: 15px;"></i> Pièces du Dossier (<?= $deposedCount ?>/<?= $totalPieces ?>)
         </button>
+        <?php if ($canViewKits): ?>
+        <button type="button" class="etu-detail-tab-btn" data-tab="tab-etu-kits" style="background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748B; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
+          <i data-lucide="package" style="width: 15px; height: 15px;"></i> Kits (<span id="tab-count-kits-retires"><?= $kitsRetiresCount ?></span>/<?= $totalKits ?>)
+        </button>
+        <?php endif; ?>
+        <?php if ($canViewBulletins): ?>
+        <button type="button" class="etu-detail-tab-btn" data-tab="tab-etu-bulletins" style="background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748B; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
+          <i data-lucide="award" style="width: 15px; height: 15px;"></i> Bulletins (<?= count($bulletins) ?>)
+        </button>
+        <?php endif; ?>
         <?php if ($canViewAbsences): ?>
         <button type="button" class="etu-detail-tab-btn" data-tab="tab-etu-absences" style="background: transparent; border: none; border-bottom: 3px solid transparent; color: #64748B; padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; margin-bottom: -2px;">
           <i data-lucide="calendar-x" style="width: 15px; height: 15px;"></i> Absences (<?= $totalAbsCount ?>)
@@ -812,6 +838,250 @@ $canUploadPhoto = $hasInscr && (
           <?php endif; ?>
         </div>
       </div>
+
+      <!-- ========================================================================= -->
+      <!-- ONGLET 3B : KITS & ACCESSOIRES (TENUES, POLOS, BADGES, MACARONS) -->
+      <!-- ========================================================================= -->
+      <?php if ($canViewKits): ?>
+      <div id="tab-etu-kits" class="etu-detail-tab-pane" style="display: none;">
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+            <div>
+              <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="package" style="width: 18px; height: 18px; color: #B45309;"></i>
+                Kits &amp; Accessoires (<span id="header-count-kits-retires"><?= $kitsRetiresCount ?></span> / <?= $totalKits ?> retirés)
+              </h3>
+              <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Suivi de la remise des tenues, polos, badges et accessoires scolaires</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <?php if ($totalKits > 0): ?>
+                <span id="badge-kits-summary" style="background: <?= $kitsEnAttenteCount === 0 ? '#DCFCE7' : '#FEF3C7' ?>; color: <?= $kitsEnAttenteCount === 0 ? '#15803D' : '#B45309' ?>; border: 1px solid <?= $kitsEnAttenteCount === 0 ? '#86EFAC' : '#FCD34D' ?>; padding: 5px 12px; border-radius: 10px; font-weight: 800; font-size: 12px;">
+                  <?= $kitsEnAttenteCount === 0 ? 'Tous les kits retirés' : ($kitsEnAttenteCount . ' en attente') ?>
+                </span>
+              <?php endif; ?>
+              <?php if (!empty($inscription['code_inscription'])): ?>
+                <a href="<?= url('accessoire/imprimerBonPdf') . '?inscription_code=' . urlencode($inscription['code_inscription']) ?>" target="_blank" style="background: #FFFFFF; color: #334155; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 7px 13px; font-size: 12.5px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                  <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Bon de Remise PDF
+                </a>
+              <?php endif; ?>
+              <a href="<?= url('accessoire/registre') ?>" style="background: #F8FAFC; color: #1E3A5F; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 7px 13px; font-size: 12.5px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="clipboard-list" style="width: 14px; height: 14px;"></i> Registre Kits
+              </a>
+            </div>
+          </div>
+
+          <?php if (empty($kits)): ?>
+            <div style="color: #94A3B8; text-align: center; padding: 26px 0; font-style: italic; font-size: 13px;">
+              Aucun kit ou accessoire n'est encore attribué à cet étudiant.
+            </div>
+          <?php else: ?>
+            <div style="width: 100%; overflow-x: auto;">
+              <table id="table-etu-kits" class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                  <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 11.5px; text-transform: uppercase;">
+                    <th style="padding: 10px 12px; width: 40px;">#</th>
+                    <th style="padding: 10px 12px;">Code</th>
+                    <th style="padding: 10px 12px;">Accessoire / Kit</th>
+                    <th style="padding: 10px 12px;">Session</th>
+                    <th style="padding: 10px 12px; text-align: center;">Date de Retrait</th>
+                    <th style="padding: 10px 12px; text-align: center;">État</th>
+                    <?php if ($canManageKits): ?>
+                      <th style="padding: 10px 12px; text-align: right; width: 140px;">Action</th>
+                    <?php endif; ?>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($kits as $idx => $kt):
+                    $isRetire = (strtolower((string)($kt['etat_retrait'] ?? '')) === 'retire');
+                    $dateRet = !empty($kt['date_retrait']) ? date('d/m/Y H:i', strtotime($kt['date_retrait'])) : '-';
+                  ?>
+                    <tr class="etu-kit-row" data-state="<?= $isRetire ? 'retire' : 'en_attente' ?>" style="border-bottom: 1px solid #F1F5F9;">
+                      <td style="padding: 11px 12px; font-weight: 700; color: #64748B;"><?= $idx + 1 ?></td>
+                      <td style="padding: 11px 12px; white-space: nowrap;">
+                        <code style="font-weight: 700; color: #475569; background: #F1F5F9; padding: 2px 7px; border-radius: 5px; font-size: 12px;"><?= htmlspecialchars($kt['code_accessoire_inscription'] ?? '-') ?></code>
+                      </td>
+                      <td style="padding: 11px 12px; font-weight: 700; color: #0F172A;">
+                        <?= htmlspecialchars($kt['libelle_accessoire'] ?? ($kt['accessoire_code'] ?? '-')) ?>
+                      </td>
+                      <td style="padding: 11px 12px; color: #475569; font-weight: 600; white-space: nowrap;">
+                        <?= htmlspecialchars($kt['libelle_annee'] ?? '-') ?>
+                      </td>
+                      <td class="kit-date-cell" style="padding: 11px 12px; text-align: center; color: #475569; font-weight: 600; white-space: nowrap;">
+                        <?= htmlspecialchars($dateRet) ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; white-space: nowrap;">
+                        <span class="kit-state-badge" style="background: <?= $isRetire ? '#DCFCE7' : '#FEF3C7' ?>; color: <?= $isRetire ? '#15803D' : '#B45309' ?>; padding: 3px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700;">
+                          <?= $isRetire ? 'Retiré' : 'En attente' ?>
+                        </span>
+                      </td>
+                      <?php if ($canManageKits): ?>
+                        <td style="padding: 11px 12px; text-align: right; white-space: nowrap;">
+                          <button type="button"
+                                  class="btn-toggle-kit-retrait"
+                                  data-id="<?= (int)($kt['id_accessoire_inscription'] ?? 0) ?>"
+                                  data-code="<?= htmlspecialchars($kt['code_accessoire_inscription'] ?? '') ?>"
+                                  style="background: <?= $isRetire ? '#F8FAFC' : '#16A34A' ?>; color: <?= $isRetire ? '#475569' : '#FFFFFF' ?>; border: 1px solid <?= $isRetire ? '#CBD5E1' : '#16A34A' ?>; border-radius: 7px; padding: 5px 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                            <i data-lucide="<?= $isRetire ? 'rotate-ccw' : 'check' ?>" style="width: 13px; height: 13px;"></i>
+                            <span><?= $isRetire ? 'Annuler retrait' : 'Marquer retiré' ?></span>
+                          </button>
+                        </td>
+                      <?php endif; ?>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endif; ?>
+
+      <!-- ========================================================================= -->
+      <!-- ONGLET 3C : BULLETINS DE NOTES & RÉSULTATS ACADÉMIQUES -->
+      <!-- ========================================================================= -->
+      <?php if ($canViewBulletins): ?>
+      <div id="tab-etu-bulletins" class="etu-detail-tab-pane" style="display: none;">
+
+        <?php if (!empty($deliberations)): ?>
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 20px 24px; border: 1px solid #BFDBFE; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px; width: 100%; box-sizing: border-box;">
+          <h3 style="font-size: 14.5px; font-weight: 800; color: #1E3A5F; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="gavel" style="width: 17px; height: 17px;"></i> Décisions Officielles de Délibération (<?= count($deliberations) ?>)
+          </h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+            <?php foreach ($deliberations as $del):
+              $dec = strtolower((string)($del['decision_finale'] ?? 'en_attente'));
+              $decStyle = [
+                'admis'      => ['bg' => '#DCFCE7', 'fg' => '#15803D', 'bd' => '#86EFAC'],
+                'ajourne'    => ['bg' => '#FEF3C7', 'fg' => '#B45309', 'bd' => '#FCD34D'],
+                'redouble'   => ['bg' => '#FEE2E2', 'fg' => '#B91C1C', 'bd' => '#FCA5A5'],
+                'exclu'      => ['bg' => '#FEE2E2', 'fg' => '#991B1B', 'bd' => '#FCA5A5'],
+                'en_attente' => ['bg' => '#F1F5F9', 'fg' => '#475569', 'bd' => '#CBD5E1'],
+              ][$dec] ?? ['bg' => '#F1F5F9', 'fg' => '#475569', 'bd' => '#CBD5E1'];
+            ?>
+              <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <strong style="color: #0F172A; font-size: 13.5px;"><?= htmlspecialchars(($del['libelle_annee'] ?? '-') . (!empty($del['libelle_classe']) ? ' · ' . $del['libelle_classe'] : '')) ?></strong>
+                  <span style="background: <?= $decStyle['bg'] ?>; color: <?= $decStyle['fg'] ?>; border: 1px solid <?= $decStyle['bd'] ?>; padding: 2px 9px; border-radius: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                    <?= htmlspecialchars(!empty($del['libelle_decision']) ? $del['libelle_decision'] : $dec) ?>
+                  </span>
+                </div>
+                <div style="font-size: 12.5px; color: #334155; display: flex; flex-wrap: wrap; gap: 12px;">
+                  <?php if ($del['moyenne_annuelle'] !== null): ?>
+                    <span>Moy. annuelle : <strong style="color: #1E3A5F;"><?= number_format((float)$del['moyenne_annuelle'], 2, ',', ' ') ?>/20</strong></span>
+                  <?php endif; ?>
+                  <?php if (!empty($del['rang_annuel'])): ?>
+                    <span>Rang : <strong><?= (int)$del['rang_annuel'] ?><?= !empty($del['effectif_classe']) ? (' / ' . (int)$del['effectif_classe']) : '' ?></strong></span>
+                  <?php endif; ?>
+                  <?php if (!empty($del['mention_finale'])): ?>
+                    <span>Mention : <strong><?= htmlspecialchars($del['mention_finale']) ?></strong></span>
+                  <?php endif; ?>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endif; ?>
+
+        <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 22px 26px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); width: 100%; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #F1F5F9;">
+            <div>
+              <h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="award" style="width: 18px; height: 18px; color: #1E3A5F;"></i>
+                Bulletins Semestriels de Notes (<?= count($bulletins) ?>)
+              </h3>
+              <p style="color: #64748B; font-size: 12px; margin: 3px 0 0 0;">Consultation des moyennes pondérées par semestre et impression officielle PDF</p>
+            </div>
+            <a href="<?= url('bulletin/list') ?>" style="background: #F8FAFC; color: #1E3A5F; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 7px 13px; font-size: 12.5px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i> Module Bulletins
+            </a>
+          </div>
+
+          <?php if (empty($bulletins)): ?>
+            <div style="color: #94A3B8; text-align: center; padding: 26px 0; font-style: italic; font-size: 13px;">
+              Aucun bulletin semestriel disponible pour cet étudiant.
+            </div>
+          <?php else: ?>
+            <div style="width: 100%; overflow-x: auto;">
+              <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                  <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 11.5px; text-transform: uppercase;">
+                    <th style="padding: 10px 12px;">Session</th>
+                    <th style="padding: 10px 12px;">Semestre</th>
+                    <th style="padding: 10px 12px;">Classe</th>
+                    <th style="padding: 10px 12px; text-align: center;">Matières / Notes</th>
+                    <th style="padding: 10px 12px; text-align: center;">Moy. Générales</th>
+                    <th style="padding: 10px 12px; text-align: center;">Moy. Pro.</th>
+                    <th style="padding: 10px 12px; text-align: center;">Moyenne Générale</th>
+                    <th style="padding: 10px 12px; text-align: right; width: 100px;">Bulletin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($bulletins as $bul):
+                    $nbNotesB = (int)($bul['nb_notes'] ?? 0);
+                    $nbMatB = (int)($bul['nb_matieres'] ?? 0);
+                    $moyG = $bul['moyenne_generale'] !== null ? (float)$bul['moyenne_generale'] : null;
+                    $moyGen = $bul['moyenne_generales'] !== null ? (float)$bul['moyenne_generales'] : null;
+                    $moyPro = $bul['moyenne_pro'] !== null ? (float)$bul['moyenne_pro'] : null;
+                    $semParam = urlencode((string)($bul['code_semestre'] ?? ''));
+                    $encInsB = (string)($bul['encrypted_inscription_id'] ?? '');
+                  ?>
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                      <td style="padding: 11px 12px; font-weight: 800; color: #1E3A5F; white-space: nowrap;">
+                        <?= htmlspecialchars($bul['libelle_annee'] ?? '-') ?>
+                      </td>
+                      <td style="padding: 11px 12px; white-space: nowrap;">
+                        <span style="background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; padding: 3px 9px; border-radius: 6px; font-weight: 800; font-size: 12px;">
+                          <?= htmlspecialchars($bul['libelle_semestre'] ?? '-') ?>
+                        </span>
+                      </td>
+                      <td style="padding: 11px 12px; font-weight: 700; color: #0F172A; white-space: nowrap;">
+                        <?= htmlspecialchars($bul['libelle_classe'] ?? '-') ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; color: #475569; font-weight: 600; white-space: nowrap;">
+                        <?php if ($nbNotesB > 0): ?>
+                          <strong><?= $nbMatB ?></strong> mat. &bull; <strong><?= $nbNotesB ?></strong> note<?= $nbNotesB > 1 ? 's' : '' ?>
+                        <?php else: ?>
+                          <span style="color: #94A3B8; font-style: italic;">Aucune note</span>
+                        <?php endif; ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; font-weight: 700; color: #334155; white-space: nowrap;">
+                        <?= $moyGen !== null ? (number_format($moyGen, 2, ',', ' ') . '/20') : '-' ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; font-weight: 700; color: #334155; white-space: nowrap;">
+                        <?= $moyPro !== null ? (number_format($moyPro, 2, ',', ' ') . '/20') : '-' ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: center; white-space: nowrap;">
+                        <?php if ($moyG !== null): ?>
+                          <span style="background: <?= $moyG >= 10 ? '#DCFCE7' : '#FEE2E2' ?>; color: <?= $moyG >= 10 ? '#15803D' : '#B91C1C' ?>; border: 1px solid <?= $moyG >= 10 ? '#86EFAC' : '#FCA5A5' ?>; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 12.5px;">
+                            <?= number_format($moyG, 2, ',', ' ') ?> / 20
+                          </span>
+                        <?php else: ?>
+                          <span style="color: #94A3B8;">-</span>
+                        <?php endif; ?>
+                      </td>
+                      <td style="padding: 11px 12px; text-align: right; white-space: nowrap;">
+                        <?php if ($encInsB !== '' && $nbNotesB > 0): ?>
+                          <div style="display: inline-flex; align-items: center; gap: 6px;">
+                            <a href="<?= url('bulletin/details/' . $encInsB) . '?semestre=' . $semParam ?>" title="Consulter le bulletin détaillé" aria-label="Consulter le bulletin détaillé" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #BAE6FD; background: #EFF6FF; color: #0284C7; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+                              <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
+                            </a>
+                            <a href="<?= url('bulletin/imprimerBulletinPdf/' . $encInsB) . '?semestre=' . $semParam ?>" target="_blank" title="Imprimer le bulletin en PDF" aria-label="Imprimer le bulletin en PDF" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #1E3A5F; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+                              <i data-lucide="printer" style="width: 15px; height: 15px;"></i>
+                            </a>
+                          </div>
+                        <?php else: ?>
+                          <span style="color: #94A3B8;">—</span>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endif; ?>
 
       <!-- ========================================================================= -->
       <!-- ONGLET 4 : ABSENCES & ASSIDUITÉ -->

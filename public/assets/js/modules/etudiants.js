@@ -817,6 +817,74 @@
       });
     });
 
+    // Bascule directe du retrait d'un kit depuis le dossier étudiant
+    $(document).on('click', '.btn-toggle-kit-retrait', function () {
+      var $btn = $(this);
+      var $row = $btn.closest('tr.etu-kit-row');
+      var id = $btn.data('id');
+      var code = $btn.data('code') || '';
+      var detRacine = cfg.racine || window.RACINE || '/';
+
+      $btn.prop('disabled', true);
+      $.ajax({
+        url: detRacine + 'accessoire/toggleRetrait',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: {
+          id: id,
+          code_accessoire_inscription: code,
+          csrf_token: cfg.csrfToken || ''
+        },
+        dataType: 'json',
+        success: function (res) {
+          $btn.prop('disabled', false);
+          if (res && (res.status === 1 || res.success)) {
+            var newState = res.new_state || (res.data && res.data.new_state) || '';
+            var newDate = res.date_retrait || (res.data && res.data.date_retrait) || '-';
+            var isRet = (newState === 'retire');
+
+            $row.attr('data-state', isRet ? 'retire' : 'en_attente');
+            $row.find('.kit-date-cell').text(newDate);
+            $row.find('.kit-state-badge')
+              .text(isRet ? 'Retiré' : 'En attente')
+              .css({ background: isRet ? '#DCFCE7' : '#FEF3C7', color: isRet ? '#15803D' : '#B45309' });
+            $btn
+              .css({
+                background: isRet ? '#F8FAFC' : '#16A34A',
+                color: isRet ? '#475569' : '#FFFFFF',
+                borderColor: isRet ? '#CBD5E1' : '#16A34A'
+              })
+              .html('<i data-lucide="' + (isRet ? 'rotate-ccw' : 'check') + '" style="width: 13px; height: 13px;"></i><span>' + (isRet ? 'Annuler retrait' : 'Marquer retiré') + '</span>');
+
+            var totalRows = $('#table-etu-kits tbody tr.etu-kit-row').length;
+            var retiredRows = $('#table-etu-kits tbody tr.etu-kit-row[data-state="retire"]').length;
+            var pendingRows = Math.max(0, totalRows - retiredRows);
+            $('#tab-count-kits-retires, #header-count-kits-retires').text(retiredRows);
+            $('#badge-kits-summary')
+              .text(pendingRows === 0 ? 'Tous les kits retirés' : (pendingRows + ' en attente'))
+              .css({
+                background: pendingRows === 0 ? '#DCFCE7' : '#FEF3C7',
+                color: pendingRows === 0 ? '#15803D' : '#B45309',
+                borderColor: pendingRows === 0 ? '#86EFAC' : '#FCD34D'
+              });
+
+            if (window.lucide) lucide.createIcons();
+            if (typeof showToast === 'function') showToast(res.message || 'Statut du kit mis à jour', 'success');
+            else if (window.toastr) toastr.success(res.message || 'Statut du kit mis à jour');
+          } else {
+            var errMsg = (res && res.message) || 'Erreur lors de la mise à jour du kit.';
+            if (typeof showToast === 'function') showToast(errMsg, 'error');
+            else if (window.toastr) toastr.error(errMsg);
+          }
+        },
+        error: function () {
+          $btn.prop('disabled', false);
+          if (typeof showToast === 'function') showToast('Erreur réseau lors de la mise à jour du kit.', 'error');
+          else if (window.toastr) toastr.error('Erreur réseau lors de la mise à jour du kit.');
+        }
+      });
+    });
+
     if (urlParams.has('print')) {
       setTimeout(function () { window.print(); }, 400);
     }
