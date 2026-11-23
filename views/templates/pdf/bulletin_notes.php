@@ -484,54 +484,44 @@ if (empty($photoPath) && file_exists($defaultPlaceholder)) {
 
   <table class="student-grid">
     <tr>
-      <td style="width: 15%;">
+      <td style="width: 15%; vertical-align: top;">
         <?php if (!empty($photoPath) && file_exists($photoPath)): ?>
           <img src="<?= $photoPath ?>" class="photo-box">
         <?php else: ?>
           <div class="photo-placeholder">PHOTO</div>
         <?php endif; ?>
       </td>
-      <td style="width: 55%; padding-left: 6px;">
+      <td style="width: 85%; padding-left: 6px; vertical-align: top;">
         <table class="info-table">
           <tr>
-            <td style="width: 34%;">Matricule MESRS :</td>
-            <td><strong><?= htmlspecialchars($matricule_mesrs) ?></strong></td>
+            <td style="width: 22%;">Matricule MESRS :</td>
+            <td style="width: 42%;"><strong><?= htmlspecialchars($matricule_mesrs) ?></strong></td>
+            <td style="text-align: right; width: 21%;">Effectif :</td>
+            <td style="padding-left: 6px; width: 15%;"><strong><?= htmlspecialchars($effectif_classe) ?></strong></td>
           </tr>
           <tr>
             <td>Né( e) le :</td>
             <td><strong><?= htmlspecialchars($date_naissance) ?></strong></td>
-          </tr>
-          <tr>
-            <td>Lieu :</td>
-            <td><strong><?= htmlspecialchars($lieu_naissance) ?></strong></td>
-          </tr>
-          <tr>
-            <td>Sexe :</td>
-            <td><strong><?= htmlspecialchars($sexe_etudiant) ?></strong></td>
-          </tr>
-          <tr>
-            <td>Filière :</td>
-            <td><strong style="font-size: 10.5pt;"><?= htmlspecialchars($filiere_libelle) ?></strong></td>
-          </tr>
-          <tr>
-            <td>Niveau :</td>
-            <td><strong><?= htmlspecialchars($niveau_libelle) ?></strong></td>
-          </tr>
-        </table>
-      </td>
-      <td style="width: 30%;">
-        <table class="info-table">
-          <tr>
-            <td style="text-align: right; width: 58%;">Effectif :</td>
-            <td style="padding-left: 6px;"><strong><?= htmlspecialchars($effectif_classe) ?></strong></td>
-          </tr>
-          <tr>
             <td style="text-align: right;">Statut :</td>
             <td style="padding-left: 6px;"><strong><?= htmlspecialchars($statut_affectation) ?></strong></td>
           </tr>
           <tr>
+            <td>Lieu :</td>
+            <td><strong><?= htmlspecialchars($lieu_naissance) ?></strong></td>
             <td style="text-align: right;">Redoublant (e ) :</td>
             <td style="padding-left: 6px;"><strong><?= htmlspecialchars($redoublant) ?></strong></td>
+          </tr>
+          <tr>
+            <td>Sexe :</td>
+            <td colspan="3"><strong><?= htmlspecialchars($sexe_etudiant) ?></strong></td>
+          </tr>
+          <tr>
+            <td>Filière :</td>
+            <td colspan="3"><strong style="font-size: 10.5pt;"><?= htmlspecialchars($filiere_libelle) ?></strong></td>
+          </tr>
+          <tr>
+            <td>Niveau :</td>
+            <td colspan="3"><strong><?= htmlspecialchars($niveau_libelle) ?></strong></td>
           </tr>
         </table>
       </td>
