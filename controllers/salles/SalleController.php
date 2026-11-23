@@ -49,7 +49,7 @@ class SalleController extends BaseController
             $data['code_salle'] = $this->validator->generateCode(TABLES::SALLES, 'code_salle', 'SAL-', 8);
         }
         $data['statut_salle'] = $data['statut_salle'] ?? 'actif';
-        $data['created_at_salle'] = date('Y-m-d H:i:s');
+        $data['created_at'] = date('Y-m-d H:i:s');
         $data['user_code'] = $userCode;
         $data['etablissement_code'] = $etabCode;
         $data['annee_code'] = $anneeCode;
@@ -94,6 +94,7 @@ class SalleController extends BaseController
         if (isset($data['capacite_salle'])) {
             $data['capacite_salle'] = ($data['capacite_salle'] !== '' && $data['capacite_salle'] !== null) ? (int)$data['capacite_salle'] : null;
         }
+        $data['updated_at'] = date('Y-m-d H:i:s');
         $filteredData = $this->model->filterData($data);
         if ($this->model->update($filteredData, $id)) {
             $this->logAction(
@@ -118,7 +119,7 @@ class SalleController extends BaseController
         $this->requirePost(false);
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::MANAGE_SALLES);
-        $id = $this->post('id');
+        $id = $this->post('id') ?: $this->post('id_salle');
         if ($id && ($sal = $this->model->getById($id))) {
             if ($this->model->toggleStatus($id)) {
                 $this->logAction(
@@ -142,22 +143,58 @@ class SalleController extends BaseController
         $this->requireAuth();
         $this->requirePermission(PERMISSIONS::VIEW_SALLES);
         try {
-            $id = $this->validator->decrypter($details);
-            $item = $this->model->getById($id);
-            if (!$item) { redirect('salle/list'); }
+            $item = null;
+            if (is_numeric($details)) {
+                $item = $this->model->getById((int)$details);
+            }
+            if (!$item) {
+                $decrypted = $this->validator->decrypter($details);
+                if (is_numeric($decrypted) && (int)$decrypted > 0) {
+                    $item = $this->model->getById((int)$decrypted);
+                } elseif (is_string($decrypted) && $decrypted !== '') {
+                    $item = $this->model->getByCode($decrypted, 'code_salle');
+                }
+            }
+            if (!$item && is_string($details) && $details !== '') {
+                $item = $this->model->getByCode($details, 'code_salle');
+            }
+            if (!$item) {
+                redirect('salle/list');
+                return;
+            }
 
-            $salleCode = $item['code_salle'];
-            $planning = $this->model->getPlanningForSalle($salleCode);
-            $encryptedId = $this->validator->crypter($id);
+            $salleCode = (string)$item['code_salle'];
+            $anneeCode = $this->getActiveAnneeCode();
+            $anneeLibelle = $this->getActiveAnneeLibelle();
+
+            $planning = $this->model->getPlanningForSalle($salleCode, $anneeCode);
+            foreach ($planning as &$p) {
+                $p['encrypted_classe_id'] = !empty($p['id_classe'])
+                    ? $this->validator->crypter((int)$p['id_classe'])
+                    : '';
+                $p['encrypted_matiere_id'] = !empty($p['id_matiere'])
+                    ? $this->validator->crypter((int)$p['id_matiere'])
+                    : '';
+                $p['encrypted_enseignant_id'] = !empty($p['id_enseignant'])
+                    ? $this->validator->crypter((int)$p['id_enseignant'])
+                    : '';
+            }
+            unset($p);
+
+            $stats = $this->model->getStatsForSalle($salleCode, $anneeCode);
+            $encryptedId = $this->validator->crypter((int)$item['id_salle']);
         } catch (Exception $e) {
             error_log("SalleController::details error: " . $e->getMessage());
             $this->renderNotFound("La salle demandée est introuvable.");
             return;
         }
         $this->loadView('../views/salles/details.php', [
-            'item' => $item, 
-            'planning' => $planning,
-            'encryptedId' => $encryptedId
+            'item'         => $item,
+            'planning'     => $planning,
+            'stats'        => $stats,
+            'anneeCode'    => $anneeCode,
+            'anneeLibelle' => $anneeLibelle,
+            'encryptedId'  => $encryptedId
         ]);
     }
 

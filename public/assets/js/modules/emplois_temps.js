@@ -1422,6 +1422,176 @@
 
   }
 
+  // =========================================================================
+  // 7. VUE : DÉTAILS D'UNE SALLE DE COURS (views/salles/details.php)
+  // =========================================================================
+  function initSallesDetailsModule() {
+    if (!$('#salles-details-config').length) return;
+
+    var cfg = {};
+    try {
+      var cfgEl = document.getElementById('salles-details-config');
+      if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+    } catch (e) {}
+
+    var racine = cfg.racine || window.RACINE || '/';
+    var csrfToken = cfg.csrfToken || '';
+    var salleId = cfg.salleId || 0;
+    var isActif = !!cfg.isActif;
+    var libelleSalle = cfg.libelleSalle || '';
+
+    function notify(msg, type) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(msg, type || 'info');
+      } else if (window.toastr) {
+        if (type === 'error') toastr.error(msg);
+        else toastr.success(msg);
+      }
+    }
+
+    // Filtrage combiné jour + recherche en direct sur le planning
+    function filterSallePlanning() {
+      var selectedJour = ($('#filter-salle-jour').val() || '').toLowerCase();
+      var q = ($('#search-salle-planning').val() || '').toLowerCase().trim();
+      var visible = 0;
+
+      $('#table-salle-planning tbody tr.salle-planning-row').each(function() {
+        var rowJour = String($(this).data('jour') || '').toLowerCase();
+        var text = $(this).text().toLowerCase();
+        var matchJour = (!selectedJour || rowJour === selectedJour);
+        var matchText = (!q || text.indexOf(q) !== -1);
+        var show = matchJour && matchText;
+        $(this).toggle(show);
+        if (show) visible++;
+      });
+      $('#count-visible-creneaux').text(visible);
+
+      $('.salle-day-pill').each(function() {
+        var isActivePill = selectedJour !== '' && String($(this).data('jour') || '').toLowerCase() === selectedJour;
+        $(this).css('box-shadow', isActivePill ? '0 0 0 2px #1E3A5F' : 'none');
+      });
+    }
+
+    $('#filter-salle-jour').on('change', filterSallePlanning);
+    $('#search-salle-planning').on('input', filterSallePlanning);
+
+    $('.salle-day-pill').on('click', function() {
+      var clickedJour = String($(this).data('jour') || '').toLowerCase();
+      var currentJour = ($('#filter-salle-jour').val() || '').toLowerCase();
+      var nextJour = (currentJour === clickedJour) ? '' : clickedJour;
+      $('#filter-salle-jour').val(nextJour).trigger('change');
+    });
+
+    // Bascule rapide de statut (Activer / Désactiver)
+    $('#btn-toggle-statut-salle-detail').on('click', function() {
+      if (!salleId) return;
+      var actionLabel = isActif ? 'désactiver' : 'activer';
+      var confirmTitle = isActif ? 'Désactiver cette salle ?' : 'Activer cette salle ?';
+      var confirmText = 'Voulez-vous vraiment ' + actionLabel + ' la salle « ' + libelleSalle + ' » ?';
+
+      function executeToggle() {
+        $.ajax({
+          url: racine + 'salle/changer',
+          type: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          data: {
+            id: salleId,
+            id_salle: salleId,
+            csrf_token: csrfToken
+          },
+          dataType: 'json',
+          success: function(res) {
+            if (res && (res.status === 1 || res.success)) {
+              notify(res.message || 'Statut mis à jour avec succès', 'success');
+              setTimeout(function() { window.location.reload(); }, 600);
+            } else {
+              notify((res && res.message) || 'Erreur lors du changement de statut', 'error');
+            }
+          },
+          error: function() {
+            notify('Erreur réseau ou serveur', 'error');
+          }
+        });
+      }
+
+      if (window.Swal) {
+        Swal.fire({
+          title: confirmTitle,
+          text: confirmText,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: isActif ? '#D97706' : '#16A34A',
+          cancelButtonColor: '#64748B',
+          confirmButtonText: isActif ? 'Oui, désactiver' : 'Oui, activer',
+          cancelButtonText: 'Annuler'
+        }).then(function(result) {
+          if (result.isConfirmed) executeToggle();
+        });
+      } else if (window.confirm(confirmText)) {
+        executeToggle();
+      }
+    });
+
+    // Modal d'édition rapide
+    $('#btn-edit-salle-detail').on('click', function() {
+      $('#modal-salle-detail').css('display', 'flex');
+      if (window.lucide) lucide.createIcons();
+      setTimeout(function() { $('#detail_salle_libelle').focus(); }, 100);
+    });
+
+    $('.btn-close-modal-salle-detail').on('click', function() {
+      $('#modal-salle-detail').css('display', 'none');
+    });
+
+    $('#modal-salle-detail').on('click', function(e) {
+      if ($(e.target).is('#modal-salle-detail')) {
+        $(this).css('display', 'none');
+      }
+    });
+
+    $(document).on('keydown.salleDetailModal', function(e) {
+      if (e.key === 'Escape' && $('#modal-salle-detail').is(':visible')) {
+        $('#modal-salle-detail').css('display', 'none');
+      }
+    });
+
+    $('#form-salle-detail').on('submit', function(e) {
+      e.preventDefault();
+      var $btn = $('#btn-save-salle-detail');
+      $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Enregistrement...');
+
+      $.ajax({
+        url: racine + 'salle/edit',
+        type: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        data: $(this).serialize(),
+        dataType: 'json',
+        success: function(res) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+          if (window.lucide) lucide.createIcons();
+
+          if (res && (res.status === 1 || res.success)) {
+            notify(res.message || 'Salle modifiée avec succès', 'success');
+            $('#modal-salle-detail').css('display', 'none');
+            setTimeout(function() { window.location.reload(); }, 600);
+          } else {
+            notify((res && res.message) || 'Erreur lors de la modification', 'error');
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur réseau ou serveur';
+          try {
+            var json = JSON.parse(xhr.responseText);
+            if (json && json.message) msg = json.message;
+          } catch (err) {}
+          notify(msg, 'error');
+        }
+      });
+    });
+  }
+
   $(document).ready(function() {
     initEmploisTempsListModule();
     initEmploisTempsEditModule();
@@ -1430,6 +1600,7 @@
     initAbsencesSaisieClasseModule();
     initAbsencesDetailsModule();
     initSallesListModule();
+    initSallesDetailsModule();
     if (window.lucide) lucide.createIcons();
   });
 
