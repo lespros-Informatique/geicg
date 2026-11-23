@@ -263,8 +263,18 @@ class AnneeController extends BaseController
             
             $anneeCode = $item['code_annee'];
             $stats = $this->model->getStatsForAnnee($anneeCode);
-            $classes = $this->model->getClassesForAnnee($anneeCode);
-            $semestres = $this->model->getSemestresForAnnee($anneeCode);
+            $rawClasses = $this->model->getClassesForAnnee($anneeCode);
+            $classes = [];
+            foreach ($rawClasses as $cl) {
+                $cl['encrypted_id'] = $this->validator->crypter($cl['id_classe']);
+                $classes[] = $cl;
+            }
+            $rawSemestres = $this->model->getSemestresForAnnee($anneeCode);
+            $semestres = [];
+            foreach ($rawSemestres as $sem) {
+                $sem['encrypted_id'] = $this->validator->crypter($sem['id_semestre']);
+                $semestres[] = $sem;
+            }
             $encryptedId = $this->validator->crypter($id);
         } catch (Exception $e) {
             error_log("AnneeController::details error: " . $e->getMessage());

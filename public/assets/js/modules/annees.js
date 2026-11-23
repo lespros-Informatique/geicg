@@ -460,4 +460,135 @@ var configEl = document.getElementById('semestres-list-config');
     })();
   }
 
+  // =========================================================================
+  // 3. SECTION DÉTAILS ANNÉE ACADÉMIQUE (views/annees/details.php)
+  // =========================================================================
+  if ($('#annees-details-config').length) {
+    (function() {
+      var cfg = {};
+      try {
+        cfg = JSON.parse(document.getElementById('annees-details-config').textContent || '{}');
+      } catch (e) {}
+
+      var racine = cfg.racine || window.RACINE || '/';
+      var anneeId = cfg.anneeId || 0;
+      var statutAnnee = cfg.statutAnnee || '';
+      var libelleAnnee = cfg.libelleAnnee || '';
+      var csrfToken = cfg.csrfToken || '';
+
+      if (window.lucide) lucide.createIcons();
+
+      // Filtre instantané sur le tableau des classes
+      $('#search-annee-classes').on('input', function() {
+        var q = ($(this).val() || '').toString().toLowerCase().trim();
+        $('#table-annee-classes tbody tr.classe-row-item').each(function() {
+          var txt = $(this).text().toLowerCase();
+          $(this).toggle(!q || txt.indexOf(q) !== -1);
+        });
+      });
+
+      // Ouverture / Fermeture de la modale d'édition rapide
+      $('#btn-edit-annee-detail').on('click', function() {
+        $('#modal-annee-detail').css('display', 'flex');
+        if (window.lucide) lucide.createIcons();
+      });
+
+      $('.btn-close-modal-annee-detail').on('click', function() {
+        $('#modal-annee-detail').css('display', 'none');
+      });
+
+      $('#modal-annee-detail').on('click', function(e) {
+        if ($(e.target).is('#modal-annee-detail')) {
+          $(this).css('display', 'none');
+        }
+      });
+
+      // Soumission AJAX de l'édition
+      $('#form-annee-detail').on('submit', function(e) {
+        e.preventDefault();
+        var $btn = $('#btn-submit-annee-detail');
+        $btn.prop('disabled', true).text('Enregistrement...');
+
+        $.ajax({
+          url: racine + 'annee/edit',
+          type: 'POST',
+          data: $(this).serialize(),
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          dataType: 'json',
+          success: function(res) {
+            if (res.status === 1 || res.success) {
+              if (window.toastr) toastr.success(res.message || 'Année académique mise à jour.');
+              $('#modal-annee-detail').css('display', 'none');
+              setTimeout(function() { window.location.reload(); }, 450);
+            } else {
+              if (window.toastr) toastr.error(res.message || 'Erreur lors de la modification.');
+              $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+              if (window.lucide) lucide.createIcons();
+            }
+          },
+          error: function(xhr) {
+            var msg = 'Erreur réseau lors de la modification.';
+            try {
+              var j = JSON.parse(xhr.responseText);
+              if (j && j.message) msg = j.message;
+            } catch (ex) {}
+            if (window.toastr) toastr.error(msg);
+            $btn.prop('disabled', false).html('<i data-lucide="check" style="width: 16px; height: 16px;"></i> Enregistrer');
+            if (window.lucide) lucide.createIcons();
+          }
+        });
+      });
+
+      // Activation / Clôture de l'année via SweetAlert2 + AJAX
+      $('#btn-toggle-statut-annee-detail').on('click', function() {
+        if (!anneeId) return;
+        var isClosing = (statutAnnee === 'actif');
+        var $btn = $(this);
+
+        var runToggle = function() {
+          $btn.prop('disabled', true);
+          $.ajax({
+            url: racine + 'annee/changer',
+            type: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            data: { id: anneeId, csrf_token: csrfToken },
+            dataType: 'json',
+            success: function(res) {
+              if (res.status === 1 || res.success) {
+                if (window.toastr) toastr.success(res.message || 'Statut mis à jour.');
+                setTimeout(function() { window.location.reload(); }, 500);
+              } else {
+                if (window.toastr) toastr.error(res.message || 'Action impossible.');
+                $btn.prop('disabled', false);
+              }
+            },
+            error: function() {
+              if (window.toastr) toastr.error('Erreur réseau.');
+              $btn.prop('disabled', false);
+            }
+          });
+        };
+
+        if (window.Swal) {
+          Swal.fire({
+            title: isClosing ? ('Clôturer l\'année ' + libelleAnnee + ' ?') : ('Activer l\'année ' + libelleAnnee + ' ?'),
+            text: isClosing
+              ? 'Tous les semestres doivent être clôturés au préalable. Une année clôturée passe en lecture seule.'
+              : 'Cette année deviendra l\'année académique active du système.',
+            icon: isClosing ? 'warning' : 'question',
+            showCancelButton: true,
+            confirmButtonColor: isClosing ? '#D97706' : '#16A34A',
+            cancelButtonColor: '#64748B',
+            confirmButtonText: isClosing ? 'Oui, clôturer' : 'Oui, activer',
+            cancelButtonText: 'Annuler'
+          }).then(function(result) {
+            if (result.isConfirmed) runToggle();
+          });
+        } else {
+          runToggle();
+        }
+      });
+    })();
+  }
+
 });

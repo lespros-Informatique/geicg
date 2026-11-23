@@ -235,46 +235,88 @@ class ModelAnnee extends BaseModel
     }
 
     /**
-     * Statistiques consolidées pour une année académique
+     * Statistiques consolidées pour une année académique (scolarité strictement dissociée des frais annexes)
      */
     public function getStatsForAnnee(string $anneeCode): array
     {
+        $defaults = [
+            'total_etudiants' => 0,
+            'total_affectes' => 0,
+            'total_non_affectes' => 0,
+            'total_hommes' => 0,
+            'total_femmes' => 0,
+            'total_classes' => 0,
+            'total_capacite' => 0,
+            'total_semestres' => 0,
+            'total_semestres_all' => 0,
+            'total_semestres_clotures' => 0,
+            'total_evaluations' => 0,
+            'total_absences_heures' => 0.0,
+            'total_recouvrement' => 0.0
+        ];
+
         try {
-            $stmt = $this->getCon()->prepare("
-                SELECT 
-                    (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " WHERE annee_code = ? AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)) as total_etudiants,
-                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = '" . STATUTS::ACTIF . "' OR statut_classe IS NULL)) as total_classes,
-                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND (statut_semestre = '" . STATUTS::ACTIF . "' OR statut_semestre IS NULL)) as total_semestres,
-                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != '" . STATUTS::ANNULE . "' OR statut_paiement IS NULL) AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES') AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES') AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')) as total_recouvrement
+            $db = $this->getCon();
+
+            $stmtInsc = $db->prepare("
+                SELECT
+                    COUNT(*) AS total_etudiants,
+                    SUM(CASE WHEN LOWER(COALESCE(i.affectation_etat, '')) IN ('affecte', 'oui') THEN 1 ELSE 0 END) AS total_affectes,
+                    SUM(CASE WHEN LOWER(COALESCE(i.affectation_etat, '')) NOT IN ('affecte', 'oui') THEN 1 ELSE 0 END) AS total_non_affectes,
+                    SUM(CASE WHEN UPPER(COALESCE(e.sexe_etudiant, '')) LIKE '%F%' THEN 1 ELSE 0 END) AS total_femmes,
+                    SUM(CASE WHEN UPPER(COALESCE(e.sexe_etudiant, '')) NOT LIKE '%F%' AND TRIM(COALESCE(e.sexe_etudiant, '')) != '' THEN 1 ELSE 0 END) AS total_hommes
+                FROM " . TABLES::INSCRIPTIONS . " i
+                LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = i.etudiant_code
+                WHERE i.annee_code = ?
+                  AND (i.statut_inscription != '" . STATUTS::ANNULE . "' OR i.statut_inscription IS NULL)
             ");
-            $stmt->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [
-                'total_etudiants' => 0, 'total_classes' => 0, 'total_semestres' => 0, 'total_recouvrement' => 0
-            ];
+            $stmtInsc->execute([$anneeCode]);
+            $inscStats = $stmtInsc->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $stmtAgg = $db->prepare("
+                SELECT
+                    (SELECT COUNT(*) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = '" . STATUTS::ACTIF . "' OR statut_classe IS NULL)) AS total_classes,
+                    (SELECT COALESCE(SUM(capacite_max_classe), 0) FROM " . TABLES::CLASSES . " WHERE annee_code = ? AND (statut_classe = '" . STATUTS::ACTIF . "' OR statut_classe IS NULL)) AS total_capacite,
+                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND (statut_semestre = '" . STATUTS::ACTIF . "' OR statut_semestre IS NULL)) AS total_semestres,
+                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ?) AS total_semestres_all,
+                    (SELECT COUNT(*) FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? AND statut_semestre = '" . STATUTS::CLOTURE . "') AS total_semestres_clotures,
+                    (SELECT COUNT(*) FROM " . TABLES::COMPOSITIONS . " WHERE annee_code = ? AND (statut_composition != '" . STATUTS::ANNULE . "' OR statut_composition IS NULL)) AS total_evaluations,
+                    (SELECT COALESCE(SUM(duree_heures), 0) FROM " . TABLES::ABSENCES . " WHERE annee_code = ?) AS total_absences_heures,
+                    (SELECT COALESCE(SUM(montant_paiement), 0) FROM " . TABLES::PAIEMENTS . " WHERE annee_code = ? AND (statut_paiement != '" . STATUTS::ANNULE . "' OR statut_paiement IS NULL) AND (categorie_paiement IS NULL OR categorie_paiement != 'FRAIS_ANNEXES') AND (tranche_code IS NULL OR tranche_code != 'FRAIS_ANNEXES') AND (type_paiement IS NULL OR type_paiement NOT LIKE '%Frais Annexe%')) AS total_recouvrement
+            ");
+            $stmtAgg->execute([$anneeCode, $anneeCode, $anneeCode, $anneeCode, $anneeCode, $anneeCode, $anneeCode, $anneeCode]);
+            $aggStats = $stmtAgg->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            return array_merge($defaults, $inscStats, $aggStats);
         } catch (Exception $e) {
             error_log("ModelAnnee::getStatsForAnnee error: " . $e->getMessage());
-            return [
-                'total_etudiants' => 0, 'total_classes' => 0, 'total_semestres' => 0, 'total_recouvrement' => 0
-            ];
+            return $defaults;
         }
     }
 
     /**
-     * Classes associées à une année académique avec le nombre d'élèves inscrits
+     * Classes associées à une année académique avec le nombre d'élèves inscrits (agrégation batch sans sous-requête corrélée)
      */
     public function getClassesForAnnee(string $anneeCode): array
     {
         try {
             $stmt = $this->getCon()->prepare("
                 SELECT cl.*, f.libelle_filiere, n.libelle_niveau,
-                       (SELECT COUNT(*) FROM " . TABLES::INSCRIPTIONS . " ins WHERE ins.classe_code = cl.code_classe AND (ins.statut_inscription != '" . STATUTS::ANNULE . "' OR ins.statut_inscription IS NULL)) as nb_eleves
+                       COALESCE(eff.nb_eleves, 0) AS nb_eleves
                 FROM " . TABLES::CLASSES . " cl
                 LEFT JOIN " . TABLES::FILIERES . " f ON f.code_filiere = cl.filiere_code
                 LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                LEFT JOIN (
+                    SELECT classe_code, COUNT(*) AS nb_eleves
+                    FROM " . TABLES::INSCRIPTIONS . "
+                    WHERE annee_code = ?
+                      AND (statut_inscription != '" . STATUTS::ANNULE . "' OR statut_inscription IS NULL)
+                    GROUP BY classe_code
+                ) eff ON eff.classe_code = cl.code_classe
                 WHERE cl.annee_code = ?
                 ORDER BY cl.libelle_classe ASC
             ");
-            $stmt->execute([$anneeCode]);
+            $stmt->execute([$anneeCode, $anneeCode]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelAnnee::getClassesForAnnee error: " . $e->getMessage());
@@ -283,15 +325,33 @@ class ModelAnnee extends BaseModel
     }
 
     /**
-     * Semestres associés à une année académique
+     * Semestres associés à une année académique enrichis du nombre d'évaluations et d'heures d'absences
      */
     public function getSemestresForAnnee(string $anneeCode): array
     {
         try {
             $stmt = $this->getCon()->prepare("
-                SELECT * FROM " . TABLES::SEMESTRES . " WHERE annee_code = ? ORDER BY id_semestre ASC
+                SELECT s.*,
+                       COALESCE(cmp.nb_evaluations, 0) AS nb_evaluations,
+                       COALESCE(ab.heures_absences, 0) AS heures_absences
+                FROM " . TABLES::SEMESTRES . " s
+                LEFT JOIN (
+                    SELECT semestre_code, COUNT(*) AS nb_evaluations
+                    FROM " . TABLES::COMPOSITIONS . "
+                    WHERE annee_code = ?
+                      AND (statut_composition != '" . STATUTS::ANNULE . "' OR statut_composition IS NULL)
+                    GROUP BY semestre_code
+                ) cmp ON cmp.semestre_code = s.code_semestre
+                LEFT JOIN (
+                    SELECT semestre_code, SUM(duree_heures) AS heures_absences
+                    FROM " . TABLES::ABSENCES . "
+                    WHERE annee_code = ?
+                    GROUP BY semestre_code
+                ) ab ON ab.semestre_code = s.code_semestre
+                WHERE s.annee_code = ?
+                ORDER BY s.id_semestre ASC
             ");
-            $stmt->execute([$anneeCode]);
+            $stmt->execute([$anneeCode, $anneeCode, $anneeCode]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             error_log("ModelAnnee::getSemestresForAnnee error: " . $e->getMessage());
