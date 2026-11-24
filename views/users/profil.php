@@ -450,7 +450,7 @@ $csrfToken = Validator::generateCsrfToken();
               <i data-lucide="lock" style="width: 15px; height: 15px;"></i> Sécurité &amp; Mot de passe
             </button>
             <button type="button" class="profil-tab-btn" data-tab="acces">
-              <i data-lucide="shield" style="width: 15px; height: 15px;"></i> Rôles, Permissions &amp; Années
+              <i data-lucide="shield" style="width: 15px; height: 15px;"></i> Rôles &amp; Années
             </button>
             <button type="button" class="profil-tab-btn" data-tab="activite">
               <i data-lucide="history" style="width: 15px; height: 15px;"></i> Mon Activité
@@ -606,7 +606,7 @@ $csrfToken = Validator::generateCsrfToken();
             </div>
 
             <!-- Années autorisées -->
-            <div style="margin-bottom: 20px;">
+            <div>
               <h3 style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin: 0 0 10px 0;">Accès aux Années Académiques</h3>
               <?php if ($isUserSuperAdmin): ?>
                 <div style="padding: 11px 14px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; font-size: 13px; font-weight: 700; color: #15803D;">
@@ -628,50 +628,6 @@ $csrfToken = Validator::generateCsrfToken();
                 </div>
               <?php endif; ?>
             </div>
-
-            <!-- Permissions effectives filtrables -->
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-                <h3 style="font-size: 14px; font-weight: 800; color: #1E3A5F; text-transform: uppercase; margin: 0;">
-                  Permissions Effectives (<span id="profil-perm-visible-count"><?= count($permissionsDetailed) ?></span>)
-                </h3>
-                <?php if (!empty($permsByModule)): ?>
-                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <select id="filter-profil-perm-module" class="profil-input" style="width: 170px; padding: 6px 10px; font-size: 12px;">
-                      <option value="">Tous les modules</option>
-                      <?php foreach (array_keys($permsByModule) as $modName): ?>
-                        <option value="<?= htmlspecialchars($modName) ?>"><?= htmlspecialchars($modName) ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                    <input type="search" id="search-profil-perms" class="profil-input" style="width: 190px; padding: 6px 10px; font-size: 12px;" placeholder="Rechercher une permission...">
-                  </div>
-                <?php endif; ?>
-              </div>
-
-              <?php if (!empty($permsByModule)): ?>
-                <div id="profil-permissions-list" style="max-height: 360px; overflow-y: auto; padding-right: 4px;">
-                  <?php foreach ($permsByModule as $modName => $permsList): ?>
-                    <div class="profil-perm-group" data-module="<?= htmlspecialchars($modName) ?>" style="margin-bottom: 12px;">
-                      <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px;">
-                        <?= htmlspecialchars($modName) ?> (<?= count($permsList) ?>)
-                      </div>
-                      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                        <?php foreach ($permsList as $perm): ?>
-                          <?php $hay = mb_strtolower(($perm['code_permission'] ?? '') . ' ' . ($perm['libelle_permission'] ?? '') . ' ' . $modName, 'UTF-8'); ?>
-                          <span class="profil-perm-item" data-search="<?= htmlspecialchars($hay) ?>" title="<?= htmlspecialchars($perm['code_permission'] ?? '') ?>" style="font-size: 11.5px; font-weight: 600; color: #334155; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 4px 9px; border-radius: 6px;">
-                            <?= htmlspecialchars($perm['libelle_permission'] ?? ($perm['code_permission'] ?? '-')) ?>
-                          </span>
-                        <?php endforeach; ?>
-                      </div>
-                    </div>
-                  <?php endforeach; ?>
-                </div>
-              <?php else: ?>
-                <div style="padding: 14px; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; font-size: 13px; color: #64748B;">
-                  <?= $isUserSuperAdmin ? 'Privilège Super-Administrateur : toutes les permissions système sont actives.' : 'Aucune permission détaillée trouvée.' ?>
-                </div>
-              <?php endif; ?>
-            </div>
           </div>
 
           <!-- =============================================================== -->
@@ -682,7 +638,7 @@ $csrfToken = Validator::generateCsrfToken();
               <div>
                 <h2 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">Journal de mes dernières actions</h2>
                 <p style="font-size: 12.5px; color: #64748B; margin: 3px 0 0 0;">
-                  Les <?= count($recentLogs) ?> actions les plus récentes sur <?= number_format($totalLogsCount, 0, ',', ' ') ?> enregistrées.
+                  Les <?= count($recentLogs) ?> actions les plus récentes enregistrées.
                 </p>
               </div>
             </div>

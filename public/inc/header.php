@@ -323,7 +323,7 @@
         window.ETABLISSEMENT_CONFIG = <?= json_encode(!empty($etablissementConfig) ? $etablissementConfig : (class_exists('ModelConfiguration') ? (new ModelConfiguration())->getConfig() : [])) ?>;
     </script>
 
-    <?php extract(ViewContext::headerData()); ?>
+    <?php extract(ViewContext::headerData(), EXTR_SKIP); ?>
 </head>
 <body>
     <div id="geicg-page-loader" class="no-print is-active" role="status" aria-live="polite" aria-label="Chargement en cours">

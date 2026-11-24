@@ -1198,36 +1198,6 @@ window.toggleModuleInput = function() {
         }
       });
     });
-
-    // 5. Filtrage des permissions RBAC effectives
-    function filterProfilPerms() {
-      var selectedMod = ($('#filter-profil-perm-module').val() || '').toUpperCase();
-      var q = ($('#search-profil-perms').val() || '').toLowerCase().trim();
-      var visibleTotal = 0;
-
-      $('#profil-permissions-list .profil-perm-group').each(function() {
-        var $grp = $(this);
-        var grpMod = String($grp.data('module') || '').toUpperCase();
-        var modMatch = (!selectedMod || grpMod === selectedMod);
-        var grpVisible = 0;
-
-        $grp.find('.profil-perm-item').each(function() {
-          var hay = String($(this).data('search') || '').toLowerCase();
-          var show = modMatch && (!q || hay.indexOf(q) !== -1);
-          $(this).toggle(show);
-          if (show) {
-            grpVisible++;
-            visibleTotal++;
-          }
-        });
-        $grp.toggle(grpVisible > 0);
-      });
-
-      $('#profil-perm-visible-count').text(visibleTotal);
-    }
-
-    $('#filter-profil-perm-module').on('change', filterProfilPerms);
-    $('#search-profil-perms').on('input', filterProfilPerms);
   }
 
   $(document).ready(function() {
