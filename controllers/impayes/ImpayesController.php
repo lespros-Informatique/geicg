@@ -307,7 +307,7 @@ class ImpayesController extends BaseController
         $userPrenom = $user['prenom_user'] ?? '';
         $caissierNom = trim($userNom . ' ' . $userPrenom);
 
-        $etab = $this->getEtablissementConfig();
+        $etab = $this->getEtablissementConfig(true);
         $cfgLogo = !empty($etab['logo_etablissement']) ? ltrim($etab['logo_etablissement'], '/') : '';
         $logoSrc = $this->toBase64(array_filter([
             $cfgLogo ? 'public/' . $cfgLogo : '',
@@ -387,7 +387,7 @@ class ImpayesController extends BaseController
         $userPrenom = $user['prenom_user'] ?? '';
         $caissierNom = trim($userNom . ' ' . $userPrenom);
 
-        $etab = $this->getEtablissementConfig();
+        $etab = $this->getEtablissementConfig(true);
         $cfgLogo = !empty($etab['logo_etablissement']) ? ltrim($etab['logo_etablissement'], '/') : '';
         $logoSrc = $this->toBase64(array_filter([
             $cfgLogo ? 'public/' . $cfgLogo : '',

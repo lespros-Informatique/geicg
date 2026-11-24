@@ -253,7 +253,7 @@
         <?php $barcodeRappel = (string)($code_barre_val ?? ($code_rappel ?? ($code_inscription ?? ''))); ?>
         <?php if ($barcodeRappel !== ''): ?>
         <div style="text-align: center; display: inline-block;">
-          <barcode code="<?= htmlspecialchars($barcodeRappel) ?>" type="C128A" size="0.65" height="0.6" />
+          <barcode code="<?= htmlspecialchars($barcodeRappel) ?>" type="C128A" size="0.6" height="1" />
           <div style="font-size: 9.5px; font-family: monospace; font-weight: bold; margin-top: 2px;">* <?= htmlspecialchars($barcodeRappel) ?> *</div>
         </div>
         <?php endif; ?>

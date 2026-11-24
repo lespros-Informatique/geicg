@@ -113,10 +113,20 @@ class PdfService
         $mpdf->WriteHTML($html);
 
         $dest = $options['destination'] ?? ($download ? \Mpdf\Output\Destination::DOWNLOAD : \Mpdf\Output\Destination::INLINE);
-        if (!headers_sent()) {
-            header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
-            header('Pragma: no-cache');
-            header('Expires: 0');
+        if ($dest === \Mpdf\Output\Destination::INLINE || $dest === \Mpdf\Output\Destination::DOWNLOAD) {
+            $pdfContent = $mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN);
+            if (!headers_sent()) {
+                $safeFilename = str_replace(['"', "\r", "\n"], '', basename($filename));
+                $disposition = ($dest === \Mpdf\Output\Destination::DOWNLOAD) ? 'attachment' : 'inline';
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: ' . $disposition . '; filename="' . $safeFilename . '"');
+                header('Content-Length: ' . strlen($pdfContent));
+                header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+                header('Pragma: no-cache');
+                header('Expires: 0');
+            }
+            echo $pdfContent;
+            return;
         }
         $mpdf->Output($filename, $dest);
     }

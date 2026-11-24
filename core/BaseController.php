@@ -6,6 +6,7 @@ abstract class BaseController
 {
     protected $validator;
     protected $model;
+    private static ?array $requestEtablissementConfig = null;
 
     public function __construct()
     {
@@ -557,12 +558,21 @@ abstract class BaseController
     }
 
     /**
-     * Récupère la configuration complète de l'établissement (avec mise en cache session)
+     * Invalide le cache de configuration établissement (requête + session)
      */
-    protected function getEtablissementConfig(): array
+    protected static function clearEtablissementConfigCache(): void
     {
-        if (is_array(Session::get('etablissement_config'))) {
-            return Session::get('etablissement_config');
+        self::$requestEtablissementConfig = null;
+        Session::remove('etablissement_config');
+    }
+
+    /**
+     * Récupère la configuration complète de l'établissement (cache par requête, toujours synchronisé avec la BDD)
+     */
+    protected function getEtablissementConfig(bool $forceRefresh = false): array
+    {
+        if (!$forceRefresh && self::$requestEtablissementConfig !== null) {
+            return self::$requestEtablissementConfig;
         }
         try {
             $db = (new Database())->getCon();
@@ -626,8 +636,9 @@ abstract class BaseController
             ]);
             $config['contacts_formatted'] = implode(' / ', array_unique($telephones));
 
-            Session::set('etablissement_config', $config ?: []);
-            return Session::get('etablissement_config', []);
+            self::$requestEtablissementConfig = $config ?: [];
+            Session::set('etablissement_config', self::$requestEtablissementConfig);
+            return self::$requestEtablissementConfig;
         } catch (Exception $e) {
             return [];
         }

@@ -215,7 +215,7 @@ class EtablissementController extends BaseController
             );
         }
 
-        Session::remove('etablissement_config');
+        self::clearEtablissementConfigCache();
 
         $sectionName = $this->post('section_name') ?: 'Configuration';
         $message = "{$sectionName} enregistrée avec succès !";
