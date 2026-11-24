@@ -498,6 +498,7 @@ CREATE TABLE `configurations` (
   `ville_signature` varchar(100) DEFAULT NULL,
   `texte_pied_page` varchar(255) DEFAULT NULL,
   `prefixe_reference` varchar(50) DEFAULT NULL,
+  `delai_rigueur_scolarite` int unsigned DEFAULT NULL COMMENT 'Délai de rigueur de paiement de la scolarité (en jours)',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_configuration`)
@@ -528,6 +529,7 @@ VALUES (
     '0102030405',
     '0302010405',
     'test@gmail.com',
+    NULL,
     NULL,
     NULL,
     NULL,

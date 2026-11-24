@@ -333,7 +333,7 @@
             <i data-lucide="file-text" style="width: 14px; height: 14px;"></i> Bas de Page & Références Documents
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; width: 100%; margin-bottom: 24px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; width: 100%; margin-bottom: 24px;">
             <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Texte de Pied de Page Officiel</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="texte_pied_page" value="<?= htmlspecialchars($item['texte_pied_page'] ?? 'Document officiel généré par le Système GEICG') ?>" placeholder="Ex: Document officiel généré par le Système GEICG">
@@ -342,6 +342,12 @@
             <div class="form-group" style="width: 100%;">
               <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Préfixe des Références</label>
               <input type="text" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="prefixe_reference" value="<?= htmlspecialchars($item['prefixe_reference'] ?? 'REF-') ?>" placeholder="Ex: REF-">
+            </div>
+
+            <div class="form-group" style="width: 100%;">
+              <label style="display: block; font-weight: 700; font-size: 13px; color: #334155; margin-bottom: 6px;">Délai de Rigueur de la Scolarité (en jours)</label>
+              <input type="number" min="0" step="1" class="form-control" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #CBD5E1; background: #FFFFFF;" name="delai_rigueur_scolarite" value="<?= htmlspecialchars(isset($item['delai_rigueur_scolarite']) && $item['delai_rigueur_scolarite'] !== null && $item['delai_rigueur_scolarite'] !== '' ? (string)$item['delai_rigueur_scolarite'] : '') ?>" placeholder="Ex: 7">
+              <small style="color: #64748B; font-size: 12px; margin-top: 4px; display: block;">Nombre de jours ajoutés à la date d'édition pour calculer le délai de rigueur sur les rappels de scolarité PDF.</small>
             </div>
           </div>
 

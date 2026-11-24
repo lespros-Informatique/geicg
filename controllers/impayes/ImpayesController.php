@@ -339,7 +339,7 @@ class ImpayesController extends BaseController
             'reste_payer' => $restePayer,
             'montant_exigible_du' => $restePayer,
             'montant_exigible_lettres' => PdfService::numberToWordsFrench($restePayer),
-            'delai_rigueur' => date('d/m/Y', strtotime('+7 days')),
+            'delai_rigueur' => $this->resolveDelaiRigueurScolarite($etab),
             'caissier_nom' => $caissierNom,
             'ref_caiss' => 'REF-' . date('YmdHis'),
             'date_impression' => date('d/m/Y H:i:s')
@@ -456,7 +456,7 @@ class ImpayesController extends BaseController
                 'reste_payer' => $restePayer,
                 'montant_exigible_du' => $restePayer,
                 'montant_exigible_lettres' => PdfService::numberToWordsFrench($restePayer),
-                'delai_rigueur' => date('d/m/Y', strtotime('+7 days')),
+                'delai_rigueur' => $this->resolveDelaiRigueurScolarite($etab),
                 'caissier_nom' => $caissierNom,
                 'ref_caiss' => 'REF-' . date('YmdHis'),
                 'date_impression' => date('d/m/Y H:i:s')
@@ -474,6 +474,21 @@ class ImpayesController extends BaseController
             'watermark_logo' => true,
             'watermark_alpha' => 0.05
         ]);
+    }
+
+    /**
+     * Calcule dynamiquement la date limite de rigueur à partir de configurations.delai_rigueur_scolarite (en jours)
+     */
+    private function resolveDelaiRigueurScolarite(array $etab): string
+    {
+        if (!isset($etab['delai_rigueur_scolarite']) || $etab['delai_rigueur_scolarite'] === '' || $etab['delai_rigueur_scolarite'] === null) {
+            return '-';
+        }
+        $nbJours = (int)$etab['delai_rigueur_scolarite'];
+        if ($nbJours < 0) {
+            return '-';
+        }
+        return date('d/m/Y', strtotime('+' . $nbJours . ' days'));
     }
 
     private function toBase64(array $paths): string

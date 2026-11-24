@@ -141,13 +141,25 @@ class EtablissementController extends BaseController
             'nom_directeur_etudes', 'titre_direction_generale', 'nom_directeur_general',
             'titre_service_finance', 'nom_responsable_finance', 'titre_service_scolarite',
             'nom_responsable_scolarite', 'nom_secretaire_general', 'mention_cachet_signature',
-            'ville_signature', 'texte_pied_page', 'prefixe_reference', 'logo_etablissement'
+            'ville_signature', 'texte_pied_page', 'prefixe_reference',
+            'delai_rigueur_scolarite', 'logo_etablissement'
         ];
 
         $configData = [];
         foreach ($allowedConfigFields as $field) {
             if (array_key_exists($field, $data)) {
                 $configData[$field] = $data[$field];
+            }
+        }
+        if (array_key_exists('delai_rigueur_scolarite', $configData)) {
+            $rawDelai = trim((string)$configData['delai_rigueur_scolarite']);
+            if ($rawDelai === '') {
+                $configData['delai_rigueur_scolarite'] = null;
+            } elseif (ctype_digit($rawDelai)) {
+                $configData['delai_rigueur_scolarite'] = (int)$rawDelai;
+            } else {
+                $this->error("Le délai de rigueur de la scolarité doit être un nombre entier positif de jours.");
+                return;
             }
         }
         if (!empty($configData)) {
