@@ -9,9 +9,9 @@
     }
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
-      font-size: 11.5px;
+      font-size: 13.5px;
       color: #000000;
-      line-height: 1.3;
+      line-height: 1.4;
     }
     .page-frame {
       border: 1px solid #000000;
@@ -51,32 +51,32 @@
     .banner-title {
       background: #969696;
       color: #000000;
-      font-size: 17px;
+      font-size: 19px;
       font-weight: bold;
       text-align: center;
-      padding: 5px;
-      margin-top: 4px;
-      margin-bottom: 6px;
+      padding: 6px;
+      margin-top: 10px;
+      margin-bottom: 8px;
       letter-spacing: 1px;
       text-transform: uppercase;
     }
     .annee-header {
-      font-size: 13px;
+      font-size: 15px;
       font-weight: bold;
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
 
     /* Info Table */
     .info-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     .info-table td {
-      padding: 2.5px 4px;
+      padding: 3.5px 4px;
       vertical-align: top;
-      font-size: 11px;
+      font-size: 13px;
     }
     .photo-box {
       width: 120px;
@@ -92,22 +92,22 @@
     .fin-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 6px;
-      margin-bottom: 12px;
+      margin-top: 8px;
+      margin-bottom: 14px;
     }
     .fin-table th {
       background: #B0B0B0;
       color: #000000;
       font-weight: bold;
-      font-size: 11px;
+      font-size: 13px;
       border: 1px solid #000000;
-      padding: 5px 6px;
+      padding: 7px 8px;
       text-align: center;
     }
     .fin-table td {
       border: 1px solid #000000;
-      padding: 6px 8px;
-      font-size: 11.5px;
+      padding: 8px 10px;
+      font-size: 14px;
       font-weight: bold;
       text-align: center;
     }
@@ -116,7 +116,7 @@
     .exigible-box {
       margin-top: 10px;
       margin-bottom: 15px;
-      font-size: 11.5px;
+      font-size: 13.5px;
     }
     .exigible-row {
       margin-bottom: 8px;
@@ -126,17 +126,17 @@
     .warning-box {
       background: #FFFF00;
       border: 1px solid #000000;
-      padding: 6px 8px;
+      padding: 8px 10px;
       font-weight: bold;
-      font-size: 10.5px;
-      margin-top: 12px;
+      font-size: 12.5px;
+      margin-top: 14px;
       margin-bottom: 10px;
       color: #000000;
     }
 
     .footer-table {
       width: 100%;
-      font-size: 9px;
+      font-size: 10.5px;
       margin-top: 8px;
     }
   </style>
@@ -238,14 +238,14 @@
         <div class="exigible-box" style="margin: 0;">
           <div class="exigible-row">
             Montant à payer : &nbsp;&nbsp;&nbsp;&nbsp;
-            <strong style="font-size: 13px; color: #800000;"><?= number_format($montant_exigible_du ?? $reste_payer ?? 0, 0, ',', ' ') ?> CFA</strong>
+            <strong style="font-size: 16px; color: #800000;"><?= number_format($montant_exigible_du ?? $reste_payer ?? 0, 0, ',', ' ') ?> CFA</strong>
             &nbsp;&nbsp;&nbsp;&nbsp;
-            <span style="font-size: 10.5px; font-weight: bold; font-style: italic; color: #000000;"><?= htmlspecialchars($montant_exigible_lettres ?? '') ?></span>
+            <span style="font-size: 12.5px; font-weight: bold; font-style: italic; color: #000000;"><?= htmlspecialchars($montant_exigible_lettres ?? '') ?></span>
           </div>
           
           <div class="exigible-row" style="margin-top: 8px;">
             Délai de rigueur : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <strong style="font-size: 13px; color: #000000;"><?= htmlspecialchars($delai_rigueur ?? '-') ?></strong>
+            <strong style="font-size: 15.5px; color: #000000;"><?= htmlspecialchars($delai_rigueur ?? '-') ?></strong>
           </div>
         </div>
       </td>
@@ -254,7 +254,7 @@
         <?php if ($barcodeRappel !== ''): ?>
         <div style="text-align: center; display: inline-block;">
           <barcode code="<?= htmlspecialchars($barcodeRappel) ?>" type="C128A" size="0.65" height="0.6" />
-          <div style="font-size: 8px; font-family: monospace; font-weight: bold; margin-top: 2px;">* <?= htmlspecialchars($barcodeRappel) ?> *</div>
+          <div style="font-size: 9.5px; font-family: monospace; font-weight: bold; margin-top: 2px;">* <?= htmlspecialchars($barcodeRappel) ?> *</div>
         </div>
         <?php endif; ?>
       </td>
@@ -266,8 +266,8 @@
     <tr>
       <td></td>
       <td style="width: 50%; text-align: right;">
-        <div style="font-weight: bold; text-decoration: underline; font-size: 11px;">CAISSIER(RE)</div>
-        <div style="font-size: 11px; margin-top: 3px; font-weight: bold;"><?= htmlspecialchars($caissier_nom ?? '-') ?></div>
+        <div style="font-weight: bold; text-decoration: underline; font-size: 13.5px;">CAISSIER(RE)</div>
+        <div style="font-size: 13.5px; margin-top: 3px; font-weight: bold;"><?= htmlspecialchars($caissier_nom ?? '-') ?></div>
       </td>
     </tr>
   </table>
@@ -281,8 +281,8 @@
   <!-- PIED DE PAGE RÉFÉRENCE & DATE -->
   <table class="footer-table">
     <tr>
-      <td style="width: 70%; font-style: italic; font-size: 8.5px;"><?= htmlspecialchars($ref_caiss ?? '-') ?></td>
-      <td style="width: 30%; text-align: right; font-size: 8.5px;"><?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></td>
+      <td style="width: 70%; font-style: italic; font-size: 10.5px;"><?= htmlspecialchars($ref_caiss ?? '-') ?></td>
+      <td style="width: 30%; text-align: right; font-size: 10.5px;"><?= htmlspecialchars($date_impression ?? date('d/m/Y H:i:s')) ?></td>
     </tr>
   </table>
 
