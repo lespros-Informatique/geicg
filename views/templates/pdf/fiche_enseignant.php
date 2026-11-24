@@ -15,7 +15,7 @@ $telEns = $item['telephone_enseignant'] ?? ($item['telephone_user'] ?? '-');
 $gradeEns = !empty($item['grade_enseignant']) ? $item['grade_enseignant'] : 'Enseignant';
 $statutEns = strtoupper($item['statut_enseignant'] ?? ($item['statut_user'] ?? 'ACTIF'));
 $typeContrat = !empty($item['type_contrat']) ? ucfirst($item['type_contrat']) : 'Non précisé';
-$numAutorisation = !empty($item['numero_autorisation']) ? $item['numero_autorisation'] : 'Non renseigné';
+$numAutorisationEns = !empty($item['numero_autorisation']) ? $item['numero_autorisation'] : 'Non renseigné';
 $dateCreation = !empty($item['created_at_enseignant']) ? date('d/m/Y H:i', strtotime($item['created_at_enseignant'])) : '-';
 
 $sexeEns = 'Non précisé';
@@ -92,7 +92,7 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
   <title>Fiche Enseignant - <?= htmlspecialchars($nomComplet) ?></title>
   <style>
     @page {
-      margin: 8mm 9mm 8mm 9mm;
+      margin: 8mm 8mm 8mm 8mm;
     }
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
@@ -101,9 +101,17 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
       line-height: 1.4;
     }
 
-    .page-frame {
+    /* Cadre pleine page A4 natif mPDF (atteint exactement le bas de la page) */
+    .page-border {
+      position: fixed;
+      top: 0mm;
+      left: 0mm;
+      width: 194mm;
+      height: 280.5mm;
       border: 1.5px solid #1E3A5F;
-      padding: 14px 16px;
+    }
+    .page-frame {
+      padding: 12px 15px 18px 15px;
       box-sizing: border-box;
     }
 
@@ -222,11 +230,14 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     }
 
     .footer-line {
+      position: fixed;
+      top: 271.5mm;
+      left: 4mm;
+      width: 186mm;
       font-size: 10px;
       color: #64748B;
       text-align: center;
-      margin-top: 16px;
-      padding-top: 8px;
+      padding-top: 5px;
       border-top: 1px solid #E2E8F0;
       font-style: italic;
     }
@@ -234,6 +245,7 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
 </head>
 <body>
 
+<div class="page-border"></div>
 <div class="page-frame">
 
   <!-- EN-TÊTE INSTITUTIONNEL UNIFIÉ GEICG -->
@@ -288,7 +300,7 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     </tr>
     <tr>
       <td>Type de contrat : <span class="val-bold"><?= htmlspecialchars($typeContrat) ?></span></td>
-      <td>N° Autorisation d'enseigner : <span class="val-bold"><?= htmlspecialchars($numAutorisation) ?></span></td>
+      <td>N° Autorisation d'enseigner : <span class="val-bold"><?= htmlspecialchars($numAutorisationEns) ?></span></td>
     </tr>
     <tr>
       <td colspan="2">Date d'enregistrement : <span class="val-bold"><?= htmlspecialchars($dateCreation) ?></span></td>
@@ -336,21 +348,23 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
       <td style="text-align: left;">
         <div style="margin-top: 10px; font-weight: bold; font-size: 9.5pt;">L'Enseignant </div>
         <div style="margin-top: 3px; font-style: italic; color: #64748B;">(Lu et approuvé, signature)</div>
-        <div style="padding-top: 36px;"><strong><?= htmlspecialchars($nomComplet) ?></strong></div>
+        <br><br>
+        <div><strong><?= htmlspecialchars($nomComplet) ?></strong></div>
       </td>
       <td style="text-align: right;">
         <div>Fait à <?= htmlspecialchars($villeSignature) ?>, le <strong><?= date('d/m/Y') ?></strong></div>
         <div style="margin-top: 10px; font-weight: bold; font-size: 9.5pt;"> <?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?> </div>
-        <div style="padding-top: 36px;"><?= htmlspecialchars($nomDirecteur) ?></div>
+        <br><br>
+        <div><?= htmlspecialchars($nomDirecteur) ?></div>
       </td>
     </tr>
   </table>
 
-  <!-- BAS DE PAGE -->
-  <div class="footer-line">
-    <?= htmlspecialchars(!empty($etablissement['texte_pied_page']) ? $etablissement['texte_pied_page'] : '') ?> &bull; <?= date('d/m/Y H:i:s') ?>
-  </div>
+</div>
 
+<!-- BAS DE PAGE ANCRÉ EN BAS DU CADRE -->
+<div class="footer-line">
+  <?= htmlspecialchars(!empty($etablissement['texte_pied_page']) ? $etablissement['texte_pied_page'] : '') ?> &bull; <?= date('d/m/Y H:i:s') ?>
 </div>
 
 </body>
