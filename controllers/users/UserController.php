@@ -441,17 +441,239 @@ class UserController extends BaseController
     public function profil()
     {
         $this->requireAuth();
-        $userId = Auth::id() ?: 0;
-        $editId = $this->validator->crypter($userId);
-        $userProfile = $this->model->getById((int)$userId);
-        $userRoles = $this->model->getUserRoles($userProfile['code_user'] ?? '');
+        $userId = (int)(Auth::id() ?: 0);
+        $userProfile = $this->model->getUserDetailsById($userId);
+        if (!$userProfile) {
+            $userProfile = $this->model->getById($userId) ?: [];
+        }
+
+        $userCode = (string)($userProfile['code_user'] ?? (Auth::code() ?? ''));
+        $userRoles = $this->model->getUserRoles($userCode);
+        foreach ($userRoles as &$ur) {
+            $ur['encrypted_role_id'] = !empty($ur['role_id'])
+                ? $this->validator->crypter((int)$ur['role_id'])
+                : '';
+        }
+        unset($ur);
+
         $primaryRole = !empty($userRoles) ? $userRoles[0] : null;
+        $permissionsDetailed = $this->model->getUserPermissionsDetailed($userCode);
+
+        $anneesAcces = $this->model->getUserAnneeAccesDetails($userCode);
+        foreach ($anneesAcces as &$aa) {
+            $aa['encrypted_annee_id'] = !empty($aa['id_annee'])
+                ? $this->validator->crypter((int)$aa['id_annee'])
+                : '';
+        }
+        unset($aa);
+
+        $enseignantProfile = $this->model->getEnseignantLink($userCode);
+        $encryptedEnseignantId = !empty($enseignantProfile['id_enseignant'])
+            ? $this->validator->crypter((int)$enseignantProfile['id_enseignant'])
+            : '';
+
+        // Chaque utilisateur peut consulter son propre historique d'activité récente
+        $recentLogs = $userCode !== '' ? $this->model->getUserRecentLogs($userCode, 15) : [];
+        $totalLogsCount = $userCode !== '' ? $this->model->getUserLogsCount($userCode) : 0;
+
+        $encryptedId = $this->validator->crypter($userId);
+
         $this->loadView('../views/users/profil.php', [
-            'user' => $userProfile,
-            'role' => $primaryRole,
-            'userRoles' => $userRoles,
-            'editId' => $editId
+            'user'                  => $userProfile,
+            'role'                  => $primaryRole,
+            'userRoles'             => $userRoles,
+            'permissionsDetailed'   => $permissionsDetailed,
+            'anneesAcces'           => $anneesAcces,
+            'enseignantProfile'     => $enseignantProfile,
+            'encryptedEnseignantId' => $encryptedEnseignantId,
+            'recentLogs'            => $recentLogs,
+            'totalLogsCount'        => $totalLogsCount,
+            'etablissement'         => $this->getEtablissementConfig(),
+            'editId'                => $encryptedId,
+            'encryptedId'           => $encryptedId
         ]);
+    }
+
+    /**
+     * Met à jour les informations personnelles autorisées de l'utilisateur connecté (self-service sécurisé)
+     */
+    public function updateProfil()
+    {
+        $this->requireAuth();
+        $this->requirePost(true);
+
+        $userId = (int)(Auth::id() ?: 0);
+        $user = $this->model->getById($userId);
+        if (!$user) {
+            $this->error('Compte utilisateur introuvable.');
+            return;
+        }
+
+        $nom = trim((string)($this->post('nom_user') ?? ''));
+        $prenom = trim((string)($this->post('prenom_user') ?? ''));
+        $email = trim((string)($this->post('email_user') ?? ''));
+        $telephone = Validator::cleanPhone((string)($this->post('telephone_user') ?? ''));
+        $sexeRaw = strtoupper(trim((string)($this->post('sexe_user') ?? ($user['sexe_user'] ?? ''))));
+        $sexe = in_array($sexeRaw, ['M', 'F', 'MASCULIN', 'FEMININ'], true) ? $sexeRaw : ($user['sexe_user'] ?? null);
+
+        if ($nom === '') {
+            $this->error('Le nom est obligatoire.');
+            return;
+        }
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->error("L'adresse e-mail saisie n'est pas valide.");
+            return;
+        }
+        if ($email !== '' && $this->model->existsEmail($email, $userId)) {
+            $this->error('Cette adresse e-mail est déjà utilisée par un autre compte.');
+            return;
+        }
+        if ($telephone !== '' && $this->model->existsTelephone($telephone, $userId)) {
+            $this->error('Ce numéro de téléphone est déjà utilisé par un autre compte.');
+            return;
+        }
+
+        $updateData = [
+            'nom_user' => $nom,
+            'prenom_user' => $prenom,
+            'email_user' => $email !== '' ? $email : null,
+            'telephone_user' => $telephone !== '' ? $telephone : null,
+            'sexe_user' => $sexe,
+            'updated_at_user' => date('Y-m-d H:i:s')
+        ];
+        $filtered = $this->model->filterData($updateData);
+
+        if ($this->model->update($filtered, $userId)) {
+            // Synchronisation immédiate de la session active
+            $authUser = Session::get(USERS_AUTH);
+            if (is_array($authUser)) {
+                $authUser['nom'] = $nom;
+                $authUser['nom_user'] = $nom;
+                $authUser['prenom'] = $prenom;
+                $authUser['prenom_user'] = $prenom;
+                $authUser['email'] = $email;
+                $authUser['email_user'] = $email;
+                $authUser['tel'] = $telephone;
+                $authUser['telephone_user'] = $telephone;
+                $authUser['sexe_user'] = $sexe;
+                Session::set(USERS_AUTH, $authUser);
+            }
+
+            $nomComplet = trim($nom . ' ' . $prenom);
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'user',
+                $user['code_user'] ?? (string)$userId,
+                "Mise à jour du profil personnel par {$nomComplet}",
+                ['id_user' => $userId, 'email' => $email, 'telephone' => $telephone]
+            );
+
+            $this->success('Votre profil a été mis à jour avec succès !', [
+                'nom_user' => $nom,
+                'prenom_user' => $prenom,
+                'nom_complet' => $nomComplet,
+                'email_user' => $email,
+                'telephone_user' => $telephone,
+                'sexe_user' => $sexe,
+                'updated_at' => date('d/m/Y H:i')
+            ]);
+        } else {
+            $this->error('Erreur lors de la mise à jour de votre profil.');
+        }
+    }
+
+    /**
+     * Téléverse la photo de profil de l'utilisateur connecté
+     */
+    public function uploadPhotoProfil()
+    {
+        $this->requireAuth();
+        $this->requirePost(true);
+
+        $userId = (int)(Auth::id() ?: 0);
+        $user = $this->model->getById($userId);
+        if (!$user) {
+            $this->error('Compte utilisateur introuvable.');
+            return;
+        }
+
+        if (empty($_FILES['photo_user']) || $_FILES['photo_user']['error'] !== UPLOAD_ERR_OK) {
+            $this->error('Veuillez sélectionner une image valide.');
+            return;
+        }
+
+        $file = $_FILES['photo_user'];
+        if (($file['size'] ?? 0) > 3 * 1024 * 1024) {
+            $this->error("L'image ne doit pas dépasser 3 Mo.");
+            return;
+        }
+
+        $imgInfo = @getimagesize($file['tmp_name']);
+        $allowedMimes = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+            'image/gif'  => 'gif'
+        ];
+        $mime = $imgInfo['mime'] ?? '';
+        if (!$imgInfo || !isset($allowedMimes[$mime])) {
+            $this->error('Format non pris en charge. Utilisez JPG, PNG, WEBP ou GIF.');
+            return;
+        }
+
+        $uploadDir = __DIR__ . '/../../public/uploads/photos_users/';
+        if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0775, true)) {
+            $this->error("Impossible de préparer le répertoire de téléversement.");
+            return;
+        }
+
+        $ext = $allowedMimes[$mime];
+        $filename = 'user_' . $userId . '_' . time() . '_' . substr(bin2hex(random_bytes(3)), 0, 6) . '.' . $ext;
+        $targetPath = $uploadDir . $filename;
+        $relPath = 'public/uploads/photos_users/' . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            $this->error("Échec de l'enregistrement de la photo sur le serveur.");
+            return;
+        }
+
+        $oldPhoto = (string)($user['photo_user'] ?? '');
+        $filtered = $this->model->filterData([
+            'photo_user' => $relPath,
+            'updated_at_user' => date('Y-m-d H:i:s')
+        ]);
+
+        if ($this->model->update($filtered, $userId)) {
+            // Supprimer l'ancienne photo personnalisée si elle était dans photos_users/
+            if ($oldPhoto !== '' && strpos($oldPhoto, 'public/uploads/photos_users/') === 0) {
+                $oldAbs = __DIR__ . '/../../' . ltrim($oldPhoto, '/');
+                if (file_exists($oldAbs) && is_file($oldAbs)) {
+                    @unlink($oldAbs);
+                }
+            }
+
+            $authUser = Session::get(USERS_AUTH);
+            if (is_array($authUser)) {
+                $authUser['photo_user'] = $relPath;
+                Session::set(USERS_AUTH, $authUser);
+            }
+
+            $this->logAction(
+                AuditLogger::ACTION_UPDATE,
+                'user',
+                $user['code_user'] ?? (string)$userId,
+                "Mise à jour de la photo de profil de " . trim(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? '')),
+                ['id_user' => $userId, 'photo_user' => $relPath]
+            );
+
+            $this->success('Photo de profil mise à jour avec succès !', [
+                'photo_url' => url($relPath) . '?t=' . time(),
+                'photo_path' => $relPath
+            ]);
+        } else {
+            @unlink($targetPath);
+            $this->error('Erreur lors de la sauvegarde de la photo en base de données.');
+        }
     }
 
     public function connexion()
@@ -531,6 +753,8 @@ class UserController extends BaseController
                         'email' => $user['email_user'] ?? '',
                         'email_user' => $user['email_user'] ?? '',
                         'tel' => $user['telephone_user'] ?? '',
+                        'telephone_user' => $user['telephone_user'] ?? '',
+                        'photo_user' => $user['photo_user'] ?? '',
                         'role_code' => $roleCode,
                         'roles' => $roleCodes,
                         'roles_details' => $userRoles,

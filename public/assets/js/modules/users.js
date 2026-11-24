@@ -915,6 +915,321 @@ window.toggleModuleInput = function() {
     });
   }
 
+  // =========================================================================
+  // 11. VUE : MON PROFIL UTILISATEUR (views/users/profil.php)
+  // =========================================================================
+  function initUsersProfilModule() {
+    if (!$('#users-profil-config').length) return;
+
+    var cfg = {};
+    try {
+      var cfgEl = document.getElementById('users-profil-config');
+      if (cfgEl) cfg = JSON.parse(cfgEl.textContent || '{}');
+    } catch (e) {}
+
+    var racine = cfg.racine || window.RACINE || '/';
+    var csrfToken = cfg.csrfToken || '';
+    var updateProfilUrl = cfg.updateProfilUrl || (racine + 'user/updateProfil');
+    var uploadPhotoUrl = cfg.uploadPhotoUrl || (racine + 'user/uploadPhotoProfil');
+    var editPasswordUrl = cfg.editPasswordUrl || (racine + 'user/editPassword');
+
+    function notify(msg, type) {
+      if (typeof window.showToast === 'function') {
+        window.showToast(msg, type || 'info');
+      } else if (window.toastr) {
+        if (type === 'error') toastr.error(msg);
+        else if (type === 'warning') toastr.warning(msg);
+        else toastr.success(msg);
+      }
+    }
+
+    function showFeedback($box, msg, isSuccess) {
+      $box.css({
+        background: isSuccess ? '#F0FDF4' : '#FEF2F2',
+        border: isSuccess ? '1px solid #BBF7D0' : '1px solid #FECACA',
+        color: isSuccess ? '#15803D' : '#B91C1C'
+      }).text(msg).fadeIn(180);
+    }
+
+    // 1. Navigation par onglets
+    function switchProfilTab(tabKey) {
+      var $target = $('#tab-panel-' + tabKey);
+      if (!$target.length) return;
+      $('.profil-tab-btn').removeClass('is-active');
+      $('.profil-tab-btn[data-tab="' + tabKey + '"]').addClass('is-active');
+      $('.profil-tab-panel').hide();
+      $target.show();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    $(document).on('click', '.profil-tab-btn', function() {
+      var tabKey = $(this).data('tab');
+      if (tabKey) switchProfilTab(tabKey);
+    });
+
+    if (window.location.hash) {
+      var hashTab = window.location.hash.replace('#', '');
+      if ($('#tab-panel-' + hashTab).length) {
+        switchProfilTab(hashTab);
+      }
+    }
+
+    // 2. Téléversement instantané de la photo de profil
+    $('#btn-trigger-photo-profil').on('click', function() {
+      $('#input-photo-profil').trigger('click');
+    });
+
+    $('#input-photo-profil').on('change', function() {
+      var file = this.files && this.files[0];
+      if (!file) return;
+
+      if (file.size > 3 * 1024 * 1024) {
+        notify("L'image ne doit pas dépasser 3 Mo.", 'error');
+        $(this).val('');
+        return;
+      }
+      if (!file.type || file.type.indexOf('image/') !== 0) {
+        notify('Veuillez sélectionner un fichier image valide (JPG, PNG, WEBP).', 'error');
+        $(this).val('');
+        return;
+      }
+
+      var $photoImg = $('#profil-hero-photo');
+      var prevSrc = $photoImg.attr('src');
+      var previewUrl = URL.createObjectURL(file);
+      $photoImg.attr('src', previewUrl).css('opacity', '0.6');
+
+      var fd = new FormData();
+      fd.append('csrf_token', csrfToken);
+      fd.append('photo_user', file);
+
+      $.ajax({
+        url: uploadPhotoUrl,
+        type: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(res) {
+          $photoImg.css('opacity', '1');
+          $('#input-photo-profil').val('');
+          if (res && (res.status === 1 || res.success)) {
+            var newUrl = (res.data && res.data.photo_url) ? res.data.photo_url : previewUrl;
+            $photoImg.attr('src', newUrl);
+            // Synchroniser l'avatar dans la barre de navigation s'il existe
+            $('.nav-user-avatar, .user-avatar-img').attr('src', newUrl);
+            notify(res.message || 'Photo de profil mise à jour !', 'success');
+          } else {
+            $photoImg.attr('src', prevSrc);
+            notify((res && res.message) || 'Erreur lors du téléversement de la photo.', 'error');
+          }
+        },
+        error: function(xhr) {
+          $photoImg.css('opacity', '1').attr('src', prevSrc);
+          $('#input-photo-profil').val('');
+          var msg = 'Erreur réseau lors du téléversement de la photo.';
+          try {
+            var j = xhr.responseJSON || JSON.parse(xhr.responseText);
+            if (j && j.message) msg = j.message;
+          } catch (err) {}
+          notify(msg, 'error');
+        }
+      });
+    });
+
+    // 3. Mise à jour AJAX des informations personnelles
+    $('#form-update-profil').on('submit', function(e) {
+      e.preventDefault();
+      var $form = $(this);
+      var $btn = $('#btn-save-profil');
+      var $feedback = $('#profil-infos-feedback');
+      var origHtml = $btn.html();
+
+      $feedback.hide();
+      $btn.prop('disabled', true).css('opacity', '0.75').text('Enregistrement...');
+
+      $.ajax({
+        url: $form.attr('action') || updateProfilUrl,
+        type: 'POST',
+        data: $form.serialize(),
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(res) {
+          $btn.prop('disabled', false).css('opacity', '1').html(origHtml);
+          if (window.lucide) lucide.createIcons();
+
+          if (res && (res.status === 1 || res.success)) {
+            var d = res.data || {};
+            if (d.nom_complet) $('#profil-hero-name').text(d.nom_complet);
+            $('#profil-hero-email').html('<i data-lucide="mail" style="width: 14px; height: 14px;"></i> ' + $('<div>').text(d.email_user || '-').html());
+            $('#profil-hero-tel').html('<i data-lucide="phone" style="width: 14px; height: 14px;"></i> ' + $('<div>').text(d.telephone_user || '-').html());
+            if (d.sexe_user !== undefined) {
+              var sxTxt = d.sexe_user === 'M' ? 'Masculin' : (d.sexe_user === 'F' ? 'Féminin' : 'Non précisé');
+              $('#profil-summary-sexe').text(sxTxt);
+            }
+            if (d.updated_at) {
+              $('#profil-summary-updated').text('Modifié le : ' + d.updated_at);
+            }
+            if (window.lucide) lucide.createIcons();
+            showFeedback($feedback, res.message || 'Profil mis à jour avec succès !', true);
+            notify(res.message || 'Profil mis à jour avec succès !', 'success');
+          } else {
+            var errMsg = (res && res.message) || 'Erreur lors de la mise à jour.';
+            showFeedback($feedback, errMsg, false);
+            notify(errMsg, 'error');
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false).css('opacity', '1').html(origHtml);
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur de communication avec le serveur.';
+          try {
+            var j = xhr.responseJSON || JSON.parse(xhr.responseText);
+            if (j && j.message) msg = j.message;
+          } catch (err) {}
+          showFeedback($feedback, msg, false);
+          notify(msg, 'error');
+        }
+      });
+    });
+
+    // 4. Sécurité : bascule visibilité, indicateur de force & changement mot de passe AJAX
+    $(document).on('click', '.btn-toggle-profil-pwd', function() {
+      var targetSel = $(this).data('target');
+      var $input = $(targetSel);
+      if (!$input.length) return;
+      var isPwd = ($input.attr('type') === 'password');
+      $input.attr('type', isPwd ? 'text' : 'password');
+    });
+
+    function evaluatePwdStrength(pwd) {
+      if (!pwd) return { pct: 0, color: '#E2E8F0', label: '-' };
+      var score = 0;
+      if (pwd.length >= 6) score++;
+      if (pwd.length >= 10) score++;
+      if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
+      if (/\d/.test(pwd)) score++;
+      if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+      if (score <= 1) return { pct: 25, color: '#DC2626', label: 'Faible' };
+      if (score <= 3) return { pct: 60, color: '#D97706', label: 'Moyen' };
+      return { pct: 100, color: '#16A34A', label: 'Fort' };
+    }
+
+    function checkPwdMatch() {
+      var n = $('#profil_new_password').val() || '';
+      var c = $('#profil_confirm_password').val() || '';
+      var $hint = $('#profil-pwd-match-hint');
+      if (!c) {
+        $hint.hide();
+        return;
+      }
+      if (n === c) {
+        $hint.css('color', '#15803D').text('✓ Les mots de passe correspondent').show();
+      } else {
+        $hint.css('color', '#DC2626').text('✕ Les mots de passe ne correspondent pas').show();
+      }
+    }
+
+    $('#profil_new_password').on('input', function() {
+      var st = evaluatePwdStrength($(this).val() || '');
+      $('#profil-pwd-strength-bar').css({ width: st.pct + '%', backgroundColor: st.color });
+      $('#profil-pwd-strength-label').css('color', st.pct > 0 ? st.color : '#64748B').text('Force du mot de passe : ' + st.label);
+      checkPwdMatch();
+    });
+
+    $('#profil_confirm_password').on('input', checkPwdMatch);
+
+    $('#form-profil-password').on('submit', function(e) {
+      e.preventDefault();
+      var $form = $(this);
+      var $btn = $('#btn-save-profil-pwd');
+      var $feedback = $('#profil-pwd-feedback');
+      var newPwd = $('#profil_new_password').val() || '';
+      var confPwd = $('#profil_confirm_password').val() || '';
+
+      $feedback.hide();
+      if (newPwd.length < 6) {
+        showFeedback($feedback, 'Le nouveau mot de passe doit contenir au moins 6 caractères.', false);
+        return;
+      }
+      if (newPwd !== confPwd) {
+        showFeedback($feedback, 'La confirmation du mot de passe ne correspond pas.', false);
+        return;
+      }
+
+      var origHtml = $btn.html();
+      $btn.prop('disabled', true).css('opacity', '0.75').text('Mise à jour...');
+
+      $.ajax({
+        url: $form.attr('action') || editPasswordUrl,
+        type: 'POST',
+        data: $form.serialize(),
+        dataType: 'json',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(res) {
+          $btn.prop('disabled', false).css('opacity', '1').html(origHtml);
+          if (window.lucide) lucide.createIcons();
+
+          if (res && (res.status === 1 || res.success)) {
+            $form[0].reset();
+            $('#profil-pwd-strength-bar').css({ width: '0%' });
+            $('#profil-pwd-strength-label').css('color', '#64748B').text('Force du mot de passe : -');
+            $('#profil-pwd-match-hint').hide();
+            showFeedback($feedback, res.message || 'Mot de passe modifié avec succès !', true);
+            notify(res.message || 'Mot de passe modifié avec succès !', 'success');
+          } else {
+            var errMsg = (res && res.message) || 'Erreur lors de la modification du mot de passe.';
+            showFeedback($feedback, errMsg, false);
+            notify(errMsg, 'error');
+          }
+        },
+        error: function(xhr) {
+          $btn.prop('disabled', false).css('opacity', '1').html(origHtml);
+          if (window.lucide) lucide.createIcons();
+          var msg = 'Erreur réseau lors de la modification du mot de passe.';
+          try {
+            var j = xhr.responseJSON || JSON.parse(xhr.responseText);
+            if (j && j.message) msg = j.message;
+          } catch (err) {}
+          showFeedback($feedback, msg, false);
+          notify(msg, 'error');
+        }
+      });
+    });
+
+    // 5. Filtrage des permissions RBAC effectives
+    function filterProfilPerms() {
+      var selectedMod = ($('#filter-profil-perm-module').val() || '').toUpperCase();
+      var q = ($('#search-profil-perms').val() || '').toLowerCase().trim();
+      var visibleTotal = 0;
+
+      $('#profil-permissions-list .profil-perm-group').each(function() {
+        var $grp = $(this);
+        var grpMod = String($grp.data('module') || '').toUpperCase();
+        var modMatch = (!selectedMod || grpMod === selectedMod);
+        var grpVisible = 0;
+
+        $grp.find('.profil-perm-item').each(function() {
+          var hay = String($(this).data('search') || '').toLowerCase();
+          var show = modMatch && (!q || hay.indexOf(q) !== -1);
+          $(this).toggle(show);
+          if (show) {
+            grpVisible++;
+            visibleTotal++;
+          }
+        });
+        $grp.toggle(grpVisible > 0);
+      });
+
+      $('#profil-perm-visible-count').text(visibleTotal);
+    }
+
+    $('#filter-profil-perm-module').on('change', filterProfilPerms);
+    $('#search-profil-perms').on('input', filterProfilPerms);
+  }
+
   $(document).ready(function() {
     initUsersListModule();
     initUsersEditModule();
@@ -926,6 +1241,7 @@ window.toggleModuleInput = function() {
     initForgotPasswordModule();
     initResetPasswordModule();
     initUsersDetailsModule();
+    initUsersProfilModule();
     if (window.lucide) lucide.createIcons();
   });
 

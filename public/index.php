@@ -57,6 +57,8 @@ $route->addRoute('/user/reset-password', [$userController, 'reinitialiserMotDePa
 $route->addRoute('/user/decon', [$userController, 'decon']);
 $route->addRoute('/user/logout', [$userController, 'logout']);
 $route->addRoute('/user/profil', [$userController, 'profil']);
+$route->addRoute('/user/updateProfil', [$userController, 'updateProfil']);
+$route->addRoute('/user/uploadPhotoProfil', [$userController, 'uploadPhotoProfil']);
 $route->addRoute('/user/editPassword', [$userController, 'editPassword']);
 $route->addRoute('/user/list', [$userController, 'list']);
 $route->addRoute('/user/apiList', [$userController, 'apiList']);

@@ -106,9 +106,27 @@ class ViewContext
 
         $currentUserName  = Auth::user('nom_user') ?? (Auth::user('nom') ?? (Auth::user('login_user') ?? 'Utilisateur'));
         $currentUserEmail = Auth::user('email_user') ?? (Auth::user('email') ?? '');
-        $currentUserPhoto = !empty(Auth::user('photo_user'))
-            ? RACINE . 'public/assets/images/users/' . Auth::user('photo_user')
-            : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
+        $rawUserPhoto = trim((string)(Auth::user('photo_user') ?? ''));
+        if ($rawUserPhoto !== '') {
+            $cleanUserPhoto = ltrim($rawUserPhoto, '/');
+            if (strpos($rawUserPhoto, 'http') === 0 || strpos($rawUserPhoto, 'data:') === 0) {
+                $currentUserPhoto = $rawUserPhoto;
+            } elseif (file_exists(__DIR__ . '/../' . $cleanUserPhoto)) {
+                $currentUserPhoto = RACINE . $cleanUserPhoto;
+            } elseif (file_exists(__DIR__ . '/../public/' . $cleanUserPhoto)) {
+                $currentUserPhoto = RACINE . 'public/' . $cleanUserPhoto;
+            } elseif (file_exists(__DIR__ . '/../public/assets/images/users/' . $cleanUserPhoto)) {
+                $currentUserPhoto = RACINE . 'public/assets/images/users/' . $cleanUserPhoto;
+            } else {
+                $currentUserPhoto = function_exists('placeholderUrl')
+                    ? placeholderUrl('user')
+                    : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
+            }
+        } else {
+            $currentUserPhoto = function_exists('placeholderUrl')
+                ? placeholderUrl('user')
+                : 'https://ui-avatars.com/api/?name=' . urlencode($currentUserName) . '&background=1E3A5F&color=fff';
+        }
 
         return [
             'currentUserCode'   => $currentUserCode,
