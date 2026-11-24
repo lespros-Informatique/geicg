@@ -314,13 +314,13 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
             <td><strong><?= htmlspecialchars($c['libelle_matiere'] ?? '-') ?></strong></td>
             <td><?= htmlspecialchars($c['libelle_classe'] ?? '-') ?></td>
             <td style="text-align: center; font-weight: bold; color: #1E3A5F;">
-              <?= !empty($c['volume_horaire']) ? $c['volume_horaire'] . ' h' : '-' ?>
+              <?= !empty($c['volume_horaire']) ? $c['volume_horaire'] . ' H' : '-' ?>
             </td>
           </tr>
         <?php endforeach; ?>
         <tr style="background: #F8FAFC; font-weight: bold;">
-          <td colspan="3" style="text-align: right; padding: 7px 8px; color: #0F172A; text-transform: uppercase;">Total Volume Horaire Hebdomadaire :</td>
-          <td style="text-align: center; padding: 7px 8px; color: #0284C7; font-size: 13px;"><?= $totalHeures ?> h</td>
+          <td colspan="3" style="text-align: right; padding: 7px 8px; color: #0D0F12; text-transform: uppercase; font-size: 11pt; font-weight: bold;">Total Volume Horaire Hebdomadaire </td>
+          <td style="text-align: center; padding: 7px 8px; color: #9B162A; font-size: 13pt; font-weight: bold;"><?= $totalHeures ?> H</td>
         </tr>
       </tbody>
     </table>
