@@ -152,7 +152,7 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
     /* Zone Solde & Code-barres / Caissier (hors table pour mPDF) */
     .bottom-status-row {
       width: 100%;
-      margin-top: 35px;
+      margin-top: 24px;
       margin-bottom: 6px;
     }
     .bottom-status-left {
@@ -361,9 +361,9 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       <td style="width: 24%; text-align: right; vertical-align: top;">
         <div style="display: inline-block; width: 120px; text-align: right;">
           <?php if (!empty($photo_etudiant)): ?>
-            <img src="<?= $photo_etudiant ?>" width="120" height="130" class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
+            <img src="<?= $photo_etudiant ?>" width="120" height="130" class="photo-box" style="width: 120px; height: 120px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
           <?php else: ?>
-            <div class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 126px; color: #94A3B8; font-size: 9px; display: inline-block;">PHOTO</div>
+            <div class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 116px; color: #94A3B8; font-size: 9px; display: inline-block;">PHOTO</div>
           <?php endif; ?>
         </div>
       </td>
@@ -505,9 +505,9 @@ $barcodeVal = !empty($code_paiement) ? $code_paiement : (!empty($numero_recu) ? 
       <td style="width: 24%; text-align: right; vertical-align: top;">
         <div style="display: inline-block; width: 120px; text-align: right;">
           <?php if (!empty($photo_etudiant)): ?>
-            <img src="<?= $photo_etudiant ?>" width="120" height="130" class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
+            <img src="<?= $photo_etudiant ?>" width="120" height="120" class="photo-box" style="width: 120px; height: 120px; border: 1px solid #000000; object-fit: cover; display: inline-block;">
           <?php else: ?>
-            <div class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 126px; color: #94A3B8; font-size: 8.5px; display: inline-block;">PHOTO</div>
+            <div class="photo-box" style="width: 120px; height: 130px; border: 1px solid #000000; background: #F1F5F9; text-align: center; line-height: 116px; color: #94A3B8; font-size: 8.5px; display: inline-block;">PHOTO</div>
           <?php endif; ?>
         </div>
       </td>
