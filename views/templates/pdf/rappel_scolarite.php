@@ -79,8 +79,8 @@
       font-size: 11px;
     }
     .photo-box {
-      width: 82px;
-      height: 98px;
+      width: 120px;
+      height: 130px;
       border: 1px solid #000000;
       object-fit: cover;
     }
@@ -180,7 +180,7 @@
   <!-- INFOS ÉTUDIANT & PHOTO -->
   <table class="info-table">
     <tr>
-      <td style="width: 78%;">
+      <td style="width: 76%;">
         <table style="width: 100%;">
           <tr>
             <td style="width: 50%;">
@@ -201,13 +201,13 @@
           </tr>
         </table>
       </td>
-      <td style="width: 22%; text-align: right; vertical-align: top;">
+      <td style="width: 24%; text-align: right; vertical-align: top;">
         <?php if (!empty($photo_src)): ?>
-          <img src="<?= $photo_src ?>" class="photo-box">
+          <img src="<?= $photo_src ?>" class="photo-box" width="120" height="130" style="width: 120px; height: 130px;">
         <?php elseif (!empty($photoSrc)): ?>
-          <img src="<?= $photoSrc ?>" class="photo-box">
+          <img src="<?= $photoSrc ?>" class="photo-box" width="120" height="130" style="width: 120px; height: 130px;">
         <?php else: ?>
-          <div class="photo-box" style="background: #F1F5F9; text-align: center; line-height: 90px; color: #94A3B8; font-size: 9px;">PHOTO</div>
+          <div class="photo-box" style="width: 120px; height: 130px; background: #F1F5F9; text-align: center; line-height: 130px; color: #94A3B8; font-size: 9px;">PHOTO</div>
         <?php endif; ?>
       </td>
     </tr>
