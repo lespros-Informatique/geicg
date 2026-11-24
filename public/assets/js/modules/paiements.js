@@ -2034,7 +2034,7 @@
         var tableHistorique = null;
         var impayesRowsByInscription = {};
         var currentRelanceRow = null;
-        var placeholderEtudiant = cfg.placeholderEtudiant || (racine + 'public/assets/images/placeholder-etudiant.png');
+        var placeholderEtudiant = config.placeholderEtudiant || (racine + 'public/assets/images/placeholder-etudiant.png');
 
         var table = $table.DataTable({
           order: [],
@@ -2229,14 +2229,14 @@
         if ($tableHistorique.length) {
           var canalBadgeMap = {
             recu_pdf: { label: 'Reçu PDF', bg: '#EFF6FF', color: '#1E3A5F', border: '#BFDBFE' },
-            sms: { label: 'SMS', bg: '#FFF7ED', color: '#C2410C', border: '#FED7AA' },
+            sms:      { label: 'SMS',      bg: '#FFF7ED', color: '#C2410C', border: '#FED7AA' },
             whatsapp: { label: 'WhatsApp', bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' },
-            email: { label: 'Email', bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' },
-            appel: { label: 'Appel', bg: '#F1F5F9', color: '#334155', border: '#CBD5E1' }
+            email:    { label: 'Email',    bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' },
+            appel:    { label: 'Appel',    bg: '#F1F5F9', color: '#334155', border: '#CBD5E1' }
           };
           var niveauLabelMap = {
-            rappel_amiable: 'Rappel Amiable',
-            relance_ferme: 'Relance Ferme',
+            rappel_amiable:  'Rappel Amiable',
+            relance_ferme:   'Relance Ferme',
             mise_en_demeure: 'Mise en Demeure'
           };
 
@@ -2270,7 +2270,7 @@
                   var dateFr = dParts.length === 3 ? (dParts[2] + '/' + dParts[1] + '/' + dParts[0]) : parts[0];
                   var timePart = parts[1] ? parts[1].substring(0, 5) : '';
                   return `<div style="font-weight: 700; color: #0F172A; font-size: 12.5px;">${dateFr}</div>` +
-                    (timePart ? `<div style="font-size: 11px; color: #64748B;">${timePart}</div>` : '');
+                         (timePart ? `<div style="font-size: 11px; color: #64748B;">${timePart}</div>` : '');
                 }
               },
               {
