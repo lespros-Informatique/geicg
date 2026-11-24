@@ -425,6 +425,7 @@ $route->addRoute('/cloture_caisse/formulaire', [$sessionCaisseController, 'clotu
 // Module: impayes (ImpayesController)
 $route->addRoute('/impayes/list', [$impayesController, 'list']);
 $route->addRoute('/impayes/apiList', [$impayesController, 'apiList']);
+$route->addRoute('/impayes/apiHistorique', [$impayesController, 'apiHistorique']);
 $route->addRoute('/impayes/add', [$impayesController, 'add']);
 $route->addRoute('/impayes/addGrouped', [$impayesController, 'addGrouped']);
 $route->addRoute('/impayes/edit', [$impayesController, 'edit']);

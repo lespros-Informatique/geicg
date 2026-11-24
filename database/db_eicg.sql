@@ -3085,7 +3085,7 @@ CREATE TABLE `relances_impayes` (
     'relance_ferme',
     'mise_en_demeure'
   ) NOT NULL DEFAULT 'rappel_amiable',
-  `canal_relance` enum('sms', 'email', 'whatsapp', 'appel') NOT NULL DEFAULT 'sms',
+  `canal_relance` enum('sms', 'email', 'whatsapp', 'appel', 'recu_pdf') NOT NULL DEFAULT 'sms',
   `montant_impaye` decimal(12, 2) NOT NULL DEFAULT '0.00',
   `telephone_destinataire` varchar(50) DEFAULT NULL,
   `message_relance` text,

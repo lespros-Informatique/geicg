@@ -42,6 +42,86 @@ class ModelImpayes extends BaseModel
         }
     }
 
+    public function getHistoriqueRelances(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $canal = 'ALL'): array
+    {
+        try {
+            $sql = "SELECT r.*,
+                           e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.photo_etudiant,
+                           ins.id_inscription,
+                           cl.libelle_classe, cl.code_classe,
+                           n.libelle_niveau, n.code_niveau,
+                           a.libelle_annee,
+                           TRIM(CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, ''))) AS auteur_nom
+                    FROM " . TABLES::RELANCES_IMPAYES . " r
+                    LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = r.etudiant_code
+                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = r.inscription_code
+                    LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                    LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                    LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = r.annee_code
+                    LEFT JOIN " . TABLES::USERS . " u ON u.code_user = r.user_code";
+
+            $conditions = [];
+            $params = [];
+            if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+                $conditions[] = "r.annee_code = ?";
+                $params[] = $anneeCode;
+            }
+            if (!empty($niveauCode) && $niveauCode !== 'ALL') {
+                $conditions[] = "cl.niveau_code = ?";
+                $params[] = $niveauCode;
+            }
+            if (!empty($classeCode) && $classeCode !== 'ALL') {
+                $conditions[] = "ins.classe_code = ?";
+                $params[] = $classeCode;
+            }
+            if (!empty($canal) && $canal !== 'ALL') {
+                $conditions[] = "r.canal_relance = ?";
+                $params[] = $canal;
+            }
+
+            if (!empty($conditions)) {
+                $sql .= " WHERE " . implode(" AND ", $conditions);
+            }
+            $sql .= " ORDER BY r.created_at_relance DESC, r.id_relance DESC";
+
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            error_log("ModelImpayes::getHistoriqueRelances error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getRelanceDetailsByIdOrCode($idOrCode): ?array
+    {
+        try {
+            $sql = "SELECT r.*,
+                           e.nom_etudiant, e.prenom_etudiant, e.matricule_etudiant, e.photo_etudiant, e.telephone_etudiant,
+                           ins.id_inscription, ins.photo_inscription,
+                           cl.libelle_classe,
+                           n.libelle_niveau,
+                           a.libelle_annee,
+                           TRIM(CONCAT(COALESCE(u.nom_user, ''), ' ', COALESCE(u.prenom_user, ''))) AS auteur_nom
+                    FROM " . TABLES::RELANCES_IMPAYES . " r
+                    LEFT JOIN " . TABLES::ETUDIANTS . " e ON e.code_etudiant = r.etudiant_code
+                    LEFT JOIN " . TABLES::INSCRIPTIONS . " ins ON ins.code_inscription = r.inscription_code
+                    LEFT JOIN " . TABLES::CLASSES . " cl ON cl.code_classe = ins.classe_code
+                    LEFT JOIN " . TABLES::NIVEAUX . " n ON n.code_niveau = cl.niveau_code
+                    LEFT JOIN " . TABLES::ANNEES . " a ON a.code_annee = r.annee_code
+                    LEFT JOIN " . TABLES::USERS . " u ON u.code_user = r.user_code
+                    WHERE r.id_relance = ? OR r.code_relance = ?
+                    LIMIT 1";
+            $stmt = $this->getCon()->prepare($sql);
+            $stmt->execute([$idOrCode, $idOrCode]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (Exception $e) {
+            error_log("ModelImpayes::getRelanceDetailsByIdOrCode error: " . $e->getMessage());
+            return null;
+        }
+    }
+
     public function getOverdueStudentsDetailed(?string $anneeCode = null, ?string $niveauCode = null, ?string $classeCode = null, ?string $severiteFilter = 'ALL'): array
     {
         try {

@@ -2015,16 +2015,23 @@
           }
           updatePrintUrl();
           if (table) table.ajax.reload();
+          if (tableHistorique) tableHistorique.ajax.reload();
         });
 
         $('#filter-classe, #filter-annee, #filter-severite').on('change', function () {
           updatePrintUrl();
           if (table) table.ajax.reload();
+          if (tableHistorique) tableHistorique.ajax.reload();
+        });
+
+        $('#filter-canal-historique').on('change', function () {
+          if (tableHistorique) tableHistorique.ajax.reload();
         });
 
         updatePrintUrl();
 
         var selectedRowsData = [];
+        var tableHistorique = null;
 
         var table = $table.DataTable({
           order: [],
@@ -2165,7 +2172,7 @@
               data: null, orderable: false, className: 'text-center',
               render: function (d) {
                 var btnPrint = `<a href="${GEICG.url('impayes/imprimerRappelPdf/' + d.encrypted_id)}" target="_blank" 
-                              class="btn btn-sm" style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #1E3A5F; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Imprimer la Lettre de Rappel PDF">
+                              class="btn btn-sm btn-print-rappel-pdf" style="width: 32px; height: 32px; padding: 0; border-radius: 8px; background: #1E3A5F; color: #FFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Imprimer la Lettre de Rappel PDF">
                               <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
                             </a>`;
 
@@ -2203,6 +2210,168 @@
           drawCallback: function () {
             if (window.lucide) lucide.createIcons();
           }
+        });
+
+        // -------------------------------------------------------------
+        // ONGLETS & DATATABLE HISTORIQUE DES RELANCES (INCLUANT REÇUS PDF)
+        // -------------------------------------------------------------
+        var $tableHistorique = $('#table-historique-relances');
+        if ($tableHistorique.length) {
+          var canalBadgeMap = {
+            recu_pdf: { label: 'Reçu PDF', bg: '#EFF6FF', color: '#1E3A5F', border: '#BFDBFE' },
+            sms:      { label: 'SMS',      bg: '#FFF7ED', color: '#C2410C', border: '#FED7AA' },
+            whatsapp: { label: 'WhatsApp', bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' },
+            email:    { label: 'Email',    bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' },
+            appel:    { label: 'Appel',    bg: '#F1F5F9', color: '#334155', border: '#CBD5E1' }
+          };
+          var niveauLabelMap = {
+            rappel_amiable:  'Rappel Amiable',
+            relance_ferme:   'Relance Ferme',
+            mise_en_demeure: 'Mise en Demeure'
+          };
+
+          tableHistorique = $tableHistorique.DataTable({
+            order: [[0, 'desc']],
+            ajax: {
+              url: GEICG.url('impayes/apiHistorique'),
+              type: 'GET',
+              data: function (d) {
+                d.annee_code = $('#filter-annee').val();
+                d.niveau_code = $('#filter-niveau').val();
+                d.classe_code = $('#filter-classe').val();
+                d.canal_relance = $('#filter-canal-historique').val() || 'ALL';
+              },
+              dataSrc: function (json) {
+                var rows = json.data || [];
+                $('#badge-historique-count').text(rows.length);
+                return rows;
+              }
+            },
+            processing: true,
+            autoWidth: false,
+            columns: [
+              {
+                data: 'created_at_relance',
+                render: function (v, type) {
+                  if (type === 'sort' || type === 'type') return v || '';
+                  if (!v) return '-';
+                  var parts = String(v).split(' ');
+                  var dParts = (parts[0] || '').split('-');
+                  var dateFr = dParts.length === 3 ? (dParts[2] + '/' + dParts[1] + '/' + dParts[0]) : parts[0];
+                  var timePart = parts[1] ? parts[1].substring(0, 5) : '';
+                  return `<div style="font-weight: 700; color: #0F172A; font-size: 12.5px;">${dateFr}</div>` +
+                         (timePart ? `<div style="font-size: 11px; color: #64748B;">${timePart}</div>` : '');
+                }
+              },
+              {
+                data: 'code_relance',
+                render: function (v) {
+                  return `<code style="font-weight: 700; color: #1E3A5F; background: #EFF6FF; border: 1px solid #DBEAFE; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-family: monospace;">${v || '-'}</code>`;
+                }
+              },
+              {
+                data: null,
+                render: function (d) {
+                  return `<div>
+                    <div style="font-weight: 800; color: #0F172A; font-size: 12.5px;">${d.nom_complet || '-'}</div>
+                    <div style="font-size: 11px; color: #64748B;">${d.matricule_etudiant || ''}</div>
+                  </div>`;
+                }
+              },
+              {
+                data: 'libelle_classe',
+                render: function (v) {
+                  return `<span style="font-weight: 700; color: #334155; font-size: 12.5px;">${v || '-'}</span>`;
+                }
+              },
+              {
+                data: 'canal_relance',
+                render: function (v) {
+                  var key = String(v || '').toLowerCase();
+                  var cfg = canalBadgeMap[key] || { label: (v || '-').toUpperCase(), bg: '#F1F5F9', color: '#334155', border: '#CBD5E1' };
+                  return `<span style="background: ${cfg.bg}; color: ${cfg.color}; border: 1px solid ${cfg.border}; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; display: inline-block;">${cfg.label}</span>`;
+                }
+              },
+              {
+                data: 'niveau_relance',
+                render: function (v) {
+                  return `<span style="font-size: 12px; font-weight: 700; color: #475569;">${niveauLabelMap[v] || v || '-'}</span>`;
+                }
+              },
+              {
+                data: 'montant_impaye',
+                className: 'text-end font-monospace',
+                render: function (v) {
+                  return `<strong style="font-size: 12.5px; color: #DC2626;">${formatFCFA(v)}</strong>`;
+                }
+              },
+              {
+                data: 'auteur_nom',
+                render: function (v) {
+                  return `<span style="font-size: 12px; color: #475569; font-weight: 600;">${v || '-'}</span>`;
+                }
+              },
+              {
+                data: null,
+                orderable: false,
+                className: 'text-center',
+                render: function (d) {
+                  var btnDetail = `<a href="${GEICG.url('impayes/details/' + d.encrypted_id)}" class="btn btn-sm" style="width: 30px; height: 30px; padding: 0; border-radius: 7px; background: #EFF6FF; color: #1E3A5F; border: 1px solid #BFDBFE; display: inline-flex; align-items: center; justify-content: center;" title="Voir la fiche de relance"><i data-lucide="eye" style="width: 15px; height: 15px;"></i></a>`;
+                  var btnReprint = d.encrypted_inscription_id
+                    ? `<a href="${GEICG.url('impayes/imprimerRappelPdf/' + d.encrypted_inscription_id)}?reprint=1&code_relance=${encodeURIComponent(d.code_relance || '')}" target="_blank" class="btn btn-sm" style="width: 30px; height: 30px; padding: 0; border-radius: 7px; background: #1E3A5F; color: #FFFFFF; border: none; display: inline-flex; align-items: center; justify-content: center;" title="Réimprimer le reçu de rappel PDF"><i data-lucide="printer" style="width: 15px; height: 15px;"></i></a>`
+                    : '';
+                  return `<div style="display: flex; gap: 5px; justify-content: center;">${btnDetail}${btnReprint}</div>`;
+                }
+              }
+            ],
+            language: GEICG.dataTableLanguage,
+            drawCallback: function () {
+              if (window.lucide) lucide.createIcons();
+            }
+          });
+        }
+
+        function activateImpayesTab(targetSelector) {
+          $('.btn-impayes-tab').each(function () {
+            var isTarget = ($(this).data('target') === targetSelector);
+            $(this).toggleClass('active', isTarget);
+            if (isTarget) {
+              $(this).css({ background: '#1E3A5F', color: '#FFFFFF', borderColor: '#1E3A5F', fontWeight: 800 });
+            } else {
+              $(this).css({ background: '#F8FAFC', color: '#475569', borderColor: '#CBD5E1', fontWeight: 700 });
+            }
+          });
+          if (targetSelector === '#panel-impayes-historique') {
+            $('#panel-impayes-liste').hide();
+            $('#panel-impayes-historique').show();
+            $('#historique-canal-filter-wrap').css('display', 'inline-flex');
+            if (tableHistorique) {
+              tableHistorique.ajax.reload(null, false);
+              tableHistorique.columns.adjust();
+            }
+          } else {
+            $('#panel-impayes-historique').hide();
+            $('#panel-impayes-liste').show();
+            $('#historique-canal-filter-wrap').hide();
+            if (table) table.columns.adjust();
+          }
+          if (window.lucide) lucide.createIcons();
+        }
+
+        $(document).on('click', '.btn-impayes-tab', function () {
+          activateImpayesTab($(this).data('target'));
+        });
+
+        $(document).on('click', '#kpi-card-relances-mois', function () {
+          activateImpayesTab('#panel-impayes-historique');
+        });
+
+        // Rafraîchissement automatique du KPI Relances & de l'historique après impression d'un reçu PDF
+        $(document).on('click', '.btn-print-rappel-pdf', function () {
+          setTimeout(function () {
+            if (table) table.ajax.reload(null, false);
+            if (tableHistorique) tableHistorique.ajax.reload(null, false);
+          }, 1500);
         });
 
         // Check all / Check row events
@@ -2344,6 +2513,10 @@
 
           var url = GEICG.url('impayes/imprimerRappelsMasse?ids=' + encodeURIComponent(selectedIds.join(',')));
           window.open(url, '_blank');
+          setTimeout(function () {
+            if (table) table.ajax.reload(null, false);
+            if (tableHistorique) tableHistorique.ajax.reload(null, false);
+          }, 2000);
         });
 
         $(document).on('click', '.btn-close-modal-group-sms', function () {
@@ -2386,6 +2559,7 @@
                 if (window.toastr) toastr.success(res.message || 'Relance enregistrée avec succès!');
                 $('#modalRelanceImpaye').hide();
                 table.ajax.reload(null, false);
+                if (tableHistorique) tableHistorique.ajax.reload(null, false);
               } else {
                 if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
               }
@@ -2427,6 +2601,7 @@
                 $('#modalRelanceGroupSMS').hide();
                 $('#check-all-impayes').prop('checked', false);
                 table.ajax.reload(null, false);
+                if (tableHistorique) tableHistorique.ajax.reload(null, false);
               } else {
                 if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'envoi des relances groupées');
               }

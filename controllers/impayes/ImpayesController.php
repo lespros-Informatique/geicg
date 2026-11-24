@@ -91,6 +91,75 @@ class ImpayesController extends BaseController
         ]);
     }
 
+    public function apiHistorique()
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+
+        $anneeCode = $this->resolveTargetAcademicYear($_GET['annee_code'] ?? null);
+        if ($anneeCode === null) {
+            $this->json([
+                'status' => 1,
+                'success' => true,
+                'data' => []
+            ]);
+            return;
+        }
+
+        $niveauCode = $_GET['niveau_code'] ?? 'ALL';
+        $classeCode = $_GET['classe_code'] ?? 'ALL';
+        $canal = $_GET['canal_relance'] ?? 'ALL';
+
+        $rows = $this->model->getHistoriqueRelances($anneeCode, $niveauCode, $classeCode, $canal);
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = array_merge($row, [
+                'encrypted_id' => $this->validator->crypter($row['id_relance']),
+                'encrypted_inscription_id' => !empty($row['id_inscription']) ? $this->validator->crypter($row['id_inscription']) : '',
+                'nom_complet' => trim(strtoupper($row['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($row['prenom_etudiant'] ?? '')))
+            ]);
+        }
+
+        $this->json([
+            'status' => 1,
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
+    public function details($param)
+    {
+        $this->requireAuth();
+        $this->requirePermission([PERMISSIONS::VIEW_IMPAYES, PERMISSIONS::MANAGE_IMPAYES, PERMISSIONS::VIEW_PAIEMENTS, PERMISSIONS::MANAGE_PAIEMENTS]);
+
+        try {
+            $id = $this->validator->decrypter($param);
+        } catch (Exception $e) {
+            $id = $param;
+        }
+
+        $item = $this->model->getRelanceDetailsByIdOrCode($id);
+        if (!$item && (string)$id !== (string)$param) {
+            $item = $this->model->getRelanceDetailsByIdOrCode($param);
+        }
+        if (!$item) {
+            $this->renderNotFound("Fiche de relance introuvable.");
+            return;
+        }
+
+        if (!empty($item['annee_code']) && !$this->canAccessAcademicYear($item['annee_code'])) {
+            $this->renderNotFound("Accès non autorisé à l'historique de cette année académique.");
+            return;
+        }
+
+        $encryptedInscriptionId = !empty($item['id_inscription']) ? $this->validator->crypter($item['id_inscription']) : '';
+
+        $this->loadView('../views/impayes/details.php', [
+            'item' => $item,
+            'encryptedInscriptionId' => $encryptedInscriptionId
+        ]);
+    }
+
     public function add()
     {
         $this->requirePost(false);
@@ -110,7 +179,7 @@ class ImpayesController extends BaseController
         unset($data['csrf_token']);
 
         if (empty($data['code_relance'])) {
-            $data['code_relance'] = $this->validator->generateCode(TABLES::IMPAYES, 'code_relance', 'REL-', 8);
+            $data['code_relance'] = $this->validator->generateCode(TABLES::RELANCES_IMPAYES, 'code_relance', 'REL-', 8);
         }
         $data['statut_relance'] = 'envoye';
         $data['created_at_relance'] = date('Y-m-d H:i:s');
@@ -121,6 +190,13 @@ class ImpayesController extends BaseController
         $filteredData = $this->model->filterData($data);
 
         if ($this->model->create($filteredData)) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'relances_impayes',
+                $data['code_relance'],
+                "Relance d'impayé enregistrée (" . ($data['canal_relance'] ?? 'sms') . ") pour " . ($data['etudiant_code'] ?? ''),
+                ['code_relance' => $data['code_relance'], 'canal_relance' => $data['canal_relance'] ?? 'sms', 'montant_impaye' => $data['montant_impaye'] ?? 0]
+            );
             $this->success('Relance d\'impayé enregistrée et journalisée avec succès!');
         } else {
             $this->error('Erreur lors de l\'enregistrement de la relance');
@@ -155,7 +231,7 @@ class ImpayesController extends BaseController
 
         $savedCount = 0;
         foreach ($items as $item) {
-            $codeRelance = $this->validator->generateCode(TABLES::IMPAYES, 'code_relance', 'REL-', 8);
+            $codeRelance = $this->validator->generateCode(TABLES::RELANCES_IMPAYES, 'code_relance', 'REL-', 8);
             
             $msg = $messageTemplate;
             $msg = str_replace('{NOM_ETUDIANT}', $item['student_name'] ?? '', $msg);
@@ -185,6 +261,13 @@ class ImpayesController extends BaseController
         }
 
         if ($savedCount > 0) {
+            $this->logAction(
+                AuditLogger::ACTION_CREATE,
+                'relances_impayes',
+                'GROUPE-' . date('YmdHis'),
+                "Relance groupée enregistrée ({$canalRelance}) pour {$savedCount} étudiant(s)",
+                ['canal_relance' => $canalRelance, 'niveau_relance' => $niveauRelance, 'count' => $savedCount]
+            );
             $this->success("Relance groupée transmise et journalisée avec succès pour {$savedCount} destinataire(s)!");
         } else {
             $this->error("Erreur lors de l'enregistrement de la relance groupée");
@@ -320,11 +403,23 @@ class ImpayesController extends BaseController
             placeholderPath('etudiant')
         ]);
 
+        $delaiRigueur = $this->resolveDelaiRigueurScolarite($etab);
+        $isReprint = !empty($_GET['reprint']);
+        $codeRappel = '';
+        if ($isReprint && !empty($_GET['code_relance'])) {
+            $codeRappel = preg_replace('/[^A-Za-z0-9_-]/', '', (string)$_GET['code_relance']);
+        } elseif (!$isReprint) {
+            $codeRappel = $this->recordRappelPdfRelance($ins, $restePayer, $contactParent, $delaiRigueur);
+        }
+        if ($codeRappel === '') {
+            $codeRappel = 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8));
+        }
+
         $dataView = [
             'etablissement' => $etab,
             'annee_libelle' => $ins['libelle_annee'] ?? '-',
-            'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
-            'code_barre_val' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
+            'code_rappel' => $codeRappel,
+            'code_barre_val' => $codeRappel,
             'code_inscription' => $ins['code_inscription'],
             'statut_affectation' => $isAffecte ? 'AFFECTE' : 'NON AFFECTE',
             'matricule_etudiant' => $ins['matricule_etudiant'] ?? 'N/A',
@@ -339,11 +434,25 @@ class ImpayesController extends BaseController
             'reste_payer' => $restePayer,
             'montant_exigible_du' => $restePayer,
             'montant_exigible_lettres' => PdfService::numberToWordsFrench($restePayer),
-            'delai_rigueur' => $this->resolveDelaiRigueurScolarite($etab),
+            'delai_rigueur' => $delaiRigueur,
             'caissier_nom' => $caissierNom,
             'ref_caiss' => 'REF-' . date('YmdHis'),
             'date_impression' => date('d/m/Y H:i:s')
         ];
+
+        $this->logAction(
+            AuditLogger::ACTION_PRINT,
+            'relances_impayes',
+            $codeRappel,
+            ($isReprint ? 'Réimpression' : 'Impression') . " du reçu de rappel de scolarité PDF ({$codeRappel}) pour " . $dataView['nom_prenom_etudiant'],
+            [
+                'code_relance' => $codeRappel,
+                'code_inscription' => $ins['code_inscription'],
+                'montant_impaye' => $restePayer,
+                'delai_rigueur' => $delaiRigueur,
+                'reprint' => $isReprint
+            ]
+        );
 
         $html = PdfService::renderTemplate('rappel_scolarite.php', $dataView);
         $filename = 'Rappel_Scolarite_' . ($ins['matricule_etudiant'] ?? $ins['code_inscription']) . '.pdf';
@@ -395,10 +504,12 @@ class ImpayesController extends BaseController
         ]));
 
         $htmlPages = [];
+        $recordedCodes = [];
         $inscCodesMasse = array_column($inscriptions, 'code_inscription');
         $totauxPayesMap = $this->model->getTotalPayeByInscriptions($inscCodesMasse);
         $modelFA->preloadMontants();
         $this->model->preloadScolaritesDues();
+        $delaiRigueur = $this->resolveDelaiRigueurScolarite($etab);
 
         foreach ($inscriptions as $ins) {
             if (!empty($ins['annee_code']) && !$this->canAccessAcademicYear($ins['annee_code'])) {
@@ -437,11 +548,14 @@ class ImpayesController extends BaseController
                 placeholderPath('etudiant')
             ]);
 
+            $codeRappel = $this->recordRappelPdfRelance($ins, $restePayer, $contactParent, $delaiRigueur);
+            $recordedCodes[] = $codeRappel;
+
             $dataView = [
                 'etablissement' => $etab,
                 'annee_libelle' => $ins['libelle_annee'] ?? '-',
-                'code_rappel' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
-                'code_barre_val' => 'RAP-' . strtoupper(substr(md5($ins['code_inscription']), 0, 8)),
+                'code_rappel' => $codeRappel,
+                'code_barre_val' => $codeRappel,
                 'code_inscription' => $ins['code_inscription'],
                 'statut_affectation' => $isAffecte ? 'AFFECTE' : 'NON AFFECTE',
                 'matricule_etudiant' => $ins['matricule_etudiant'] ?? 'N/A',
@@ -456,13 +570,23 @@ class ImpayesController extends BaseController
                 'reste_payer' => $restePayer,
                 'montant_exigible_du' => $restePayer,
                 'montant_exigible_lettres' => PdfService::numberToWordsFrench($restePayer),
-                'delai_rigueur' => $this->resolveDelaiRigueurScolarite($etab),
+                'delai_rigueur' => $delaiRigueur,
                 'caissier_nom' => $caissierNom,
                 'ref_caiss' => 'REF-' . date('YmdHis'),
                 'date_impression' => date('d/m/Y H:i:s')
             ];
 
             $htmlPages[] = PdfService::renderTemplate('rappel_scolarite.php', $dataView);
+        }
+
+        if (!empty($recordedCodes)) {
+            $this->logAction(
+                AuditLogger::ACTION_PRINT,
+                'relances_impayes',
+                'MASSE-' . date('YmdHis'),
+                "Impression en masse de " . count($recordedCodes) . " reçu(s) de rappel de scolarité PDF",
+                ['count' => count($recordedCodes), 'codes_relances' => $recordedCodes, 'delai_rigueur' => $delaiRigueur]
+            );
         }
 
         $fullHtml = implode('<div style="page-break-after: always;"></div>', $htmlPages);
@@ -474,6 +598,50 @@ class ImpayesController extends BaseController
             'watermark_logo' => true,
             'watermark_alpha' => 0.05
         ]);
+    }
+
+    /**
+     * Enregistre dans relances_impayes l'émission d'un reçu / avis de rappel de scolarité PDF
+     */
+    private function recordRappelPdfRelance(array $ins, float $restePayer, string $contactParent, string $delaiRigueur): string
+    {
+        $codeRelance = $this->validator->generateCode(TABLES::RELANCES_IMPAYES, 'code_relance', 'RAP-', 8);
+        $anneeCode = (string)($ins['annee_code'] ?? $this->getActiveAnneeCode());
+        $etudiantCode = (string)($ins['etudiant_code'] ?? '');
+        $userCode = (string)(Auth::code() ?? '');
+        $etabCode = (string)($ins['etablissement_code'] ?? $this->getActiveEtablissementCode());
+
+        if ($etudiantCode === '' || $userCode === '' || $anneeCode === '' || $etabCode === '') {
+            return $codeRelance;
+        }
+        if (!$this->canWriteAcademicYear($anneeCode)) {
+            return $codeRelance;
+        }
+
+        $telephoneDest = ($contactParent !== '' && $contactParent !== '-') ? $contactParent : ($ins['telephone_etudiant'] ?? '');
+        $message = "Reçu de rappel de scolarité PDF émis (Réf: {$codeRelance}) — Solde restant : "
+            . number_format($restePayer, 0, ',', ' ') . " FCFA"
+            . ($delaiRigueur !== '-' ? " — Délai de rigueur : {$delaiRigueur}" : '') . ".";
+
+        $payload = [
+            'code_relance' => $codeRelance,
+            'etudiant_code' => $etudiantCode,
+            'inscription_code' => $ins['code_inscription'] ?? null,
+            'niveau_relance' => 'rappel_amiable',
+            'canal_relance' => 'recu_pdf',
+            'montant_impaye' => $restePayer,
+            'telephone_destinataire' => $telephoneDest,
+            'message_relance' => $message,
+            'statut_relance' => 'envoye',
+            'user_code' => $userCode,
+            'annee_code' => $anneeCode,
+            'etablissement_code' => $etabCode,
+            'created_at_relance' => date('Y-m-d H:i:s')
+        ];
+
+        $filtered = $this->model->filterData($payload);
+        $this->model->create($filtered);
+        return $codeRelance;
     }
 
     /**

@@ -93,11 +93,11 @@ $canRecordPayment = $canRecordPayment ?? true;
         </div>
 
         <!-- Card 5: Relances Effectuées Ce Mois -->
-        <div class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #059669; display: flex; align-items: center; justify-content: space-between;">
+        <div id="kpi-card-relances-mois" class="card kpi-card" style="background: #FFFFFF; border-radius: 12px; padding: 18px 20px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border-left: 4px solid #059669; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" title="Voir l'historique des relances">
           <div>
             <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Relances Ce Mois</div>
             <div id="kpi-relances-mois" style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 4px;">0</div>
-            <div style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;">Rappels émis aux parents</div>
+            <div style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;">SMS, WhatsApp, Email & Reçus PDF</div>
           </div>
           <div class="kpi-icon-box" style="width: 38px; height: 38px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <i data-lucide="send" style="width: 18px; height: 18px;"></i>
@@ -149,9 +149,34 @@ $canRecordPayment = $canRecordPayment ?? true;
         </div>
       </div>
 
-      <!-- TABLEAU COMPTABLE DES IMPAYÉS -->
+      <!-- TABLEAU COMPTABLE DES IMPAYÉS & HISTORIQUE DES RELANCES -->
       <div class="card" style="background: #FFFFFF; border-radius: 12px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
-        <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <!-- ONGLETS NAVIGATION -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #E2E8F0; padding-bottom: 14px; margin-bottom: 18px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" id="tab-btn-impayes" class="btn-impayes-tab active" data-target="#panel-impayes-liste" style="background: #1E3A5F; color: #FFFFFF; border: 1px solid #1E3A5F; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+              <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i> Dossiers Impayés Échus
+            </button>
+            <button type="button" id="tab-btn-historique" class="btn-impayes-tab" data-target="#panel-impayes-historique" style="background: #F8FAFC; color: #475569; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+              <i data-lucide="history" style="width: 16px; height: 16px;"></i> Historique des Relances
+              <span id="badge-historique-count" style="background: #E2E8F0; color: #334155; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px;">0</span>
+            </button>
+          </div>
+          <div id="historique-canal-filter-wrap" style="display: none; align-items: center; gap: 8px;">
+            <label for="filter-canal-historique" style="font-size: 12px; font-weight: 700; color: #475569; margin: 0;">Canal :</label>
+            <select id="filter-canal-historique" class="form-control" style="width: 180px; height: 34px; font-size: 12.5px; font-weight: 600; border-radius: 8px; padding: 4px 10px;">
+              <option value="ALL">Tous les canaux</option>
+              <option value="recu_pdf">Reçu / Rappel PDF</option>
+              <option value="sms">SMS</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="email">Email</option>
+              <option value="appel">Appel Téléphonique</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- PANEL 1 : LISTE DES IMPAYÉS -->
+        <div id="panel-impayes-liste" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <table id="table-impayes" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px;">
@@ -166,6 +191,26 @@ $canRecordPayment = $canRecordPayment ?? true;
                 <th style="padding: 12px;" class="text-end">Total Versé</th>
                 <th style="padding: 12px;" class="text-end">Reste à Payer</th>
                 <th style="padding: 12px; text-align: center; width: 140px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- PANEL 2 : HISTORIQUE DES RELANCES (SMS, WHATSAPP, EMAIL, APPEL & REÇUS PDF) -->
+        <div id="panel-impayes-historique" style="display: none; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <table id="table-historique-relances" class="table display nowrap" style="width:100%; max-width:100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #F8FAFC; text-align: left; color: #64748B; font-size: 12px;">
+                <th style="padding: 12px;">Date & Heure</th>
+                <th style="padding: 12px;">Référence</th>
+                <th style="padding: 12px;">Étudiant</th>
+                <th style="padding: 12px;">Classe</th>
+                <th style="padding: 12px;">Canal</th>
+                <th style="padding: 12px;">Niveau</th>
+                <th style="padding: 12px;" class="text-end">Montant Impayé</th>
+                <th style="padding: 12px;">Émis par</th>
+                <th style="padding: 12px; text-align: center;">Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
