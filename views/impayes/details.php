@@ -58,8 +58,8 @@ if (!empty($photoRaw)) {
         <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
           
           <!-- Photo / Avatar Étudiant -->
-          <div style="width: 72px; height: 86px; min-width: 72px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
-            <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Étudiant" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="width: 120px; height: 130px; min-width: 120px; border-radius: 8px; border: 2px solid #CBD5E1; background: #EFF6FF; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0;">
+            <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Photo Étudiant" style="width: 120px; height: 130px; object-fit: cover; display: block;">
           </div>
 
           <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
