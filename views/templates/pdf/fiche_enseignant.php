@@ -96,14 +96,14 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     }
     body {
       font-family: 'Helvetica', 'Arial', sans-serif;
-      font-size: 9.5px;
+      font-size: 12.5px;
       color: #000000;
-      line-height: 1.25;
+      line-height: 1.4;
     }
 
     .page-frame {
       border: 1.5px solid #1E3A5F;
-      padding: 12px 14px;
+      padding: 14px 16px;
       box-sizing: border-box;
     }
 
@@ -114,22 +114,22 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
       margin-bottom: 6px;
     }
     .inst-title {
-      font-size: 13px;
+      font-size: 14.5px;
       font-weight: bold;
       color: #990000;
       text-transform: uppercase;
       text-align: center;
-      line-height: 1.15;
+      line-height: 1.2;
     }
     .inst-subtitle {
-      font-size: 9.5px;
+      font-size: 11px;
       font-weight: bold;
       text-align: center;
       color: #0369A1;
       margin-top: 2px;
     }
     .inst-contacts {
-      font-size: 8px;
+      font-size: 9.5px;
       text-align: center;
       color: #475569;
       margin-top: 2px;
@@ -139,12 +139,12 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     .banner-title {
       background: #1E3A5F;
       color: #FFFFFF;
-      font-size: 12px;
+      font-size: 15px;
       font-weight: bold;
       text-align: center;
-      padding: 5px;
-      margin-top: 4px;
-      margin-bottom: 6px;
+      padding: 7px 8px;
+      margin-top: 6px;
+      margin-bottom: 10px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -153,12 +153,12 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     .section-title {
       background: #F1F5F9;
       color: #1E3A5F;
-      font-size: 10px;
+      font-size: 12.5px;
       font-weight: bold;
-      padding: 4px 6px;
+      padding: 6px 8px;
       border-left: 4px solid #1E3A5F;
-      margin-top: 8px;
-      margin-bottom: 6px;
+      margin-top: 12px;
+      margin-bottom: 8px;
       text-transform: uppercase;
     }
 
@@ -166,12 +166,12 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .data-table td {
-      padding: 3px 5px;
+      padding: 5px 6px;
       vertical-align: top;
-      font-size: 9.5px;
+      font-size: 12px;
     }
     .val-bold {
       font-weight: bold;
@@ -179,8 +179,8 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     }
 
     .photo-box {
-      width: 90px;
-      height: 90px;
+      width: 120px;
+      height: 130px;
       border: 1.5px solid #1E3A5F;
       border-radius: 8px;
       object-fit: cover;
@@ -190,22 +190,22 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     .cours-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 4px;
-      margin-bottom: 6px;
+      margin-top: 6px;
+      margin-bottom: 8px;
       border: 1px solid #CBD5E1;
     }
     .cours-table th {
       background: #1E3A5F;
       color: #FFFFFF;
       font-weight: bold;
-      padding: 5px 6px;
-      font-size: 9px;
+      padding: 7px 8px;
+      font-size: 11.5px;
       text-align: left;
       border: 1px solid #1E3A5F;
     }
     .cours-table td {
-      padding: 4px 6px;
-      font-size: 9px;
+      padding: 6px 8px;
+      font-size: 11.5px;
       border: 1px solid #E2E8F0;
       vertical-align: middle;
     }
@@ -213,8 +213,8 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     /* Signatures */
     .signature-grid {
       width: 100%;
-      margin-top: 18px;
-      font-size: 9.5px;
+      margin-top: 22px;
+      font-size: 12px;
     }
     .signature-grid td {
       vertical-align: top;
@@ -222,11 +222,11 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
     }
 
     .footer-line {
-      font-size: 8px;
+      font-size: 10px;
       color: #64748B;
       text-align: center;
-      margin-top: 14px;
-      padding-top: 6px;
+      margin-top: 16px;
+      padding-top: 8px;
       border-top: 1px solid #E2E8F0;
       font-style: italic;
     }
@@ -251,13 +251,13 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
       <td style="width: 78%; vertical-align: top;">
         <table style="width: 100%;">
           <tr>
-            <td style="width: 35%;">Code Enseignant : <span class="val-bold" style="font-family: monospace; color:#1E3A5F;"><?= htmlspecialchars($codeEns) ?></span></td>
-            <td style="width: 35%;">Genre / Sexe : <span class="val-bold"><?= htmlspecialchars($sexeEns) ?></span></td>
-            <td style="width: 30%;">Statut : <span class="val-bold" style="color: <?= ($statutEns === 'ACTIF') ? '#15803D' : '#B91C1C' ?>;"><?= htmlspecialchars($statutEns) ?></span></td>
+            <td style="width: 45%; white-space: nowrap;">Code Enseignant : <span class="val-bold" style="font-family: monospace; color:#1E3A5F;"><?= htmlspecialchars($codeEns) ?></span></td>
+            <td style="width: 32%; white-space: nowrap;">Genre / Sexe : <span class="val-bold"><?= htmlspecialchars($sexeEns) ?></span></td>
+            <td style="width: 23%; white-space: nowrap;">Statut : <span class="val-bold" style="color: <?= ($statutEns === 'ACTIF') ? '#15803D' : '#B91C1C' ?>;"><?= htmlspecialchars($statutEns) ?></span></td>
           </tr>
           <tr>
-            <td colspan="3" style="padding-top: 4px;">
-              Nom & Prénom(s) : <span class="val-bold" style="font-size: 11.5px; color:#1E3A5F;"><?= htmlspecialchars(mb_strtoupper($nomComplet)) ?></span>
+            <td colspan="3" style="padding-top: 6px;">
+              Nom & Prénom(s) : <span class="val-bold" style="font-size: 14.5px; color:#1E3A5F;"><?= htmlspecialchars(mb_strtoupper($nomComplet)) ?></span>
             </td>
           </tr>
           <tr>
@@ -319,13 +319,13 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
           </tr>
         <?php endforeach; ?>
         <tr style="background: #F8FAFC; font-weight: bold;">
-          <td colspan="3" style="text-align: right; padding: 6px; color: #0F172A; text-transform: uppercase;">Total Volume Horaire Hebdomadaire :</td>
-          <td style="text-align: center; padding: 6px; color: #0284C7; font-size: 10px;"><?= $totalHeures ?> h</td>
+          <td colspan="3" style="text-align: right; padding: 7px 8px; color: #0F172A; text-transform: uppercase;">Total Volume Horaire Hebdomadaire :</td>
+          <td style="text-align: center; padding: 7px 8px; color: #0284C7; font-size: 13px;"><?= $totalHeures ?> h</td>
         </tr>
       </tbody>
     </table>
   <?php else: ?>
-    <div style="padding: 10px; border: 1px dashed #CBD5E1; text-align: center; font-style: italic; color: #64748B; background: #F8FAFC; border-radius: 4px; margin-bottom: 6px;">
+    <div style="padding: 12px; border: 1px dashed #CBD5E1; text-align: center; font-style: italic; font-size: 11.5px; color: #64748B; background: #F8FAFC; border-radius: 4px; margin-bottom: 8px;">
       Aucune attribution de cours n'a été enregistrée à ce jour pour cet enseignant.
     </div>
   <?php endif; ?>
@@ -334,23 +334,21 @@ $villeSignature = !empty($etablissement['ville_signature']) ? $etablissement['vi
   <table class="signature-grid">
     <tr>
       <td style="text-align: left;">
-        <div><strong>L'Enseignant :</strong></div>
+        <div style="margin-top: 10px; font-weight: bold; font-size: 9.5pt;">L'Enseignant </div>
         <div style="margin-top: 3px; font-style: italic; color: #64748B;">(Lu et approuvé, signature)</div>
-        <div style="height: 48px;"></div>
-        <div><strong><?= htmlspecialchars($nomComplet) ?></strong></div>
+        <div style="padding-top: 36px;"><strong><?= htmlspecialchars($nomComplet) ?></strong></div>
       </td>
       <td style="text-align: right;">
         <div>Fait à <?= htmlspecialchars($villeSignature) ?>, le <strong><?= date('d/m/Y') ?></strong></div>
-        <div style="margin-top: 3px;"><strong>Pour la Direction des Études / Pédagogie :</strong></div>
-        <div style="height: 48px;"></div>
-        <div><strong><?= htmlspecialchars($nomDirecteur) ?></strong></div>
+        <div style="margin-top: 10px; font-weight: bold; font-size: 9.5pt;"> <?= htmlspecialchars(!empty($etablissement['titre_direction_pedagogique']) ? $etablissement['titre_direction_pedagogique'] : '') ?> </div>
+        <div style="padding-top: 36px;"><?= htmlspecialchars($nomDirecteur) ?></div>
       </td>
     </tr>
   </table>
 
   <!-- BAS DE PAGE -->
   <div class="footer-line">
-    Document officiel généré par le Système Intégré de Gestion GEICG &bull; <?= date('d/m/Y H:i:s') ?> &bull; Page 1/1
+    <?= htmlspecialchars(!empty($etablissement['texte_pied_page']) ? $etablissement['texte_pied_page'] : '') ?> &bull; <?= date('d/m/Y H:i:s') ?>
   </div>
 
 </div>
