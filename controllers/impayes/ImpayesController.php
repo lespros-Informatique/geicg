@@ -174,14 +174,115 @@ class ImpayesController extends BaseController
         }
 
         $etabCode = $this->getActiveEtablissementCode();
+        $etab = $this->getEtablissementConfig(true);
 
         $data = $_POST;
         unset($data['csrf_token']);
 
-        if (empty($data['code_relance'])) {
-            $data['code_relance'] = $this->validator->generateCode(TABLES::RELANCES_IMPAYES, 'code_relance', 'REL-', 8);
+        $allowedCanaux = ['sms', 'whatsapp', 'email', 'appel', 'recu_pdf'];
+        $canal = strtolower(trim((string)($data['canal_relance'] ?? 'sms')));
+        if (!in_array($canal, $allowedCanaux, true)) {
+            $canal = 'sms';
         }
-        $data['statut_relance'] = 'envoye';
+        $data['canal_relance'] = $canal;
+
+        $allowedNiveaux = ['rappel_amiable', 'relance_ferme', 'mise_en_demeure'];
+        $niveau = strtolower(trim((string)($data['niveau_relance'] ?? 'rappel_amiable')));
+        if (!in_array($niveau, $allowedNiveaux, true)) {
+            $niveau = 'rappel_amiable';
+        }
+        $data['niveau_relance'] = $niveau;
+
+        $destinataire = trim((string)($data['telephone_destinataire'] ?? ''));
+        $messageRelance = trim((string)($data['message_relance'] ?? ''));
+        if ($messageRelance === '') {
+            $this->error("Le message de relance ne peut pas être vide.");
+            return;
+        }
+
+        if ($canal === 'email' && !filter_var($destinataire, FILTER_VALIDATE_EMAIL)) {
+            $this->error("Veuillez saisir une adresse e-mail valide pour le canal Email.");
+            return;
+        }
+
+        $prefix = ($canal === 'recu_pdf') ? 'RAP-' : 'REL-';
+        if (empty($data['code_relance'])) {
+            $data['code_relance'] = $this->validator->generateCode(TABLES::RELANCES_IMPAYES, 'code_relance', $prefix, 8);
+        }
+
+        $ins = !empty($data['inscription_code'])
+            ? $this->model->getInscriptionDetailsForRappel($data['inscription_code'])
+            : null;
+        if ($ins && !empty($ins['annee_code'])) {
+            if (!$this->canWriteAcademicYear($ins['annee_code'])) {
+                $this->error("Action d'enregistrement de relance non autorisée sur l'année de cette inscription.");
+                return;
+            }
+            $anneeCode = $ins['annee_code'];
+        }
+
+        $statutRelance = 'envoye';
+        $emailNotice = '';
+        $emailSent = null;
+
+        // Envoi SMTP réel pour le canal Email (avec option de pièce jointe PDF du rappel)
+        if ($canal === 'email' && !empty($_POST['send_email_now'])) {
+            require_once __DIR__ . '/../../core/MailerService.php';
+            $attachments = [];
+            $tmpPdfPath = null;
+
+            if (!empty($_POST['attach_pdf']) && $ins) {
+                try {
+                    require_once __DIR__ . '/../../core/PdfService.php';
+                    $delaiRigueur = $this->resolveDelaiRigueurScolarite($etab);
+                    $dataViewPdf = $this->buildRappelPdfDataView($ins, $etab, $data['code_relance'], $delaiRigueur);
+                    $htmlPdf = PdfService::renderTemplate('rappel_scolarite.php', $dataViewPdf);
+                    $tmpPdfPath = rtrim(sys_get_temp_dir(), '/\\') . '/rappel_' . preg_replace('/[^A-Za-z0-9_-]/', '', $data['code_relance']) . '_' . uniqid() . '.pdf';
+                    PdfService::generate($htmlPdf, $tmpPdfPath, [
+                        'orientation' => 'P',
+                        'format' => 'A4',
+                        'title' => 'Rappel de Scolarité - ' . ($dataViewPdf['nom_prenom_etudiant'] ?? ''),
+                        'watermark_logo' => true,
+                        'watermark_alpha' => 0.05,
+                        'destination' => \Mpdf\Output\Destination::FILE
+                    ]);
+                    if (file_exists($tmpPdfPath)) {
+                        $attachments[] = [
+                            'path' => $tmpPdfPath,
+                            'name' => 'Rappel_Scolarite_' . ($ins['matricule_etudiant'] ?? $data['code_relance']) . '.pdf'
+                        ];
+                    }
+                } catch (Throwable $e) {
+                    error_log("ImpayesController::add PDF attachment error: " . $e->getMessage());
+                }
+            }
+
+            $niveauLabels = [
+                'rappel_amiable' => 'Rappel Amiable de Scolarité',
+                'relance_ferme' => 'Relance Ferme de Scolarité',
+                'mise_en_demeure' => 'Mise en Demeure — Scolarité'
+            ];
+            $etabTitle = trim((string)($etab['sigle_etablissement'] ?? ($etab['nom_etablissement'] ?? '')));
+            $subject = ($etabTitle !== '' ? $etabTitle . ' — ' : '') . ($niveauLabels[$niveau] ?? 'Rappel de Scolarité');
+            $htmlBody = $this->buildRelanceEmailHtml($etab, $ins, $messageRelance, (float)($data['montant_impaye'] ?? 0), $data['code_relance']);
+
+            $mailRes = MailerService::send($destinataire, $subject, $htmlBody, $messageRelance, $attachments);
+            if ($tmpPdfPath && file_exists($tmpPdfPath)) {
+                @unlink($tmpPdfPath);
+            }
+
+            $emailSent = !empty($mailRes['status']);
+            if (!$emailSent) {
+                $statutRelance = 'en_attente';
+                $emailNotice = " (Relance journalisée en attente : " . ($mailRes['message'] ?? "échec SMTP") . ")";
+            } else {
+                $emailNotice = " et e-mail transmis à {$destinataire}";
+            }
+        }
+
+        $data['telephone_destinataire'] = $destinataire;
+        $data['message_relance'] = $messageRelance;
+        $data['statut_relance'] = $statutRelance;
         $data['created_at_relance'] = date('Y-m-d H:i:s');
         $data['user_code'] = $userCode;
         $data['annee_code'] = $anneeCode;
@@ -194,12 +295,39 @@ class ImpayesController extends BaseController
                 AuditLogger::ACTION_CREATE,
                 'relances_impayes',
                 $data['code_relance'],
-                "Relance d'impayé enregistrée (" . ($data['canal_relance'] ?? 'sms') . ") pour " . ($data['etudiant_code'] ?? ''),
-                ['code_relance' => $data['code_relance'], 'canal_relance' => $data['canal_relance'] ?? 'sms', 'montant_impaye' => $data['montant_impaye'] ?? 0]
+                "Relance d'impayé enregistrée ({$canal} / {$niveau}) pour " . ($data['etudiant_code'] ?? ''),
+                [
+                    'code_relance' => $data['code_relance'],
+                    'canal_relance' => $canal,
+                    'niveau_relance' => $niveau,
+                    'montant_impaye' => (float)($data['montant_impaye'] ?? 0),
+                    'statut_relance' => $statutRelance
+                ]
             );
-            $this->success('Relance d\'impayé enregistrée et journalisée avec succès!');
+
+            $responsePayload = [
+                'code_relance' => $data['code_relance'],
+                'canal_relance' => $canal,
+                'statut_relance' => $statutRelance,
+                'email_sent' => $emailSent
+            ];
+
+            if ($canal === 'recu_pdf' && $ins && !empty($ins['id_inscription'])) {
+                $encInsId = $this->validator->crypter($ins['id_inscription']);
+                $responsePayload['pdf_url'] = url('impayes/imprimerRappelPdf/' . $encInsId) . '?reprint=1&code_relance=' . urlencode($data['code_relance']);
+            } elseif ($canal === 'whatsapp') {
+                $digits = preg_replace('/\D+/', '', $destinataire);
+                if (strlen($digits) === 10 && str_starts_with($digits, '0')) {
+                    $digits = '225' . $digits;
+                }
+                if ($digits !== '') {
+                    $responsePayload['whatsapp_url'] = 'https://wa.me/' . $digits . '?text=' . rawurlencode($messageRelance);
+                }
+            }
+
+            $this->success("Relance d'impayé enregistrée ({$data['code_relance']}){$emailNotice} !", $responsePayload);
         } else {
-            $this->error('Erreur lors de l\'enregistrement de la relance');
+            $this->error("Erreur lors de l'enregistrement de la relance.");
         }
     }
 
@@ -598,6 +726,105 @@ class ImpayesController extends BaseController
             'watermark_logo' => true,
             'watermark_alpha' => 0.05
         ]);
+    }
+
+    /**
+     * Construit le tableau de données complet pour le gabarit PDF rappel_scolarite.php
+     */
+    private function buildRappelPdfDataView(array $ins, array $etab, string $codeRappel, string $delaiRigueur): array
+    {
+        $totalPaye = $this->model->getTotalPayeByInscription($ins['code_inscription']);
+        $scolariteDue = $this->model->getScolariteDue($ins['filiere_code'], $ins['niveau_code'], $ins['annee_code'], $ins['affectation_etat'] ?? null);
+        if ($scolariteDue === null) {
+            $scolariteDue = (float)($ins['montant_scolarite_inscription'] ?? 0);
+        }
+        $restePayer = max(0, $scolariteDue - $totalPaye);
+        $isAffecte = (($ins['affectation_etat'] ?? '') === 'affecte' || ($ins['affectation_etat'] ?? '') === 'oui');
+
+        $contactParent = $ins['telephone_etudiant'] ?? '-';
+        if (!empty($ins['nom_tuteur']) && !empty($ins['telephone_tuteur'])) {
+            $contactParent = $ins['telephone_tuteur'];
+        } elseif (!empty($ins['nom_pere']) && !empty($ins['telephone_pere'])) {
+            $contactParent = $ins['telephone_pere'];
+        } elseif (!empty($ins['nom_mere']) && !empty($ins['telephone_mere'])) {
+            $contactParent = $ins['telephone_mere'];
+        }
+
+        $user = Auth::user();
+        $caissierNom = trim(($user['nom_user'] ?? '') . ' ' . ($user['prenom_user'] ?? ''));
+
+        $cfgLogo = !empty($etab['logo_etablissement']) ? ltrim($etab['logo_etablissement'], '/') : '';
+        $logoSrc = $this->toBase64(array_filter([
+            $cfgLogo ? 'public/' . $cfgLogo : '',
+            $cfgLogo
+        ]));
+        $photoSrc = $this->toBase64([
+            $ins['photo_etudiant'] ?? '',
+            $ins['photo_inscription'] ?? '',
+            placeholderPath('etudiant')
+        ]);
+
+        return [
+            'etablissement' => $etab,
+            'annee_libelle' => $ins['libelle_annee'] ?? '-',
+            'code_rappel' => $codeRappel,
+            'code_barre_val' => $codeRappel,
+            'code_inscription' => $ins['code_inscription'],
+            'statut_affectation' => $isAffecte ? 'AFFECTE' : 'NON AFFECTE',
+            'matricule_etudiant' => $ins['matricule_etudiant'] ?? '-',
+            'filiere_niveau' => (!empty($ins['slug_filiere']) ? $ins['slug_filiere'] : ($ins['libelle_filiere'] ?? '')) . ' - ' . (!empty($ins['slug_niveau']) ? $ins['slug_niveau'] : ($ins['libelle_niveau'] ?? '')),
+            'nom_prenom_etudiant' => strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
+            'contact_etudiant' => $contactParent,
+            'photo_etudiant' => $ins['photo_etudiant'] ?? $ins['photo_inscription'] ?? '',
+            'photo_src' => $photoSrc,
+            'logo_src' => $logoSrc,
+            'total_scolarite' => $scolariteDue,
+            'montant_paye' => $totalPaye,
+            'reste_payer' => $restePayer,
+            'montant_exigible_du' => $restePayer,
+            'montant_exigible_lettres' => PdfService::numberToWordsFrench($restePayer),
+            'delai_rigueur' => $delaiRigueur,
+            'caissier_nom' => $caissierNom !== '' ? $caissierNom : '-',
+            'ref_caiss' => ($etab['prefixe_reference'] ?? 'REF-') . date('YmdHis'),
+            'date_impression' => date('d/m/Y H:i:s')
+        ];
+    }
+
+    /**
+     * Construit le corps HTML de l'e-mail de relance à partir de configurations (Règle 9)
+     */
+    private function buildRelanceEmailHtml(array $etab, ?array $ins, string $message, float $montant, string $codeRelance): string
+    {
+        $nomEtab = htmlspecialchars((string)($etab['nom_etablissement'] ?? ($etab['sigle_etablissement'] ?? '')));
+        $contacts = htmlspecialchars((string)($etab['contacts_formatted'] ?? ''));
+        $adresse = htmlspecialchars((string)($etab['adresse_etablissement'] ?? ''));
+        $piedPage = htmlspecialchars((string)($etab['texte_pied_page'] ?? ''));
+        $nomEtudiant = $ins ? htmlspecialchars(trim(strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')))) : '';
+        $matricule = $ins ? htmlspecialchars((string)($ins['matricule_etudiant'] ?? '')) : '';
+        $classe = $ins ? htmlspecialchars((string)($ins['libelle_classe'] ?? '')) : '';
+        $montantFmt = number_format($montant, 0, ',', ' ') . ' FCFA';
+        $delai = htmlspecialchars($this->resolveDelaiRigueurScolarite($etab));
+        $msgHtml = nl2br(htmlspecialchars($message));
+
+        return '<div style="font-family: Arial, Helvetica, sans-serif; max-width: 620px; margin: 0 auto; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; color: #0F172A;">'
+            . '<div style="background: #1E3A5F; color: #FFFFFF; padding: 18px 24px;">'
+            . '<div style="font-size: 16px; font-weight: bold;">' . $nomEtab . '</div>'
+            . '<div style="font-size: 12px; opacity: 0.85; margin-top: 4px;">Avis de Relance de Scolarité — Réf. ' . htmlspecialchars($codeRelance) . '</div>'
+            . '</div>'
+            . '<div style="padding: 22px 24px; font-size: 14px; line-height: 1.6;">'
+            . ($nomEtudiant !== '' ? '<p style="margin: 0 0 12px 0; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px;">'
+                . '<strong>Étudiant :</strong> ' . $nomEtudiant . ($matricule !== '' ? ' (' . $matricule . ')' : '') . '<br>'
+                . ($classe !== '' ? '<strong>Classe :</strong> ' . $classe . '<br>' : '')
+                . '<strong>Montant exigible :</strong> <span style="color: #DC2626; font-weight: bold;">' . $montantFmt . '</span>'
+                . ($delai !== '-' ? '<br><strong>Délai de rigueur :</strong> <strong>' . $delai . '</strong>' : '')
+                . '</p>' : '')
+            . '<p style="margin: 0 0 16px 0;">' . $msgHtml . '</p>'
+            . '<hr style="border: none; border-top: 1px solid #E2E8F0; margin: 18px 0;">'
+            . '<div style="font-size: 12px; color: #64748B;">'
+            . ($adresse !== '' ? $adresse . '<br>' : '')
+            . ($contacts !== '' ? 'Contacts : ' . $contacts . '<br>' : '')
+            . ($piedPage !== '' ? '<em>' . $piedPage . '</em>' : '')
+            . '</div></div></div>';
     }
 
     /**

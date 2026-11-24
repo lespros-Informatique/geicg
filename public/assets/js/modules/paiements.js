@@ -2032,6 +2032,9 @@
 
         var selectedRowsData = [];
         var tableHistorique = null;
+        var impayesRowsByInscription = {};
+        var currentRelanceRow = null;
+        var placeholderEtudiant = cfg.placeholderEtudiant || (racine + 'public/assets/images/placeholder-etudiant.png');
 
         var table = $table.DataTable({
           order: [],
@@ -2053,7 +2056,14 @@
                 $('#kpi-relances-mois').text(json.kpis.total_relances_mois || 0);
               }
               $('#check-all-impayes').prop('checked', false);
-              return json.data || [];
+              impayesRowsByInscription = {};
+              var rowsData = json.data || [];
+              rowsData.forEach(function (r) {
+                if (r && r.code_inscription) {
+                  impayesRowsByInscription[r.code_inscription] = r;
+                }
+              });
+              return rowsData;
             }
           },
           processing: true,
@@ -2219,14 +2229,14 @@
         if ($tableHistorique.length) {
           var canalBadgeMap = {
             recu_pdf: { label: 'Reçu PDF', bg: '#EFF6FF', color: '#1E3A5F', border: '#BFDBFE' },
-            sms:      { label: 'SMS',      bg: '#FFF7ED', color: '#C2410C', border: '#FED7AA' },
+            sms: { label: 'SMS', bg: '#FFF7ED', color: '#C2410C', border: '#FED7AA' },
             whatsapp: { label: 'WhatsApp', bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' },
-            email:    { label: 'Email',    bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' },
-            appel:    { label: 'Appel',    bg: '#F1F5F9', color: '#334155', border: '#CBD5E1' }
+            email: { label: 'Email', bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' },
+            appel: { label: 'Appel', bg: '#F1F5F9', color: '#334155', border: '#CBD5E1' }
           };
           var niveauLabelMap = {
-            rappel_amiable:  'Rappel Amiable',
-            relance_ferme:   'Relance Ferme',
+            rappel_amiable: 'Rappel Amiable',
+            relance_ferme: 'Relance Ferme',
             mise_en_demeure: 'Mise en Demeure'
           };
 
@@ -2260,7 +2270,7 @@
                   var dateFr = dParts.length === 3 ? (dParts[2] + '/' + dParts[1] + '/' + dParts[0]) : parts[0];
                   var timePart = parts[1] ? parts[1].substring(0, 5) : '';
                   return `<div style="font-weight: 700; color: #0F172A; font-size: 12.5px;">${dateFr}</div>` +
-                         (timePart ? `<div style="font-size: 11px; color: #64748B;">${timePart}</div>` : '');
+                    (timePart ? `<div style="font-size: 11px; color: #64748B;">${timePart}</div>` : '');
                 }
               },
               {
@@ -2379,24 +2389,255 @@
           $('.check-impaye-row').prop('checked', $(this).prop('checked'));
         });
 
-        // Ouvre le modal de relance individuelle
+        // Helpers dynamiques basés sur window.ETABLISSEMENT_CONFIG (Règles 1 & 9)
+        function getEtabDisplayName() {
+          var etabCfg = window.ETABLISSEMENT_CONFIG || {};
+          return String(etabCfg.sigle_etablissement || etabCfg.nom_etablissement || etabCfg.libelle_etablissement || '').trim();
+        }
+
+        function getDelaiRigueurPhrase() {
+          var etabCfg = window.ETABLISSEMENT_CONFIG || {};
+          var rawDays = etabCfg.delai_rigueur_scolarite;
+          if (rawDays !== undefined && rawDays !== null && rawDays !== '' && !isNaN(parseInt(rawDays, 10))) {
+            var days = parseInt(rawDays, 10);
+            if (days >= 0) {
+              var dt = new Date();
+              dt.setDate(dt.getDate() + days);
+              var dd = String(dt.getDate()).padStart(2, '0');
+              var mm = String(dt.getMonth() + 1).padStart(2, '0');
+              var yyyy = dt.getFullYear();
+              return 'avant le ' + dd + '/' + mm + '/' + yyyy + ' (' + days + ' jour' + (days > 1 ? 's' : '') + ')';
+            }
+          }
+          return 'dans les plus brefs délais';
+        }
+
+        function updateSmsCharCounter() {
+          var text = $('#relance_message_relance').val() || '';
+          var len = text.length;
+          var segments = len === 0 ? 1 : (len <= 160 ? 1 : Math.ceil(len / 153));
+          var $counter = $('#relance_sms_counter');
+          $counter.text(len + ' / 160 car. • ' + segments + ' SMS');
+          if (segments > 2) {
+            $counter.css({ background: '#FEF2F2', color: '#DC2626' });
+          } else if (segments > 1) {
+            $counter.css({ background: '#FFFBEB', color: '#B45309' });
+          } else {
+            $counter.css({ background: '#F1F5F9', color: '#64748B' });
+          }
+        }
+
+        function renderRelanceContactsChips(row, canal) {
+          var $wrap = $('#relance_contacts_wrap');
+          var $chips = $('#relance_contacts_chips');
+          $chips.empty();
+          if (!row || !Array.isArray(row.contacts_disponibles) || row.contacts_disponibles.length === 0) {
+            $wrap.hide();
+            return;
+          }
+
+          var isEmail = (canal === 'email');
+          var added = 0;
+          row.contacts_disponibles.forEach(function (c) {
+            var val = isEmail ? (c.email || '') : (c.telephone || '');
+            if (!val) return;
+            var labelText = c.role + ' : ' + val;
+            var $btn = $('<button>', {
+              type: 'button',
+              class: 'btn-pick-relance-contact',
+              'data-contact-val': val,
+              title: (c.nom || c.role) + ' (' + val + ')'
+            }).css({
+              background: '#FFFFFF',
+              border: '1px solid #CBD5E1',
+              color: '#1E3A5F',
+              fontSize: '11.5px',
+              fontWeight: 700,
+              padding: '3px 10px',
+              borderRadius: '999px',
+              cursor: 'pointer'
+            }).text(labelText);
+            $chips.append($btn);
+            added++;
+          });
+
+          if (added > 0) {
+            $wrap.show();
+          } else {
+            $wrap.hide();
+          }
+        }
+
+        function updateRelanceChannelUI() {
+          var canal = $('#relance_canal_relance').val() || 'sms';
+          var $input = $('#relance_telephone_destinataire');
+          var $label = $('#relance_contact_label');
+          var $btnCall = $('#btn_relance_call_tel');
+          var $submitBtn = $('#btn_submit_relance_indiv');
+          var $submitLabel = $('#btn_submit_relance_label');
+
+          $('#relance_opt_whatsapp, #relance_opt_email, #relance_opt_pdf').hide();
+          $btnCall.hide();
+
+          if (canal === 'email') {
+            $label.text('Adresse Email Destinataire');
+            $input.attr('type', 'email').attr('placeholder', 'Ex: parent@exemple.com').prop('required', true);
+            if (currentRelanceRow) {
+              var currentVal = ($input.val() || '').trim();
+              if (!currentVal || currentVal.indexOf('@') === -1) {
+                $input.val(currentRelanceRow.email_etudiant || '');
+              }
+            }
+            $('#relance_opt_email').show();
+            $submitBtn.css({ background: '#4338CA', borderColor: '#4338CA' });
+            $submitLabel.text("Enregistrer & Envoyer l'Email");
+          } else if (canal === 'whatsapp') {
+            $label.text('Numéro WhatsApp Destinataire');
+            $input.attr('type', 'text').attr('placeholder', 'Ex: 0700000000').prop('required', true);
+            if (currentRelanceRow && (($input.val() || '').indexOf('@') !== -1 || !($input.val() || '').trim())) {
+              $input.val(currentRelanceRow.telephone_parent && currentRelanceRow.telephone_parent !== 'N/A' ? currentRelanceRow.telephone_parent : '');
+            }
+            $('#relance_opt_whatsapp').show();
+            $submitBtn.css({ background: '#16A34A', borderColor: '#16A34A' });
+            $submitLabel.text('Enregistrer & Ouvrir WhatsApp');
+          } else if (canal === 'recu_pdf') {
+            $label.text('Téléphone / Contact de Référence');
+            $input.attr('type', 'text').attr('placeholder', 'Ex: 0700000000').prop('required', false);
+            if (currentRelanceRow && (($input.val() || '').indexOf('@') !== -1 || !($input.val() || '').trim())) {
+              $input.val(currentRelanceRow.telephone_parent && currentRelanceRow.telephone_parent !== 'N/A' ? currentRelanceRow.telephone_parent : '');
+            }
+            $('#relance_opt_pdf').show();
+            $submitBtn.css({ background: '#1E3A5F', borderColor: '#1E3A5F' });
+            $submitLabel.text('Enregistrer & Ouvrir le Reçu PDF');
+          } else if (canal === 'appel') {
+            $label.text('Numéro à Appeler');
+            $input.attr('type', 'text').attr('placeholder', 'Ex: 0700000000').prop('required', true);
+            if (currentRelanceRow && (($input.val() || '').indexOf('@') !== -1 || !($input.val() || '').trim())) {
+              $input.val(currentRelanceRow.telephone_parent && currentRelanceRow.telephone_parent !== 'N/A' ? currentRelanceRow.telephone_parent : '');
+            }
+            var telClean = String($input.val() || '').replace(/[^\d+]/g, '');
+            if (telClean) {
+              $btnCall.attr('href', 'tel:' + telClean).css('display', 'inline-flex');
+            }
+            $submitBtn.css({ background: '#0F172A', borderColor: '#0F172A' });
+            $submitLabel.text("Journaliser l'Appel de Relance");
+          } else {
+            $label.text('Téléphone Destinataire (SMS)');
+            $input.attr('type', 'text').attr('placeholder', 'Ex: 0700000000').prop('required', true);
+            if (currentRelanceRow && (($input.val() || '').indexOf('@') !== -1 || !($input.val() || '').trim())) {
+              $input.val(currentRelanceRow.telephone_parent && currentRelanceRow.telephone_parent !== 'N/A' ? currentRelanceRow.telephone_parent : '');
+            }
+            $submitBtn.css({ background: '#1E3A5F', borderColor: '#1E3A5F' });
+            $submitLabel.text('Confirmer & Journaliser la Relance');
+          }
+
+          renderRelanceContactsChips(currentRelanceRow, canal);
+          if (window.lucide) lucide.createIcons();
+        }
+
+        // Ouvre le modal de relance individuelle enrichi
         $(document).on('click', '.btn-relancer-impaye', function () {
           var etudiantCode = $(this).data('etudiant-code');
           var inscriptionCode = $(this).data('inscription-code');
-          var studentName = $(this).data('student-name');
-          var classe = $(this).data('classe');
-          var phone = $(this).data('phone');
-          var montantEchu = $(this).data('montant-echu');
+          var row = impayesRowsByInscription[inscriptionCode] || null;
+          currentRelanceRow = row;
+
+          var studentName = row ? row.nom_complet : $(this).data('student-name');
+          var classe = row ? row.classe : $(this).data('classe');
+          var matricule = row ? (row.matricule || '-') : '-';
+          var phone = row ? (row.telephone_parent || '') : ($(this).data('phone') || '');
+          var montantEchu = row ? (row.montant_echu || 0) : ($(this).data('montant-echu') || 0);
+          var soldeRestant = row ? (row.solde_restant || montantEchu) : montantEchu;
+          var anneeCode = (row && row.annee_code) ? row.annee_code : ($('#filter-annee').val() || '');
+          var photoUrl = (row && row.photo) ? row.photo : placeholderEtudiant;
+          if (photoUrl && !photoUrl.startsWith('http') && !photoUrl.startsWith('data:') && !photoUrl.startsWith('/')) {
+            photoUrl = GEICG.url(photoUrl);
+          }
 
           $('#relance_etudiant_code').val(etudiantCode);
           $('#relance_inscription_code').val(inscriptionCode);
-          $('#relance_student_name').text(studentName);
-          $('#relance_student_meta').text('Classe : ' + classe);
-          $('#relance_telephone_destinataire').val(phone || '');
+          $('#relance_annee_code').val(anneeCode);
+          $('#relance_student_photo').attr('src', photoUrl || placeholderEtudiant).off('error').on('error', function () {
+            $(this).attr('src', placeholderEtudiant);
+          });
+          $('#relance_student_name').text(studentName || '-');
+          $('#relance_student_meta').text('Matricule : ' + matricule + ' • Classe : ' + (classe || '-'));
+          $('#relance_student_solde_badge').text('Solde : ' + formatFCFA(soldeRestant));
+          $('#relance_telephone_destinataire').val(phone && phone !== 'N/A' ? phone : '');
           $('#relance_montant_impaye').val(montantEchu || 0);
 
+          // Badge historique rapide pour éviter les doublons involontaires
+          var nbRel = row ? (parseInt(row.nb_relances, 10) || 0) : 0;
+          var $histBadge = $('#relance_history_badge');
+          if (nbRel > 0) {
+            var lastDate = '';
+            if (row.derniere_relance_at) {
+              var pDate = String(row.derniere_relance_at).split(' ')[0].split('-');
+              lastDate = pDate.length === 3 ? (pDate[2] + '/' + pDate[1] + '/' + pDate[0]) : row.derniere_relance_at;
+            }
+            var lastCanalMap = { recu_pdf: 'Reçu PDF', sms: 'SMS', whatsapp: 'WhatsApp', email: 'Email', appel: 'Appel' };
+            var lastCanal = lastCanalMap[row.dernier_canal_relance] || (row.dernier_canal_relance || '');
+            var histText = nbRel + ' relance' + (nbRel > 1 ? 's' : '') + ' déjà émise' + (nbRel > 1 ? 's' : '');
+            if (lastDate) histText += ' — Dernière le ' + lastDate + (lastCanal ? ' (' + lastCanal + ')' : '');
+            $histBadge.css({ background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' })
+              .html('<i data-lucide="alert-triangle" style="width: 13px; height: 13px;"></i><span>' + histText + '</span>');
+          } else {
+            $histBadge.css({ background: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0' })
+              .html('<i data-lucide="history" style="width: 13px; height: 13px;"></i><span>Aucune relance enregistrée sur ce dossier</span>');
+          }
+
+          $('#relance_niveau_relance').val('rappel_amiable');
+          $('#relance_canal_relance').val('sms');
+          updateRelanceChannelUI();
           window.updateRelanceTemplate();
           $('#modalRelanceImpaye').css('display', 'flex');
+          if (window.lucide) lucide.createIcons();
+        });
+
+        $(document).on('change', '#relance_niveau_relance', function () {
+          window.updateRelanceTemplate();
+        });
+
+        $(document).on('change', '#relance_canal_relance', function () {
+          updateRelanceChannelUI();
+        });
+
+        $(document).on('input', '#relance_telephone_destinataire', function () {
+          if ($('#relance_canal_relance').val() === 'appel') {
+            var telClean = String($(this).val() || '').replace(/[^\d+]/g, '');
+            if (telClean) {
+              $('#btn_relance_call_tel').attr('href', 'tel:' + telClean).css('display', 'inline-flex');
+            } else {
+              $('#btn_relance_call_tel').hide();
+            }
+          }
+        });
+
+        $(document).on('click', '.btn-pick-relance-contact', function () {
+          var val = $(this).data('contact-val') || '';
+          $('#relance_telephone_destinataire').val(val).trigger('input');
+          $('.btn-pick-relance-contact').css({ background: '#FFFFFF', color: '#1E3A5F', borderColor: '#CBD5E1' });
+          $(this).css({ background: '#1E3A5F', color: '#FFFFFF', borderColor: '#1E3A5F' });
+        });
+
+        $(document).on('input', '#relance_message_relance', updateSmsCharCounter);
+
+        $(document).on('click', '#btn_reset_relance_tpl', function () {
+          window.updateRelanceTemplate();
+        });
+
+        $(document).on('click', '#btn_copy_relance_msg', function () {
+          var msg = $('#relance_message_relance').val() || '';
+          if (!msg) return;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(msg).then(function () {
+              if (window.toastr) toastr.info('Message copié dans le presse-papiers.');
+            });
+          } else {
+            $('#relance_message_relance')[0].select();
+            document.execCommand('copy');
+            if (window.toastr) toastr.info('Message copié dans le presse-papiers.');
+          }
         });
 
         $(document).on('click', '.btn-close-modal-relance', function () {
@@ -2413,16 +2654,20 @@
           var studentName = $('#relance_student_name').text();
           var montant = formatFCFA($('#relance_montant_impaye').val());
           var type = $('#relance_niveau_relance').val();
+          var etabName = getEtabDisplayName();
+          var prefix = etabName ? (etabName + ' - ') : '';
+          var delaiPhrase = getDelaiRigueurPhrase();
 
           var msg = "";
           if (type === 'rappel_amiable') {
-            msg = "GROUPE EICG - Rappel Amiable : Cher parent, nous vous rappelons que la tranche de scolarité de " + studentName + " s'élevant à " + montant + " est arrivée à échéance. Merci de régulariser à la caisse de l'établissement.";
+            msg = prefix + "Rappel Amiable : Cher parent, nous vous rappelons que la tranche de scolarité de " + studentName + " s'élevant à " + montant + " est arrivée à échéance. Merci de bien vouloir régulariser " + delaiPhrase + " à la caisse de l'établissement.";
           } else if (type === 'relance_ferme') {
-            msg = "GROUPE EICG - Relance de Scolarité : Cher parent, sauf erreur de notre part, le montant de " + montant + " concernant l'élève " + studentName + " demeure impayé. Veuillez régulariser sous 48h afin d'éviter l'interruption des cours.";
+            msg = prefix + "Relance de Scolarité : Cher parent, sauf erreur de notre part, le montant de " + montant + " concernant l'étudiant(e) " + studentName + " demeure impayé. Veuillez régulariser " + delaiPhrase + " afin d'éviter toute suspension d'accès aux cours.";
           } else {
-            msg = "GROUPE EICG - MISE EN DEMEURE : M./Mme le Tuteur de " + studentName + ", un reliquat impayé de " + montant + " est échu. Nous vous prions de vous présenter d'urgence à la caisse de l'école.";
+            msg = prefix + "MISE EN DEMEURE : M./Mme le Tuteur de " + studentName + ", un reliquat impayé de " + montant + " reste exigible. Nous vous prions de régulariser impérativement " + delaiPhrase + " à la caisse de l'établissement.";
           }
           $('#relance_message_relance').val(msg);
+          updateSmsCharCounter();
         };
 
         // LOGIQUE RELANCE GROUPÉE PAR SMS
@@ -2531,21 +2776,34 @@
 
         window.updateGroupSMSTemplate = function () {
           var type = $('#group_niveau_relance').val();
+          var etabName = getEtabDisplayName();
+          var prefix = etabName ? (etabName + ' - ') : '';
+          var delaiPhrase = getDelaiRigueurPhrase();
           var msg = "";
 
           if (type === 'rappel_amiable') {
-            msg = "GROUPE EICG - Rappel Amiable : Cher parent, nous vous rappelons que la tranche de scolarité de {NOM_ETUDIANT} s'élevant à {MONTANT_ECHU} est arrivée à échéance. Merci de régulariser à la caisse de l'établissement.";
+            msg = prefix + "Rappel Amiable : Cher parent, nous vous rappelons que la tranche de scolarité de {NOM_ETUDIANT} s'élevant à {MONTANT_ECHU} est arrivée à échéance. Merci de régulariser " + delaiPhrase + " à la caisse de l'établissement.";
           } else if (type === 'relance_ferme') {
-            msg = "GROUPE EICG - Relance de Scolarité : Cher parent, sauf erreur de notre part, le montant de {MONTANT_ECHU} concernant l'élève {NOM_ETUDIANT} ({CLASSE}) demeure impayé. Veuillez régulariser sous 48h afin d'éviter l'interruption des cours.";
+            msg = prefix + "Relance de Scolarité : Cher parent, sauf erreur de notre part, le montant de {MONTANT_ECHU} concernant l'étudiant(e) {NOM_ETUDIANT} ({CLASSE}) demeure impayé. Veuillez régulariser " + delaiPhrase + " afin d'éviter l'interruption des cours.";
           } else {
-            msg = "GROUPE EICG - MISE EN DEMEURE : M./Mme le Tuteur de {NOM_ETUDIANT}, un reliquat impayé de {MONTANT_ECHU} est échu. Nous vous prions de vous présenter d'urgence à la caisse de l'école.";
+            msg = prefix + "MISE EN DEMEURE : M./Mme le Tuteur de {NOM_ETUDIANT}, un reliquat impayé de {MONTANT_ECHU} est échu. Nous vous prions de régulariser impérativement " + delaiPhrase + " à la caisse de l'établissement.";
           }
           $('#group_message_relance').val(msg);
         };
 
-        // Soumission Relance Individuelle
+        // Soumission Relance Individuelle (anti-double-clic + actions canal WhatsApp / Email / Reçu PDF)
         $('#formRelanceImpaye').on('submit', function (e) {
           e.preventDefault();
+          var $btn = $('#btn_submit_relance_indiv');
+          if ($btn.prop('disabled')) return;
+
+          var originalLabel = $('#btn_submit_relance_label').text();
+          var canal = $('#relance_canal_relance').val() || 'sms';
+          var openWhatsApp = $('#relance_open_whatsapp').is(':checked');
+
+          $btn.prop('disabled', true).css('opacity', '0.7');
+          $('#btn_submit_relance_label').text('Traitement en cours...');
+
           var formData = $(this).serialize();
 
           $.ajax({
@@ -2555,17 +2813,40 @@
             dataType: 'json',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             success: function (res) {
+              $btn.prop('disabled', false).css('opacity', '1');
+              $('#btn_submit_relance_label').text(originalLabel);
+
               if (res.status === 1 || res.success) {
-                if (window.toastr) toastr.success(res.message || 'Relance enregistrée avec succès!');
+                var payload = res.data || {};
+                if (window.toastr) {
+                  if (canal === 'email' && payload.email_sent === false) {
+                    toastr.warning(res.message || 'Relance enregistrée en attente (échec SMTP).');
+                  } else {
+                    toastr.success(res.message || 'Relance enregistrée avec succès!');
+                  }
+                }
                 $('#modalRelanceImpaye').hide();
                 table.ajax.reload(null, false);
                 if (tableHistorique) tableHistorique.ajax.reload(null, false);
+
+                if (canal === 'recu_pdf' && payload.pdf_url) {
+                  window.open(payload.pdf_url, '_blank');
+                } else if (canal === 'whatsapp' && openWhatsApp && payload.whatsapp_url) {
+                  window.open(payload.whatsapp_url, '_blank');
+                }
               } else {
-                if (window.toastr) toastr.error(res.message || 'Erreur lors de l\'enregistrement');
+                if (window.toastr) toastr.error(res.message || "Erreur lors de l'enregistrement");
               }
             },
-            error: function () {
-              if (window.toastr) toastr.error('Erreur réseau lors de l\'envoi');
+            error: function (xhr) {
+              $btn.prop('disabled', false).css('opacity', '1');
+              $('#btn_submit_relance_label').text(originalLabel);
+              var msgErr = "Erreur réseau lors de l'envoi";
+              try {
+                var parsed = JSON.parse(xhr.responseText);
+                if (parsed && parsed.message) msgErr = parsed.message;
+              } catch (err) { }
+              if (window.toastr) toastr.error(msgErr);
             }
           });
         });

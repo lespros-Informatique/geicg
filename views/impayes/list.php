@@ -222,67 +222,135 @@ $canRecordPayment = $canRecordPayment ?? true;
   </main>
 </div>
 
-<!-- MODAL D'ÉMISSION DE RELANCE INDIVIDUELLE (Style GEICG) -->
+<!-- MODAL D'ÉMISSION DE RELANCE INDIVIDUELLE (Style GEICG Enrichi) -->
 <div id="modalRelanceImpaye" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box;">
-  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); overflow: hidden; animation: modalZoomIn 0.25s ease-out;">
-    <div style="background: #1E3A5F; color: #FFFFFF; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+  <div style="background: #FFFFFF; border-radius: 14px; width: 100%; max-width: 620px; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25); overflow: hidden; animation: modalZoomIn 0.25s ease-out;">
+    <div style="background: #1E3A5F; color: #FFFFFF; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
       <h5 style="font-weight: 800; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="send" style="width: 20px; height: 20px;"></i> Émettre une Relance Individuelle
+        <i data-lucide="send" style="width: 19px; height: 19px;"></i> Émettre une Relance Individuelle
       </h5>
       <button type="button" class="btn-close-modal-relance" style="background: transparent; border: none; color: #FFFFFF; font-size: 22px; cursor: pointer; line-height: 1;">&times;</button>
     </div>
     
-    <form id="formRelanceImpaye">
+    <form id="formRelanceImpaye" style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
       <input type="hidden" name="csrf_token" value="<?= Validator::generateCsrfToken() ?>">
       <input type="hidden" id="relance_etudiant_code" name="etudiant_code" value="">
       <input type="hidden" id="relance_inscription_code" name="inscription_code" value="">
+      <input type="hidden" id="relance_annee_code" name="annee_code" value="">
 
-      <div style="padding: 20px;">
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
-          <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase;">Étudiant Destinataire</div>
-          <div id="relance_student_name" style="font-size: 14px; font-weight: 800; color: #0F172A; margin-top: 2px;">-</div>
-          <div id="relance_student_meta" style="font-size: 12px; color: #64748B; margin-top: 1px;">-</div>
+      <div style="padding: 18px 20px; overflow-y: auto; flex: 1;">
+        <!-- Carte Étudiant Enrichie + Historique Rapide -->
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img id="relance_student_photo" src="<?= htmlspecialchars(placeholderUrl('etudiant')) ?>" alt="Photo Étudiant" style="width: 54px; height: 62px; border-radius: 8px; object-fit: cover; border: 1.5px solid #CBD5E1; background: #FFFFFF; flex-shrink: 0;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                <div id="relance_student_name" style="font-size: 14.5px; font-weight: 800; color: #0F172A;">-</div>
+                <span id="relance_student_solde_badge" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">Solde : 0 FCFA</span>
+              </div>
+              <div id="relance_student_meta" style="font-size: 12px; color: #64748B; margin-top: 3px;">-</div>
+              <div id="relance_history_badge" style="margin-top: 6px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; background: #F1F5F9; color: #475569;">
+                <i data-lucide="history" style="width: 13px; height: 13px;"></i>
+                <span>Aucune relance enregistrée</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau de Relance</label>
-          <select name="niveau_relance" id="relance_niveau_relance" class="form-control" style="border-radius: 8px; font-weight: 600;" onchange="updateRelanceTemplate()">
-            <option value="rappel_amiable">Rappel Amiable (1er Rappel)</option>
-            <option value="relance_ferme">Relance Ferme (Délai 48h)</option>
-            <option value="mise_en_demeure">Mise en Demeure Officielle</option>
-          </select>
+        <!-- Ligne 1 : Niveau & Canal (2 colonnes) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label for="relance_niveau_relance" style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Niveau de Relance</label>
+            <select name="niveau_relance" id="relance_niveau_relance" class="form-control" style="border-radius: 8px; font-weight: 600; font-size: 13px;">
+              <option value="rappel_amiable">Rappel Amiable (1er Rappel)</option>
+              <option value="relance_ferme">Relance Ferme (Avertissement)</option>
+              <option value="mise_en_demeure">Mise en Demeure Officielle</option>
+            </select>
+          </div>
+          <div>
+            <label for="relance_canal_relance" style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Canal d'Expédition</label>
+            <select name="canal_relance" id="relance_canal_relance" class="form-control" style="border-radius: 8px; font-weight: 600; font-size: 13px;">
+              <option value="sms">SMS Direct</option>
+              <option value="whatsapp">WhatsApp Officiel (wa.me)</option>
+              <option value="email">Courrier Électronique (Email)</option>
+              <option value="recu_pdf">Reçu / Lettre de Rappel PDF</option>
+              <option value="appel">Appel Téléphonique (Journalisé)</option>
+            </select>
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Canal d'Expédition</label>
-          <select name="canal_relance" id="relance_canal_relance" class="form-control" style="border-radius: 8px; font-weight: 600;">
-            <option value="sms">SMS Direct (Téléphone Tuteur)</option>
-            <option value="whatsapp">WhatsApp Officiel</option>
-            <option value="email">Courrier Électronique (Email)</option>
-            <option value="appel">Appel Téléphonique (Enregistré)</option>
-          </select>
+        <!-- Sélecteur Rapide de Destinataire (Puces Tuteur / Père / Mère / Étudiant) -->
+        <div id="relance_contacts_wrap" style="margin-bottom: 12px; display: none;">
+          <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px;">Destinataires connus (sélection rapide)</div>
+          <div id="relance_contacts_chips" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
         </div>
 
-        <div class="mb-3">
-          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Téléphone / Contact Destinataire</label>
-          <input type="text" name="telephone_destinataire" id="relance_telephone_destinataire" class="form-control" style="border-radius: 8px; font-weight: 700; font-family: monospace;" required>
+        <!-- Ligne 2 : Contact & Montant Impayé (2 colonnes) -->
+        <div style="display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label for="relance_telephone_destinataire" id="relance_contact_label" style="font-size: 12px; font-weight: 700; color: #0F172A; margin: 0;">Téléphone Destinataire</label>
+              <a id="btn_relance_call_tel" href="#" style="display: none; font-size: 11px; font-weight: 800; color: #0284C7; text-decoration: none; align-items: center; gap: 4px;">
+                <i data-lucide="phone-call" style="width: 12px; height: 12px;"></i> Appeler
+              </a>
+            </div>
+            <input type="text" name="telephone_destinataire" id="relance_telephone_destinataire" class="form-control" style="border-radius: 8px; font-weight: 700; font-family: monospace; font-size: 13px;" placeholder="Ex: 0700000000" required>
+          </div>
+          <div>
+            <label for="relance_montant_impaye" style="font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Montant Impayé Échu (FCFA)</label>
+            <input type="number" name="montant_impaye" id="relance_montant_impaye" class="form-control" style="border-radius: 8px; font-weight: 800; color: #DC2626; background: #FEF2F2; border-color: #FECACA; font-size: 13.5px;" required readonly>
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Montant Impayé Échu (FCFA)</label>
-          <input type="number" name="montant_impaye" id="relance_montant_impaye" class="form-control" style="border-radius: 8px; font-weight: 800; color: #DC2626; background: #F8FAFC;" required readonly>
+        <!-- Options Dynamiques par Canal -->
+        <div id="relance_channel_options" style="margin-bottom: 12px;">
+          <!-- Option WhatsApp -->
+          <div id="relance_opt_whatsapp" style="display: none; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #166534;">
+            <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; font-weight: 700;">
+              <input type="checkbox" id="relance_open_whatsapp" value="1" checked style="width: 15px; height: 15px; cursor: pointer;">
+              <span>Ouvrir WhatsApp (wa.me) avec le message pré-rempli après enregistrement</span>
+            </label>
+          </div>
+          <!-- Option Email -->
+          <div id="relance_opt_email" style="display: none; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #3730A3;">
+            <label style="display: flex; align-items: center; gap: 8px; margin: 0 0 6px 0; cursor: pointer; font-weight: 700;">
+              <input type="checkbox" name="send_email_now" id="relance_send_email_now" value="1" checked style="width: 15px; height: 15px; cursor: pointer;">
+              <span>Envoyer l'e-mail immédiatement via le serveur SMTP configuré</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; font-weight: 600;">
+              <input type="checkbox" name="attach_pdf" id="relance_attach_pdf" value="1" checked style="width: 15px; height: 15px; cursor: pointer;">
+              <span>Joindre automatiquement le reçu / avis de rappel de scolarité PDF</span>
+            </label>
+          </div>
+          <!-- Option Reçu PDF -->
+          <div id="relance_opt_pdf" style="display: none; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #1E3A5F; font-weight: 600;">
+            <i data-lucide="file-text" style="width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px;"></i>
+            La relance sera enregistrée dans l'historique avec sa référence unique puis le reçu PDF officiel s'ouvrira automatiquement.
+          </div>
         </div>
 
-        <div class="mb-3">
-          <label style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px; display: block;">Message du Rappel</label>
-          <textarea name="message_relance" id="relance_message_relance" rows="4" class="form-control" style="border-radius: 8px; font-size: 12.5px;" required></textarea>
+        <!-- Message du Rappel + Compteur SMS + Actions Rapides -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; gap: 8px; flex-wrap: wrap;">
+            <label for="relance_message_relance" style="font-size: 12px; font-weight: 700; color: #0F172A; margin: 0;">Message du Rappel</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="relance_sms_counter" style="font-size: 11px; font-weight: 700; color: #64748B; background: #F1F5F9; padding: 2px 8px; border-radius: 999px;">0 / 160 car. &bull; 1 SMS</span>
+              <button type="button" id="btn_copy_relance_msg" style="background: #F8FAFC; border: 1px solid #CBD5E1; color: #334155; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Copier le texte du message">
+                <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copier
+              </button>
+              <button type="button" id="btn_reset_relance_tpl" style="background: #F8FAFC; border: 1px solid #CBD5E1; color: #1E3A5F; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Régénérer le modèle de message">
+                <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> Modèle
+              </button>
+            </div>
+          </div>
+          <textarea name="message_relance" id="relance_message_relance" rows="4" class="form-control" style="border-radius: 8px; font-size: 12.5px; line-height: 1.45;" required></textarea>
         </div>
       </div>
 
-      <div style="background: #F8FAFC; padding: 14px 20px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-secondary btn-close-modal-relance" style="font-weight: 700; border-radius: 8px; background: #E2E8F0; color: #475569; border: none; padding: 8px 16px;">Annuler</button>
-        <button type="submit" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px;">
-          <i data-lucide="send" style="width: 16px; height: 16px;"></i> Confirmer & Journaliser la Relance
+      <div style="background: #F8FAFC; padding: 13px 20px; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0;">
+        <button type="button" class="btn btn-secondary btn-close-modal-relance" style="font-weight: 700; border-radius: 8px; background: #E2E8F0; color: #475569; border: none; padding: 8px 16px; cursor: pointer;">Annuler</button>
+        <button type="submit" id="btn_submit_relance_indiv" class="btn btn-primary" style="background: #1E3A5F; border-color: #1E3A5F; font-weight: 800; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+          <i data-lucide="send" style="width: 16px; height: 16px;"></i> <span id="btn_submit_relance_label">Confirmer & Journaliser la Relance</span>
         </button>
       </div>
     </form>
@@ -472,6 +540,7 @@ $canRecordPayment = $canRecordPayment ?? true;
     'racine' => RACINE,
     'canRecordPayment' => !empty($canRecordPayment),
     'isCaisseOuverte' => !empty($isCaisseOuverte),
+    'placeholderEtudiant' => placeholderUrl('etudiant'),
     'csrfToken' => Validator::generateCsrfToken()
 ]) ?>
 </script>

@@ -193,6 +193,26 @@ class ModelImpayes extends BaseModel
             $stmtTranches->execute();
             $tranchesGrid = $stmtTranches->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+            // Pré-charger le résumé des relances par inscription en 1 seule requête (zéro N+1)
+            $relSumSql = "SELECT inscription_code,
+                                 COUNT(*) AS nb_relances,
+                                 MAX(created_at_relance) AS derniere_relance_at,
+                                 SUBSTRING_INDEX(GROUP_CONCAT(canal_relance ORDER BY created_at_relance DESC, id_relance DESC), ',', 1) AS dernier_canal
+                          FROM " . TABLES::RELANCES_IMPAYES . "
+                          WHERE inscription_code IS NOT NULL AND inscription_code != ''";
+            $relSumParams = [];
+            if (!empty($anneeCode) && $anneeCode !== 'ALL') {
+                $relSumSql .= " AND annee_code = ?";
+                $relSumParams[] = $anneeCode;
+            }
+            $relSumSql .= " GROUP BY inscription_code";
+            $stmtRelSum = $db->prepare($relSumSql);
+            $stmtRelSum->execute($relSumParams);
+            $relanceSummaryMap = [];
+            foreach ($stmtRelSum->fetchAll(PDO::FETCH_ASSOC) ?: [] as $rs) {
+                $relanceSummaryMap[$rs['inscription_code']] = $rs;
+            }
+
             $today = date('Y-m-d');
             $todayTime = strtotime($today);
 
@@ -359,15 +379,54 @@ class ModelImpayes extends BaseModel
                     }
                 }
 
+                // Construire la liste des contacts disponibles pour le sélecteur rapide du modal
+                $contactsDisponibles = [];
+                if (!empty($ins['telephone_tuteur'])) {
+                    $contactsDisponibles[] = [
+                        'role' => 'Tuteur',
+                        'nom' => trim((string)($ins['nom_tuteur'] ?? 'Tuteur')),
+                        'telephone' => trim((string)$ins['telephone_tuteur']),
+                        'email' => ''
+                    ];
+                }
+                if (!empty($ins['telephone_pere'])) {
+                    $contactsDisponibles[] = [
+                        'role' => 'Père',
+                        'nom' => trim((string)($ins['nom_pere'] ?? 'Père')),
+                        'telephone' => trim((string)$ins['telephone_pere']),
+                        'email' => ''
+                    ];
+                }
+                if (!empty($ins['telephone_mere'])) {
+                    $contactsDisponibles[] = [
+                        'role' => 'Mère',
+                        'nom' => trim((string)($ins['nom_mere'] ?? 'Mère')),
+                        'telephone' => trim((string)$ins['telephone_mere']),
+                        'email' => ''
+                    ];
+                }
+                if (!empty($ins['telephone_etudiant']) || !empty($ins['email_etudiant'])) {
+                    $contactsDisponibles[] = [
+                        'role' => 'Étudiant',
+                        'nom' => trim(strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? ''))),
+                        'telephone' => trim((string)($ins['telephone_etudiant'] ?? '')),
+                        'email' => trim((string)($ins['email_etudiant'] ?? ''))
+                    ];
+                }
+
+                $relSum = $relanceSummaryMap[$codeIns] ?? null;
+
                 $results[] = [
                     'id_inscription' => (int)$ins['id_inscription'],
                     'code_inscription' => $codeIns,
+                    'annee_code' => $aCode,
                     'code_etudiant' => $ins['code_etudiant'],
                     'matricule' => $ins['matricule_etudiant'] ?? 'N/A',
                     'nom' => strtoupper($ins['nom_etudiant'] ?? ''),
                     'prenom' => ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
                     'nom_complet' => strtoupper($ins['nom_etudiant'] ?? '') . ' ' . ucwords(strtolower($ins['prenom_etudiant'] ?? '')),
                     'telephone_etudiant' => $ins['telephone_etudiant'] ?? 'N/A',
+                    'email_etudiant' => trim((string)($ins['email_etudiant'] ?? '')),
                     'initiales' => !empty($initiales) ? $initiales : 'E',
                     'photo' => $photoUrl,
                     'classe' => $ins['libelle_classe'] ?? 'N/A',
@@ -378,6 +437,10 @@ class ModelImpayes extends BaseModel
                     'regime' => $isAffecte ? 'Affecté' : 'Privé',
                     'nom_parent' => $nomParent,
                     'telephone_parent' => $telParent,
+                    'contacts_disponibles' => $contactsDisponibles,
+                    'nb_relances' => (int)($relSum['nb_relances'] ?? 0),
+                    'derniere_relance_at' => $relSum['derniere_relance_at'] ?? '',
+                    'dernier_canal_relance' => $relSum['dernier_canal'] ?? '',
                     'scolarite_due' => $scolariteDue,
                     'frais_annexes_dus' => $fraisAnnexesDus,
                     'total_attendu' => $totalAttendu,
